@@ -1119,7 +1119,7 @@ export default function PlaygroundPage() {
       )}
 
       {/* ══════════ ヘッダー ══════════ */}
-      <header className="flex shrink-0 items-center gap-2 border-b border-emerald-200 bg-white px-3 py-2 shadow-sm overflow-x-auto">
+      <header className="flex shrink-0 items-center gap-1 border-b border-emerald-200 bg-white px-2 py-2 shadow-sm sm:gap-2 sm:px-3">
 
         <button
           type="button"
@@ -1151,11 +1151,10 @@ export default function PlaygroundPage() {
         {/* 初心者ガイドボタン（タイトル右） */}
         <button
           onClick={() => setShowGuideModal(true)}
-          className="ml-2 flex items-center gap-1.5 rounded-xl bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95"
+          className="ml-1 flex shrink-0 items-center gap-1 rounded-xl bg-amber-100 px-2 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95 sm:ml-2 sm:gap-1.5 sm:px-3"
         >
-          <HelpCircle className="h-3.5 w-3.5" />
+          <HelpCircle className="h-3.5 w-3.5 shrink-0" />
           <span className="hidden sm:block">初心者ガイド</span>
-          <span className="sm:hidden">ガイド</span>
         </button>
 
         {/* 右ツール群 */}
@@ -1179,30 +1178,30 @@ export default function PlaygroundPage() {
           <button
             onClick={handleSave}
             title="コードを保存 (Ctrl+S)"
-            className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-emerald-600"
+            className="flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-emerald-600 sm:px-2"
           >
             <Save className="h-4 w-4" />
-            <span className="text-[9px] font-semibold">保存する</span>
+            <span className="hidden text-[9px] font-semibold sm:block">保存する</span>
           </button>
 
-          {/* マイプロジェクトボタン */}
+          {/* マイプロジェクトボタン（モバイルでは非表示） */}
           <Link
             href="/projects"
             title="マイプロジェクト"
-            className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-violet-600"
+            className="hidden sm:flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-violet-600"
           >
             <FolderOpen className="h-4 w-4" />
             <span className="text-[9px] font-semibold">プロジェクト</span>
           </Link>
 
-          <div className="mx-1 h-6 w-px bg-gray-200" />
+          <div className="mx-0.5 h-6 w-px bg-gray-200 sm:mx-1" />
 
           {/* ▶ アプリを動かすボタン（メイン） */}
           <button
             onClick={handleRun}
             disabled={!code.trim()}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black shadow-md transition-all active:scale-[0.97]",
+              "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-black shadow-md transition-all active:scale-[0.97] sm:gap-2 sm:px-4",
               code.trim()
                 ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"

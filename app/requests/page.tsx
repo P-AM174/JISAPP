@@ -31,62 +31,7 @@ type AppRequest = {
 
 const CATEGORIES = ["すべて", "ゲーム", "便利ツール", "学習・教育", "エンタメ", "生産性", "その他"];
 
-const STATIC_REQUESTS: AppRequest[] = [
-  {
-    id: "s1",
-    title: "タイピング練習アプリが欲しい",
-    content: "ランダムな日本語の文章が表示されて、タイピングしてスコアが出るシンプルなゲームが欲しいです。WPM（1分あたりの入力数）と正確率が見えると嬉しいです。",
-    category: "ゲーム",
-    authorName: "ひまわり",
-    createdAt: "2026/07/08",
-    responses: 3,
-  },
-  {
-    id: "s2",
-    title: "ポモドーロタイマーアプリ",
-    content: "25分作業→5分休憩を繰り返すタイマーアプリが欲しいです。通知音があって、セット数も記録できると嬉しいです。シンプルでかわいいデザインが好みです。",
-    category: "生産性",
-    authorName: "もちこ",
-    createdAt: "2026/07/07",
-    responses: 5,
-  },
-  {
-    id: "s3",
-    title: "かわいい音が出るピアノ",
-    content: "スマホで弾けるミニピアノアプリが欲しいです。鍵盤をタップすると音が出て、簡単な曲を弾けるくらいのものでいいです。",
-    category: "エンタメ",
-    authorName: "おとは",
-    createdAt: "2026/07/06",
-    responses: 7,
-  },
-  {
-    id: "s4",
-    title: "英単語フラッシュカードアプリ",
-    content: "英単語と意味をカードに登録して、ランダムに表示してクイズができるアプリが欲しいです。正解・不正解を記録して、苦手単語を優先的に出してほしいです。",
-    category: "学習・教育",
-    authorName: "あんり",
-    createdAt: "2026/07/05",
-    responses: 2,
-  },
-  {
-    id: "s5",
-    title: "割り勘計算ツール",
-    content: "飲み会の割り勘を簡単に計算できるツールが欲しいです。金額と人数を入力したら一人当たりの金額が出て、お釣りも計算できると助かります。",
-    category: "便利ツール",
-    authorName: "たろう",
-    createdAt: "2026/07/04",
-    responses: 10,
-  },
-  {
-    id: "s6",
-    title: "数学クイズゲーム",
-    content: "掛け算・割り算の問題がランダムに出て、制限時間内に答えるゲームが欲しいです。小学生の子供が楽しめるようなデザインにしてほしいです。",
-    category: "学習・教育",
-    authorName: "さとみ",
-    createdAt: "2026/07/03",
-    responses: 4,
-  },
-];
+// ダミーデータは廃止（ユーザー投稿のみ表示）
 
 // ─── リクエストカード ───
 function RequestCard({ req }: { req: AppRequest }) {
@@ -210,7 +155,7 @@ function PostModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: A
 
 // ─── メインページ ───
 export default function RequestsPage() {
-  const [requests,     setRequests]     = useState<AppRequest[]>(STATIC_REQUESTS);
+  const [requests,     setRequests]     = useState<AppRequest[]>([]);
   const [showModal,    setShowModal]    = useState(false);
   const [query,        setQuery]        = useState("");
   const [activeTab,    setActiveTab]    = useState("すべて");
@@ -222,15 +167,14 @@ export default function RequestsPage() {
       const raw = localStorage.getItem("jisapp_app_requests");
       if (raw) {
         const saved: AppRequest[] = JSON.parse(raw);
-        setRequests([...saved, ...STATIC_REQUESTS]);
+        setRequests(saved);
       }
     } catch { /* noop */ }
     setMounted(true);
   }, []);
 
   const handlePost = (req: AppRequest) => {
-    const userRequests = requests.filter(r => !STATIC_REQUESTS.find(s => s.id === r.id));
-    const updated = [req, ...userRequests];
+    const updated = [req, ...requests];
     try {
       localStorage.setItem("jisapp_app_requests", JSON.stringify(updated));
     } catch { /* noop */ }

@@ -52,45 +52,8 @@ type AcquiredApp = {
   acquiredAt?: string;
 };
 
-// ─── ダミープロジェクトデータ ───
-const DEMO_PROJECTS: Project[] = [
-  {
-    id: "demo_1",
-    title: "就活管理アプリ",
-    description: "企業ごとの選考状況を一覧管理。ステータス・メモ・面接日を記録できるシンプルなWebアプリ。書類選考から内定まで全フローを可視化。",
-    updatedAt: "2026年6月15日",
-    lines: 124,
-    chars: 4832,
-    gradient: "from-blue-500 to-indigo-600",
-    tag: "業務ツール",
-    tagColor: "bg-blue-100 text-blue-700",
-    isDemo: true,
-  },
-  {
-    id: "demo_2",
-    title: "10秒タイマー",
-    description: "ボタンを押すと10秒カウントダウンが始まる超シンプルタイマー。ちょっとした休憩・作業管理にぴったり。音も鳴ります！",
-    updatedAt: "2026年6月13日",
-    lines: 58,
-    chars: 1920,
-    gradient: "from-amber-500 to-orange-600",
-    tag: "ユーティリティ",
-    tagColor: "bg-amber-100 text-amber-700",
-    isDemo: true,
-  },
-  {
-    id: "demo_3",
-    title: "シフト自動入力シート",
-    description: "GoogleスプレッドシートのGASで動くシフト管理ツール。希望休を入力すると自動でシフト表を作成・Slack通知まで完全自動化。",
-    updatedAt: "2026年6月10日",
-    lines: 287,
-    chars: 9140,
-    gradient: "from-emerald-500 to-teal-600",
-    tag: "業務効率化",
-    tagColor: "bg-emerald-100 text-emerald-700",
-    isDemo: true,
-  },
-];
+// ダミープロジェクトは廃止（空配列）
+const DEMO_PROJECTS: Project[] = [];
 
 // ─── GETしたアプリのスタティックデータ ───
 const STATIC_ACQUIRED: AcquiredApp[] = [

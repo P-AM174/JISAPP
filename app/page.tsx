@@ -446,48 +446,20 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
 
   const closeMenu = () => setShowMenu(false);
 
-  const STATIC_APPS_FOR_MODAL = [
-    { id: 1,  name: "AIスケジュール最適化",       price: 2980, category: "生産性",      gradient: "from-emerald-600 via-green-600 to-teal-700"   },
-    { id: 2,  name: "マーケットレポーター",        price: 1980, category: "分析",        gradient: "from-rose-500 via-pink-600 to-red-600"         },
-    { id: 3,  name: "SNSコンテンツAI",            price: 3480, category: "マーケ",      gradient: "from-amber-500 via-orange-500 to-red-500"      },
-    { id: 4,  name: "コード品質チェッカー",        price: 2480, category: "開発",        gradient: "from-emerald-500 via-teal-600 to-cyan-700"     },
-    { id: 5,  name: "タスク管理Pro",              price: 0,    category: "生産性",      gradient: "from-green-500 via-emerald-600 to-teal-600"    },
-    { id: 6,  name: "メール文章アシスト",          price: 0,    category: "ビジネス",    gradient: "from-emerald-500 via-green-600 to-teal-600"    },
-    { id: 7,  name: "音楽プレイリスト生成",        price: 0,    category: "エンタメ",    gradient: "from-green-500 via-emerald-600 to-teal-700"    },
-    { id: 8,  name: "EC商品説明ジェネレーター",   price: 0,    category: "EC",          gradient: "from-orange-500 via-amber-500 to-yellow-500"   },
-    { id: 9,  name: "ワンクリック議事録作成GAS",  price: 980,  category: "業務効率化",  gradient: "from-emerald-500 via-green-600 to-teal-600"    },
-    { id: 10, name: "自動シフト調整ツール",        price: 500,  category: "シフト管理",  gradient: "from-teal-500 via-emerald-600 to-green-700"    },
-    { id: 11, name: "かんたん請求書メーカー",      price: 780,  category: "フリーランス",gradient: "from-green-500 via-teal-600 to-emerald-700"    },
-    { id: 12, name: "SNS予約投稿スケジューラー",  price: 980,  category: "SNS運用",     gradient: "from-emerald-400 via-teal-500 to-cyan-600"     },
-  ];
-
-  const CREATORS_FOR_MODAL = [
-    { id: 1, name: "田中 拓也", handle: "@takuya_dev",    avatar: "TT", color: "from-emerald-500 to-teal-600"  },
-    { id: 2, name: "山田 彩花", handle: "@ayaka_design",  avatar: "YA", color: "from-green-500 to-emerald-600"  },
-    { id: 3, name: "佐々木 健", handle: "@ken_techlab",   avatar: "SK", color: "from-teal-500 to-cyan-600"      },
-    { id: 4, name: "中村 美咲", handle: "@misaki_apps",   avatar: "NM", color: "from-emerald-400 to-green-600"  },
-  ];
-
   const openFavModal = () => {
     try {
       const savedIds: string[] = JSON.parse(localStorage.getItem("jisapp_saved_apps") ?? "[]");
       const listings: Array<{ id: number | string; name: string; priceNum?: number; category?: string; gradient?: string }> =
         JSON.parse(localStorage.getItem("jisapp_listings") ?? "[]");
-      const allApps = [
-        ...STATIC_APPS_FOR_MODAL,
-        ...listings.map((l) => ({ id: l.id, name: l.name, price: l.priceNum ?? 0, category: l.category, gradient: l.gradient })),
-      ];
-      setFavApps(allApps.filter((a) => savedIds.includes(String(a.id))));
+      const apps = listings.map((l) => ({ id: l.id, name: l.name, price: l.priceNum ?? 0, category: l.category, gradient: l.gradient }));
+      setFavApps(apps.filter((a) => savedIds.includes(String(a.id))));
     } catch { setFavApps([]); }
     setShowMenu(false);
     setShowFavModal(true);
   };
 
   const openFollowModal = () => {
-    try {
-      const followedIds: number[] = JSON.parse(localStorage.getItem("jisapp_followed_creators") ?? "[]");
-      setFollowedList(CREATORS_FOR_MODAL.filter((c) => followedIds.includes(c.id)));
-    } catch { setFollowedList([]); }
+    setFollowedList([]);
     setShowMenu(false);
     setShowFollowModal(true);
   };

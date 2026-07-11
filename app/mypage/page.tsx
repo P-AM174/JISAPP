@@ -27,28 +27,9 @@ import {
   Clock,
 } from "lucide-react";
 
-// ─── 参照用の静的データ ───
-const STATIC_APPS = [
-  { id: 1,  name: "AIスケジュール最適化",       price: 2980, category: "生産性",      creator: "田中 拓也"  },
-  { id: 2,  name: "マーケットレポーター",        price: 1980, category: "分析",        creator: "佐々木 健"  },
-  { id: 3,  name: "SNSコンテンツAI",            price: 2980, category: "マーケ",      creator: "中村 美咲"  },
-  { id: 4,  name: "コード品質チェッカー",        price: 2480, category: "開発",        creator: "田中 拓也"  },
-  { id: 5,  name: "タスク管理Pro",              price: 0,    category: "生産性",      creator: "田中 拓也"  },
-  { id: 6,  name: "メール文章アシスト",          price: 0,    category: "ビジネス",    creator: "山田 彩花"  },
-  { id: 7,  name: "音楽プレイリスト生成",        price: 0,    category: "エンタメ",    creator: "山田 彩花"  },
-  { id: 8,  name: "EC商品説明ジェネレーター",   price: 0,    category: "EC",          creator: "中村 美咲"  },
-  { id: 9,  name: "ワンクリック議事録作成GAS",  price: 980,  category: "業務効率化",  creator: "佐々木 健"  },
-  { id: 10, name: "自動シフト調整ツール",        price: 500,  category: "シフト管理",  creator: "佐々木 健"  },
-  { id: 11, name: "かんたん請求書メーカー",      price: 780,  category: "フリーランス",creator: "中村 美咲"  },
-  { id: 12, name: "SNS予約投稿スケジューラー",  price: 980,  category: "SNS運用",     creator: "中村 美咲"  },
-];
-
-const CREATORS = [
-  { id: 1, name: "田中 拓也", handle: "@takuya_dev",    avatar: "TT", badge: "🏆 トップクリエイター", specialty: "生産性・AI",   color: "from-emerald-500 to-teal-600"   },
-  { id: 2, name: "山田 彩花", handle: "@ayaka_design",  avatar: "YA", badge: "⭐ 殿堂入り",          specialty: "デザイン・UI",  color: "from-green-500 to-emerald-600"  },
-  { id: 3, name: "佐々木 健", handle: "@ken_techlab",   avatar: "SK", badge: "🔥 急上昇中",          specialty: "データ分析",    color: "from-teal-500 to-cyan-600"      },
-  { id: 4, name: "中村 美咲", handle: "@misaki_apps",   avatar: "NM", badge: "✨ 新鋭",              specialty: "マーケ・SNS",  color: "from-emerald-400 to-green-600"  },
-];
+// ダミーデータは廃止
+const STATIC_APPS: { id: number; name: string; price: number; category: string; creator: string }[] = [];
+const CREATORS: { id: number; name: string; handle: string; avatar: string; badge: string; specialty: string; color: string }[] = [];
 
 type AppItem = {
   id: string;

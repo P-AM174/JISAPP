@@ -55,12 +55,8 @@ type AcquiredApp = {
 // ダミープロジェクトは廃止（空配列）
 const DEMO_PROJECTS: Project[] = [];
 
-// ─── GETしたアプリのスタティックデータ ───
-const STATIC_ACQUIRED: AcquiredApp[] = [
-  { id: 5,  name: "タスク管理Pro",        category: "生産性",    creator: "SimpleApps",  gradient: "from-green-500 to-teal-600",    rating: 4.5, acquiredAt: "2026年6月12日" },
-  { id: 6,  name: "メール文章アシスト",    category: "ビジネス",  creator: "MailGenius",  gradient: "from-emerald-500 to-teal-600",  rating: 4.4, acquiredAt: "2026年6月11日" },
-  { id: 7,  name: "音楽プレイリスト生成",  category: "エンタメ",  creator: "MusicAI",     gradient: "from-green-500 to-emerald-600", rating: 4.6, acquiredAt: "2026年6月8日"  },
-];
+// ダミー入手アプリは廃止
+const STATIC_ACQUIRED: AcquiredApp[] = [];
 
 // ─── プロジェクトカード ───
 function ProjectCard({ proj, onDelete, onPublish }: { proj: Project; onDelete?: (id: string) => void; onPublish?: (proj: Project) => void }) {
@@ -388,18 +384,7 @@ export default function ProjectsPage() {
       deletedIds = JSON.parse(localStorage.getItem("jisapp_deleted_projects") ?? "[]");
     } catch { /* noop */ }
 
-    // GETしたアプリを LocalStorage から読み込み
-    try {
-      const ids: string[] = JSON.parse(localStorage.getItem("purchased_apps") ?? "[]");
-      if (ids.length > 0) {
-        const extra = STATIC_ACQUIRED.filter((a) => ids.includes(String(a.id)));
-        setAcquiredApps(extra.length > 0 ? extra : STATIC_ACQUIRED);
-      } else {
-        setAcquiredApps(STATIC_ACQUIRED);
-      }
-    } catch {
-      setAcquiredApps(STATIC_ACQUIRED);
-    }
+    // 入手アプリはライブラリAPIから取得するため localStorage には依存しない
 
     // 保存されたコードがあれば「マイプロジェクト」として追加
     try {

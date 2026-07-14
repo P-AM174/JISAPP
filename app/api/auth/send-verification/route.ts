@@ -116,7 +116,10 @@ export async function POST(req: NextRequest) {
 
     if (sendError) {
       console.error("[Resend]", sendError);
-      return NextResponse.json({ error: "メール送信に失敗しました。再度お試しください。" }, { status: 500 });
+      const errObj = sendError as { name?: string; message?: string; statusCode?: number };
+      return NextResponse.json({
+        error: `[Resend ${errObj.statusCode}] ${errObj.name}: ${errObj.message}`,
+      }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

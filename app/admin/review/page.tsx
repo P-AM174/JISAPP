@@ -5,9 +5,9 @@ import Link from "next/link";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
   ShieldCheck, AlertTriangle, CheckCircle2, X,
-  Clock, Trash2, Eye, EyeOff, Lock, BarChart3, Package,
+  Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
-  ChevronDown, ChevronUp, Tag, Layers, Flag, Hash,
+  Tag, Layers, Flag, Hash, Search, UserX,
 } from "lucide-react";
 
 // ─── 型定義 ────────────────────────────────────────────────────────
@@ -41,12 +41,22 @@ type Report = {
   product: { id: string; appNumber: number; title: string; status: string };
 };
 
-type Tab = "dashboard" | "pending" | "active" | "all" | "reports";
+type UserRecord = {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  createdAt: string;
+  productCount: number;
+  purchaseCount: number;
+};
+
+type Tab = "dashboard" | "apps" | "reports" | "users";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  active:    { label: "公開中",   cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  pending:   { label: "審査待ち", cls: "bg-amber-50   text-amber-700   ring-amber-200"  },
-  rejected:  { label: "却下",     cls: "bg-rose-50    text-rose-600    ring-rose-200"   },
+  active:   { label: "公開中",   cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  pending:  { label: "審査待ち", cls: "bg-amber-50   text-amber-700   ring-amber-200"  },
+  rejected: { label: "却下",     cls: "bg-rose-50    text-rose-600    ring-rose-200"   },
 };
 
 const REPORT_STATUS: Record<string, { label: string; cls: string }> = {
@@ -57,7 +67,7 @@ const REPORT_STATUS: Record<string, { label: string; cls: string }> = {
 
 const LISTING_LABEL: Record<string, string> = {
   file:       "ファイル販売",
-  playground: "プレイグラウンドアプリ",
+  playground: "プレイグラウンド",
   external:   "外部リンク",
 };
 
@@ -71,30 +81,33 @@ function AppNum({ n }: { n: number }) {
 
 // ══════════════════════════════════════════════════════════
 export default function AdminDashboard() {
-  // ─── 認証 ───
   const [authed,  setAuthed]  = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [showPw,  setShowPw]  = useState(false);
   const [pwError, setPwError] = useState(false);
 
-  // ─── データ ───
-  const [products,          setProducts]          = useState<Product[]>([]);
-  const [reports,           setReports]           = useState<Report[]>([]);
-  const [userCount,         setUserCount]         = useState(0);
-  const [pendingReportCount,setPendingReportCount] = useState(0);
-  const [mounted,           setMounted]           = useState(false);
-  const [tab,               setTab]               = useState<Tab>("dashboard");
-  const [actionMsg,         setActionMsg]         = useState("");
-  const [selected,          setSelected]          = useState<Product | null>(null);
-  const [loadingId,         setLoadingId]         = useState<string | null>(null);
+  const [products,           setProducts]           = useState<Product[]>([]);
+  const [reports,            setReports]            = useState<Report[]>([]);
+  const [users,              setUsers]              = useState<UserRecord[]>([]);
+  const [userCount,          setUserCount]          = useState(0);
+  const [pendingReportCount, setPendingReportCount] = useState(0);
+  const [mounted,            setMounted]            = useState(false);
+  const [tab,                setTab]                = useState<Tab>("dashboard");
+  const [actionMsg,          setActionMsg]          = useState("");
+  const [loadingId,          setLoadingId]          = useState<string | null>(null);
+
+  // 検索
+  const [appSearch,  setAppSearch]  = useState("");
+  const [userSearch, setUserSearch] = useState("");
 
   useEffect(() => { loadAll(); }, []);
 
   const loadAll = async () => {
     try {
-      const [prodRes, repRes] = await Promise.all([
+      const [prodRes, repRes, userRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/reports"),
+        fetch("/api/admin/users"),
       ]);
       if (prodRes.ok) {
         const data = await prodRes.json();
@@ -109,17 +122,42 @@ export default function AdminDashboard() {
         const d = await repRes.json();
         setReports(d.reports ?? []);
       }
+      if (userRes.ok) {
+        const d = await userRes.json();
+        setUsers(d.users ?? []);
+      }
     } catch {
       setAuthed(false);
     }
     setMounted(true);
   };
 
-  // ─── 派生データ ───
-  const pendingProducts  = useMemo(() => products.filter(p => p.status === "pending"),  [products]);
-  const activeProducts   = useMemo(() => products.filter(p => p.status === "active"),   [products]);
-  const rejectedProducts = useMemo(() => products.filter(p => p.status === "rejected"), [products]);
-  const pendingReports   = useMemo(() => reports.filter(r => r.status === "pending"),   [reports]);
+  const activeProducts  = useMemo(() => products.filter(p => p.status === "active"),  [products]);
+  const pendingProducts = useMemo(() => products.filter(p => p.status === "pending"), [products]);
+  const pendingReports  = useMemo(() => reports.filter(r => r.status === "pending"),  [reports]);
+
+  // 検索フィルター
+  const filteredProducts = useMemo(() => {
+    const q = appSearch.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(p =>
+      String(p.appNumber).includes(q) ||
+      p.title.toLowerCase().includes(q) ||
+      (p.creator.name ?? "").toLowerCase().includes(q) ||
+      p.creator.email.toLowerCase().includes(q) ||
+      (p.category ?? "").toLowerCase().includes(q)
+    );
+  }, [products, appSearch]);
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(u =>
+      (u.name ?? "").toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.id.toLowerCase().includes(q)
+    );
+  }, [users, userSearch]);
 
   const categoryStats = useMemo(() => {
     const map: Record<string, number> = {};
@@ -131,7 +169,6 @@ export default function AdminDashboard() {
   }, [products]);
   const maxCatCount = useMemo(() => Math.max(1, ...categoryStats.map(c => c[1])), [categoryStats]);
 
-  // ─── 認証ハンドラ ───
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch("/api/admin/login", {
@@ -148,42 +185,27 @@ export default function AdminDashboard() {
     setAuthed(false); setPwInput("");
   };
 
-  // ─── 通知 ───
   const notify = (msg: string) => {
     setActionMsg(msg);
     setTimeout(() => setActionMsg(""), 4000);
   };
 
-  // ─── アクション（商品） ───
-  const handleStatus = async (product: Product, status: "active" | "rejected" | "pending") => {
-    setLoadingId(product.id);
-    const res = await fetch(`/api/admin/products/${product.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    if (res.ok) {
-      await loadAll();
-      setSelected(null);
-      const labels = { active: "承認・公開", rejected: "却下", pending: "審査待ちに戻す" };
-      notify(`「${product.title}」を${labels[status]}しました`);
-    }
-    setLoadingId(null);
-  };
-
-  const handleDelete = async (product: Product) => {
-    if (!confirm(`「${product.title}」を完全に削除しますか？この操作は取り消せません。`)) return;
+  const handleDeleteProduct = async (product: Product) => {
+    if (!confirm(`「${product.title}」（#${String(product.appNumber).padStart(4,"0")}）を完全に削除しますか？この操作は取り消せません。`)) return;
     setLoadingId(product.id);
     const res = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
-    if (res.ok) {
-      await loadAll();
-      setSelected(null);
-      notify(`「${product.title}」を削除しました`);
-    }
+    if (res.ok) { await loadAll(); notify(`「${product.title}」を削除しました`); }
     setLoadingId(null);
   };
 
-  // ─── アクション（報告） ───
+  const handleDeleteUser = async (user: UserRecord) => {
+    if (!confirm(`「${user.name ?? user.email}」を強制退会させますか？このユーザーのデータはすべて削除されます。`)) return;
+    setLoadingId(user.id);
+    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+    if (res.ok) { await loadAll(); notify(`「${user.name ?? user.email}」を退会させました`); }
+    setLoadingId(null);
+  };
+
   const handleReportAction = async (reportId: string, status: "resolved" | "dismissed") => {
     setLoadingId(reportId);
     const res = await fetch(`/api/admin/reports/${reportId}`, {
@@ -193,8 +215,7 @@ export default function AdminDashboard() {
     });
     if (res.ok) {
       await loadAll();
-      const label = status === "resolved" ? "対応済みにしました" : "却下しました";
-      notify(`報告を${label}`);
+      notify(status === "resolved" ? "報告を対応済みにしました" : "報告を却下しました");
     }
     setLoadingId(null);
   };
@@ -222,7 +243,7 @@ export default function AdminDashboard() {
                 placeholder="管理者パスワード"
                 autoComplete="current-password"
                 className={`w-full rounded-2xl border px-4 py-3 pr-10 text-sm outline-none transition ${
-                  pwError ? "border-rose-300 bg-rose-50" : "border-gray-200 bg-gray-50 focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20"
+                  pwError ? "border-rose-300 bg-rose-50" : "border-gray-200 bg-gray-50 focus:border-emerald-400 focus:bg-white"
                 }`}
               />
               <button type="button" onClick={() => setShowPw(v => !v)}
@@ -266,13 +287,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* タブ */}
-        <div className="mx-auto max-w-7xl px-4 flex gap-1 overflow-x-auto pb-0">
+        <div className="mx-auto max-w-7xl px-4 flex gap-1 overflow-x-auto">
           {([
             { id: "dashboard", label: "📊 ダッシュボード" },
-            { id: "pending",   label: `⏳ 審査待ち`, count: pendingProducts.length,  countCls: "bg-amber-500" },
-            { id: "active",    label: `🌐 公開中`,   count: activeProducts.length,   countCls: "bg-emerald-500" },
-            { id: "all",       label: `📋 全出品`,   count: products.length,         countCls: "bg-gray-400" },
-            { id: "reports",   label: `🚨 報告`,     count: pendingReports.length,   countCls: "bg-rose-500" },
+            { id: "apps",      label: "📱 アプリ管理",    count: products.length,       countCls: "bg-gray-400"    },
+            { id: "reports",   label: "🚨 報告",          count: pendingReports.length, countCls: "bg-rose-500"    },
+            { id: "users",     label: "👤 ユーザー管理",   count: users.length,          countCls: "bg-emerald-500" },
           ] as { id: Tab; label: string; count?: number; countCls?: string }[]).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`relative flex shrink-0 items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 ${
@@ -291,7 +311,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* 通知トースト */}
+      {/* トースト */}
       {actionMsg && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[600] flex items-center gap-3 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-2xl"
           style={{ animation: "fadeInScale .2s ease-out" }}>
@@ -305,12 +325,11 @@ export default function AdminDashboard() {
         {/* ══════ DASHBOARD ══════ */}
         {tab === "dashboard" && (
           <div className="space-y-8">
-            {/* 統計カード */}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {[
-                { label: "登録ユーザー数", value: `${userCount}人`,             icon: Users,         bg: "from-emerald-500 to-green-600"  },
-                { label: "総出品数（実）",  value: `${products.length}件`,        icon: Package,       bg: "from-teal-500 to-emerald-600"   },
-                { label: "公開中",          value: `${activeProducts.length}件`,  icon: Globe,         bg: "from-green-500 to-teal-600"     },
+                { label: "登録ユーザー数", value: `${userCount}人`,             icon: Users,         bg: "from-emerald-500 to-green-600"   },
+                { label: "総出品数",        value: `${products.length}件`,        icon: Package,       bg: "from-teal-500 to-emerald-600"    },
+                { label: "公開中",          value: `${activeProducts.length}件`,  icon: Globe,         bg: "from-green-500 to-teal-600"      },
                 { label: "未対応の報告",    value: `${pendingReportCount}件`,     icon: Flag,          bg: pendingReportCount > 0 ? "from-rose-500 to-rose-600" : "from-gray-400 to-gray-500" },
               ].map(c => (
                 <div key={c.label} className={`rounded-2xl bg-gradient-to-br ${c.bg} p-5 text-white shadow-md`}>
@@ -321,7 +340,6 @@ export default function AdminDashboard() {
               ))}
             </div>
 
-            {/* ステータス内訳 */}
             <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
               <div className="flex items-center gap-2 mb-5">
                 <BarChart3 className="h-5 w-5 text-emerald-600" />
@@ -329,9 +347,9 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: "公開中",   value: activeProducts.length,   cls: "bg-emerald-50 text-emerald-700" },
-                  { label: "審査待ち", value: pendingProducts.length,  cls: "bg-amber-50   text-amber-700"   },
-                  { label: "却下済み", value: rejectedProducts.length, cls: "bg-rose-50    text-rose-600"    },
+                  { label: "公開中",   value: activeProducts.length,                               cls: "bg-emerald-50 text-emerald-700" },
+                  { label: "審査待ち", value: pendingProducts.length,                              cls: "bg-amber-50   text-amber-700"   },
+                  { label: "却下済み", value: products.filter(p=>p.status==="rejected").length,   cls: "bg-rose-50    text-rose-600"    },
                 ].map(s => (
                   <div key={s.label} className={`rounded-2xl ${s.cls} p-4`}>
                     <p className="text-[11px] font-semibold mb-1">{s.label}</p>
@@ -341,7 +359,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* カテゴリ分布 */}
             {categoryStats.length > 0 && (
               <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
                 <div className="flex items-center gap-2 mb-5">
@@ -366,32 +383,27 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* アラートバナー */}
             <div className="grid gap-3 sm:grid-cols-2">
-              {pendingProducts.length > 0 && (
-                <div className="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    <p className="text-sm font-bold text-amber-700">
-                      審査待ち {pendingProducts.length} 件
-                    </p>
-                  </div>
-                  <button onClick={() => setTab("pending")}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-colors">
-                    審査する
-                  </button>
-                </div>
-              )}
               {pendingReports.length > 0 && (
                 <div className="rounded-2xl bg-rose-50 border border-rose-200 px-5 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Flag className="h-5 w-5 text-rose-500" />
-                    <p className="text-sm font-bold text-rose-700">
-                      未対応の報告 {pendingReports.length} 件
-                    </p>
+                    <p className="text-sm font-bold text-rose-700">未対応の報告 {pendingReports.length} 件</p>
                   </div>
                   <button onClick={() => setTab("reports")}
                     className="rounded-xl bg-rose-500 px-4 py-2 text-xs font-bold text-white hover:bg-rose-600 transition-colors">
+                    確認する
+                  </button>
+                </div>
+              )}
+              {pendingProducts.length > 0 && (
+                <div className="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    <p className="text-sm font-bold text-amber-700">審査待ち出品 {pendingProducts.length} 件</p>
+                  </div>
+                  <button onClick={() => setTab("apps")}
+                    className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-colors">
                     確認する
                   </button>
                 </div>
@@ -400,112 +412,37 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ══════ 審査待ち ══════ */}
-        {tab === "pending" && (
+        {/* ══════ アプリ管理 ══════ */}
+        {tab === "apps" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-base font-black text-gray-900">審査待ち一覧</h2>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{pendingProducts.length} 件</span>
-            </div>
-
-            {pendingProducts.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 text-center shadow-sm">
-                <ShieldCheck className="h-12 w-12 text-emerald-200" />
-                <p className="font-bold text-gray-600">審査待ちの出品はありません</p>
-              </div>
-            ) : (
-              pendingProducts.map(p => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  isSelected={selected?.id === p.id}
-                  isLoading={loadingId === p.id}
-                  onToggle={() => setSelected(selected?.id === p.id ? null : p)}
-                  onApprove={() => handleStatus(p, "active")}
-                  onReject={() => handleStatus(p, "rejected")}
-                  onDelete={() => handleDelete(p)}
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-base font-black text-gray-900">アプリ管理</h2>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{filteredProducts.length} 件</span>
+              {/* 検索バー */}
+              <div className="ml-auto flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm w-full sm:w-80">
+                <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={appSearch}
+                  onChange={e => setAppSearch(e.target.value)}
+                  placeholder="管理番号・タイトル・出品者で検索"
+                  className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-400"
                 />
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ══════ 公開中 ══════ */}
-        {tab === "active" && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-base font-black text-gray-900">公開中アプリ</h2>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">{activeProducts.length} 件</span>
+                {appSearch && (
+                  <button onClick={() => setAppSearch("")} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {activeProducts.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 text-center shadow-sm">
-                <Globe className="h-12 w-12 text-gray-200" />
-                <p className="font-bold text-gray-600">公開中の出品はありません</p>
+                <ShieldCheck className="h-12 w-12 text-gray-200" />
+                <p className="font-bold text-gray-600">{appSearch ? "該当するアプリが見つかりません" : "出品データがありません"}</p>
               </div>
             ) : (
               <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
-                      <th className="px-4 py-3">管理番号</th>
-                      <th className="px-4 py-3">タイトル</th>
-                      <th className="px-4 py-3">カテゴリ</th>
-                      <th className="px-4 py-3">種別</th>
-                      <th className="px-4 py-3">出品者</th>
-                      <th className="px-4 py-3">登録日</th>
-                      <th className="px-4 py-3">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {activeProducts.map(p => (
-                      <tr key={p.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-4 py-3"><AppNum n={p.appNumber} /></td>
-                        <td className="px-4 py-3 font-semibold text-gray-800 max-w-[200px]">
-                          <Link href={`/apps/${p.id}`} target="_blank"
-                            className="hover:text-emerald-600 transition-colors flex items-center gap-1 truncate">
-                            {p.title}
-                            <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </Link>
-                        </td>
-                        <td className="px-4 py-3">
-                          {p.category && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">{p.category}</span>}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{LISTING_LABEL[p.listingType] ?? p.listingType}</td>
-                        <td className="px-4 py-3 text-xs text-gray-400">{p.creator.name ?? p.creator.email}</td>
-                        <td className="px-4 py-3 text-xs text-gray-400">{p.createdAt}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleStatus(p, "pending")} disabled={loadingId === p.id}
-                              className="flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50">
-                              <Clock className="h-3 w-3" />審査待ちに戻す
-                            </button>
-                            <button onClick={() => handleDelete(p)} disabled={loadingId === p.id}
-                              className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
-                              <Trash2 className="h-3 w-3" />削除
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ══════ 全出品 ══════ */}
-        {tab === "all" && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-base font-black text-gray-900">全出品一覧</h2>
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{products.length} 件</span>
-            </div>
-            <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-              {products.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-12">出品データがありません</p>
-              ) : (
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
@@ -520,7 +457,7 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {products.map(p => {
+                    {filteredProducts.map(p => {
                       const st = STATUS_LABEL[p.status] ?? { label: p.status, cls: "bg-gray-100 text-gray-500 ring-gray-200" };
                       return (
                         <tr key={p.id} className="hover:bg-gray-50 transition-colors group">
@@ -537,12 +474,15 @@ export default function AdminDashboard() {
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${st.cls}`}>{st.label}</span>
                           </td>
                           <td className="px-4 py-2.5 text-gray-500">{LISTING_LABEL[p.listingType] ?? p.listingType}</td>
-                          <td className="px-4 py-2.5 text-gray-400">{p.creator.name ?? p.creator.email}</td>
+                          <td className="px-4 py-2.5 text-gray-400 max-w-[140px] truncate">{p.creator.name ?? p.creator.email}</td>
                           <td className="px-4 py-2.5 text-gray-400">{p.createdAt}</td>
                           <td className="px-4 py-2.5">
-                            <button onClick={() => handleDelete(p)} disabled={loadingId === p.id}
-                              className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100">
-                              <Trash2 className="h-3 w-3" />削除
+                            <button onClick={() => handleDeleteProduct(p)} disabled={loadingId === p.id}
+                              className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
+                              {loadingId === p.id
+                                ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
+                                : <Trash2 className="h-3 w-3" />}
+                              強制削除
                             </button>
                           </td>
                         </tr>
@@ -550,8 +490,8 @@ export default function AdminDashboard() {
                     })}
                   </tbody>
                 </table>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -600,32 +540,27 @@ export default function AdminDashboard() {
                         </div>
                         {isPending && (
                           <div className="flex gap-2 shrink-0">
-                            <button
-                              onClick={() => handleReportAction(r.id, "resolved")}
-                              disabled={loadingId === r.id}
+                            <button onClick={() => handleReportAction(r.id, "resolved")} disabled={loadingId === r.id}
                               className="flex items-center gap-1 rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50">
                               <CheckCircle2 className="h-3.5 w-3.5" />対応済み
                             </button>
-                            <button
-                              onClick={() => handleReportAction(r.id, "dismissed")}
-                              disabled={loadingId === r.id}
+                            <button onClick={() => handleReportAction(r.id, "dismissed")} disabled={loadingId === r.id}
                               className="flex items-center gap-1 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50">
                               <X className="h-3.5 w-3.5" />却下
                             </button>
                           </div>
                         )}
                       </div>
-                      {/* 対象アプリへのクイックリンク */}
                       {isPending && (
                         <div className="border-t border-gray-100 px-5 py-3 flex items-center gap-3 bg-gray-50">
-                          <p className="text-[11px] text-gray-400">このアプリを確認して対処：</p>
+                          <p className="text-[11px] text-gray-400">このアプリを対処：</p>
                           <Link href={`/apps/${r.product.id}`} target="_blank"
                             className="text-[11px] font-bold text-emerald-600 hover:underline flex items-center gap-1">
                             アプリページを開く <ExternalLink className="h-3 w-3" />
                           </Link>
                           <button
                             onClick={async () => {
-                              if (!confirm(`「${r.product.title}」を削除しますか？この操作は取り消せません。`)) return;
+                              if (!confirm(`「${r.product.title}」を削除しますか？`)) return;
                               setLoadingId(r.product.id);
                               const res = await fetch(`/api/admin/products/${r.product.id}`, { method: "DELETE" });
                               if (res.ok) { await loadAll(); notify(`「${r.product.title}」を削除しました`); }
@@ -633,7 +568,7 @@ export default function AdminDashboard() {
                             }}
                             disabled={loadingId === r.product.id}
                             className="ml-auto flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
-                            <Trash2 className="h-3 w-3" />アプリを削除
+                            <Trash2 className="h-3 w-3" />アプリを強制削除
                           </button>
                         </div>
                       )}
@@ -645,104 +580,88 @@ export default function AdminDashboard() {
           </div>
         )}
 
-      </main>
-    </div>
-  );
-}
-
-// ─── 審査カードコンポーネント ───────────────────────────────────────
-function ProductCard({
-  product, isSelected, isLoading, onToggle, onApprove, onReject, onDelete,
-}: {
-  product: Product;
-  isSelected: boolean;
-  isLoading: boolean;
-  onToggle: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-      <div className="flex items-center gap-4 p-5">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100">
-          <AlertTriangle className="h-6 w-6 text-amber-500" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <AppNum n={product.appNumber} />
-            <p className="font-bold text-gray-800 truncate">{product.title}</p>
-            {product.category && (
-              <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600">
-                <Tag className="h-2.5 w-2.5" />{product.category}
-              </span>
-            )}
-            <span className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] text-blue-600 ring-1 ring-blue-100">
-              <Layers className="h-2.5 w-2.5" />{LISTING_LABEL[product.listingType] ?? product.listingType}
-            </span>
-          </div>
-          <p className="text-xs text-gray-400 mt-0.5">
-            by {product.creator.name ?? product.creator.email} ·{" "}
-            {product.price === 0 ? "無料" : `¥${product.price.toLocaleString()}`} ·{" "}
-            {product.createdAt}
-          </p>
-        </div>
-        <button onClick={onToggle}
-          className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors shrink-0">
-          {isSelected ? <><ChevronUp className="h-3.5 w-3.5" />閉じる</> : <><Eye className="h-3.5 w-3.5" />詳細・審査</>}
-        </button>
-      </div>
-
-      {isSelected && (
-        <div className="border-t border-gray-100 px-5 py-5 space-y-4">
-          {product.description && (
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">説明文</p>
-              <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: "管理番号", value: `#${String(product.appNumber).padStart(4, "0")}` },
-              { label: "種別",     value: LISTING_LABEL[product.listingType] ?? product.listingType },
-              { label: "カテゴリ", value: product.category ?? "—" },
-              { label: "出品者",   value: product.creator.email },
-            ].map(m => (
-              <div key={m.label} className="rounded-xl bg-gray-50 px-3 py-2.5">
-                <p className="text-[10px] font-semibold text-gray-400 mb-0.5">{m.label}</p>
-                <p className="text-xs font-bold text-gray-700 truncate">{m.value}</p>
+        {/* ══════ ユーザー管理 ══════ */}
+        {tab === "users" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-base font-black text-gray-900">ユーザー管理</h2>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{filteredUsers.length} 人</span>
+              <div className="ml-auto flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm w-full sm:w-80">
+                <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  placeholder="名前・メール・ユーザーIDで検索"
+                  className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-400"
+                />
+                {userSearch && (
+                  <button onClick={() => setUserSearch("")} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
-
-          {product.sourceUrl && (
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">リンク</p>
-              <a href={product.sourceUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline">
-                {product.sourceUrl} <ExternalLink className="h-3.5 w-3.5" />
-              </a>
             </div>
-          )}
 
-          <div className="flex gap-3 pt-1">
-            <button onClick={onApprove} disabled={isLoading}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 py-3 text-sm font-bold text-white shadow-md hover:from-emerald-700 hover:to-green-600 transition-all active:scale-[0.98] disabled:opacity-50">
-              {isLoading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <CheckCircle2 className="h-4 w-4" />}
-              承認・公開
-            </button>
-            <button onClick={onReject} disabled={isLoading}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-bold text-amber-700 hover:bg-amber-100 transition-all active:scale-[0.98] disabled:opacity-50">
-              <Clock className="h-4 w-4" />却下
-            </button>
-            <button onClick={onDelete} disabled={isLoading}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-bold text-rose-600 hover:bg-rose-100 transition-all active:scale-[0.98] disabled:opacity-50">
-              <Trash2 className="h-4 w-4" />削除
-            </button>
+            {filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 text-center shadow-sm">
+                <Users className="h-12 w-12 text-gray-200" />
+                <p className="font-bold text-gray-600">{userSearch ? "該当するユーザーが見つかりません" : "ユーザーデータがありません"}</p>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
+                      <th className="px-4 py-3">ユーザー</th>
+                      <th className="px-4 py-3">メールアドレス</th>
+                      <th className="px-4 py-3">出品数</th>
+                      <th className="px-4 py-3">取得数</th>
+                      <th className="px-4 py-3">登録日</th>
+                      <th className="px-4 py-3">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredUsers.map(u => (
+                      <tr key={u.id} className="hover:bg-gray-50 transition-colors group">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {u.image ? (
+                              <img src={u.image} alt="" className="h-7 w-7 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700">
+                                {(u.name ?? u.email).slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-gray-800">{u.name ?? "（名前なし）"}</p>
+                              <p className="text-[10px] text-gray-400 font-mono">{u.id.slice(0, 12)}…</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                        <td className="px-4 py-3 text-center font-bold text-gray-700">{u.productCount}</td>
+                        <td className="px-4 py-3 text-center font-bold text-gray-700">{u.purchaseCount}</td>
+                        <td className="px-4 py-3 text-gray-400">{u.createdAt}</td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
+                            className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
+                            {loadingId === u.id
+                              ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
+                              : <UserX className="h-3 w-3" />}
+                            強制退会
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+      </main>
     </div>
   );
 }

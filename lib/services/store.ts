@@ -129,6 +129,39 @@ export async function countUsers() {
   return prisma.user.count();
 }
 
+export async function createReport(input: {
+  productId: string;
+  reporterId?: string;
+  reason: string;
+  detail?: string;
+}) {
+  return prisma.report.create({
+    data: {
+      productId:  input.productId,
+      reporterId: input.reporterId ?? null,
+      reason:     input.reason,
+      detail:     input.detail ?? null,
+    },
+  });
+}
+
+export async function listReportsForAdmin() {
+  return prisma.report.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      product: { select: { id: true, appNumber: true, title: true, status: true } },
+    },
+  });
+}
+
+export async function updateReportStatus(id: string, status: string) {
+  return prisma.report.update({ where: { id }, data: { status } });
+}
+
+export async function countPendingReports() {
+  return prisma.report.count({ where: { status: "pending" } });
+}
+
 export async function hasPurchased(userId: string, productId: string) {
   const row = await prisma.purchase.findUnique({
     where: { userId_productId: { userId, productId } },

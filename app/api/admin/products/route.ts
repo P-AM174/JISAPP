@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { listProductsForAdmin, countUsers } from "@/lib/services/store";
+import { listProductsForAdmin, countUsers, countPendingReports } from "@/lib/services/store";
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -8,27 +8,32 @@ export async function GET() {
     return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
-  const [products, userCount] = await Promise.all([
+  const [products, userCount, pendingReportCount] = await Promise.all([
     listProductsForAdmin(),
     countUsers(),
+    countPendingReports(),
   ]);
+
+  const realProducts = products.filter(p => !p.isDemo);
 
   return NextResponse.json({
     userCount,
-    products: products.map((p) => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      price: p.price,
-      category: p.category,
-      status: p.status,
+    pendingReportCount,
+    products: realProducts.map((p) => ({
+      id:             p.id,
+      appNumber:      p.appNumber,
+      title:          p.title,
+      description:    p.description,
+      price:          p.price,
+      category:       p.category,
+      status:         p.status,
       isPlaygroundApp: p.isPlaygroundApp,
-      isDemo: p.isDemo,
-      listingType: p.listingType,
-      productType: p.productType,
-      sourceUrl: p.sourceUrl,
-      creator: p.creator,
-      createdAt: p.createdAt.toISOString().slice(0, 10),
+      isDemo:         p.isDemo,
+      listingType:    p.listingType,
+      productType:    p.productType,
+      sourceUrl:      p.sourceUrl,
+      creator:        p.creator,
+      createdAt:      p.createdAt.toISOString().slice(0, 10),
     })),
   });
 }

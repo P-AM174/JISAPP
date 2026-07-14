@@ -7,14 +7,15 @@ import {
   ShieldCheck, AlertTriangle, CheckCircle2, X,
   Clock, Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
-  ChevronDown, ChevronUp, Tag, Layers,
+  ChevronDown, ChevronUp, Tag, Layers, Flag, Hash,
 } from "lucide-react";
 
-// ─── 型定義（実際のDBスキーマに合わせたもの）───────────────────────
+// ─── 型定義 ────────────────────────────────────────────────────────
 type Creator = { id: string; name: string | null; email: string };
 
 type Product = {
   id: string;
+  appNumber: number;
   title: string;
   description: string | null;
   price: number;
@@ -29,12 +30,29 @@ type Product = {
   createdAt: string;
 };
 
-type Tab = "dashboard" | "pending" | "active" | "all";
+type Report = {
+  id: string;
+  productId: string;
+  reporterId: string | null;
+  reason: string;
+  detail: string | null;
+  status: string;
+  createdAt: string;
+  product: { id: string; appNumber: number; title: string; status: string };
+};
+
+type Tab = "dashboard" | "pending" | "active" | "all" | "reports";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  active:   { label: "公開中",   cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  pending:  { label: "審査待ち", cls: "bg-amber-50   text-amber-700   ring-amber-200"   },
-  rejected: { label: "却下",     cls: "bg-rose-50    text-rose-600    ring-rose-200"    },
+  active:    { label: "公開中",   cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  pending:   { label: "審査待ち", cls: "bg-amber-50   text-amber-700   ring-amber-200"  },
+  rejected:  { label: "却下",     cls: "bg-rose-50    text-rose-600    ring-rose-200"   },
+};
+
+const REPORT_STATUS: Record<string, { label: string; cls: string }> = {
+  pending:   { label: "未対応",   cls: "bg-rose-50    text-rose-600    ring-rose-200"   },
+  resolved:  { label: "対応済み", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200"},
+  dismissed: { label: "却下",     cls: "bg-gray-100   text-gray-500    ring-gray-200"   },
 };
 
 const LISTING_LABEL: Record<string, string> = {
@@ -42,6 +60,14 @@ const LISTING_LABEL: Record<string, string> = {
   playground: "プレイグラウンドアプリ",
   external:   "外部リンク",
 };
+
+function AppNum({ n }: { n: number }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-gray-500">
+      <Hash className="h-2.5 w-2.5" />{String(n).padStart(4, "0")}
+    </span>
+  );
+}
 
 // ══════════════════════════════════════════════════════════
 export default function AdminDashboard() {
@@ -52,26 +78,36 @@ export default function AdminDashboard() {
   const [pwError, setPwError] = useState(false);
 
   // ─── データ ───
-  const [products,   setProducts]   = useState<Product[]>([]);
-  const [userCount,  setUserCount]  = useState(0);
-  const [mounted,    setMounted]    = useState(false);
-  const [tab,        setTab]        = useState<Tab>("dashboard");
-  const [actionMsg,  setActionMsg]  = useState("");
-  const [selected,   setSelected]   = useState<Product | null>(null);
-  const [loadingId,  setLoadingId]  = useState<string | null>(null);
+  const [products,          setProducts]          = useState<Product[]>([]);
+  const [reports,           setReports]           = useState<Report[]>([]);
+  const [userCount,         setUserCount]         = useState(0);
+  const [pendingReportCount,setPendingReportCount] = useState(0);
+  const [mounted,           setMounted]           = useState(false);
+  const [tab,               setTab]               = useState<Tab>("dashboard");
+  const [actionMsg,         setActionMsg]         = useState("");
+  const [selected,          setSelected]          = useState<Product | null>(null);
+  const [loadingId,         setLoadingId]         = useState<string | null>(null);
 
   useEffect(() => { loadAll(); }, []);
 
   const loadAll = async () => {
     try {
-      const res = await fetch("/api/admin/products");
-      if (res.ok) {
-        const data = await res.json();
+      const [prodRes, repRes] = await Promise.all([
+        fetch("/api/admin/products"),
+        fetch("/api/admin/reports"),
+      ]);
+      if (prodRes.ok) {
+        const data = await prodRes.json();
         setProducts(data.products ?? []);
         setUserCount(data.userCount ?? 0);
+        setPendingReportCount(data.pendingReportCount ?? 0);
         setAuthed(true);
-      } else if (res.status === 403) {
+      } else if (prodRes.status === 403) {
         setAuthed(false);
+      }
+      if (repRes.ok) {
+        const d = await repRes.json();
+        setReports(d.reports ?? []);
       }
     } catch {
       setAuthed(false);
@@ -83,6 +119,7 @@ export default function AdminDashboard() {
   const pendingProducts  = useMemo(() => products.filter(p => p.status === "pending"),  [products]);
   const activeProducts   = useMemo(() => products.filter(p => p.status === "active"),   [products]);
   const rejectedProducts = useMemo(() => products.filter(p => p.status === "rejected"), [products]);
+  const pendingReports   = useMemo(() => reports.filter(r => r.status === "pending"),   [reports]);
 
   const categoryStats = useMemo(() => {
     const map: Record<string, number> = {};
@@ -117,7 +154,7 @@ export default function AdminDashboard() {
     setTimeout(() => setActionMsg(""), 4000);
   };
 
-  // ─── アクション ───
+  // ─── アクション（商品） ───
   const handleStatus = async (product: Product, status: "active" | "rejected" | "pending") => {
     setLoadingId(product.id);
     const res = await fetch(`/api/admin/products/${product.id}`, {
@@ -142,6 +179,22 @@ export default function AdminDashboard() {
       await loadAll();
       setSelected(null);
       notify(`「${product.title}」を削除しました`);
+    }
+    setLoadingId(null);
+  };
+
+  // ─── アクション（報告） ───
+  const handleReportAction = async (reportId: string, status: "resolved" | "dismissed") => {
+    setLoadingId(reportId);
+    const res = await fetch(`/api/admin/reports/${reportId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      await loadAll();
+      const label = status === "resolved" ? "対応済みにしました" : "却下しました";
+      notify(`報告を${label}`);
     }
     setLoadingId(null);
   };
@@ -213,20 +266,26 @@ export default function AdminDashboard() {
         </div>
 
         {/* タブ */}
-        <div className="mx-auto max-w-7xl px-4 flex gap-1 pb-0">
+        <div className="mx-auto max-w-7xl px-4 flex gap-1 overflow-x-auto pb-0">
           {([
             { id: "dashboard", label: "📊 ダッシュボード" },
-            { id: "pending",   label: `⏳ 審査待ち (${pendingProducts.length})` },
-            { id: "active",    label: `🌐 公開中 (${activeProducts.length})` },
-            { id: "all",       label: `📋 全出品 (${products.length})` },
-          ] as { id: Tab; label: string }[]).map(t => (
+            { id: "pending",   label: `⏳ 審査待ち`, count: pendingProducts.length,  countCls: "bg-amber-500" },
+            { id: "active",    label: `🌐 公開中`,   count: activeProducts.length,   countCls: "bg-emerald-500" },
+            { id: "all",       label: `📋 全出品`,   count: products.length,         countCls: "bg-gray-400" },
+            { id: "reports",   label: `🚨 報告`,     count: pendingReports.length,   countCls: "bg-rose-500" },
+          ] as { id: Tab; label: string; count?: number; countCls?: string }[]).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 ${
+              className={`relative flex shrink-0 items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 ${
                 tab === t.id
                   ? "border-emerald-500 text-emerald-700 bg-emerald-50/60"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}>
               {t.label}
+              {t.count !== undefined && t.count > 0 && (
+                <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black text-white ${t.countCls}`}>
+                  {t.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -249,10 +308,10 @@ export default function AdminDashboard() {
             {/* 統計カード */}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {[
-                { label: "登録ユーザー数", value: `${userCount}人`,            icon: Users,         bg: "from-emerald-500 to-green-600"  },
-                { label: "総出品数",       value: `${products.length}件`,       icon: Package,       bg: "from-teal-500 to-emerald-600"   },
-                { label: "公開中",         value: `${activeProducts.length}件`, icon: Globe,         bg: "from-green-500 to-teal-600"     },
-                { label: "審査待ち",       value: `${pendingProducts.length}件`,icon: AlertTriangle, bg: pendingProducts.length > 0 ? "from-amber-500 to-orange-500" : "from-gray-400 to-gray-500" },
+                { label: "登録ユーザー数", value: `${userCount}人`,             icon: Users,         bg: "from-emerald-500 to-green-600"  },
+                { label: "総出品数（実）",  value: `${products.length}件`,        icon: Package,       bg: "from-teal-500 to-emerald-600"   },
+                { label: "公開中",          value: `${activeProducts.length}件`,  icon: Globe,         bg: "from-green-500 to-teal-600"     },
+                { label: "未対応の報告",    value: `${pendingReportCount}件`,     icon: Flag,          bg: pendingReportCount > 0 ? "from-rose-500 to-rose-600" : "from-gray-400 to-gray-500" },
               ].map(c => (
                 <div key={c.label} className={`rounded-2xl bg-gradient-to-br ${c.bg} p-5 text-white shadow-md`}>
                   <c.icon className="h-5 w-5 mb-2 opacity-80" />
@@ -283,14 +342,12 @@ export default function AdminDashboard() {
             </div>
 
             {/* カテゴリ分布 */}
-            <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-              <div className="flex items-center gap-2 mb-5">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
-                <h2 className="text-base font-black text-gray-900">カテゴリ分布</h2>
-              </div>
-              {!mounted || categoryStats.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">出品データがありません</p>
-              ) : (
+            {categoryStats.length > 0 && (
+              <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+                <div className="flex items-center gap-2 mb-5">
+                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                  <h2 className="text-base font-black text-gray-900">カテゴリ分布</h2>
+                </div>
                 <div className="space-y-3">
                   {categoryStats.map(([cat, count]) => (
                     <div key={cat} className="flex items-center gap-4">
@@ -306,24 +363,40 @@ export default function AdminDashboard() {
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* 審査待ち件数があればリンク */}
-            {pendingProducts.length > 0 && (
-              <div className="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  <p className="text-sm font-bold text-amber-700">
-                    審査待ちの出品が {pendingProducts.length} 件あります
-                  </p>
-                </div>
-                <button onClick={() => setTab("pending")}
-                  className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-colors">
-                  審査する
-                </button>
               </div>
             )}
+
+            {/* アラートバナー */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {pendingProducts.length > 0 && (
+                <div className="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    <p className="text-sm font-bold text-amber-700">
+                      審査待ち {pendingProducts.length} 件
+                    </p>
+                  </div>
+                  <button onClick={() => setTab("pending")}
+                    className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-colors">
+                    審査する
+                  </button>
+                </div>
+              )}
+              {pendingReports.length > 0 && (
+                <div className="rounded-2xl bg-rose-50 border border-rose-200 px-5 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flag className="h-5 w-5 text-rose-500" />
+                    <p className="text-sm font-bold text-rose-700">
+                      未対応の報告 {pendingReports.length} 件
+                    </p>
+                  </div>
+                  <button onClick={() => setTab("reports")}
+                    className="rounded-xl bg-rose-500 px-4 py-2 text-xs font-bold text-white hover:bg-rose-600 transition-colors">
+                    確認する
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -375,9 +448,9 @@ export default function AdminDashboard() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
-                      <th className="px-5 py-3">タイトル</th>
+                      <th className="px-4 py-3">管理番号</th>
+                      <th className="px-4 py-3">タイトル</th>
                       <th className="px-4 py-3">カテゴリ</th>
-                      <th className="px-4 py-3">価格</th>
                       <th className="px-4 py-3">種別</th>
                       <th className="px-4 py-3">出品者</th>
                       <th className="px-4 py-3">登録日</th>
@@ -387,7 +460,8 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-gray-50">
                     {activeProducts.map(p => (
                       <tr key={p.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-5 py-3 font-semibold text-gray-800 max-w-[200px]">
+                        <td className="px-4 py-3"><AppNum n={p.appNumber} /></td>
+                        <td className="px-4 py-3 font-semibold text-gray-800 max-w-[200px]">
                           <Link href={`/apps/${p.id}`} target="_blank"
                             className="hover:text-emerald-600 transition-colors flex items-center gap-1 truncate">
                             {p.title}
@@ -396,9 +470,6 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3">
                           {p.category && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">{p.category}</span>}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-emerald-600">
-                          {p.price === 0 ? "無料" : `¥${p.price.toLocaleString()}`}
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-500">{LISTING_LABEL[p.listingType] ?? p.listingType}</td>
                         <td className="px-4 py-3 text-xs text-gray-400">{p.creator.name ?? p.creator.email}</td>
@@ -427,7 +498,10 @@ export default function AdminDashboard() {
         {/* ══════ 全出品 ══════ */}
         {tab === "all" && (
           <div className="space-y-4">
-            <h2 className="text-base font-black text-gray-900">全出品一覧</h2>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-base font-black text-gray-900">全出品一覧</h2>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{products.length} 件</span>
+            </div>
             <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
               {products.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-12">出品データがありません</p>
@@ -435,31 +509,42 @@ export default function AdminDashboard() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
-                      <th className="px-5 py-3">タイトル</th>
+                      <th className="px-4 py-3">管理番号</th>
+                      <th className="px-4 py-3">タイトル</th>
                       <th className="px-4 py-3">カテゴリ</th>
-                      <th className="px-4 py-3">価格</th>
                       <th className="px-4 py-3">ステータス</th>
                       <th className="px-4 py-3">種別</th>
                       <th className="px-4 py-3">出品者</th>
                       <th className="px-4 py-3">登録日</th>
+                      <th className="px-4 py-3">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {products.map(p => {
                       const st = STATUS_LABEL[p.status] ?? { label: p.status, cls: "bg-gray-100 text-gray-500 ring-gray-200" };
                       return (
-                        <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-5 py-2.5 font-medium text-gray-800 max-w-[200px] truncate">{p.title}</td>
-                          <td className="px-4 py-2.5 text-gray-500">{p.category ?? "—"}</td>
-                          <td className="px-4 py-2.5 font-semibold text-emerald-600">
-                            {p.price === 0 ? "無料" : `¥${p.price.toLocaleString()}`}
+                        <tr key={p.id} className="hover:bg-gray-50 transition-colors group">
+                          <td className="px-4 py-2.5"><AppNum n={p.appNumber} /></td>
+                          <td className="px-4 py-2.5 font-medium text-gray-800 max-w-[180px]">
+                            <Link href={`/apps/${p.id}`} target="_blank"
+                              className="hover:text-emerald-600 flex items-center gap-1 truncate">
+                              {p.title}
+                              <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100" />
+                            </Link>
                           </td>
+                          <td className="px-4 py-2.5 text-gray-500">{p.category ?? "—"}</td>
                           <td className="px-4 py-2.5">
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${st.cls}`}>{st.label}</span>
                           </td>
                           <td className="px-4 py-2.5 text-gray-500">{LISTING_LABEL[p.listingType] ?? p.listingType}</td>
                           <td className="px-4 py-2.5 text-gray-400">{p.creator.name ?? p.creator.email}</td>
                           <td className="px-4 py-2.5 text-gray-400">{p.createdAt}</td>
+                          <td className="px-4 py-2.5">
+                            <button onClick={() => handleDelete(p)} disabled={loadingId === p.id}
+                              className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100">
+                              <Trash2 className="h-3 w-3" />削除
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
@@ -469,6 +554,97 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ══════ 報告一覧 ══════ */}
+        {tab === "reports" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-base font-black text-gray-900">報告一覧</h2>
+              {pendingReports.length > 0 && (
+                <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">未対応 {pendingReports.length} 件</span>
+              )}
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">計 {reports.length} 件</span>
+            </div>
+
+            {reports.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 text-center shadow-sm">
+                <Flag className="h-12 w-12 text-gray-200" />
+                <p className="font-bold text-gray-600">報告はありません</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reports.map(r => {
+                  const rs = REPORT_STATUS[r.status] ?? REPORT_STATUS.pending;
+                  const isPending = r.status === "pending";
+                  return (
+                    <div key={r.id} className={`rounded-2xl bg-white shadow-sm ring-1 ${isPending ? "ring-rose-200" : "ring-black/5"} overflow-hidden`}>
+                      <div className="flex items-start gap-4 p-5">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isPending ? "bg-rose-100" : "bg-gray-100"}`}>
+                          <Flag className={`h-5 w-5 ${isPending ? "text-rose-500" : "text-gray-400"}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <AppNum n={r.product.appNumber} />
+                            <Link href={`/apps/${r.product.id}`} target="_blank"
+                              className="font-bold text-sm text-gray-800 hover:text-emerald-600 flex items-center gap-1">
+                              {r.product.title}
+                              <ExternalLink className="h-3 w-3 opacity-60" />
+                            </Link>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${rs.cls}`}>{rs.label}</span>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-700 mb-0.5">理由：{r.reason}</p>
+                          {r.detail && <p className="text-xs text-gray-500 leading-relaxed">{r.detail}</p>}
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            {r.createdAt.slice(0, 10)} {r.reporterId ? `（報告者ID: ${r.reporterId.slice(0, 8)}…）` : "（匿名）"}
+                          </p>
+                        </div>
+                        {isPending && (
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleReportAction(r.id, "resolved")}
+                              disabled={loadingId === r.id}
+                              className="flex items-center gap-1 rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50">
+                              <CheckCircle2 className="h-3.5 w-3.5" />対応済み
+                            </button>
+                            <button
+                              onClick={() => handleReportAction(r.id, "dismissed")}
+                              disabled={loadingId === r.id}
+                              className="flex items-center gap-1 rounded-xl bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50">
+                              <X className="h-3.5 w-3.5" />却下
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {/* 対象アプリへのクイックリンク */}
+                      {isPending && (
+                        <div className="border-t border-gray-100 px-5 py-3 flex items-center gap-3 bg-gray-50">
+                          <p className="text-[11px] text-gray-400">このアプリを確認して対処：</p>
+                          <Link href={`/apps/${r.product.id}`} target="_blank"
+                            className="text-[11px] font-bold text-emerald-600 hover:underline flex items-center gap-1">
+                            アプリページを開く <ExternalLink className="h-3 w-3" />
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`「${r.product.title}」を削除しますか？この操作は取り消せません。`)) return;
+                              setLoadingId(r.product.id);
+                              const res = await fetch(`/api/admin/products/${r.product.id}`, { method: "DELETE" });
+                              if (res.ok) { await loadAll(); notify(`「${r.product.title}」を削除しました`); }
+                              setLoadingId(null);
+                            }}
+                            disabled={loadingId === r.product.id}
+                            className="ml-auto flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
+                            <Trash2 className="h-3 w-3" />アプリを削除
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
     </div>
   );
@@ -494,6 +670,7 @@ function ProductCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
+            <AppNum n={product.appNumber} />
             <p className="font-bold text-gray-800 truncate">{product.title}</p>
             {product.category && (
               <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600">
@@ -518,7 +695,6 @@ function ProductCard({
 
       {isSelected && (
         <div className="border-t border-gray-100 px-5 py-5 space-y-4">
-          {/* 説明文 */}
           {product.description && (
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">説明文</p>
@@ -526,10 +702,9 @@ function ProductCard({
             </div>
           )}
 
-          {/* メタ情報 */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: "価格",     value: product.price === 0 ? "無料" : `¥${product.price.toLocaleString()}` },
+              { label: "管理番号", value: `#${String(product.appNumber).padStart(4, "0")}` },
               { label: "種別",     value: LISTING_LABEL[product.listingType] ?? product.listingType },
               { label: "カテゴリ", value: product.category ?? "—" },
               { label: "出品者",   value: product.creator.email },
@@ -541,7 +716,6 @@ function ProductCard({
             ))}
           </div>
 
-          {/* 外部リンク */}
           {product.sourceUrl && (
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">リンク</p>
@@ -552,7 +726,6 @@ function ProductCard({
             </div>
           )}
 
-          {/* アクションボタン */}
           <div className="flex gap-3 pt-1">
             <button onClick={onApprove} disabled={isLoading}
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 py-3 text-sm font-bold text-white shadow-md hover:from-emerald-700 hover:to-green-600 transition-all active:scale-[0.98] disabled:opacity-50">

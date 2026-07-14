@@ -29,6 +29,8 @@ import {
   Share2,
   Cloud,
   LogIn,
+  Flag,
+  AlertCircle,
 } from "lucide-react";
 import { supabase, type AppRow } from "@/lib/supabase";
 import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
@@ -210,6 +212,12 @@ function MarketplaceAppPage({ id }: { id: string }) {
   const [urlSafetyOpen, setUrlSafetyOpen] = useState(false);
   // 未ログイン案内モーダル
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  // 報告モーダル
+  const [reportOpen,    setReportOpen]    = useState(false);
+  const [reportReason,  setReportReason]  = useState("");
+  const [reportDetail,  setReportDetail]  = useState("");
+  const [reportDone,    setReportDone]    = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // 購入済み判定（ハイドレーションエラー防止のため useEffect 内で読み込む）
   const [mounted, setMounted]       = useState(false);
@@ -498,7 +506,106 @@ function MarketplaceAppPage({ id }: { id: string }) {
           </div>
         </section>
 
+        {/* ⑦ 報告リンク */}
+        <div className="flex justify-center pb-2">
+          <button
+            onClick={() => { setReportOpen(true); setReportDone(false); setReportReason(""); setReportDetail(""); }}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-rose-500 transition-colors"
+          >
+            <Flag className="h-3.5 w-3.5" />
+            このアプリを報告する
+          </button>
+        </div>
+
       </main>
+
+      {/* ── 報告モーダル ── */}
+      {reportOpen && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setReportOpen(false)}>
+          <div className="w-full max-w-sm rounded-3xl bg-white shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100">
+                  <Flag className="h-4 w-4 text-rose-500" />
+                </div>
+                <span className="text-sm font-black text-gray-900">アプリを報告</span>
+              </div>
+              <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {reportDone ? (
+              <div className="p-6 text-center">
+                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+                </div>
+                <p className="font-bold text-gray-900 mb-1">報告を受け付けました</p>
+                <p className="text-xs text-gray-500 mb-5">内容を確認後、適切に対処いたします。</p>
+                <button onClick={() => setReportOpen(false)}
+                  className="w-full rounded-2xl bg-gray-100 py-3 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors">
+                  閉じる
+                </button>
+              </div>
+            ) : (
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="mb-2 block text-xs font-semibold text-gray-600">報告理由 *</label>
+                  <div className="space-y-2">
+                    {["不適切なコンテンツ", "スパム・詐欺", "悪意のあるコード", "著作権侵害", "その他"].map(r => (
+                      <label key={r} className="flex items-center gap-2.5 cursor-pointer">
+                        <input type="radio" name="reason" value={r} checked={reportReason === r}
+                          onChange={e => setReportReason(e.target.value)}
+                          className="h-4 w-4 accent-rose-500" />
+                        <span className="text-sm text-gray-700">{r}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">詳細（任意）</label>
+                  <textarea
+                    value={reportDetail}
+                    onChange={e => setReportDetail(e.target.value)}
+                    placeholder="具体的な問題点を教えてください"
+                    rows={3}
+                    className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-rose-400 focus:bg-white transition resize-none"
+                  />
+                </div>
+                {!reportReason && (
+                  <p className="flex items-center gap-1 text-xs text-amber-600">
+                    <AlertCircle className="h-3.5 w-3.5" />理由を選択してください
+                  </p>
+                )}
+                <button
+                  disabled={!reportReason || reportLoading}
+                  onClick={async () => {
+                    if (!reportReason) return;
+                    setReportLoading(true);
+                    try {
+                      await fetch(`/api/apps/${id}/report`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ reason: reportReason, detail: reportDetail }),
+                      });
+                      setReportDone(true);
+                    } finally {
+                      setReportLoading(false);
+                    }
+                  }}
+                  className="w-full rounded-2xl bg-rose-500 py-3 text-sm font-bold text-white hover:bg-rose-600 transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  {reportLoading
+                    ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    : "報告を送信"
+                  }
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── 固定 GET バー ── */}
       <div className="fixed bottom-0 left-0 z-50 w-full border-t border-gray-200 bg-white/95 backdrop-blur-md shadow-2xl shadow-black/10">

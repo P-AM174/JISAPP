@@ -208,3 +208,24 @@ export async function consumeVerificationCode(email: string, code: string) {
   await prisma.verificationCode.delete({ where: { id: row.id } });
   return row;
 }
+
+export async function storePasswordResetToken(email: string, token: string, expiresAt: Date) {
+  await prisma.passwordResetToken.deleteMany({ where: { email: email.toLowerCase() } });
+  return prisma.passwordResetToken.create({
+    data: { email: email.toLowerCase(), token, expiresAt },
+  });
+}
+
+export async function consumePasswordResetToken(token: string) {
+  const row = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (!row || row.expiresAt < new Date()) return null;
+  await prisma.passwordResetToken.delete({ where: { id: row.id } });
+  return row;
+}
+
+export async function updateUserPassword(email: string, passwordHash: string) {
+  return prisma.user.update({
+    where: { email: email.toLowerCase() },
+    data: { passwordHash },
+  });
+}

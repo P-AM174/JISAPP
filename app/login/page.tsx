@@ -409,6 +409,11 @@ function LoginContent() {
                   </div>
                 </div>
                 <SubmitBtn loading={loading} label="ログイン" icon={<ArrowRight className="h-4 w-4" />} />
+                <div className="text-center">
+                  <Link href="/forgot-password" className="text-xs text-gray-400 hover:text-emerald-600 transition-colors">
+                    パスワードをお忘れですか？
+                  </Link>
+                </div>
               </form>
             )}
 

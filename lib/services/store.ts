@@ -121,6 +121,14 @@ export async function updateProductStatus(id: string, status: string) {
   return prisma.product.update({ where: { id }, data: { status } });
 }
 
+export async function deleteProduct(id: string) {
+  return prisma.product.delete({ where: { id } });
+}
+
+export async function countUsers() {
+  return prisma.user.count();
+}
+
 export async function hasPurchased(userId: string, productId: string) {
   const row = await prisma.purchase.findUnique({
     where: { userId_productId: { userId, productId } },

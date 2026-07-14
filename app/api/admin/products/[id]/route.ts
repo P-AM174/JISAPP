@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { updateProductStatus } from "@/lib/services/store";
+import { updateProductStatus, deleteProduct } from "@/lib/services/store";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -24,11 +24,15 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const product = await updateProductStatus(id, status);
-  return NextResponse.json({
-    product: {
-      id: product.id,
-      title: product.title,
-      status: product.status,
-    },
-  });
+  return NextResponse.json({ product: { id: product.id, title: product.title, status: product.status } });
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
+  }
+  const { id } = await context.params;
+  await deleteProduct(id);
+  return NextResponse.json({ ok: true });
 }

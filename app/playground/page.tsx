@@ -827,9 +827,27 @@ export default function PlaygroundPage() {
   // 行番号とスクロール同期
   const syncLineNumbers = () => { /* 行番号は非表示のためno-op */ };
 
-  // ── ?load=1 のときだけ localStorage から前回のコードを復元 ──
+  // ── ?project=ID または ?load=1 でコードを復元 ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const projectId = params.get("project");
+    if (projectId) {
+      fetch(`/api/my-projects/${projectId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          const html = d.project?.html_code ?? "";
+          if (html.trim()) {
+            setCode(html);
+            setPreviewHtml(html);
+            setLastSavedCode(html);
+            if (d.project?.title) {
+              try { localStorage.setItem("jisapp_playground_title", d.project.title); } catch { /* noop */ }
+            }
+          }
+        })
+        .catch(() => { /* noop */ });
+      return;
+    }
     if (params.get("load") !== "1") return;
     try {
       const saved = localStorage.getItem("jisapp_playground_code") ?? "";
@@ -964,6 +982,14 @@ export default function PlaygroundPage() {
         showToast("ローカルに保存しました（サーバー保存は失敗）");
       } else {
         showToast(`「${title}」を保存しました ✓`);
+        // ログイン済みならマイプロジェクトにも登録
+        if (session?.user) {
+          await fetch("/api/my-projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, html_code: code, status: "draft" }),
+          });
+        }
       }
     } catch {
       showToast("ローカルに保存しました（オフライン）");

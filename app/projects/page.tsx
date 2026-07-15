@@ -40,7 +40,51 @@ type Project = {
   tag: string;
   tagColor: string;
   isDemo?: boolean;
+  appId?: string;
+  url?: string;
+  status?: "draft" | "listed" | "url_only";
 };
+
+function getPlaygroundHref(proj: Project) {
+  if (proj.id === "saved_playground") return "/playground?load=1";
+  return `/playground?project=${proj.id}`;
+}
+
+function mapServerProject(row: {
+  id: string;
+  title: string;
+  description: string | null;
+  html_code: string | null;
+  app_id: string | null;
+  status: string;
+  is_listed: boolean;
+  category: string | null;
+  updated_at: string;
+}): Project {
+  const code = row.html_code ?? "";
+  const status = row.status as Project["status"];
+  const meta = {
+    draft:    { tag: "作業中",   tagColor: "bg-violet-100 text-violet-700",  gradient: "from-violet-500 to-purple-600" },
+    listed:   { tag: "公開中",   tagColor: "bg-emerald-100 text-emerald-700", gradient: "from-emerald-500 to-teal-600" },
+    url_only: { tag: "URL発行済", tagColor: "bg-blue-100 text-blue-700",     gradient: "from-blue-500 to-indigo-600" },
+  }[status ?? "draft"] ?? { tag: "作業中", tagColor: "bg-violet-100 text-violet-700", gradient: "from-violet-500 to-purple-600" };
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? (status === "draft" ? "コードプレイグラウンドで保存したプロジェクトです。" : "出品・URL発行したアプリです。"),
+    updatedAt: new Date(row.updated_at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
+    lines: code ? code.split("\n").length : 0,
+    chars: code.length,
+    gradient: meta.gradient,
+    tag: meta.tag,
+    tagColor: meta.tagColor,
+    appId: row.app_id ?? undefined,
+    url: row.app_id ? `${origin}/apps/${row.app_id}` : undefined,
+    status,
+  };
+}
 
 type AcquiredApp = {
   id: string | number;
@@ -91,7 +135,7 @@ function ProjectCard({ proj, onDelete, onPublish }: { proj: Project; onDelete?: 
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
               <div className="absolute right-0 top-8 z-20 w-36 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10">
                 <Link
-                  href={proj.id === "saved_playground" ? "/playground?load=1" : "/playground"}
+                  href={getPlaygroundHref(proj)}
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 >
@@ -147,7 +191,7 @@ function ProjectCard({ proj, onDelete, onPublish }: { proj: Project; onDelete?: 
         {/* アクションボタン */}
         <div className="mt-auto flex gap-2 pt-1">
           <Link
-            href={proj.id === "saved_playground" ? "/playground?load=1" : "/playground"}
+            href={getPlaygroundHref(proj)}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-emerald-100 hover:text-emerald-700 active:scale-[0.98]"
           >
             <Wrench className="h-3.5 w-3.5" />
@@ -288,20 +332,50 @@ export default function ProjectsPage() {
     setSaveSuccess(false);
     setEditMode(false);
 
-    const existing = publishedMap[proj.id];
-    if (existing) {
-      // 出品済み → URL確認画面
-      setPublishedUrl(existing.url);
-      setPublishTitle(existing.title);
-      setPublishDesc(existing.description ?? "");
-      setPublishCategory(existing.category ?? "");
-    } else {
-      // 未出品 → 入力フォーム
-      setPublishedUrl(null);
-      setPublishTitle(proj.isDemo ? "" : proj.title);
-      setPublishDesc("");
+    if (proj.appId && proj.url) {
+      setPublishedUrl(proj.url);
+      setPublishTitle(proj.title);
+      setPublishDesc(proj.description ?? "");
       setPublishCategory("");
+    } else {
+      const existing = publishedMap[proj.id];
+      if (existing) {
+        setPublishedUrl(existing.url);
+        setPublishTitle(existing.title);
+        setPublishDesc(existing.description ?? "");
+        setPublishCategory(existing.category ?? "");
+      } else {
+        setPublishedUrl(null);
+        setPublishTitle(proj.isDemo ? "" : proj.title);
+        setPublishDesc("");
+        setPublishCategory("");
+      }
     }
+  };
+
+  const reloadProjects = async () => {
+    try {
+      const res = await fetch("/api/my-projects");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.logged_in) return;
+      const projects = (data.projects ?? []).map(mapServerProject);
+      setMyProjects(projects);
+      const map: Record<string, PublishedInfo> = {};
+      for (const row of data.projects ?? []) {
+        if (row.app_id) {
+          map[row.id] = {
+            appId: row.app_id,
+            url: `${window.location.origin}/apps/${row.app_id}`,
+            title: row.title,
+            description: row.description ?? "",
+            category: row.category ?? "",
+            is_listed: row.is_listed,
+          };
+        }
+      }
+      setPublishedMap(map);
+    } catch { /* noop */ }
   };
 
   const handlePublish = async (is_listed: boolean) => {
@@ -313,6 +387,14 @@ export default function ProjectsPage() {
     let html_code = "";
     if (publishTarget.id === "saved_playground") {
       try { html_code = localStorage.getItem("jisapp_playground_code") ?? ""; } catch { /**/ }
+    } else {
+      try {
+        const codeRes = await fetch(`/api/my-projects/${publishTarget.id}`);
+        if (codeRes.ok) {
+          const d = await codeRes.json();
+          html_code = d.project?.html_code ?? "";
+        }
+      } catch { /* noop */ }
     }
     if (!html_code.trim()) {
       setPublishError("コードが見つかりません。プレイグラウンドでコードを保存してから出品してください。");
@@ -325,17 +407,24 @@ export default function ProjectsPage() {
       const res = await fetch("/api/apps/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description: publishDesc.trim() || null, html_code, category: publishCategory || null, is_listed }),
+        body: JSON.stringify({
+          title,
+          description: publishDesc.trim() || null,
+          html_code,
+          category: publishCategory || null,
+          is_listed,
+          project_id: publishTarget.id !== "saved_playground" ? publishTarget.id : undefined,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "出品に失敗しました");
       const url = `${window.location.origin}/apps/${json.id}`;
       setPublishedUrl(url);
-      // 出品済み情報を保存
       savePublishedMap({
         ...publishedMap,
         [publishTarget.id]: { appId: json.id, url, title, description: publishDesc.trim(), category: publishCategory, is_listed },
       });
+      await reloadProjects();
     } catch (e) {
       setPublishError(e instanceof Error ? e.message : "出品に失敗しました");
     } finally {
@@ -378,48 +467,77 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    // 削除済みプロジェクトIDを取得
-    let deletedIds: string[] = [];
-    try {
-      deletedIds = JSON.parse(localStorage.getItem("jisapp_deleted_projects") ?? "[]");
-    } catch { /* noop */ }
+    const load = async () => {
+      try {
+        const res = await fetch("/api/my-projects");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.logged_in) {
+            const projects = (data.projects ?? []).map(mapServerProject);
+            setMyProjects(projects);
+            const map: Record<string, PublishedInfo> = {};
+            for (const row of data.projects ?? []) {
+              if (row.app_id) {
+                map[row.id] = {
+                  appId: row.app_id,
+                  url: `${window.location.origin}/apps/${row.app_id}`,
+                  title: row.title,
+                  description: row.description ?? "",
+                  category: row.category ?? "",
+                  is_listed: row.is_listed,
+                };
+              }
+            }
+            setPublishedMap(map);
+            setMounted(true);
+            return;
+          }
+        }
+      } catch { /* noop */ }
 
-    // 入手アプリはライブラリAPIから取得するため localStorage には依存しない
+      // 未ログイン時: localStorage フォールバック
+      let deletedIds: string[] = [];
+      try {
+        deletedIds = JSON.parse(localStorage.getItem("jisapp_deleted_projects") ?? "[]");
+      } catch { /* noop */ }
 
-    // 保存されたコードがあれば「マイプロジェクト」として追加
-    try {
-      const savedCode = localStorage.getItem("jisapp_playground_code");
-      const activeDemos = DEMO_PROJECTS.filter((p) => !deletedIds.includes(p.id));
+      try {
+        const savedCode = localStorage.getItem("jisapp_playground_code");
+        const activeDemos = DEMO_PROJECTS.filter((p) => !deletedIds.includes(p.id));
 
-      if (savedCode && savedCode.trim() && !deletedIds.includes("saved_playground")) {
-        const lines = savedCode.split("\n").length;
-        const chars = savedCode.length;
-        const savedTitle = localStorage.getItem("jisapp_playground_title") ?? "プレイグラウンドの作業中コード";
-        const savedProject: Project = {
-          id: "saved_playground",
-          title: savedTitle,
-          description: "コードプレイグラウンドで保存したコードです。「編集する」からそのまま続きを開発できます。",
-          updatedAt: new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
-          lines,
-          chars,
-          gradient: "from-violet-500 to-purple-600",
-          tag: "作業中",
-          tagColor: "bg-violet-100 text-violet-700",
-        };
-        setMyProjects([savedProject, ...activeDemos]);
-      } else {
-        setMyProjects(activeDemos);
-      }
-    } catch { /* noop */ }
+        if (savedCode && savedCode.trim() && !deletedIds.includes("saved_playground")) {
+          const lines = savedCode.split("\n").length;
+          const chars = savedCode.length;
+          const savedTitle = localStorage.getItem("jisapp_playground_title") ?? "プレイグラウンドの作業中コード";
+          const savedProject: Project = {
+            id: "saved_playground",
+            title: savedTitle,
+            description: "コードプレイグラウンドで保存したコードです。「編集する」からそのまま続きを開発できます。",
+            updatedAt: new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
+            lines,
+            chars,
+            gradient: "from-violet-500 to-purple-600",
+            tag: "作業中",
+            tagColor: "bg-violet-100 text-violet-700",
+            status: "draft",
+          };
+          setMyProjects([savedProject, ...activeDemos]);
+        } else {
+          setMyProjects(activeDemos);
+        }
+      } catch { /* noop */ }
 
-    setMounted(true);
+      setMounted(true);
+    };
+    load();
   }, []);
 
-  const handleDeleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     if (id === "saved_playground") {
       try { localStorage.removeItem("jisapp_playground_code"); } catch { /* noop */ }
+    } else {
+      try { await fetch(`/api/my-projects/${id}`, { method: "DELETE" }); } catch { /* noop */ }
     }
-    // 削除済みIDをlocalStorageに記録（リロード後も維持）
     try {
       const deleted: string[] = JSON.parse(localStorage.getItem("jisapp_deleted_projects") ?? "[]");
       if (!deleted.includes(id)) {

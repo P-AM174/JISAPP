@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     creator_name?: string;
     category?: string;
     is_listed?: boolean;
+    project_id?: string;
   };
 
   try {
@@ -42,11 +43,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "コードサイズが大きすぎます（最大512KB）" }, { status: 413 });
   }
 
-  // セッションからクリエイター名を補完（任意ログイン）
+  // セッションからクリエイター名・IDを補完
   let sessionCreatorName: string | null = null;
+  let sessionUserId: string | null = null;
   try {
     const session = await getServerSession(authOptions);
     sessionCreatorName = (session?.user as { name?: string })?.name ?? null;
+    sessionUserId = (session?.user as { id?: string })?.id ?? null;
   } catch { /* noop */ }
 
   const creatorName = (body.creator_name ?? "").trim() || sessionCreatorName || "ゲスト";
@@ -61,6 +64,7 @@ export async function POST(request: Request) {
       css_code: body.css_code ?? null,
       js_code: body.js_code ?? null,
       creator_name: creatorName,
+      creator_id: sessionUserId,
       category: body.category ?? null,
       is_listed: body.is_listed ?? true,
       is_playground_app: true,
@@ -75,6 +79,34 @@ export async function POST(request: Request) {
       { error: "保存に失敗しました: " + error.message },
       { status: 500 }
     );
+  }
+
+  // ログイン済みならマイプロジェクトにも登録
+  if (sessionUserId) {
+    const status = body.is_listed ? "listed" : "url_only";
+    const projectRow = {
+      user_id: sessionUserId,
+      title,
+      description: (body.description ?? "").trim() || null,
+      html_code,
+      css_code: body.css_code ?? null,
+      js_code: body.js_code ?? null,
+      app_id: data.id,
+      status,
+      is_listed: body.is_listed ?? true,
+      category: body.category ?? null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.project_id) {
+      await supabase
+        .from("user_projects")
+        .update(projectRow)
+        .eq("id", body.project_id)
+        .eq("user_id", sessionUserId);
+    } else {
+      await supabase.from("user_projects").insert(projectRow);
+    }
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });

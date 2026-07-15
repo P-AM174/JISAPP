@@ -103,7 +103,12 @@ const DEMO_PROJECTS: Project[] = [];
 const STATIC_ACQUIRED: AcquiredApp[] = [];
 
 // ─── プロジェクトカード ───
-function ProjectCard({ proj, onDelete, onPublish }: { proj: Project; onDelete?: (id: string) => void; onPublish?: (proj: Project) => void }) {
+function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
+  proj: Project;
+  onDelete?: (id: string) => void;
+  onPublish?: (proj: Project) => void;
+  onUnlist?: (proj: Project) => void;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -149,6 +154,15 @@ function ProjectCard({ proj, onDelete, onPublish }: { proj: Project; onDelete?: 
                   <Rocket className="h-3.5 w-3.5" />
                   出品 / URL発行
                 </button>
+                {proj.status === "listed" && onUnlist && (
+                  <button
+                    onClick={() => { onUnlist(proj); setMenuOpen(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-amber-700 hover:bg-amber-50"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    出品を取り下げ
+                  </button>
+                )}
                 {onDelete && (
                   <button
                     onClick={() => { onDelete(proj.id); setMenuOpen(false); }}
@@ -310,6 +324,7 @@ export default function ProjectsPage() {
   const [saving, setSaving]         = useState(false);
   const [saveError, setSaveError]   = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [unlisting, setUnlisting]     = useState(false);
 
   // localStorage から出品済みマップを読み込む
   useEffect(() => {
@@ -429,6 +444,39 @@ export default function ProjectsPage() {
       setPublishError(e instanceof Error ? e.message : "出品に失敗しました");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleUnlist = async (proj: Project) => {
+    if (!proj.appId) return;
+    if (!confirm(`「${proj.title}」の出品を取り下げますか？\nトップページの一覧から非表示になります（URLは引き続き使えます）。`)) return;
+
+    setUnlisting(true);
+    try {
+      const appRes = await fetch(`/api/apps/${proj.appId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_listed: false }),
+      });
+      if (!appRes.ok) {
+        const d = await appRes.json().catch(() => ({}));
+        throw new Error((d as { error?: string }).error ?? "取り下げに失敗しました");
+      }
+
+      if (proj.id !== "saved_playground") {
+        await fetch(`/api/my-projects/${proj.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "url_only", is_listed: false }),
+        });
+      }
+
+      if (publishTarget?.id === proj.id) setPublishTarget(null);
+      await reloadProjects();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "取り下げに失敗しました");
+    } finally {
+      setUnlisting(false);
     }
   };
 
@@ -697,7 +745,7 @@ export default function ProjectsPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredProjects.map((proj) => (
-                    <ProjectCard key={proj.id} proj={proj} onDelete={handleDeleteProject} onPublish={openPublishModal} />
+                    <ProjectCard key={proj.id} proj={proj} onDelete={handleDeleteProject} onPublish={openPublishModal} onUnlist={handleUnlist} />
                   ))}
 
                   {/* 新規作成カード */}
@@ -823,6 +871,15 @@ export default function ProjectsPage() {
                     >
                       ✏️ 出品情報を編集する
                     </button>
+                    {publishTarget?.status === "listed" && (
+                      <button
+                        onClick={() => handleUnlist(publishTarget)}
+                        disabled={unlisting}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
+                      >
+                        {unlisting ? "取り下げ中…" : "📤 出品を取り下げる"}
+                      </button>
+                    )}
                   </div>
                   <button onClick={() => setPublishTarget(null)} className="text-center text-[10px] text-gray-400 hover:text-gray-600 transition-colors">閉じる</button>
                 </div>

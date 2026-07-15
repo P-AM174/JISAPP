@@ -52,7 +52,20 @@ export async function PATCH(
     return NextResponse.json({ error: "更新内容がありません" }, { status: 400 });
   }
 
-  // アプリの存在確認（将来的に user_id カラム追加時はここで所有者チェックを追加）
+  // 所有者チェック
+  const { data: app } = await supabase
+    .from("apps")
+    .select("creator_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!app) {
+    return NextResponse.json({ error: "アプリが見つかりません" }, { status: 404 });
+  }
+  if (app.creator_id && app.creator_id !== userId) {
+    return NextResponse.json({ error: "このアプリを編集する権限がありません" }, { status: 403 });
+  }
+
   const { error } = await supabase
     .from("apps")
     .update(updates)

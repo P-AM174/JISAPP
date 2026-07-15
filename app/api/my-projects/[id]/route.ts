@@ -63,3 +63,40 @@ export async function GET(_req: Request, context: RouteContext) {
 
   return NextResponse.json({ project: data });
 }
+
+/** PATCH /api/my-projects/[id] — ステータス更新（出品取り下げ等） */
+export async function PATCH(req: Request, context: RouteContext) {
+  const userId = await getUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+  let body: { status?: string; is_listed?: boolean; title?: string; description?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
+  }
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (body.status !== undefined) updates.status = body.status;
+  if (body.is_listed !== undefined) updates.is_listed = body.is_listed;
+  if (body.title !== undefined) updates.title = body.title.trim();
+  if (body.description !== undefined) updates.description = body.description.trim() || null;
+
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("user_projects")
+    .update(updates)
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ project: data });
+}

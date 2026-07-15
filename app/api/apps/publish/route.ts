@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 const MAX_CODE_BYTES = 512 * 1024; // 512KB
 
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
 
   const creatorName = (body.creator_name ?? "").trim() || sessionCreatorName || "ゲスト";
 
+  const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
     .from("apps")
     .insert({

@@ -21,8 +21,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "ジサップ | 個人間アプリ売買プラットフォーム",
-  description: "個人開発のアプリを売買できるマーケットプレイス",
+  title: "ジサップ | アイデアを、すぐアプリに。",
+  description: "コードがわからなくても大丈夫。ジサップなら誰でも無料でアプリが作れます。",
   icons: {
     icon: "/logo-icon.png",
     apple: "/logo-icon.png",

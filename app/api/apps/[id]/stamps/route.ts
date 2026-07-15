@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+
+const supabase = createServerSupabaseClient();
 
 const STAMP_KEY_PREFIX = "__stamp__";
 const STAMP_IDS = ["like", "genius", "useful", "design"] as const;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 /**
  * セッションから安全にユーザーキーを取得する。
@@ -29,6 +29,7 @@ async function getUserKey(request: Request): Promise<string> {
 
 export async function GET(request: Request) {
   const userId = await getUserKey(request);
+  const supabase = createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from("playground_drafts")
@@ -51,6 +52,7 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   const userId = await getUserKey(request);
+  const supabase = createServerSupabaseClient();
 
   let body: { html_code?: string; css_code?: string; js_code?: string };
   try {

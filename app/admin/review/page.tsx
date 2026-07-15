@@ -193,16 +193,38 @@ export default function AdminDashboard() {
   const handleDeleteProduct = async (product: Product) => {
     if (!confirm(`「${product.title}」（#${String(product.appNumber).padStart(4,"0")}）を完全に削除しますか？この操作は取り消せません。`)) return;
     setLoadingId(product.id);
-    const res = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
-    if (res.ok) { await loadAll(); notify(`「${product.title}」を削除しました`); }
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
+      if (res.ok) {
+        await loadAll();
+        notify(`「${product.title}」を削除しました`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const detail = (data as { detail?: string }).detail ?? (data as { error?: string }).error ?? `HTTP ${res.status}`;
+        alert(`削除に失敗しました\n\n${detail}`);
+      }
+    } catch (err) {
+      alert(`ネットワークエラー: ${err instanceof Error ? err.message : String(err)}`);
+    }
     setLoadingId(null);
   };
 
   const handleDeleteUser = async (user: UserRecord) => {
     if (!confirm(`「${user.name ?? user.email}」を強制退会させますか？このユーザーのデータはすべて削除されます。`)) return;
     setLoadingId(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
-    if (res.ok) { await loadAll(); notify(`「${user.name ?? user.email}」を退会させました`); }
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+      if (res.ok) {
+        await loadAll();
+        notify(`「${user.name ?? user.email}」を退会させました`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const detail = (data as { detail?: string }).detail ?? (data as { error?: string }).error ?? `HTTP ${res.status}`;
+        alert(`削除に失敗しました\n\n${detail}`);
+      }
+    } catch (err) {
+      alert(`ネットワークエラー: ${err instanceof Error ? err.message : String(err)}`);
+    }
     setLoadingId(null);
   };
 

@@ -15,6 +15,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[admin/users DELETE]", err);
-    return NextResponse.json({ error: "削除に失敗しました" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "削除に失敗しました", detail: msg }, { status: 500 });
   }
 }

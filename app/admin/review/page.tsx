@@ -465,7 +465,8 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <table className="w-full text-xs">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
                       <th className="px-4 py-3">管理番号</th>
@@ -512,6 +513,7 @@ export default function AdminDashboard() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>
@@ -632,7 +634,8 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-                <table className="w-full text-xs">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[680px] text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
                       <th className="px-4 py-3">ユーザー</th>
@@ -665,9 +668,9 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3 text-center font-bold text-gray-700">{u.productCount}</td>
                         <td className="px-4 py-3 text-center font-bold text-gray-700">{u.purchaseCount}</td>
                         <td className="px-4 py-3 text-gray-400">{u.createdAt}</td>
-                        <td className="px-4 py-3">
+                          <td className="px-4 py-3">
                           <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
-                            className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
+                            className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
                             {loadingId === u.id
                               ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
                               : <UserX className="h-3 w-3" />}
@@ -678,6 +681,7 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>

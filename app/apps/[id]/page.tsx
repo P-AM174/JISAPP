@@ -27,14 +27,13 @@ import {
   Globe,
   Gamepad2,
   Share2,
-  Cloud,
-  LogIn,
   Flag,
   AlertCircle,
 } from "lucide-react";
 import { supabase, type AppRow } from "@/lib/supabase";
 import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
+import { SyncLoginButton } from "@/components/app-runner";
 
 
 
@@ -49,15 +48,17 @@ function SupabaseAppPage({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied]   = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [inLibrary, setInLibrary] = useState(false);
 
   const { data: session, status } = useSession();
   const userId = (session?.user as { id?: string })?.id ?? null;
   const isLoggedIn = status === "authenticated" && !!userId;
+  const enableCloud = isLoggedIn && inLibrary;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const loginCallbackUrl = `/apps/${id}`;
 
-  // Zisup ブリッジ: ログイン時はクラウド、未ログイン時は localStorage
-  useZisupBridge(iframeRef, id, isLoggedIn ? userId : null);
+  useZisupBridge(iframeRef, id, enableCloud ? userId : null);
 
   useEffect(() => {
     supabase
@@ -71,6 +72,17 @@ function SupabaseAppPage({ id }: { id: string }) {
         setLoading(false);
       });
   }, [id]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setInLibrary(false);
+      return;
+    }
+    fetch(`/api/library/check?appId=${encodeURIComponent(id)}`)
+      .then((r) => r.json())
+      .then((d) => setInLibrary(Boolean(d.inLibrary)))
+      .catch(() => setInLibrary(false));
+  }, [isLoggedIn, id]);
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -121,6 +133,9 @@ function SupabaseAppPage({ id }: { id: string }) {
             <span className="hidden sm:inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
               プレイグラウンドアプリ
             </span>
+            {status !== "loading" && !isLoggedIn && (
+              <SyncLoginButton callbackUrl={loginCallbackUrl} />
+            )}
             <button
               onClick={handleCopyUrl}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
@@ -144,18 +159,6 @@ function SupabaseAppPage({ id }: { id: string }) {
           title={app.title}
           allow="clipboard-write"
         />
-        {/* 対策B: 未ログイン時のみ表示するクラウド同期ボタン */}
-        {status !== "loading" && !isLoggedIn && (
-          <Link
-            href="/login"
-            className="absolute bottom-4 left-4 z-50 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-lg ring-1 ring-emerald-200 backdrop-blur-sm transition-all hover:bg-emerald-50 active:scale-95"
-            title="ログインしてデータをクラウドに保存する"
-          >
-            <Cloud className="h-3.5 w-3.5" />
-            <LogIn className="h-3 w-3" />
-            <span>ログインして同期</span>
-          </Link>
-        )}
       </main>
 
       {/* フッター（最小限） */}

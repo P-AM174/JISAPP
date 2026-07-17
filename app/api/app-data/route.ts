@@ -4,6 +4,18 @@ import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 const supabase = createServerSupabaseClient();
+const LIBRARY_KEY = "__in_library__";
+
+async function isAppInLibrary(userId: string, appId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("app_user_data")
+    .select("app_id")
+    .eq("user_id", userId)
+    .eq("app_id", appId)
+    .eq("data_key", LIBRARY_KEY)
+    .maybeSingle();
+  return !!data;
+}
 
 // ユーザーIDを取得するヘルパー
 async function getUserId(): Promise<string | null> {
@@ -28,6 +40,11 @@ export async function GET(req: Request) {
 
   if (!key || !appId) {
     return NextResponse.json({ error: "key と appId が必要です" }, { status: 400 });
+  }
+
+  const inLibrary = await isAppInLibrary(userId, appId);
+  if (!inLibrary) {
+    return NextResponse.json({ value: null, logged_in: true, in_library: false });
   }
 
   const { data, error } = await supabase
@@ -63,6 +80,14 @@ export async function POST(req: Request) {
   const { key, value, appId } = body;
   if (!key || !appId) {
     return NextResponse.json({ error: "key と appId が必要です" }, { status: 400 });
+  }
+
+  const inLibrary = await isAppInLibrary(userId, appId);
+  if (!inLibrary) {
+    return NextResponse.json(
+      { error: "マイライブラリに追加されたアプリのみ同期できます", logged_in: true, in_library: false },
+      { status: 403 }
+    );
   }
 
   const { error } = await supabase

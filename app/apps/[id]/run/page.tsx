@@ -114,7 +114,13 @@ export default function AppRunPage() {
             <p className="text-sm text-gray-600">アプリを実行するにはログインが必要です</p>
             <button
               type="button"
-              onClick={() => router.push(`/login?callbackUrl=/apps/${id}/run`)}
+              onClick={() => {
+                const url = `/apps/${id}/run`;
+                try {
+                  sessionStorage.setItem("jisapp_login_return", url);
+                } catch { /* noop */ }
+                router.push(`/login?callbackUrl=${encodeURIComponent(url)}`);
+              }}
               className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
             >
               ログインする

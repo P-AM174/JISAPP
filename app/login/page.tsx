@@ -29,7 +29,22 @@ function LoginContent() {
   const { status } = useSession();
   const router      = useRouter();
   const params      = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/";
+  const [returnUrl, setReturnUrl] = useState("/");
+
+  useEffect(() => {
+    const fromQuery = params.get("callbackUrl");
+    const stored =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("jisapp_login_return")
+        : null;
+    const url = fromQuery || stored || "/";
+    if (fromQuery) {
+      try {
+        sessionStorage.setItem("jisapp_login_return", fromQuery);
+      } catch { /* noop */ }
+    }
+    setReturnUrl(url);
+  }, [params]);
 
   const [mode,    setMode]    = useState<Mode>("login");
   const [stage,   setStage]   = useState<Stage>("form");
@@ -59,13 +74,17 @@ function LoginContent() {
 
   // ─── リダイレクト ───
   useEffect(() => {
-    if (status === "authenticated") router.replace(callbackUrl);
-  }, [status, router, callbackUrl]);
+    if (status !== "authenticated") return;
+    try {
+      sessionStorage.removeItem("jisapp_login_return");
+    } catch { /* noop */ }
+    router.replace(returnUrl);
+  }, [status, router, returnUrl]);
 
   // ─── Google ログイン ───
   const handleGoogle = () => {
     setLoading(true);
-    signIn("google", { callbackUrl });
+    signIn("google", { callbackUrl: returnUrl });
   };
 
   // ─── 新規登録フォーム送信 → Resend でメール送信 ───
@@ -142,7 +161,7 @@ function LoginContent() {
       setStage("done");
       await signIn("credentials", {
         email: regEmail, password: regPw,
-        callbackUrl, redirect: true,
+        callbackUrl: returnUrl, redirect: true,
       });
     } catch {
       setError("ネットワークエラーが発生しました");
@@ -182,7 +201,7 @@ function LoginContent() {
         email: loginEmail, password: loginPw, redirect: false,
       });
       if (res?.error) setError("メールアドレスまたはパスワードが正しくありません");
-      else router.replace(callbackUrl);
+      else router.replace(returnUrl);
     } finally {
       setLoading(false);
     }

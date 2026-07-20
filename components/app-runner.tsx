@@ -37,7 +37,12 @@ export function SyncLoginButton({
   return (
     <button
       type="button"
-      onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`)}
+      onClick={() => {
+        try {
+          sessionStorage.setItem("jisapp_login_return", callbackUrl);
+        } catch { /* noop */ }
+        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      }}
       className={cn(
         "flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95",
         className

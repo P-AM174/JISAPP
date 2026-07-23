@@ -8,14 +8,15 @@ import { JisappLogo } from "@/components/jisapp-logo";
 import {
   Search,
   Sparkles,
-  ArrowRight,
   User,
   SlidersHorizontal,
   X,
-  Zap,
 } from "lucide-react";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
 import type { CatalogApp } from "@/lib/home/catalog";
+import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
+import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
+import type { ModalApp } from "@/components/app-catalog/types";
 
 type AppItem = CatalogApp;
 
@@ -26,49 +27,6 @@ const SORT_OPTIONS: { value: SortMethod; label: string }[] = [
   { value: "new",     label: "古い順" },
   { value: "popular", label: "人気順（スタンプ数）" },
 ];
-
-// ─── アプリカード ───
-function AppCard({ app }: { app: AppItem }) {
-  const cat = app.category ? CATEGORY_MAP[app.category] : null;
-  const gradient = cat?.gradient ?? "from-emerald-500 to-teal-600";
-  const catName  = cat?.name ?? app.category ?? "その他";
-  const catEmoji = cat?.emoji ?? "✨";
-
-  return (
-    <Link href={`/apps/${app.id}`} className="group block">
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-100/60 hover:ring-emerald-200">
-        {/* グラデーションビジュアル */}
-        <div className={`relative flex items-center justify-center bg-gradient-to-br ${gradient} px-5 py-6`}>
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <span className="text-3xl">{catEmoji}</span>
-          </div>
-          {(app.stamp_count ?? 0) > 0 && (
-            <span className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 text-[11px] font-bold text-white backdrop-blur-sm">
-              <Zap className="h-3 w-3" /> {app.stamp_count}
-            </span>
-          )}
-          <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-black text-emerald-700">
-            FREE
-          </span>
-        </div>
-        {/* コンテンツ */}
-        <div className="flex flex-1 flex-col gap-2 p-4">
-          <span className="w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">{catName}</span>
-          <h3 className="text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700">{app.title}</h3>
-          {app.description && (
-            <p className="line-clamp-2 flex-1 text-xs leading-relaxed text-gray-500">{app.description}</p>
-          )}
-          <div className="mt-1 flex items-center justify-between border-t border-gray-100 pt-2.5">
-            <span className="text-xs text-gray-400">by {app.creator_name ?? "匿名"}</span>
-            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 opacity-0 transition-opacity group-hover:opacity-100">
-              詳細を見る <ArrowRight className="h-3 w-3" />
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
 
 // ─── 検索ページ本体（useSearchParams 使用のため Suspense でラップ） ───
 export function SearchPageClient({
@@ -87,6 +45,7 @@ export function SearchPageClient({
   const [sortMethod,     setSortMethod]     = useState<SortMethod>(
     SORT_OPTIONS.some(o => o.value === initSort) ? initSort : "default"
   );
+  const [selectedApp, setSelectedApp] = useState<ModalApp | null>(null);
   const allApps = initialApps;
   const loading = false;
   const error = false;
@@ -292,7 +251,13 @@ export function SearchPageClient({
               </div>
             ) : !loading && filtered.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                {filtered.map((app) => <AppCard key={app.id} app={app} />)}
+                {filtered.map((app) => (
+                  <CatalogAppCard
+                    key={app.id}
+                    app={app}
+                    onSelect={setSelectedApp}
+                  />
+                ))}
               </div>
             ) : !loading ? (
               <div className="flex flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed border-gray-200 bg-white py-24 text-center">
@@ -330,6 +295,10 @@ export function SearchPageClient({
           </div>
         </div>
       </div>
+
+      {selectedApp && (
+        <AppDetailModal app={selectedApp} onClose={() => setSelectedApp(null)} />
+      )}
     </div>
   );
 }

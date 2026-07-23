@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import {
   SITE_NAME,
-  SITE_TAGLINE,
+  SITE_TITLE,
   SITE_DESCRIPTION,
   absoluteUrl,
   getSiteUrl,
@@ -28,7 +28,7 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
     ogImage = "/logo-header.png",
   } = options;
 
-  const pageTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | ${SITE_TAGLINE}`;
+  const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_TITLE;
   const canonical = path ? absoluteUrl(path) : getSiteUrl();
   const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
 
@@ -60,7 +60,7 @@ export function createRootMetadata(): Metadata {
     metadataBase: new URL(getSiteUrl()),
     ...createPageMetadata(),
     title: {
-      default: `${SITE_NAME} | ${SITE_TAGLINE}`,
+      default: SITE_TITLE,
       template: `%s | ${SITE_NAME}`,
     },
   };

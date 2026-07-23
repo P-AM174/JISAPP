@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
+import { ShareButton, ShareButtonRow } from "@/components/share-button";
+import { getAppShareUrl } from "@/lib/share";
+import { supabase } from "@/lib/supabase";
 
 // ─── 型定義 ───
 type Project = {
@@ -203,21 +206,31 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
         </div>
 
         {/* アクションボタン */}
-        <div className="mt-auto flex gap-2 pt-1">
-          <Link
-            href={getPlaygroundHref(proj)}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-emerald-100 hover:text-emerald-700 active:scale-[0.98]"
-          >
-            <Wrench className="h-3.5 w-3.5" />
-            🛠️ 編集する
-          </Link>
-          <button
-            onClick={() => onPublish?.(proj)}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
-          >
-            <Rocket className="h-3.5 w-3.5" />
-            出品 / URL発行
-          </button>
+        <div className="mt-auto flex flex-col gap-2 pt-1">
+          <div className="flex gap-2">
+            <Link
+              href={getPlaygroundHref(proj)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-emerald-100 hover:text-emerald-700 active:scale-[0.98]"
+            >
+              <Wrench className="h-3.5 w-3.5" />
+              🛠️ 編集する
+            </Link>
+            <button
+              onClick={() => onPublish?.(proj)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
+            >
+              <Rocket className="h-3.5 w-3.5" />
+              出品 / URL発行
+            </button>
+          </div>
+          {(proj.url || proj.appId) && (
+            <ShareButton
+              url={proj.url ?? getAppShareUrl(String(proj.appId))}
+              title={proj.title}
+              text={`${proj.title} | ジサップで作った無料アプリ`}
+              variant="outline"
+            />
+          )}
         </div>
       </div>
     </div>
@@ -314,6 +327,7 @@ export default function ProjectsPage() {
   const [publishTitle, setPublishTitle]       = useState("");
   const [publishDesc, setPublishDesc]         = useState("");
   const [publishCategory, setPublishCategory] = useState("");
+  const [publishCodePublic, setPublishCodePublic] = useState(false);
   const [publishing, setPublishing]           = useState(false);
   const [publishedUrl, setPublishedUrl]       = useState<string | null>(null);
   const [urlCopied, setUrlCopied]             = useState(false);
@@ -346,6 +360,18 @@ export default function ProjectsPage() {
     setSaveError(null);
     setSaveSuccess(false);
     setEditMode(false);
+    setPublishCodePublic(false);
+
+    if (proj.appId) {
+      supabase
+        .from("apps")
+        .select("code_public")
+        .eq("id", proj.appId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) setPublishCodePublic(Boolean(data.code_public));
+        });
+    }
 
     if (proj.appId && proj.url) {
       setPublishedUrl(proj.url);
@@ -428,6 +454,7 @@ export default function ProjectsPage() {
           html_code,
           category: publishCategory || null,
           is_listed,
+          code_public: publishCodePublic,
           project_id: publishTarget.id !== "saved_playground" ? publishTarget.id : undefined,
         }),
       });
@@ -494,7 +521,12 @@ export default function ProjectsPage() {
       const res = await fetch(`/api/apps/${info.appId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description: publishDesc.trim() || null, category: publishCategory || null }),
+        body: JSON.stringify({
+          title,
+          description: publishDesc.trim() || null,
+          category: publishCategory || null,
+          code_public: publishCodePublic,
+        }),
       });
       if (!res.ok) {
         const json = await res.json();
@@ -851,13 +883,12 @@ export default function ProjectsPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
+                    <ShareButtonRow
+                      url={publishedUrl}
+                      title={publishTitle}
+                      text={`${publishTitle} | ジサップで作った無料アプリ`}
+                    />
                     <div className="flex gap-2">
-                      <button
-                        onClick={async () => { await navigator.clipboard.writeText(publishedUrl); setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); }}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 transition-all"
-                      >
-                        {urlCopied ? "✅ コピー済み" : "🔗 URLをコピー"}
-                      </button>
                       <button
                         onClick={() => router.push(publishedUrl.replace(window.location.origin, ""))}
                         className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-200 transition-all"
@@ -926,6 +957,21 @@ export default function ProjectsPage() {
                       className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
                     />
                   </div>
+                  <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={publishCodePublic}
+                        onChange={(e) => setPublishCodePublic(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-xs leading-relaxed text-violet-900">
+                        <span className="font-bold">ソースコードを公開する</span>
+                        <br />
+                        マイライブラリに追加したユーザーだけが閲覧できます
+                      </span>
+                    </label>
+                  </div>
                   {saveError && (
                     <p className="rounded-xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600 ring-1 ring-rose-200">{saveError}</p>
                   )}
@@ -981,6 +1027,21 @@ export default function ProjectsPage() {
                     <label className="text-xs font-bold text-gray-700">説明（任意）</label>
                     <textarea value={publishDesc} onChange={(e) => setPublishDesc(e.target.value)} placeholder="アプリの使い方や特徴を簡単に説明..." rows={3}
                       className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
+                  </div>
+                  <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={publishCodePublic}
+                        onChange={(e) => setPublishCodePublic(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-xs leading-relaxed text-violet-900">
+                        <span className="font-bold">ソースコードを公開する</span>
+                        <br />
+                        マイライブラリに追加したユーザーだけが閲覧できます（アプリの実行自体は誰でも可能）
+                      </span>
+                    </label>
                   </div>
                   {publishError && (
                     <p className="rounded-xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600 ring-1 ring-rose-200">{publishError}</p>

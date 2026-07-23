@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
@@ -32,11 +31,6 @@ import {
   Gamepad2,
   ChevronRight,
   Terminal,
-  LibraryBig,
-  LogIn,
-  ThumbsUp,
-  Send,
-  MessageCirclePlus,
   Crown,
   Menu,
   X,
@@ -46,320 +40,14 @@ import {
 import { cn } from "@/lib/utils";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
 import type { HomeCatalogData } from "@/lib/home/catalog";
+import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
+import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
+import { MiniPreview } from "@/components/app-catalog/mini-preview";
+import type { ModalApp } from "@/components/app-catalog/types";
+import { getCreatorProfilePath } from "@/components/app-catalog/utils";
 
 // ─── 通知データ（将来的にAPIから取得）───
 const NOTIFICATIONS: { id: number; Icon: React.ComponentType<{ className?: string }>; iconBg: string; iconColor: string; text: string; href: string; time: string }[] = [];
-
-// ─── モーダル用共通アプリ型 ───
-type ModalApp = {
-  id: string | number;
-  name: string;
-  description: string;
-  creator: string;
-  rating: number;
-  reviews: number;
-  category: string;
-  gradient: string;
-  emoji?: string;
-};
-
-// ─── スタンプ定義 ───
-const STAMPS = [
-  { id: "like",    emoji: "👍", label: "いいね！" },
-  { id: "genius",  emoji: "🧠", label: "天才！" },
-  { id: "useful",  emoji: "⚡", label: "便利！" },
-  { id: "design",  emoji: "🎨", label: "デザインが好き！" },
-] as const;
-type StampId = typeof STAMPS[number]["id"];
-
-// ─── アプリ詳細モーダル ───
-function AppDetailModal({
-  app,
-  onClose,
-}: {
-  app: ModalApp;
-  onClose: () => void;
-}) {
-  const { data: session, status } = useSession();
-  const userId = (session?.user as { id?: string })?.id ?? null;
-  const isLoggedIn = status === "authenticated" && !!userId;
-  const router = useRouter();
-
-  const [libState, setLibState] = useState<"idle" | "loading" | "done" | "login_required">("idle");
-
-  // マイライブラリ登録済みか確認
-  useEffect(() => {
-    setLibState("idle");
-    if (!isLoggedIn) return;
-    fetch(`/api/library/check?appId=${encodeURIComponent(String(app.id))}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.inLibrary) setLibState("done");
-      })
-      .catch(() => {});
-  }, [app.id, isLoggedIn]);
-
-  // ─ スタンプ状態（localStorageで管理）
-  const storageKey = `jisapp_stamps_${app.id}`;
-  const [myStamps, setMyStamps] = useState<StampId[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem(storageKey) ?? "[]"); } catch { return []; }
-  });
-  const [stampCounts, setStampCounts] = useState<Record<StampId, number>>({ like: 0, genius: 0, useful: 0, design: 0 });
-
-  // スタンプ数をAPIから取得
-  useEffect(() => {
-    fetch(`/api/apps/${app.id}/stamps`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.counts) setStampCounts(data.counts); })
-      .catch(() => {});
-  }, [app.id]);
-
-  const handleStamp = useCallback(async (stampId: StampId) => {
-    const isOn = myStamps.includes(stampId);
-    const next = isOn
-      ? myStamps.filter(s => s !== stampId)
-      : [...myStamps, stampId];
-    setMyStamps(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-
-    // カウント楽観的更新
-    setStampCounts(prev => ({
-      ...prev,
-      [stampId]: Math.max(0, (prev[stampId] ?? 0) + (isOn ? -1 : 1)),
-    }));
-
-    // APIへ送信（fire-and-forget）
-    fetch(`/api/apps/${app.id}/stamps`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stampId, action: isOn ? "remove" : "add" }),
-    }).catch(() => {});
-  }, [myStamps, app.id, storageKey]);
-
-  // ─ リクエスト状態
-  const [requestText, setRequestText] = useState("");
-  const [requestState, setRequestState] = useState<"idle" | "loading" | "done">("idle");
-
-  const handleRequest = useCallback(async () => {
-    if (!requestText.trim()) return;
-    setRequestState("loading");
-    try {
-      const res = await fetch(`/api/apps/${app.id}/requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: requestText.trim().slice(0, 300) }),
-      });
-      if (!res.ok) throw new Error("送信失敗");
-      setRequestState("done");
-      setRequestText("");
-    } catch {
-      setRequestState("idle");
-    }
-  }, [requestText, app.id]);
-
-  // ─ ライブラリ追加
-  const handleAddLibrary = useCallback(async () => {
-    if (!isLoggedIn) { setLibState("login_required"); return; }
-    setLibState("loading");
-    try {
-      const res = await fetch("/api/library", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          appId: String(app.id),
-          name: app.name,
-          category: app.category,
-          gradient: app.gradient,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setLibState("done");
-    } catch {
-      setLibState("idle");
-    }
-  }, [isLoggedIn, app]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[200] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm overflow-y-auto max-h-[90dvh] rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* サムネ（拡大） */}
-        <div className="relative">
-          <MiniPreview
-            id={app.id}
-            fallbackGradient={app.gradient}
-            fallbackEmoji={app.emoji}
-            height={180}
-          />
-          <button
-            onClick={onClose}
-            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-5">
-          {/* アプリ情報 */}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              {app.category && (
-                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">
-                  {app.category}
-                </span>
-              )}
-            </div>
-            <h2 className="text-lg font-black text-gray-900">{app.name}</h2>
-            <p className="mt-0.5 text-xs text-gray-400">by {app.creator}</p>
-            {app.description && (
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed line-clamp-3">{app.description}</p>
-            )}
-          </div>
-
-          {/* ─── 応援バッジ ─── */}
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <ThumbsUp className="h-4 w-4 text-emerald-600" />
-              <p className="text-xs font-bold text-emerald-800">応援バッジを送る</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {STAMPS.map(({ id, emoji, label }) => {
-                const active = myStamps.includes(id);
-                const count = stampCounts[id] ?? 0;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => handleStamp(id)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-all active:scale-95",
-                      active
-                        ? "border-emerald-400 bg-emerald-100 text-emerald-800 shadow-sm"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50"
-                    )}
-                  >
-                    <span className="text-base">{emoji}</span>
-                    <span className="flex-1 text-left text-xs">{label}</span>
-                    {count > 0 && (
-                      <span className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[10px] font-black",
-                        active ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-500"
-                      )}>
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ─── リクエスト機能 ─── */}
-          <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MessageCirclePlus className="h-4 w-4 text-violet-600" />
-              <p className="text-xs font-bold text-violet-800">こうなったらもっと最高！</p>
-            </div>
-            <p className="text-[11px] text-violet-600 mb-3">
-              改善リクエストを作者に届けよう。批判じゃなく「期待」として受け取ってもらえます。
-            </p>
-            {requestState === "done" ? (
-              <div className="flex items-center gap-2 rounded-xl bg-violet-100 px-3 py-2.5 text-xs font-bold text-violet-700">
-                <CheckCircle2 className="h-4 w-4" />
-                リクエストを送りました！ありがとうございます🙌
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={requestText}
-                  onChange={e => setRequestText(e.target.value)}
-                  placeholder="例：ダークモードがあると最高！"
-                  className="flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs placeholder:text-gray-300 focus:border-violet-400 focus:outline-none"
-                  onKeyDown={e => { if (e.key === "Enter") handleRequest(); }}
-                />
-                <button
-                  onClick={handleRequest}
-                  disabled={!requestText.trim() || requestState === "loading"}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
-                >
-                  {requestState === "loading"
-                    ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    : <Send className="h-3.5 w-3.5" />
-                  }
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* 未ログイン注意書き */}
-          {!isLoggedIn && status !== "loading" && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 leading-relaxed">
-              <p className="font-bold mb-0.5">⚠️ ログインせずにご利用の場合</p>
-              <p>
-                アプリは使えますが、データの保存はお使いのブラウザにのみ保存されます。
-                ブラウザデータを削除すると消えることがあります。
-                <Link href="/login" className="font-bold underline ml-1">ログイン</Link>するとクラウドに安全に保存されます。
-              </p>
-            </div>
-          )}
-
-          {/* ライブラリ追加後 → ホーム画面への追加を促す */}
-          {libState === "done" && (
-            <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-xs text-teal-800 leading-relaxed">
-              <p className="font-bold mb-1">📱 ホーム画面に追加しよう！</p>
-              <p>ブラウザの「共有」→「ホーム画面に追加」でアプリのように起動できます。</p>
-            </div>
-          )}
-
-          {/* ログイン案内（ライブラリ追加試行時） */}
-          {libState === "login_required" && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-              <LogIn className="h-4 w-4 shrink-0" />
-              <span>マイライブラリへの追加には<Link href="/login" className="font-bold underline ml-1">ログイン</Link>が必要です</span>
-            </div>
-          )}
-
-          {/* ボタン群 */}
-          <div className="space-y-2 pb-2">
-            <button
-              onClick={() => router.push(`/apps/${app.id}`)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] transition-all"
-            >
-              <ExternalLink className="h-4 w-4" />
-              アプリを開く
-            </button>
-
-            {libState === "done" ? (
-              <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-50 border border-teal-200 py-3 text-sm font-bold text-teal-700">
-                <CheckCircle2 className="h-4 w-4" />
-                マイライブラリに追加済み ✓
-              </div>
-            ) : (
-              <button
-                onClick={handleAddLibrary}
-                disabled={libState === "loading"}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-200 bg-teal-50 py-3 text-sm font-bold text-teal-700 hover:bg-teal-100 active:scale-[0.98] transition-all disabled:opacity-60"
-              >
-                {libState === "loading" ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-                ) : (
-                  <LibraryBig className="h-4 w-4" />
-                )}
-                マイライブラリに追加
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── チャットルーム型 ───
 type ChatRoom = {
@@ -956,156 +644,6 @@ function SectionHeader({ icon, title, sub, href }: { icon: React.ReactNode; titl
   );
 }
 
-// ─── ミニプレビュー（iframeサムネイル） ───
-function MiniPreview({
-  id,
-  fallbackGradient,
-  fallbackEmoji,
-  height = 120,
-}: {
-  id: string | number;
-  fallbackGradient: string;
-  fallbackEmoji?: string;
-  height?: number;
-}) {
-  const [loaded, setLoaded] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [errored, setErrored] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "300px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      className="relative overflow-hidden bg-gray-950"
-      style={{ height: `${height}px` }}
-    >
-      {/* ブラウザ風クロームバー */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-1 bg-gray-900 px-2.5 py-1.5">
-        <span className="h-2 w-2 rounded-full bg-red-500/70" />
-        <span className="h-2 w-2 rounded-full bg-yellow-500/70" />
-        <span className="h-2 w-2 rounded-full bg-green-500/70" />
-        <div className="mx-2 h-3.5 flex-1 rounded-sm bg-gray-700/60 text-[9px] text-gray-500 flex items-center px-1.5 truncate">
-          {String(id).slice(0, 8)}…
-        </div>
-      </div>
-
-      {/* フォールバック（読み込み中 or エラー時） */}
-      {(!loaded || errored) && (
-        <div
-          className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${fallbackGradient} opacity-75`}
-          style={{ top: "26px" }}
-        >
-          {fallbackEmoji && (
-            <span className="text-3xl drop-shadow">{fallbackEmoji}</span>
-          )}
-        </div>
-      )}
-
-      {/* iframe プレビュー */}
-      {visible && !errored && (
-        <div
-          className="absolute overflow-hidden"
-          style={{ top: "26px", left: 0, right: 0, bottom: 0 }}
-        >
-          <iframe
-            src={`/api/apps/${id}/preview`}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "500%",
-              height: "470px",
-              transform: "scale(0.2)",
-              transformOrigin: "top left",
-              pointerEvents: "none",
-              border: "none",
-            }}
-            sandbox="allow-scripts"
-            tabIndex={-1}
-            aria-hidden
-            onLoad={() => setLoaded(true)}
-            onError={() => setErrored(true)}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── プレイグラウンドアプリカード ───
-type PlaygroundApp = {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string | null;
-  creator_name: string | null;
-  created_at: string;
-  stamp_count?: number;
-};
-
-function PlaygroundAppCard({ app, onSelect }: { app: PlaygroundApp; onSelect: (a: ModalApp) => void }) {
-  const cat = app.category ? CATEGORY_MAP[app.category] : null;
-  const gradient = cat?.gradient ?? "from-emerald-500 to-teal-600";
-  const emoji    = cat?.emoji    ?? "✨";
-  const tagColor = cat?.tagColor ?? "bg-gray-100 text-gray-500";
-  const tagName  = cat ? `${cat.emoji} ${cat.name}` : null;
-
-  const modalApp: ModalApp = {
-    id: app.id,
-    name: app.title,
-    description: app.description ?? "",
-    creator: app.creator_name ?? "匿名",
-    rating: 5.0,
-    reviews: 0,
-    category: cat?.name ?? app.category ?? "",
-    gradient,
-    emoji,
-  };
-
-  return (
-    <button
-      onClick={() => onSelect(modalApp)}
-      className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.06] transition-all hover:shadow-md hover:ring-emerald-300 text-left w-full"
-    >
-      <MiniPreview id={app.id} fallbackGradient={gradient} fallbackEmoji={emoji} />
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <p className="font-bold text-sm text-gray-900 leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
-          {app.title}
-        </p>
-        {app.description && (
-          <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2">{app.description}</p>
-        )}
-        <div className="mt-auto flex items-center gap-1.5 pt-1.5 flex-wrap">
-          {tagName && (
-            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${tagColor}`}>
-              {tagName}
-            </span>
-          )}
-          <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 ml-auto">
-            FREE
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
 // ─── メインページ ───
 export function HomePageClient({
   initialData,
@@ -1358,9 +896,10 @@ export function HomePageClient({
                 ];
                 const colorIdx = Math.abs(creator.name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % colors.length;
                 return (
-                  <div
+                  <Link
                     key={creator.name}
-                    className="shrink-0 w-36 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 text-center"
+                    href={getCreatorProfilePath(creator.name)}
+                    className="shrink-0 w-36 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 text-center transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200"
                   >
                     <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${colors[colorIdx]} text-2xl font-black text-white shadow-md`}>
                       {initial}
@@ -1375,7 +914,10 @@ export function HomePageClient({
                     )}
                     {creator.topApp && (
                       <button
-                        onClick={() => {
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           const cat = creator.topApp!.category ? CATEGORY_MAP[creator.topApp!.category] : null;
                           setSelectedApp({
                             id: creator.topApp!.id,
@@ -1394,7 +936,7 @@ export function HomePageClient({
                         {creator.topApp.title}
                       </button>
                     )}
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -1445,7 +987,9 @@ export function HomePageClient({
             </div>
           ) : filteredPlaygroundApps.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {filteredPlaygroundApps.map((app) => <PlaygroundAppCard key={app.id} app={app} onSelect={setSelectedApp} />)}
+              {filteredPlaygroundApps.map((app) => (
+                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
+              ))}
             </div>
           ) : playgroundApps.length === 0 ? (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
@@ -1476,7 +1020,9 @@ export function HomePageClient({
             </div>
           ) : newApps.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {newApps.slice(0, 8).map((app) => <PlaygroundAppCard key={app.id} app={app} onSelect={setSelectedApp} />)}
+              {newApps.slice(0, 8).map((app) => (
+                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
+              ))}
             </div>
           ) : (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
@@ -1501,7 +1047,9 @@ export function HomePageClient({
               href="/search?category=ゲーム"
             />
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {gameApps.map((app) => <PlaygroundAppCard key={app.id} app={app} onSelect={setSelectedApp} />)}
+              {gameApps.map((app) => (
+                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
+              ))}
             </div>
           </section>
         )}

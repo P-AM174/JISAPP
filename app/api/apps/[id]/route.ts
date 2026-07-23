@@ -30,6 +30,7 @@ export async function PATCH(
     description?: string;
     category?: string;
     is_listed?: boolean;
+    code_public?: boolean;
   };
 
   try {
@@ -47,6 +48,7 @@ export async function PATCH(
   if (body.description !== undefined) updates.description = body.description.trim() || null;
   if (body.category !== undefined)    updates.category    = body.category || null;
   if (body.is_listed !== undefined)   updates.is_listed   = body.is_listed;
+  if (body.code_public !== undefined) updates.code_public = body.code_public;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "更新内容がありません" }, { status: 400 });

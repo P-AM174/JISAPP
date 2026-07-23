@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   Lock,
 } from "lucide-react";
+import { CreatorProfileClient } from "@/components/creator/creator-profile-client";
 
 // ─── クリエイターデータ ───
 const CREATORS = [
@@ -351,7 +352,22 @@ function AppCard({ app }: { app: typeof STATIC_APPS[number] }) {
 
 export default function CreatorDetailPage() {
   const params = useParams();
-  const creatorId = Number(params.id);
+  const slug = String(params.id ?? "");
+  const legacyId = Number(slug);
+  const isLegacyCreator =
+    /^\d+$/.test(slug) &&
+    legacyId >= 1 &&
+    legacyId <= 4 &&
+    CREATORS.some((c) => c.id === legacyId);
+
+  if (!isLegacyCreator) {
+    return <CreatorProfileClient slug={slug} />;
+  }
+
+  return <LegacyCreatorDetailPage creatorId={legacyId} />;
+}
+
+function LegacyCreatorDetailPage({ creatorId }: { creatorId: number }) {
   const { data: session } = useSession();
   const [showEstimate,   setShowEstimate]   = useState(false);
   const [isFollowing,    setIsFollowing]    = useState(false);

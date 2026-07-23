@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     creator_name?: string;
     category?: string;
     is_listed?: boolean;
+    code_public?: boolean;
     project_id?: string;
   };
 
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
       creator_id: sessionUserId,
       category: body.category ?? null,
       is_listed: body.is_listed ?? true,
+      code_public: body.code_public ?? false,
       is_playground_app: true,
       status: "active",
     })

@@ -22,7 +22,7 @@ async function fetchActiveApps(limit = 200): Promise<CatalogApp[]> {
   try {
     let query = supabase
       .from("apps")
-      .select("id, title, description, category, creator_name, created_at")
+      .select("id, title, description, category, creator_name, creator_id, created_at")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -37,7 +37,7 @@ async function fetchActiveApps(limit = 200): Promise<CatalogApp[]> {
     if (error) {
       const { data: fallback } = await supabase
         .from("apps")
-        .select("id, title, description, category, creator_name, created_at")
+        .select("id, title, description, category, creator_name, creator_id, created_at")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(Math.min(limit, 50));
@@ -76,7 +76,7 @@ export async function getPopularMonthApps(limit = 5): Promise<CatalogApp[]> {
 
     const { data, error } = await supabase
       .from("apps")
-      .select("id, title, description, category, creator_name, created_at")
+      .select("id, title, description, category, creator_name, creator_id, created_at")
       .eq("status", "active")
       .gte("created_at", firstDay)
       .order("created_at", { ascending: false })

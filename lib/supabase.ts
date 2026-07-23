@@ -27,9 +27,12 @@ export type AppRow = {
   js_code: string | null;
   is_playground_app: boolean;
   creator_name: string | null;
+  creator_id?: string | null;
   category: string | null;
   /** true = トップ一覧に掲載、false = URLのみ（非公開） */
   is_listed: boolean;
+  /** true = マイライブラリ登録者のみソースコード閲覧可 */
+  code_public: boolean;
   status: string;
   created_at: string;
 };

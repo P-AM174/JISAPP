@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { CATEGORIES } from "@/lib/categories";
 import { AppRunner } from "@/components/app-runner";
+import { ShareButtonRow } from "@/components/share-button";
 // ─── ショートカット一覧 ───
 const SHORTCUTS = [
   { key: "Ctrl + Enter", desc: "アプリを動かす（実行）" },
@@ -752,6 +753,7 @@ export default function PlaygroundPage() {
   const [publishDesc, setPublishDesc]         = useState("");
   const [publishCategory, setPublishCategory] = useState("");
   const [publishListed, setPublishListed]     = useState(true);
+  const [publishCodePublic, setPublishCodePublic] = useState(false);
   const [publishedUrl, setPublishedUrl]       = useState<string | null>(null);
   const [urlCopied, setUrlCopied]             = useState(false);
 
@@ -794,6 +796,7 @@ export default function PlaygroundPage() {
           html_code: code,
           category: publishCategory || null,
           is_listed: publishListed,
+          code_public: publishCodePublic,
         }),
       });
       const json = await res.json();
@@ -1482,21 +1485,15 @@ export default function PlaygroundPage() {
                   <p className="mt-1 text-xs text-emerald-700">{publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
                 </div>
                 <div className="p-6 space-y-4">
-                  {/* URL 表示＆コピー */}
+                  <ShareButtonRow
+                    url={publishedUrl}
+                    title={publishTitle}
+                    text={`${publishTitle} | ジサップで作った無料アプリ`}
+                  />
                   <div>
                     <p className="mb-2 text-xs font-bold text-gray-600">アプリの URL</p>
                     <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
                       <span className="flex-1 truncate font-mono text-xs text-emerald-800">{publishedUrl}</span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(publishedUrl);
-                          setUrlCopied(true);
-                          setTimeout(() => setUrlCopied(false), 2000);
-                        }}
-                        className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
-                      >
-                        {urlCopied ? "コピー済み ✓" : "コピー"}
-                      </button>
                     </div>
                   </div>
                   <p className="text-[11px] text-gray-400">
@@ -1512,6 +1509,7 @@ export default function PlaygroundPage() {
                         setPublishDesc("");
                         setPublishCategory("");
                         setPublishListed(true);
+                        setPublishCodePublic(false);
                       }}
                       className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
                     >
@@ -1630,6 +1628,21 @@ export default function PlaygroundPage() {
                       </div>
                     </div>
                   )}
+                  <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={publishCodePublic}
+                        onChange={(e) => setPublishCodePublic(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-xs leading-relaxed text-violet-900">
+                        <span className="font-bold">ソースコードを公開する</span>
+                        <br />
+                        マイライブラリに追加したユーザーだけが閲覧できます
+                      </span>
+                    </label>
+                  </div>
                   <div className="rounded-xl bg-gray-50 px-4 py-3 text-xs text-gray-500">
                     {publishListed
                       ? "マーケットに公開されます。URLを知らない人もアプリを見つけられます。"

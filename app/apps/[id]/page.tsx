@@ -34,6 +34,8 @@ import { supabase, type AppRow } from "@/lib/supabase";
 import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { SyncLoginButton } from "@/components/app-runner";
+import { ShareButton } from "@/components/share-button";
+import { getAppShareUrl } from "@/lib/share";
 
 
 
@@ -46,9 +48,13 @@ function isUUID(s: string) {
 function SupabaseAppPage({ id }: { id: string }) {
   const [app, setApp]     = useState<AppRow | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied]   = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
+  const [codePanelOpen, setCodePanelOpen] = useState(false);
+  const [sourceCode, setSourceCode] = useState<{ html: string; css: string; js: string } | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeTab, setCodeTab] = useState<"html" | "css" | "js">("html");
 
   const { data: session, status } = useSession();
   const userId = (session?.user as { id?: string })?.id ?? null;
@@ -84,11 +90,29 @@ function SupabaseAppPage({ id }: { id: string }) {
       .catch(() => setInLibrary(false));
   }, [isLoggedIn, id]);
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const loadSourceCode = async () => {
+    if (codePanelOpen && sourceCode) {
+      setCodePanelOpen(false);
+      return;
+    }
+    setCodeLoading(true);
+    setCodeError(null);
+    try {
+      const res = await fetch(`/api/apps/${id}/code`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "ソースコードを取得できませんでした");
+      setSourceCode({
+        html: data.html_code ?? "",
+        css: data.css_code ?? "",
+        js: data.js_code ?? "",
+      });
+      setCodePanelOpen(true);
+    } catch (e) {
+      setCodeError(e instanceof Error ? e.message : "ソースコードを取得できませんでした");
+      setCodePanelOpen(true);
+    } finally {
+      setCodeLoading(false);
+    }
   };
 
   if (loading) {
@@ -136,19 +160,58 @@ function SupabaseAppPage({ id }: { id: string }) {
             {status !== "loading" && !isLoggedIn && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
             )}
-            <button
-              onClick={handleCopyUrl}
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              {copied ? "コピーしました！" : "共有"}
-            </button>
+            {app.code_public && (
+              <button
+                type="button"
+                onClick={loadSourceCode}
+                disabled={codeLoading}
+                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50"
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                {codeLoading ? "読込中…" : codePanelOpen ? "コードを閉じる" : "コード"}
+              </button>
+            )}
+            <ShareButton
+              url={getAppShareUrl(id)}
+              title={app.title}
+              text={`${app.title} | ジサップで作った無料アプリ`}
+              variant="outline"
+              className="w-auto"
+            />
           </div>
         </div>
       </header>
 
       {/* アプリ実行エリア（全画面 iframe） */}
       <main className="relative flex flex-1 flex-col">
+        {codePanelOpen && app.code_public && (
+          <div className="border-b border-violet-100 bg-gray-950 text-gray-100">
+            <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2">
+              {(["html", "css", "js"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setCodeTab(tab)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase transition-colors ${
+                    codeTab === tab ? "bg-violet-600 text-white" : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+              <span className="ml-auto text-[10px] text-gray-500">
+                マイライブラリ登録者のみ閲覧可
+              </span>
+            </div>
+            {codeError ? (
+              <div className="px-4 pb-4 text-sm text-amber-300">{codeError}</div>
+            ) : sourceCode ? (
+              <pre className="max-h-64 overflow-auto px-4 pb-4 text-xs leading-relaxed text-emerald-100">
+                <code>{sourceCode[codeTab] || "（空）"}</code>
+              </pre>
+            ) : null}
+          </div>
+        )}
         <iframe
           ref={iframeRef}
           key={id}

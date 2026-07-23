@@ -63,6 +63,9 @@ export function createRootMetadata(): Metadata {
       default: SITE_TITLE,
       template: `%s | ${SITE_NAME}`,
     },
+    verification: {
+      google: "MknTcu1dRo9xzP-DDlRK5K0p0GDBZEReO3ftFe1tFFM",
+    },
   };
 }
 

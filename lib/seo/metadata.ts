@@ -25,12 +25,19 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
     description = SITE_DESCRIPTION,
     path,
     noIndex = false,
-    ogImage = "/logo-header.png",
+    ogImage,
   } = options;
 
   const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_TITLE;
   const canonical = path ? absoluteUrl(path) : getSiteUrl();
-  const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
+  const imageMeta = ogImage
+    ? {
+        url: ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage),
+        width: ogImage.includes("opengraph") ? 1200 : 512,
+        height: ogImage.includes("opengraph") ? 630 : 512,
+        alt: SITE_NAME,
+      }
+    : null;
 
   return {
     ...(title ? { title } : {}),
@@ -43,13 +50,13 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
       title: pageTitle,
       description,
       url: canonical,
-      images: [{ url: imageUrl, width: 512, height: 512, alt: SITE_NAME }],
+      ...(imageMeta ? { images: [imageMeta] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: pageTitle,
       description,
-      images: [imageUrl],
+      ...(imageMeta ? { images: [imageMeta.url] } : {}),
     },
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),
   };

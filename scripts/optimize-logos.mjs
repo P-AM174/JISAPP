@@ -106,11 +106,32 @@ async function main() {
     .png({ compressionLevel: 9, quality: 100 })
     .toFile(path.join(publicDir, "logo-header.png"));
 
-  const favicon = await trimAndPad(faviconSrc, 0.02);
-  await resizeIcon(favicon, 32).toFile(path.join(publicDir, "favicon-32.png"));
-  await resizeIcon(favicon, 16).toFile(path.join(publicDir, "favicon-16.png"));
-  await resizeIcon(favicon, 180).toFile(path.join(publicDir, "apple-touch-icon.png"));
-  await resizeIcon(favicon, 48).toFile(path.join(publicDir, "logo-icon.png"));
+  const headerOut = path.join(publicDir, "logo-header.png");
+
+  async function faviconFromHeader(size) {
+    const iconSize = Math.round(size * 0.78);
+    const pad = Math.round((size - iconSize) / 2);
+    const icon = await sharp(headerOut)
+      .resize(iconSize, iconSize, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+
+    return sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: { r: 243, g: 246, b: 244, alpha: 1 },
+      },
+    })
+      .composite([{ input: icon, top: pad, left: pad }])
+      .png();
+  }
+
+  await faviconFromHeader(32).toFile(path.join(publicDir, "favicon-32.png"));
+  await faviconFromHeader(16).toFile(path.join(publicDir, "favicon-16.png"));
+  await faviconFromHeader(180).toFile(path.join(publicDir, "apple-touch-icon.png"));
+  await faviconFromHeader(48).toFile(path.join(publicDir, "logo-icon.png"));
 
   console.log("Logo assets written to public/");
 }

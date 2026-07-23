@@ -1,12 +1,18 @@
 import { ImageResponse } from "next/og";
 import { SITE_BRAND, SITE_TAGLINE, SITE_DESCRIPTION } from "@/lib/seo/site";
+import { loadLogoDataUri, loadNotoSansJP, OG_SIZE, OG_THEME } from "@/lib/seo/og-assets";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const alt = SITE_BRAND;
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
-export default function Image() {
+export default async function Image() {
+  const [logo, fonts] = await Promise.all([
+    loadLogoDataUri(),
+    loadNotoSansJP([700, 900]),
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -16,31 +22,30 @@ export default function Image() {
           display: "flex",
           position: "relative",
           overflow: "hidden",
-          background: "linear-gradient(145deg, #022c22 0%, #065f46 38%, #0d9488 72%, #0891b2 100%)",
-          color: "white",
-          fontFamily: "sans-serif",
+          background: OG_THEME.pageBg,
+          fontFamily: '"Noto Sans JP"',
         }}
       >
         <div
           style={{
             position: "absolute",
-            top: -120,
-            right: -80,
-            width: 420,
-            height: 420,
+            top: -80,
+            right: -60,
+            width: 360,
+            height: 360,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)",
+            background: "rgba(52, 211, 153, 0.18)",
           }}
         />
         <div
           style={{
             position: "absolute",
-            bottom: -160,
-            left: -60,
-            width: 360,
-            height: 360,
+            bottom: -100,
+            left: -40,
+            width: 320,
+            height: 320,
             borderRadius: "50%",
-            background: "rgba(167,243,208,0.12)",
+            background: "rgba(45, 212, 191, 0.14)",
           }}
         />
 
@@ -50,37 +55,49 @@ export default function Image() {
             flexDirection: "column",
             justifyContent: "space-between",
             width: "100%",
-            padding: "64px 72px",
+            padding: "56px 64px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 56,
-                height: 56,
-                borderRadius: 18,
-                background: "rgba(255,255,255,0.16)",
-                fontSize: 28,
-              }}
-            >
-              ⚡
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>
-              {SITE_BRAND}
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo} width={72} height={72} alt="" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div
+                style={{
+                  fontSize: 34,
+                  fontWeight: 700,
+                  color: OG_THEME.brandText,
+                  letterSpacing: -1,
+                }}
+              >
+                Jisapp
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: OG_THEME.emerald600 }}>
+                {SITE_BRAND}
+              </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 980 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              padding: "36px 40px",
+              borderRadius: 28,
+              background: OG_THEME.pillBg,
+              border: `2px solid ${OG_THEME.cardBorder}`,
+              boxShadow: "0 20px 50px rgba(5, 150, 105, 0.08)",
+            }}
+          >
             <div
               style={{
                 alignSelf: "flex-start",
                 padding: "10px 18px",
                 borderRadius: 999,
-                background: "rgba(255,255,255,0.14)",
-                fontSize: 22,
+                background: OG_THEME.badgeBg,
+                color: OG_THEME.badgeText,
+                fontSize: 20,
                 fontWeight: 700,
               }}
             >
@@ -88,19 +105,20 @@ export default function Image() {
             </div>
             <div
               style={{
-                fontSize: 58,
+                fontSize: 52,
                 fontWeight: 900,
-                lineHeight: 1.12,
-                letterSpacing: -2,
+                lineHeight: 1.15,
+                letterSpacing: -1.5,
+                color: OG_THEME.titleText,
               }}
             >
               {SITE_TAGLINE}
             </div>
             <div
               style={{
-                fontSize: 28,
-                lineHeight: 1.45,
-                opacity: 0.88,
+                fontSize: 24,
+                lineHeight: 1.5,
+                color: OG_THEME.bodyText,
                 fontWeight: 500,
               }}
             >
@@ -108,12 +126,32 @@ export default function Image() {
             </div>
           </div>
 
-          <div style={{ fontSize: 24, fontWeight: 700, opacity: 0.72 }}>
-            jisapp.app
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div
+              style={{
+                padding: "10px 20px",
+                borderRadius: 999,
+                background: OG_THEME.heroAccent,
+                color: OG_THEME.white,
+                fontSize: 20,
+                fontWeight: 800,
+              }}
+            >
+              jisapp.app
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: OG_THEME.mutedText }}>
+              AIコードを貼るだけの開発スタジオ
+            </div>
           </div>
         </div>
       </div>
     ),
-    { ...size }
+    { ...OG_SIZE, fonts }
   );
 }

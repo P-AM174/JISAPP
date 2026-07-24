@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { getStampCounts } from "@/lib/stamp-counts";
 
@@ -19,6 +20,7 @@ export type CatalogApp = {
 };
 
 async function fetchActiveApps(limit = 200): Promise<CatalogApp[]> {
+  noStore();
   try {
     let query = supabase
       .from("apps")
@@ -73,19 +75,9 @@ export async function getPopularMonthApps(limit = 5): Promise<CatalogApp[]> {
   try {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-    const { data, error } = await supabase
-      .from("apps")
-      .select("id, title, description, category, creator_name, creator_id, created_at")
-      .eq("status", "active")
-      .gte("created_at", firstDay)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    const source =
-      error || !data || data.length === 0
-        ? await fetchActiveApps(20)
-        : data;
+    const listedApps = await fetchActiveApps(50);
+    const monthApps = listedApps.filter((app) => app.created_at >= firstDay);
+    const source = monthApps.length > 0 ? monthApps : listedApps.slice(0, 20);
 
     const stampCounts = await getStampCounts(source.map((a) => a.id));
     return source

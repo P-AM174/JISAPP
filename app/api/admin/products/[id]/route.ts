@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { revalidateCatalogPages } from "@/lib/revalidate-catalog";
 import { updateProductStatus, deleteProduct } from "@/lib/services/store";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
@@ -39,10 +40,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    revalidateCatalogPages();
     return NextResponse.json({ product: { id, status } });
   }
 
   const product = await updateProductStatus(id, status);
+  revalidateCatalogPages();
   return NextResponse.json({ product: { id: product.id, title: product.title, status: product.status } });
 }
 
@@ -59,9 +62,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    revalidateCatalogPages();
     return NextResponse.json({ ok: true });
   }
 
   await deleteProduct(id);
+  revalidateCatalogPages();
   return NextResponse.json({ ok: true });
 }

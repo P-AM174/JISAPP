@@ -47,7 +47,13 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ projects: data ?? [], logged_in: true });
+  const projects = (data ?? []).map(({ html_code, css_code, js_code, ...rest }) => ({
+    ...rest,
+    code_lines: html_code ? html_code.split("\n").length : 0,
+    code_chars: html_code?.length ?? 0,
+  }));
+
+  return NextResponse.json({ projects, logged_in: true });
 }
 
 /** POST /api/my-projects — プロジェクト作成・更新 */

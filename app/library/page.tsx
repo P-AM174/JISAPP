@@ -5,14 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { BackButton } from "@/components/back-button";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   LibraryBig,
   ExternalLink,
   Trash2,
   LogIn,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 import { CATEGORY_MAP } from "@/lib/categories";
 import { cn } from "@/lib/utils";
@@ -127,7 +126,7 @@ export default function LibraryPage() {
               href="/"
               className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition-colors"
             >
-              <Sparkles className="h-4 w-4" />
+              <JisappLogoIcon className="h-4 w-4" />
               アプリを探す
               <ArrowRight className="h-4 w-4" />
             </Link>

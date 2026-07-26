@@ -3,9 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { BackButton } from "@/components/back-button";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
-  Sparkles,
   Plus,
   X,
   Search,
@@ -217,7 +216,7 @@ export default function RequestsPage() {
         {/* ─── ヒーロー ─── */}
         <div className="mb-8 text-center">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-700">
-            <Sparkles className="h-3.5 w-3.5" /> ジサップユーザーがAIで作ってくれるかも
+            <JisappLogoIcon className="h-3.5 w-3.5" /> ジサップユーザーがAIで作ってくれるかも
           </div>
           <h1 className="text-2xl font-black text-gray-900 sm:text-3xl">こんなアプリが欲しい！</h1>
           <p className="mt-2 text-sm text-gray-500">

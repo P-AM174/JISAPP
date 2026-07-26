@@ -27,7 +27,6 @@ export default function AppRunPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runtime, setRuntime] = useState<RuntimeData | null>(null);
-  const [inLibrary, setInLibrary] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -44,10 +43,7 @@ export default function AppRunPage() {
       setLoading(true);
       setError(null);
       try {
-        const [runtimeRes, libraryRes] = await Promise.all([
-          fetch(`/api/products/${id}/runtime`),
-          fetch(`/api/library/check?appId=${encodeURIComponent(id)}`),
-        ]);
+        const runtimeRes = await fetch(`/api/products/${id}/runtime`);
 
         if (!runtimeRes.ok) {
           const data = await runtimeRes.json().catch(() => ({}));
@@ -61,10 +57,8 @@ export default function AppRunPage() {
           return;
         }
         const data = (await runtimeRes.json()) as RuntimeData;
-        const libData = libraryRes.ok ? await libraryRes.json() : { inLibrary: false };
         if (!cancelled) {
           setRuntime(data);
-          setInLibrary(Boolean(libData.inLibrary));
         }
       } catch {
         if (!cancelled) setError("ネットワークエラーが発生しました");
@@ -151,7 +145,8 @@ export default function AppRunPage() {
             className="h-full"
             showToolbar
             appId={id}
-            inLibrary={inLibrary}
+            showSyncModal
+            appName={runtime.title}
             loginCallbackUrl={`/apps/${id}/run`}
           />
         )}

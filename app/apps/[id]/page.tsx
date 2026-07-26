@@ -33,7 +33,9 @@ import {
 import { supabase, type AppRow } from "@/lib/supabase";
 import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
+import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncLoginButton } from "@/components/app-runner";
+import { SyncInfoModal } from "@/components/sync-info-modal";
 import { ShareButton } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 
@@ -49,22 +51,40 @@ function SupabaseAppPage({ id }: { id: string }) {
   const [app, setApp]     = useState<AppRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [inLibrary, setInLibrary] = useState(false);
   const [codePanelOpen, setCodePanelOpen] = useState(false);
   const [sourceCode, setSourceCode] = useState<{ html: string; css: string; js: string } | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeTab, setCodeTab] = useState<"html" | "css" | "js">("html");
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
 
-  const { data: session, status } = useSession();
-  const userId = (session?.user as { id?: string })?.id ?? null;
-  const isLoggedIn = status === "authenticated" && !!userId;
-  const enableCloud = isLoggedIn && inLibrary;
+  const loginCallbackUrl = `/apps/${id}`;
+  const {
+    userId,
+    isLoggedIn,
+    inLibrary,
+    enableCloud,
+    ready: syncReady,
+    setInLibrary,
+    sessionStatus,
+  } = useLibrarySync(id);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const loginCallbackUrl = `/apps/${id}`;
 
   useZisupBridge(iframeRef, id, enableCloud ? userId : null);
+
+  useEffect(() => {
+    if (!syncReady || enableCloud) {
+      setSyncModalOpen(false);
+      return;
+    }
+    setSyncModalOpen(true);
+  }, [syncReady, enableCloud, isLoggedIn, inLibrary]);
+
+  useEffect(() => {
+    if (enableCloud) setIframeKey((k) => k + 1);
+  }, [enableCloud]);
 
   useEffect(() => {
     supabase
@@ -78,17 +98,6 @@ function SupabaseAppPage({ id }: { id: string }) {
         setLoading(false);
       });
   }, [id]);
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      setInLibrary(false);
-      return;
-    }
-    fetch(`/api/library/check?appId=${encodeURIComponent(id)}`)
-      .then((r) => r.json())
-      .then((d) => setInLibrary(Boolean(d.inLibrary)))
-      .catch(() => setInLibrary(false));
-  }, [isLoggedIn, id]);
 
   const loadSourceCode = async () => {
     if (codePanelOpen && sourceCode) {
@@ -157,7 +166,7 @@ function SupabaseAppPage({ id }: { id: string }) {
             <span className="hidden sm:inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
               プレイグラウンドアプリ
             </span>
-            {status !== "loading" && !isLoggedIn && (
+            {sessionStatus !== "loading" && !isLoggedIn && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
             )}
             {app.code_public && (
@@ -212,17 +221,34 @@ function SupabaseAppPage({ id }: { id: string }) {
             ) : null}
           </div>
         )}
-        <iframe
-          ref={iframeRef}
-          key={id}
-          srcDoc={srcDoc}
-          sandbox="allow-scripts allow-forms allow-modals"
-          className="flex-1 border-0 bg-white w-full"
-          style={{ minHeight: "calc(100vh - 53px)" }}
-          title={app.title}
-          allow="clipboard-write"
-        />
+        {syncReady ? (
+          <iframe
+            ref={iframeRef}
+            key={`${id}-${enableCloud ? userId : "local"}-${iframeKey}`}
+            srcDoc={srcDoc}
+            sandbox="allow-scripts allow-forms allow-modals"
+            className="flex-1 border-0 bg-white w-full"
+            style={{ minHeight: "calc(100vh - 53px)" }}
+            title={app.title}
+            allow="clipboard-write"
+          />
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+            読み込み中…
+          </div>
+        )}
       </main>
+
+      <SyncInfoModal
+        open={syncModalOpen}
+        variant={isLoggedIn ? "add_library" : "login"}
+        appId={id}
+        appName={app.title}
+        appCategory={app.category ?? undefined}
+        loginCallbackUrl={loginCallbackUrl}
+        onClose={() => setSyncModalOpen(false)}
+        onAddedToLibrary={() => setInLibrary(true)}
+      />
 
       {/* フッター（最小限） */}
       <div className="border-t border-gray-100 bg-gray-50 py-2 text-center">

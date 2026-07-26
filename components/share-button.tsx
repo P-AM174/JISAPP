@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Share2, Link2, Mail, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -49,10 +50,11 @@ function ShareSheet({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
 
@@ -95,11 +97,11 @@ function ShareSheet({
     },
   ];
 
-  return (
-    <div className="fixed inset-0 z-[400] flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+  const sheet = (
+    <div className="fixed inset-0 z-[500] flex items-end justify-center sm:items-center sm:p-4">
+      <div className="absolute inset-0 bg-black/55" onClick={onClose} aria-hidden />
       <div
-        className="relative z-[401] w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+        className="relative z-[501] w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
@@ -163,6 +165,8 @@ function ShareSheet({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(sheet, document.body) : sheet;
 }
 
 export function ShareButton({
@@ -175,14 +179,22 @@ export function ShareButton({
   label = "共有する",
 }: ShareButtonProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const shareText = text ?? title ?? "ジサップのアプリ";
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
 
   const handleShare = async () => {
-    if (prefersNativeShare()) {
-      const ok = await nativeShare({ url, title, text: shareText });
-      if (ok) return;
+    if (sharing) return;
+    setSharing(true);
+    try {
+      if (prefersNativeShare()) {
+        const ok = await nativeShare({ url, title, text: shareText });
+        if (ok) return;
+      }
+      setSheetOpen(true);
+    } finally {
+      setSharing(false);
     }
-    setSheetOpen(true);
   };
 
   const pad = size === "sm" ? "px-2.5 py-2 text-xs" : "px-4 py-3 text-sm";
@@ -198,8 +210,9 @@ export function ShareButton({
       <button
         type="button"
         onClick={handleShare}
+        disabled={sharing}
         className={cn(
-          "flex w-full items-center justify-center gap-1.5 rounded-xl font-bold transition-all active:scale-[0.98]",
+          "flex w-full items-center justify-center gap-1.5 rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-60",
           pad,
           base,
           className
@@ -211,7 +224,7 @@ export function ShareButton({
 
       <ShareSheet
         open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={closeSheet}
         url={url}
         title={title}
         shareText={shareText}

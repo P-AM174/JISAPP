@@ -57,14 +57,17 @@ function mapServerProject(row: {
   id: string;
   title: string;
   description: string | null;
-  html_code: string | null;
+  html_code?: string | null;
+  code_lines?: number;
+  code_chars?: number;
   app_id: string | null;
   status: string;
   is_listed: boolean;
   category: string | null;
   updated_at: string;
 }): Project {
-  const code = row.html_code ?? "";
+  const lineCount = row.code_lines ?? (row.html_code ? row.html_code.split("\n").length : 0);
+  const charCount = row.code_chars ?? row.html_code?.length ?? 0;
   const status = row.status as Project["status"];
   const meta = {
     draft:    { tag: "作業中",   tagColor: "bg-violet-100 text-violet-700",  gradient: "from-violet-500 to-purple-600" },
@@ -78,8 +81,8 @@ function mapServerProject(row: {
     title: row.title,
     description: row.description ?? (status === "draft" ? "コードプレイグラウンドで保存したプロジェクトです。" : "出品・URL発行したアプリです。"),
     updatedAt: new Date(row.updated_at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
-    lines: code ? code.split("\n").length : 0,
-    chars: code.length,
+    lines: lineCount,
+    chars: charCount,
     gradient: meta.gradient,
     tag: meta.tag,
     tagColor: meta.tagColor,
@@ -839,7 +842,7 @@ export default function ProjectsPage() {
 
       {/* ══════════ 出品モーダル ══════════ */}
       {publishTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
 
             {publishedUrl && !editMode ? (

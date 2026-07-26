@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
-  Sparkles, Eye, EyeOff, X, CheckCircle2, Mail, Lock, User,
+  Eye, EyeOff, X, CheckCircle2, Mail, Lock, User,
   ArrowRight, AlertCircle, RefreshCw, ShieldCheck,
 } from "lucide-react";
 
@@ -341,8 +341,8 @@ function LoginContent() {
 
           {/* タイトル */}
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-200">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
+              <JisappLogoIcon className="h-16 w-16" />
             </div>
             <h1 className="text-2xl font-black text-gray-900">
               {mode === "login" ? "おかえりなさい" : "アカウントを作成"}

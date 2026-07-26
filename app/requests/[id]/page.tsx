@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { BackButton } from "@/components/back-button";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   ChevronLeft,
   MessageSquare,
@@ -236,7 +236,7 @@ export default function RequestDetailPage() {
 
             {/* 自分で作る訴求 */}
             <div className="rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 p-5 flex items-center gap-4">
-              <Terminal className="h-8 w-8 text-emerald-500 shrink-0" />
+              <JisappLogoIcon className="h-8 w-8 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800">このアプリを自分でも作れます！</p>
                 <p className="text-xs text-gray-500 mt-0.5">AIにアイデアを伝えてコードを生成してもらい、プレイグラウンドに貼るだけです。</p>

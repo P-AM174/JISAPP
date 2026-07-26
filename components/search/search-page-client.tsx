@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BackButton } from "@/components/back-button";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   Search,
   Sparkles,
@@ -281,7 +281,7 @@ export function SearchPageClient({
                   href="/playground"
                   className="flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-emerald-700"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <JisappLogoIcon className="h-4 w-4" />
                   アプリを作ってみる
                 </Link>
               </div>

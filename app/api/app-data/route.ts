@@ -17,7 +17,6 @@ async function isAppInLibrary(userId: string, appId: string): Promise<boolean> {
   return !!data;
 }
 
-// ユーザーIDを取得するヘルパー
 async function getUserId(): Promise<string | null> {
   try {
     const session = await getServerSession(authOptions);
@@ -60,7 +59,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ value: null, logged_in: true });
   }
 
-  return NextResponse.json({ value: data?.data_value ?? null, logged_in: true });
+  return NextResponse.json({ value: data?.data_value ?? null, logged_in: true, in_library: true });
 }
 
 /** データ保存: POST /api/app-data */
@@ -85,7 +84,11 @@ export async function POST(req: Request) {
   const inLibrary = await isAppInLibrary(userId, appId);
   if (!inLibrary) {
     return NextResponse.json(
-      { error: "マイライブラリに追加されたアプリのみ同期できます", logged_in: true, in_library: false },
+      {
+        error: "マイライブラリに追加されたアプリのみ同期できます",
+        logged_in: true,
+        in_library: false,
+      },
       { status: 403 }
     );
   }
@@ -108,5 +111,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, logged_in: true });
+  return NextResponse.json({ ok: true, logged_in: true, in_library: true });
 }

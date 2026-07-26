@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Sparkles,
   Search,
   Trash2,
   Clipboard,
@@ -15,7 +14,6 @@ import {
   RefreshCw,
   Code2,
   Eye,
-  Terminal,
   Zap,
   Copy,
   CheckCircle2,
@@ -25,7 +23,6 @@ import {
   Undo2,
   Redo2,
   Key,
-  FolderOpen,
   Rocket,
   HelpCircle,
   ArrowRight,
@@ -40,12 +37,14 @@ import { useSession } from "next-auth/react";
 import { CATEGORIES } from "@/lib/categories";
 import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow } from "@/components/share-button";
+import { JisappLogoIcon } from "@/components/jisapp-logo";
+import { PROMPT_TEMPLATE } from "@/lib/playground/prompt-template";
 // ─── ショートカット一覧 ───
 const SHORTCUTS = [
-  { key: "Ctrl + Enter", desc: "アプリを動かす（実行）" },
+  { key: "Ctrl + Enter", desc: "プレビューを更新" },
   { key: "Ctrl + Z",     desc: "元に戻す（Undo）" },
   { key: "Ctrl + Y",     desc: "やり直す（Redo）" },
-  { key: "Ctrl + S",     desc: "保存する" },
+  { key: "Ctrl + S",     desc: "下書き保存" },
   { key: "Ctrl + F",     desc: "コード内検索" },
   { key: "Tab",          desc: "インデント（2スペース）" },
 ];
@@ -106,6 +105,7 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
             <div className="space-y-4 p-5">
               <p className="text-sm text-gray-600 leading-relaxed">
                 📌 <span className="font-bold">【ここに作りたいアプリ名を入れる】</span> の部分だけ書き換えて、そのままAIに送るだけ！
+                最初は質問だけ返ってくるので、はい/いいえで答えるとコードが出ます。
               </p>
 
               <div className="overflow-hidden rounded-2xl border border-sky-200 bg-sky-50">
@@ -173,8 +173,8 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
           <div className="flex items-start gap-3 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-amber-100">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-600">2</div>
             <div>
-              <p className="text-sm font-bold text-gray-800">AIが出したコードをコピー</p>
-              <p className="mt-0.5 text-xs text-gray-500">生成されたHTMLコードをすべてコピーする</p>
+              <p className="text-sm font-bold text-gray-800">AIの質問に答えて、コードをコピー</p>
+              <p className="mt-0.5 text-xs text-gray-500">保存機能が必要か等の質問にはい/いいえで答える → HTMLコードが出たらすべてコピー</p>
             </div>
           </div>
 
@@ -204,26 +204,6 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
 
 // ─── ガイドモーダルのステップ定義 ───
 // ─── ガイドモーダル（4ステップ） ───
-
-const PROMPT_TEMPLATE = `あなたは優秀なフロントエンドエンジニアです。
-ジサップ（Jisapp）という初心者向けのシングルファイル開発環境で動かすための、
-おしゃれで使いやすい「【ここに作りたいアプリ名を入れる】」のコードを作成してください。
-
-ジサップの仕様に合わせて、必ず以下の【3つの開発ルール】を厳守して出力してください。
-
-【ジサップ専用の開発ルール】
-1. 【完全なHTML1枚（シングルファイル）で完結】
-   CSS（Tailwind CSSのCDNを使用）もJavaScriptも、すべて独立させずに
-   1つの「index.html」ファイルの中に丸ごと埋め込んでください。
-
-2. 【デザインはTailwind CSSを使用】
-   初心者向けに、明るく爽やかで洗練されたモダンなUIデザイン（ライトモード）にしてください。
-
-3. 【データの保存・読み込みはジサップ共通API（非同期）を使用】
-   ページを閉じてもデータが安全に保存されるよう、独自にlocalStorage等は使わず、以下の非同期APIを使用してください。
-   ・保存: await window.Zisup.saveData('識別名', データ)
-   ・読込: await window.Zisup.loadData('識別名')
-   ※通信のタイムラグがあるため、必ず async/await を使用してデータの読み込み完了を待つロジック（初期化処理など）を組んでください。`;
 
 function GuideModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
@@ -305,7 +285,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
                 プログラミング知識ゼロでOK！<br />
-                下の指示文をそのままAIに送ろう
+                下の指示文をそのままAIに送ろう（最初は質問だけ返ってきます）
               </p>
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
@@ -385,7 +365,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
                 いい感じに動いたら<br />
-                <span className="text-emerald-600">「💾 保存する」</span>を押そう！
+                <span className="text-emerald-600">「下書き保存」</span>を押そう！
               </p>
 
               <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-4">
@@ -1166,9 +1146,7 @@ export default function PlaygroundPage() {
 
         {/* ロゴ */}
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-sm">
-            <Terminal className="h-3.5 w-3.5 text-white" />
-          </div>
+          <JisappLogoIcon className="h-7 w-7" />
           <span className="text-sm font-black text-gray-900 whitespace-nowrap hidden sm:block">
             コードプレイグラウンド
           </span>
@@ -1186,8 +1164,8 @@ export default function PlaygroundPage() {
           <span className="hidden sm:block">初心者ガイド</span>
         </button>
 
-        {/* 右ツール群 */}
-        <div className="ml-auto flex items-center gap-1">
+        {/* 右ツール群：下書き → プレビュー → 公開 */}
+        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
 
           {/* 自動実行トグル（PCのみ） */}
           <button
@@ -1203,42 +1181,64 @@ export default function PlaygroundPage() {
             {autoRun ? "自動実行 ON" : "自動実行 OFF"}
           </button>
 
-          {/* 保存ボタン */}
+          <div className="hidden md:block mx-0.5 h-6 w-px bg-gray-200" />
+
+          {/* ① 下書き保存 */}
           <button
             onClick={handleSave}
-            title="コードを保存 (Ctrl+S)"
-            className="flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-emerald-600 sm:px-2"
+            title="マイプロジェクトに下書き保存（非公開）"
+            className="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700 transition-all hover:bg-gray-100 active:scale-[0.98] sm:min-w-[5.5rem] sm:px-3"
           >
-            <Save className="h-4 w-4" />
-            <span className="hidden text-[9px] font-semibold sm:block">保存する</span>
+            <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
+              <Save className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">下書き保存</span>
+              <span className="sm:hidden">保存</span>
+            </span>
+            <span className="mt-0.5 hidden text-[9px] font-medium text-gray-400 lg:block">
+              自分だけ・非公開
+            </span>
           </button>
 
-          {/* マイプロジェクトボタン（モバイルでは非表示） */}
-          <Link
-            href="/projects"
-            title="マイプロジェクト"
-            className="hidden sm:flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-gray-500 transition-all hover:bg-gray-100 hover:text-violet-600"
-          >
-            <FolderOpen className="h-4 w-4" />
-            <span className="text-[9px] font-semibold">プロジェクト</span>
-          </Link>
-
-          <div className="mx-0.5 h-6 w-px bg-gray-200 sm:mx-1" />
-
-          {/* ▶ アプリを動かすボタン（メイン） */}
+          {/* ② プレビュー更新 */}
           <button
             onClick={handleRun}
             disabled={!code.trim()}
+            title="右側のプレビューで動作を確認"
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-black shadow-md transition-all active:scale-[0.97] sm:gap-2 sm:px-4",
+              "flex flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:min-w-[5.5rem] sm:px-3",
               code.trim()
-                ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                ? "border-emerald-600 bg-white text-emerald-700 hover:bg-emerald-50"
+                : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
             )}
           >
-            <Play className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:block">アプリを動かす</span>
-            <span className="sm:hidden">実行</span>
+            <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
+              <Play className="h-3.5 w-3.5 shrink-0" />
+              プレビュー更新
+            </span>
+            <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-600/80 lg:block">
+              右側で動作確認
+            </span>
+          </button>
+
+          {/* ③ 公開する */}
+          <button
+            onClick={() => setShowPublishModal(true)}
+            disabled={!code.trim()}
+            title="URLを発行して共有・出品"
+            className={cn(
+              "flex flex-col items-center rounded-xl px-2 py-1.5 shadow-sm transition-all active:scale-[0.98] sm:min-w-[5.5rem] sm:px-3",
+              code.trim()
+                ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700"
+                : "cursor-not-allowed bg-gray-200 text-gray-400 shadow-none"
+            )}
+          >
+            <span className="flex items-center gap-1 text-[11px] font-black sm:text-xs">
+              <Rocket className="h-3.5 w-3.5 shrink-0" />
+              公開する
+            </span>
+            <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-100 lg:block">
+              URL発行・共有
+            </span>
           </button>
         </div>
       </header>
@@ -1247,7 +1247,7 @@ export default function PlaygroundPage() {
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
 
         {/* ── コードパネル（モバイル：下部常時表示 / PC：左ペイン） ── */}
-        <div className="order-2 flex h-[200px] shrink-0 flex-col border-t-2 border-t-emerald-400 bg-white md:order-1 md:h-auto md:w-[42%] md:border-r-2 md:border-r-emerald-400 md:border-t-0">
+        <div className="order-2 flex h-[200px] shrink-0 flex-col border-t-[3px] border-t-black bg-white md:order-1 md:h-auto md:w-[42%] md:border-r-[3px] md:border-r-black md:border-t-0">
 
           {/* パネルヘッダー */}
           <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
@@ -1287,18 +1287,10 @@ export default function PlaygroundPage() {
           />
 
           {/* フッター */}
-          <div className="flex shrink-0 items-center justify-between border-t border-gray-100 bg-gray-50 px-3 py-1.5">
+          <div className="flex shrink-0 items-center border-t border-gray-100 bg-gray-50 px-3 py-1.5">
             <span className="text-[10px] text-gray-400">
               {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
             </span>
-            <button
-              onClick={handleRun}
-              disabled={!code.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Play className="h-3.5 w-3.5" />
-              プレビュー表示
-            </button>
           </div>
         </div>
 
@@ -1339,19 +1331,6 @@ export default function PlaygroundPage() {
               )}
             </div>
           </div>
-
-          {/* 公開リンク（コードあるとき） */}
-          {!showGuide && (
-            <div className="flex shrink-0 items-center justify-end border-t border-gray-100 bg-gray-50 px-3 py-1.5">
-              <button
-                onClick={() => setShowPublishModal(true)}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
-              >
-                <Rocket className="h-3 w-3" />
-                このアプリを公開する →
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

@@ -1,31 +1,31 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Cloud, LogIn } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { buildSrcDoc, injectZisupShim } from "@/lib/products/build-srcdoc";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
+import { useLibrarySync } from "@/lib/hooks/use-library-sync";
+import { SyncInfoModal } from "@/components/sync-info-modal";
 import { cn } from "@/lib/utils";
 
 type AppRunnerProps = {
   html?: string | null;
   css?: string | null;
   js?: string | null;
-  /** 結合済みドキュメントを直接渡す場合 */
   srcDoc?: string | null;
   title?: string;
   className?: string;
   showToolbar?: boolean;
-  /** Zisup データ保存のアプリ識別子（省略時は "playground"） */
   appId?: string;
-  /** ログイン後の戻り先（省略時は現在のパス） */
   loginCallbackUrl?: string;
-  /** マイライブラリ登録済み（true のときのみクラウド同期） */
-  inLibrary?: boolean;
+  /** true のとき、同期未設定なら案内モーダルを表示 */
+  showSyncModal?: boolean;
+  appName?: string;
+  appCategory?: string;
+  appGradient?: string;
 };
 
-/** 未ログイン時: ヘッダー等に配置するログイン誘導ボタン */
 export function SyncLoginButton({
   callbackUrl,
   className,
@@ -66,15 +66,24 @@ export function AppRunner({
   showToolbar = false,
   appId = "playground",
   loginCallbackUrl,
-  inLibrary = false,
+  showSyncModal = false,
+  appName,
+  appCategory,
+  appGradient,
 }: AppRunnerProps) {
-  const { data: session, status } = useSession();
-  const userId = (session?.user as { id?: string })?.id ?? null;
-  const isLoggedIn = status === "authenticated" && !!userId;
-  const enableCloud = isLoggedIn && inLibrary;
+  const {
+    userId,
+    isLoggedIn,
+    inLibrary,
+    enableCloud,
+    ready,
+    setInLibrary,
+  } = useLibrarySync(appId);
 
   const [iframeKey, setIframeKey] = useState(0);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const syncKey = enableCloud ? `cloud-${userId}` : isLoggedIn ? "local-auth" : "guest";
 
   const documentHtml = useMemo(() => {
     if (srcDoc?.trim()) return injectZisupShim(srcDoc);
@@ -82,6 +91,20 @@ export function AppRunner({
   }, [srcDoc, html, css, js]);
 
   useZisupBridge(iframeRef, appId, enableCloud ? userId : null);
+
+  useEffect(() => {
+    if (!showSyncModal || !ready || enableCloud) {
+      setSyncModalOpen(false);
+      return;
+    }
+    setSyncModalOpen(true);
+  }, [showSyncModal, ready, enableCloud, isLoggedIn, inLibrary]);
+
+  useEffect(() => {
+    if (enableCloud) {
+      setIframeKey((k) => k + 1);
+    }
+  }, [enableCloud]);
 
   if (!documentHtml.trim()) {
     return (
@@ -96,13 +119,28 @@ export function AppRunner({
     );
   }
 
+  if (!ready) {
+    return (
+      <div
+        className={cn(
+          "flex h-full items-center justify-center bg-gray-50 text-sm text-gray-400",
+          className
+        )}
+      >
+        読み込み中…
+      </div>
+    );
+  }
+
+  const callbackUrl = loginCallbackUrl ?? (typeof window !== "undefined" ? window.location.pathname : "/");
+
   return (
     <div className={cn("relative flex h-full min-h-0 flex-col", className)}>
       {showToolbar && (
         <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-gray-100 px-4 py-2">
           <span className="truncate text-xs text-gray-500">{title}</span>
           <div className="flex items-center gap-2">
-            {status !== "loading" && !isLoggedIn && loginCallbackUrl && (
+            {!isLoggedIn && loginCallbackUrl && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
             )}
             <button
@@ -116,13 +154,26 @@ export function AppRunner({
           </div>
         </div>
       )}
+
       <iframe
         ref={iframeRef}
-        key={iframeKey}
+        key={`${syncKey}-${iframeKey}`}
         srcDoc={documentHtml}
         sandbox="allow-scripts allow-forms allow-modals"
         className="min-h-0 flex-1 w-full border-0 bg-white"
         title={title}
+      />
+
+      <SyncInfoModal
+        open={syncModalOpen}
+        variant={isLoggedIn ? "add_library" : "login"}
+        appId={appId}
+        appName={appName ?? title}
+        appCategory={appCategory}
+        appGradient={appGradient}
+        loginCallbackUrl={callbackUrl}
+        onClose={() => setSyncModalOpen(false)}
+        onAddedToLibrary={() => setInLibrary(true)}
       />
     </div>
   );

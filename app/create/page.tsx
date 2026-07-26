@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 import {
   Upload,
   ImagePlus,
-  Sparkles,
   Zap,
   CheckCircle2,
   X,
@@ -22,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/back-button";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import { cn } from "@/lib/utils";
 import { processSourceUrl } from "@/lib/products/source-url";
 import { extractCodeFromFiles } from "@/lib/products/build-srcdoc";
@@ -672,7 +671,7 @@ function CreatePageInner() {
                 onClick={handleFinalSubmit}
                 className="flex-[2] flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200 transition-all hover:from-emerald-700 hover:to-green-600 active:scale-[0.98]"
               >
-                <Sparkles className="h-4 w-4" />
+                <JisappLogoIcon className="h-4 w-4" />
                 この内容で安全に出品する（AI審査へ）
               </button>
             </div>

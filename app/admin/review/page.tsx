@@ -67,7 +67,7 @@ const REPORT_STATUS: Record<string, { label: string; cls: string }> = {
 
 const LISTING_LABEL: Record<string, string> = {
   file:       "ファイル販売",
-  playground: "プレイグラウンド",
+  playground: "開発スタジオ",
   external:   "外部リンク",
 };
 

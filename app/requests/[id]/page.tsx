@@ -239,7 +239,7 @@ export default function RequestDetailPage() {
               <JisappLogoIcon className="h-8 w-8 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800">このアプリを自分でも作れます！</p>
-                <p className="text-xs text-gray-500 mt-0.5">AIにアイデアを伝えてコードを生成してもらい、プレイグラウンドに貼るだけです。</p>
+                <p className="text-xs text-gray-500 mt-0.5">AIにアイデアを伝えてコードを生成してもらい、開発スタジオに貼るだけです。</p>
               </div>
               <Link href="/playground"
                 className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-colors">
@@ -259,7 +259,7 @@ export default function RequestDetailPage() {
                   <h2 className="text-sm font-black text-gray-900">作ってみた！と報告する</h2>
                 </div>
                 <p className="mb-4 text-xs leading-relaxed text-gray-500">
-                  プレイグラウンドでアプリを作ったら、URLを貼って共有しよう！
+                  開発スタジオでアプリを作ったら、URLを貼って共有しよう！
                 </p>
 
                 {submitted ? (
@@ -294,7 +294,7 @@ export default function RequestDetailPage() {
                       <input type="url" value={appUrl} onChange={e => setAppUrl(e.target.value)}
                         placeholder="https://jisapp.com/apps/..."
                         className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
-                      <p className="mt-1 text-[10px] text-gray-400">プレイグラウンドで公開したURLを貼ってください</p>
+                      <p className="mt-1 text-[10px] text-gray-400">開発スタジオで公開したURLを貼ってください</p>
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-bold text-gray-700">メッセージ <span className="text-rose-500">*</span></label>

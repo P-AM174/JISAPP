@@ -164,7 +164,7 @@ function SupabaseAppPage({ id }: { id: string }) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="hidden sm:inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-              プレイグラウンドアプリ
+              スタジオアプリ
             </span>
             {sessionStatus !== "loading" && !isLoggedIn && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
@@ -253,7 +253,7 @@ function SupabaseAppPage({ id }: { id: string }) {
       {/* フッター（最小限） */}
       <div className="border-t border-gray-100 bg-gray-50 py-2 text-center">
         <p className="text-[10px] text-gray-400">
-          <Link href="/playground" className="hover:text-emerald-600">ジサップ プレイグラウンド</Link>
+          <Link href="/playground" className="hover:text-emerald-600">ジサップ 開発スタジオ</Link>
           {" "}で作成されました ·{" "}
           <Link href="/" className="hover:text-emerald-600">jisapp.vercel.app</Link>
         </p>

@@ -85,7 +85,7 @@ const STEPS = [
       "保護者の方と一緒にアカウントを作るか、ログインしてください。",
     ],
     link: { href: "/login", label: "ログイン・新規登録" },
-    tip: "ログインしなくてもプレイグラウンドで試すことはできますが、公開するときはログインが必要です。",
+    tip: "ログインしなくても開発スタジオで試すことはできますが、公開するときはログインが必要です。",
   },
   {
     id: "prompt",
@@ -105,7 +105,7 @@ const STEPS = [
     body: [
       "ChatGPT、Gemini、Claude など、使えるAIを開きます。",
       "書き換えた指示文をそのまま送信します。",
-      "AIが「保存機能は必要ですか？」など質問してきたら、はい/いいえで答えます（このときコードはまだ出ません）。",
+      "AIが「保存機能は必要ですか？」と質問してきたら、はい/いいえで答えます（このときコードはまだ出ません）。",
       "答えると、ジサップ用のHTMLコードが返ってきます（1〜2分かかることもあります）。",
     ],
     tip: "保存機能が不要なアプリ（電卓など）なら「いいえ」と答えると、シンプルなコードになります。",
@@ -113,13 +113,13 @@ const STEPS = [
   {
     id: "paste",
     num: "5",
-    title: "プレイグラウンドに貼り付ける",
+    title: "開発スタジオに貼り付ける",
     body: [
-      "ジサップのプレイグラウンドを開きます。",
+      "ジサップの開発スタジオを開きます。",
       "AIが出したHTMLコードをすべて貼り付けます。",
       "「プレビュー更新」ボタンを押すと、右側（スマホでは下）にアプリが表示されます。",
     ],
-    link: { href: "/playground", label: "プレイグラウンドを開く" },
+    link: { href: "/playground", label: "開発スタジオを開く" },
     tip: "画面が真っ白なときは、コードの最初に <!DOCTYPE html> があるか確認してください。",
   },
   {
@@ -138,11 +138,11 @@ const STEPS = [
     num: "7",
     title: "公開してURLをもらう",
     body: [
-      "プレイグラウンドの「公開する」ボタンを押します。",
+      "開発スタジオの「公開する」ボタンを押します。",
       "アプリの名前、説明、カテゴリを入力して公開します。",
       "公開が完了すると、アプリ専用のURL（インターネット上のアドレス）が発行されます。",
     ],
-    link: { href: "/playground", label: "公開する（プレイグラウンド）" },
+    link: { href: "/playground", label: "公開する（開発スタジオ）" },
     tip: "URLはレポートの「提出物」欄に書きます。メモ帳に控えておきましょう。",
   },
   {
@@ -407,7 +407,7 @@ export function SummerResearchGuide() {
               className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-emerald-700 transition hover:bg-emerald-50 sm:w-auto"
             >
               <Terminal className="h-4 w-4" />
-              プレイグラウンドで作る
+              開発スタジオで作る
             </Link>
             <Link
               href="/search"

@@ -320,7 +320,7 @@ function CreatePageInner() {
       // コードをプレビューファイルに反映
       setPreviewFiles([{ id: 1, name: "index.html", content: savedCode }]);
       // アプリ名の初期候補（未入力のときだけ）
-      setAppName((prev) => prev || "プレイグラウンドで作ったアプリ");
+      setAppName((prev) => prev || "開発スタジオで作ったアプリ");
       // プレビューHTMLも反映
       setPreviewHtml(savedCode);
     } catch { /* noop */ }
@@ -726,7 +726,7 @@ function CreatePageInner() {
                   <Code2 className="h-5 w-5 text-violet-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-violet-800">プレイグラウンドのコードを自動反映しました ✓</p>
+                  <p className="text-sm font-black text-violet-800">開発スタジオのコードを自動反映しました ✓</p>
                   <p className="text-xs text-violet-500 mt-0.5">アプリ名・説明文を入力して出品を完成させよう</p>
                 </div>
               </div>

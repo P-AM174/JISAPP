@@ -269,7 +269,7 @@ export function SearchPageClient({
                     {allApps.length === 0 ? "まだアプリが公開されていません" : "お探しのアプリは見つかりませんでした"}
                   </p>
                   <p className="mt-1 text-sm text-gray-400">
-                    {allApps.length === 0 ? "プレイグラウンドで最初のアプリを作ってみよう！" : "キーワードを変えるか、絞り込みをリセットしてください。"}
+                    {allApps.length === 0 ? "開発スタジオで最初のアプリを作ってみよう！" : "キーワードを変えるか、絞り込みをリセットしてください。"}
                   </p>
                 </div>
                 {hasFilter && (
@@ -282,7 +282,7 @@ export function SearchPageClient({
                   className="flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-emerald-700"
                 >
                   <JisappLogoIcon className="h-4 w-4" />
-                  アプリを作ってみる
+                  アプリ開発スタジオへ
                 </Link>
               </div>
             ) : (

@@ -89,10 +89,10 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-3">
           <Link
             href="/playground"
-            className="hidden items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 sm:flex"
+            className="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-4 py-2 text-sm font-black text-white shadow-md shadow-emerald-200/40 transition-all hover:from-violet-700 hover:to-emerald-700 active:scale-95 sm:flex"
           >
             <Terminal className="h-4 w-4" />
-            作る
+            開発スタジオ
           </Link>
 
           {/* Profile */}

@@ -4,6 +4,29 @@ import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 const MAX_CODE_BYTES = 512 * 1024; // 512KB
+const LIBRARY_KEY = "__in_library__";
+
+async function addAppToUserLibrary(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  userId: string,
+  appId: string,
+  meta: { name: string; category?: string | null }
+) {
+  await supabase.from("app_user_data").upsert(
+    {
+      user_id: userId,
+      app_id: appId,
+      data_key: LIBRARY_KEY,
+      data_value: JSON.stringify({
+        name: meta.name,
+        category: meta.category ?? null,
+        addedAt: new Date().toISOString(),
+      }),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,app_id,data_key" }
+  );
+}
 
 export async function POST(request: Request) {
   // コンテンツサイズ事前チェック
@@ -83,7 +106,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // ログイン済みならマイプロジェクトにも登録
+  // ログイン済みならマイプロジェクト・マイライブラリにも登録
   if (sessionUserId) {
     const status = body.is_listed ? "listed" : "url_only";
     const projectRow = {
@@ -109,6 +132,11 @@ export async function POST(request: Request) {
     } else {
       await supabase.from("user_projects").insert(projectRow);
     }
+
+    await addAppToUserLibrary(supabase, sessionUserId, data.id, {
+      name: title,
+      category: body.category ?? null,
+    });
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });

@@ -30,7 +30,7 @@ export function HeroSection() {
               href="/playground"
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-emerald-700 shadow-lg transition-all hover:bg-emerald-50 hover:shadow-xl active:scale-95"
             >
-              無料で作ってみる →
+              無料で開発スタジオへ →
             </Link>
             <Link
               href="/search"

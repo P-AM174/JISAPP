@@ -76,15 +76,15 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
 
-  // 対策A: セッションを30日間維持（PWA・ホーム画面追加でも自動ログイン継続）
+  // ログイン状態をできるだけ長く維持（ブラウザ Cookie の実用上限 ≒ 400 日）
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30日
+    maxAge: 400 * 24 * 60 * 60, // 400日
+    updateAge: 24 * 60 * 60, // 24時間ごとに期限を延長（アクセスがあれば実質ログイン継続）
   },
 
-  // JWT も同期して30日間有効化
   jwt: {
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 400 * 24 * 60 * 60,
   },
 
   secret: process.env.NEXTAUTH_SECRET,

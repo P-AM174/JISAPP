@@ -290,13 +290,13 @@ export default function RequestsPage() {
           <div className="mb-2 text-2xl">🛠️</div>
           <h2 className="text-lg font-black">自分でも作れます！</h2>
           <p className="mt-2 text-sm text-white/80">
-            AIにアイデアを伝えてコードを生成してもらい、プレイグラウンドに貼るだけ。<br className="hidden sm:block"/>
+            AIにアイデアを伝えてコードを生成してもらい、開発スタジオに貼るだけ。<br className="hidden sm:block"/>
             プログラミング知識ゼロでも、あなたのアイデアをアプリにできます。
           </p>
           <Link href="/playground"
             className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-3 text-sm font-black text-emerald-700 shadow-md hover:bg-emerald-50 transition-colors">
             <Rocket className="h-4 w-4" />
-            プレイグラウンドで試してみる
+            開発スタジオで試してみる
           </Link>
         </div>
       </main>

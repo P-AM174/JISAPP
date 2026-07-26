@@ -176,15 +176,6 @@ export default function MyPage() {
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
           <span className="text-sm font-semibold text-gray-700">マイページ</span>
-          <div className="ml-auto">
-            <Link
-              href="/create"
-              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              出品する
-            </Link>
-          </div>
         </div>
       </header>
 
@@ -338,7 +329,7 @@ export default function MyPage() {
                       <Code2 className="h-5 w-5 text-violet-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm">プレイグラウンドの作業中コード</p>
+                      <p className="font-bold text-gray-900 text-sm">開発スタジオの作業中コード</p>
                       <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {playgroundLines} 行 · {playgroundCode.length.toLocaleString()} 文字
@@ -402,14 +393,14 @@ export default function MyPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-500">まだプロジェクトがありません</p>
-                      <p className="text-xs text-gray-400 mt-0.5">プレイグラウンドでコードを作ってみよう</p>
+                      <p className="text-xs text-gray-400 mt-0.5">開発スタジオでコードを作ってみよう</p>
                     </div>
                     <Link
                       href="/playground"
                       className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-700 transition-colors"
                     >
                       <Code2 className="h-4 w-4" />
-                      プレイグラウンドを開く
+                      開発スタジオを開く
                     </Link>
                   </div>
                 )}

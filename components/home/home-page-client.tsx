@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, type ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   Search,
@@ -15,7 +16,6 @@ import {
   ArrowRight,
   Code2,
   Globe,
-  CheckCircle2,
   ShieldCheck,
   Lock,
   UserPlus,
@@ -28,6 +28,7 @@ import {
   BookOpen,
   HelpCircle,
   Gamepad2,
+  LibraryBig,
   ChevronRight,
   ChevronLeft,
   Terminal,
@@ -288,10 +289,10 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
             </button>
             <Link
               href="/playground"
-              className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.97]"
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-4 text-xs font-black text-white shadow-md shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 active:scale-[0.97] sm:h-10 sm:px-5 sm:text-sm"
             >
-              <Terminal className="h-3.5 w-3.5" />
-              <span>作る</span>
+              <Terminal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>開発スタジオ</span>
             </Link>
           </form>
         </div>
@@ -330,24 +331,28 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
           <nav className="px-3 pt-4 pb-2">
             <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">メインメニュー</p>
             {([
-              { icon: <Search className="h-4 w-4" />,      label: "アプリを探す",       href: "/search",    bg: "bg-emerald-50 text-emerald-600" },
-              { icon: <Terminal className="h-4 w-4" />,    label: "アプリを開発する",   href: "/playground",bg: "bg-violet-50 text-violet-600"   },
-              { icon: <Package className="h-4 w-4" />,     label: "マイプロジェクト",   href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
-              { icon: <BookOpen className="h-4 w-4" />,    label: "マイライブラリ",     href: "/library",   bg: "bg-teal-50 text-teal-600"       },
-              { icon: <Wrench className="h-4 w-4" />,      label: "開発依頼掲示板",     href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
-              { icon: <User className="h-4 w-4" />,        label: "マイページ",         href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
-            ] as { icon: React.ReactNode; label: string; href: string; bg: string }[]).map((item) => (
+              { icon: <Search className="h-4 w-4" />,      label: "アプリを探す",         href: "/search",    bg: "bg-emerald-50 text-emerald-600" },
+              { icon: <Terminal className="h-4 w-4" />,    label: "アプリ開発スタジオへ", href: "/playground",bg: "bg-violet-600 text-white", highlight: true },
+              { icon: <Package className="h-4 w-4" />,     label: "マイプロジェクト",     href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
+              { icon: <BookOpen className="h-4 w-4" />,    label: "マイライブラリ",       href: "/library",   bg: "bg-teal-50 text-teal-600"       },
+              { icon: <Wrench className="h-4 w-4" />,      label: "開発依頼掲示板",       href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
+              { icon: <User className="h-4 w-4" />,        label: "マイページ",           href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
+            ] as { icon: React.ReactNode; label: string; href: string; bg: string; highlight?: boolean }[]).map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
                 onClick={closeMenu}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  item.highlight
+                    ? "bg-gradient-to-r from-violet-600 to-emerald-600 text-white shadow-md shadow-emerald-200/40 hover:from-violet-700 hover:to-emerald-700"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.highlight ? "bg-white/20" : item.bg}`}>
                   {item.icon}
                 </span>
                 {item.label}
-                <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300" />
+                <ChevronRight className={`ml-auto h-3.5 w-3.5 ${item.highlight ? "text-white/80" : "text-gray-300"}`} />
               </Link>
             ))}
 
@@ -465,7 +470,7 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400">
                 <HelpCircle className="h-4 w-4" />
               </span>
-              使い方・プレイグラウンドへ
+              使い方・開発スタジオへ
             </Link>
             <Link
               href="/terms"
@@ -485,10 +490,10 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
           <Link
             href="/playground"
             onClick={closeMenu}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-emerald-600 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-200/40 hover:from-violet-700 hover:to-emerald-700 transition-colors"
           >
             <Terminal className="h-4 w-4" />
-            アプリを作る
+            アプリ開発スタジオへ
           </Link>
         </div>
       </div>
@@ -659,6 +664,7 @@ const HERO_SLIDES: HeroSlide[] = [
     badge: "ジサップ 開発スタジオ",
     title: "AIにコードを作ってもらって、貼るだけでアプリが完成。",
     subtitle: "サーバー設定もデータベースも不要。使い慣れたAIのコードを貼るだけで即公開！",
+    cta: { label: "アプリ開発スタジオへ", href: "/playground" },
   },
   {
     id: "summer",
@@ -793,31 +799,128 @@ function HeroCarousel() {
 
 function HomeQuickActions() {
   return (
-    <div className="border-b border-gray-100 bg-white px-4 py-5 shadow-sm">
-      <div className="mx-auto flex max-w-4xl flex-col items-stretch gap-2 sm:flex-row sm:justify-center">
+    <div className="border-b border-gray-100 bg-gradient-to-b from-violet-50/70 to-white px-4 py-6 shadow-sm">
+      <div className="mx-auto max-w-4xl">
         <Link
           href="/playground"
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] sm:max-w-xs"
+          className="group relative flex w-full flex-col items-stretch gap-4 overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-emerald-600 to-teal-600 px-5 py-5 text-white shadow-xl shadow-emerald-300/40 transition-all hover:shadow-2xl hover:shadow-emerald-400/40 active:scale-[0.99] sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6"
         >
-          <Terminal className="h-4 w-4" />
-          アプリを作る
+          <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative flex items-center gap-4">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+              <Terminal className="h-7 w-7" />
+            </span>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/75">無料 · 登録不要で試せる</p>
+              <p className="text-xl font-black sm:text-2xl">アプリ開発スタジオへ</p>
+              <p className="mt-0.5 text-sm text-white/85">AIのコードを貼るだけで、すぐにアプリが完成</p>
+            </div>
+          </div>
+          <span className="relative flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-emerald-700 shadow-lg transition group-hover:bg-emerald-50">
+            今すぐ作る
+            <ArrowRight className="h-5 w-5" />
+          </span>
         </Link>
-        <Link
-          href="/requests"
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98] sm:max-w-xs"
-        >
-          <MessageSquarePlus className="h-4 w-4" />
-          開発依頼掲示板をみる
-        </Link>
-        <Link
-          href="/search"
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-bold text-gray-800 transition-all hover:bg-gray-100 active:scale-[0.98] sm:max-w-xs"
-        >
-          <SearchIcon className="h-4 w-4" />
-          みんなが作ったアプリをさがす
-        </Link>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <Link
+            href="/requests"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98] sm:max-w-xs"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            開発依頼掲示板をみる
+          </Link>
+          <Link
+            href="/search"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-bold text-gray-800 transition-all hover:bg-gray-100 active:scale-[0.98] sm:max-w-xs"
+          >
+            <SearchIcon className="h-4 w-4" />
+            みんなが作ったアプリをさがす
+          </Link>
+        </div>
       </div>
     </div>
+  );
+}
+
+type LibraryEntry = {
+  appId: string;
+  addedAt: string;
+  name?: string;
+  category?: string;
+  gradient?: string;
+};
+
+function HomeLibrarySection() {
+  const { data: session, status } = useSession();
+  const userId = (session?.user as { id?: string })?.id ?? null;
+  const isLoggedIn = status === "authenticated" && !!userId;
+  const [library, setLibrary] = useState<LibraryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!isLoggedIn) {
+      setLibrary([]);
+      return;
+    }
+    setLoading(true);
+    fetch("/api/library")
+      .then((r) => (r.ok ? r.json() : { library: [] }))
+      .then((json) => setLibrary(json.library ?? []))
+      .catch(() => setLibrary([]))
+      .finally(() => setLoading(false));
+  }, [isLoggedIn, status]);
+
+  if (!isLoggedIn || loading || library.length === 0) return null;
+
+  const getGradient = (entry: LibraryEntry) => {
+    if (entry.gradient) return entry.gradient;
+    if (entry.category) return CATEGORY_MAP[entry.category]?.gradient ?? "from-emerald-500 to-teal-600";
+    return "from-emerald-500 to-teal-600";
+  };
+
+  return (
+    <section className="border-b border-emerald-100/80 bg-emerald-50/50 px-4 py-10">
+      <div className="mx-auto max-w-6xl">
+        <SectionHeader
+          icon={<LibraryBig className="h-5 w-5 text-teal-600" />}
+          title="マイライブラリ"
+          sub="追加したアプリをすぐに開けます"
+          href="/library"
+        />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {library.map((entry) => {
+            const cat = entry.category ? CATEGORY_MAP[entry.category] : null;
+            const gradient = getGradient(entry);
+            const emoji = cat?.emoji ?? "✨";
+            return (
+              <Link
+                key={entry.appId}
+                href={`/apps/${entry.appId}`}
+                className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.06] transition-all hover:shadow-md hover:ring-emerald-300"
+              >
+                <MiniPreview
+                  id={entry.appId}
+                  fallbackGradient={gradient}
+                  fallbackEmoji={emoji}
+                  height={96}
+                />
+                <div className="flex flex-1 flex-col gap-1 p-3">
+                  <p className="line-clamp-2 text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700">
+                    {entry.name ?? "アプリ"}
+                  </p>
+                  {entry.category && (
+                    <p className="text-[10px] font-semibold text-gray-400">
+                      {CATEGORY_MAP[entry.category]?.name ?? entry.category}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -878,7 +981,7 @@ export function HomePageClient({
                 step: "02",
                 icon: <Code2 className="h-6 w-6 text-teal-600" />,
                 title: "コードをコピーして貼る",
-                desc: "生成されたコードをコピーして、ジサップのプレイグラウンドに貼り付けるだけ。サーバーもDBも設定不要です。",
+                desc: "生成されたコードをコピーして、ジサップの開発スタジオに貼り付けるだけ。サーバーもDBも設定不要です。",
                 color: "bg-teal-50 border-teal-100",
               },
               {
@@ -904,15 +1007,17 @@ export function HomePageClient({
           <div className="mt-8 text-center">
             <Link
               href="/playground"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-8 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 hover:shadow-xl active:scale-95"
             >
-              <Terminal className="h-4 w-4" />
-              プレイグラウンドを開く
+              <Terminal className="h-5 w-5" />
+              アプリ開発スタジオへ
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </div>
+
+      <HomeLibrarySection />
 
       <main id="browse" className="mx-auto max-w-6xl space-y-12 px-4 py-10">
 
@@ -1052,7 +1157,7 @@ export function HomePageClient({
           <SectionHeader
             icon={<Terminal className="h-5 w-5 text-violet-500" />}
             title="🛠️ みんなが作ったアプリ"
-            sub="応援バッジが多い順 · プレイグラウンドで作成・公開"
+            sub="応援バッジが多い順 · 開発スタジオで作成・公開"
             href="/search?source=playground"
           />
           {/* カテゴリフィルタータブ */}
@@ -1098,9 +1203,9 @@ export function HomePageClient({
           ) : playgroundApps.length === 0 ? (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
               <p className="text-sm font-semibold text-gray-500">まだ公開されたアプリがありません</p>
-              <p className="mt-2 text-xs text-gray-400">プレイグラウンドでアプリを作って出品してみましょう！</p>
+              <p className="mt-2 text-xs text-gray-400">開発スタジオでアプリを作って出品してみましょう！</p>
               <Link href="/playground" className="mt-4 inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2 text-sm font-bold text-white hover:bg-violet-700">
-                プレイグラウンドへ <ArrowRight className="h-4 w-4" />
+                開発スタジオへ <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           ) : (
@@ -1115,7 +1220,7 @@ export function HomePageClient({
           <SectionHeader
             icon={<JisappLogoIcon className="h-5 w-5" />}
             title="✨ 新着アプリ"
-            sub="最近プレイグラウンドで公開された新しいアプリ"
+            sub="最近開発スタジオで公開された新しいアプリ"
             href="/search?sort=new"
           />
           {loadingPG ? (
@@ -1133,9 +1238,9 @@ export function HomePageClient({
               <p className="text-sm font-semibold text-gray-500">
                 {query ? `「${query}」に一致するアプリはありません` : "まだアプリが登録されていません"}
               </p>
-              <p className="mt-2 text-xs text-gray-400">プレイグラウンドでアプリを作って公開してみましょう！</p>
+              <p className="mt-2 text-xs text-gray-400">開発スタジオでアプリを作って公開してみましょう！</p>
               <Link href="/playground" className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-700">
-                プレイグラウンドへ <ArrowRight className="h-4 w-4" />
+                開発スタジオへ <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           )}
@@ -1209,7 +1314,7 @@ export function HomePageClient({
               {
                 Icon: Code2,
                 title: "AIが作ったコードをそのまま貼る",
-                desc: "ChatGPT・Claude・Gemini が出力したコードを、npm install も環境構築も一切せずにそのままプレイグラウンドに貼るだけで完成。",
+                desc: "ChatGPT・Claude・Gemini が出力したコードを、npm install も環境構築も一切せずにそのまま開発スタジオに貼るだけで完成。",
                 bg: "bg-cyan-50",
                 iconColor: "text-cyan-600",
               },
@@ -1257,16 +1362,16 @@ export function HomePageClient({
                 </div>
                 <h2 className="text-2xl font-black">今すぐ、あなたの最初のアプリを作ろう 🚀</h2>
                 <p className="mt-1.5 text-sm text-white/70 max-w-md">
-                  AIにアイデアを伝えてコードを生成 → プレイグラウンドに貼るだけ。サーバーもDBも設定不要です。
+                  AIにアイデアを伝えてコードを生成 → 開発スタジオに貼るだけ。サーバーもDBも設定不要です。
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                 <Link
                   href="/playground"
-                  className="flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-black text-emerald-700 shadow-md transition-all hover:bg-emerald-50 hover:shadow-lg active:scale-[0.98]"
+                  className="flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-black text-emerald-700 shadow-md transition-all hover:bg-emerald-50 hover:shadow-lg active:scale-[0.98]"
                 >
                   <JisappLogoIcon className="h-4 w-4" />
-                  無料で作ってみる
+                  アプリ開発スタジオへ
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -1289,7 +1394,7 @@ export function HomePageClient({
           <p className="text-xs text-gray-400">© 2026 ジサップ — AIコードを貼るだけの開発スタジオ</p>
           <div className="flex flex-wrap justify-center gap-4 text-xs text-gray-400">
             <Link href="/mypage" className="hover:text-emerald-600">マイページ</Link>
-            <Link href="/playground" className="hover:text-emerald-600">アプリを作る</Link>
+            <Link href="/playground" className="hover:text-emerald-600">アプリ開発スタジオへ</Link>
             <Link href="/terms" className="hover:text-emerald-600">利用規約</Link>
           </div>
           <nav aria-label="カテゴリ一覧" className="flex flex-wrap justify-center gap-2 pt-2">

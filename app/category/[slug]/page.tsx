@@ -69,7 +69,7 @@ export default async function CategoryPage({ params }: PageProps) {
             href="/playground"
             className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
           >
-            アプリを作る
+            アプリ開発スタジオへ
           </Link>
         </div>
       </header>

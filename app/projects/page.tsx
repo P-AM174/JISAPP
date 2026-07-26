@@ -79,7 +79,7 @@ function mapServerProject(row: {
   return {
     id: row.id,
     title: row.title,
-    description: row.description ?? (status === "draft" ? "コードプレイグラウンドで保存したプロジェクトです。" : "出品・URL発行したアプリです。"),
+    description: row.description ?? (status === "draft" ? "開発スタジオで保存したプロジェクトです。" : "出品・URL発行したアプリです。"),
     updatedAt: new Date(row.updated_at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
     lines: lineCount,
     chars: charCount,
@@ -294,7 +294,7 @@ function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
         </p>
         <p className="mt-1 text-xs text-gray-400">
           {tab === "mine"
-            ? "プレイグラウンドでコードを作って保存してみよう"
+            ? "開発スタジオでコードを作って保存してみよう"
             : "トップページからアプリをGETしてライブラリに追加しよう"}
         </p>
       </div>
@@ -303,7 +303,7 @@ function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
         className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-[0.97]"
       >
         {tab === "mine"
-          ? <><Terminal className="h-4 w-4" /> プレイグラウンドを開く</>
+          ? <><Terminal className="h-4 w-4" /> 開発スタジオを開く</>
           : <><ShoppingBag className="h-4 w-4" /> アプリを探す</>}
       </Link>
     </div>
@@ -441,7 +441,7 @@ export default function ProjectsPage() {
       } catch { /* noop */ }
     }
     if (!html_code.trim()) {
-      setPublishError("コードが見つかりません。プレイグラウンドでコードを保存してから出品してください。");
+      setPublishError("コードが見つかりません。開発スタジオでコードを保存してから出品してください。");
       return;
     }
 
@@ -591,11 +591,11 @@ export default function ProjectsPage() {
         if (savedCode && savedCode.trim() && !deletedIds.includes("saved_playground")) {
           const lines = savedCode.split("\n").length;
           const chars = savedCode.length;
-          const savedTitle = localStorage.getItem("jisapp_playground_title") ?? "プレイグラウンドの作業中コード";
+          const savedTitle = localStorage.getItem("jisapp_playground_title") ?? "開発スタジオの作業中コード";
           const savedProject: Project = {
             id: "saved_playground",
             title: savedTitle,
-            description: "コードプレイグラウンドで保存したコードです。「編集する」からそのまま続きを開発できます。",
+            description: "開発スタジオで保存したコードです。「編集する」からそのまま続きを開発できます。",
             updatedAt: new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
             lines,
             chars,
@@ -677,7 +677,7 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
-                コードプレイグラウンド
+                アプリ開発スタジオ
               </p>
               <h2 className="mt-1 text-xl font-black">
                 あなたのコードが集まる場所 ✨
@@ -774,7 +774,7 @@ export default function ProjectsPage() {
                 <div className="flex items-start gap-3 rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
                   <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
                   <p className="text-xs leading-relaxed text-blue-700">
-                    💡 プレイグラウンドで保存したコードはここに表示されます。「🚀 出品する」を押すとジサップのマーケットに無料で公開できます。
+                    💡 開発スタジオで保存したコードはここに表示されます。「🚀 出品する」を押すとジサップのマーケットに無料で公開できます。
                   </p>
                 </div>
 
@@ -793,7 +793,7 @@ export default function ProjectsPage() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-emerald-700">新規プロジェクトを作成</p>
-                      <p className="mt-0.5 text-xs text-gray-400">プレイグラウンドが開きます</p>
+                      <p className="mt-0.5 text-xs text-gray-400">開発スタジオが開きます</p>
                     </div>
                   </Link>
                 </div>
@@ -1005,7 +1005,7 @@ export default function ProjectsPage() {
                 <div className="flex flex-col gap-4 p-6">
                   {publishTarget.isDemo && (
                     <div className="rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
-                      <p className="text-xs text-amber-700">⚠️ このプロジェクトはデモデータです。プレイグラウンドで実際にコードを作成・保存してから出品してください。</p>
+                      <p className="text-xs text-amber-700">⚠️ このプロジェクトはデモデータです。開発スタジオで実際にコードを作成・保存してから出品してください。</p>
                     </div>
                   )}
                   <div className="flex flex-col gap-1.5">

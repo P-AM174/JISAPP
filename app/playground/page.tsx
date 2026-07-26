@@ -758,7 +758,7 @@ export default function PlaygroundPage() {
   const router = useRouter();
 
   const handlePublish = async () => {
-    const title = publishTitle.trim() || "プレイグラウンドアプリ";
+    const title = publishTitle.trim() || "開発スタジオアプリ";
     if (!code.trim() || publishing) return;
     if (publishListed && !publishCategory) {
       setToast({ msg: "カテゴリを選択してください", show: true });
@@ -1148,10 +1148,10 @@ export default function PlaygroundPage() {
         <div className="flex items-center gap-2">
           <JisappLogoIcon className="h-7 w-7" />
           <span className="text-sm font-black text-gray-900 whitespace-nowrap hidden sm:block">
-            コードプレイグラウンド
+            アプリ開発スタジオ
           </span>
           <span className="text-sm font-black text-gray-900 whitespace-nowrap sm:hidden">
-            プレイグラウンド
+            開発スタジオ
           </span>
         </div>
 

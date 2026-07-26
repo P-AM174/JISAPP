@@ -77,6 +77,7 @@ export async function POST(request: Request) {
   } catch { /* noop */ }
 
   const creatorName = (body.creator_name ?? "").trim() || sessionCreatorName || "ゲスト";
+  const now = new Date().toISOString();
 
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
       code_public: body.code_public ?? false,
       is_playground_app: true,
       status: "active",
+      last_accessed_at: now,
     })
     .select("id")
     .single();

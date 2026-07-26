@@ -39,6 +39,11 @@ import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
 import { PROMPT_TEMPLATE } from "@/lib/playground/prompt-template";
+import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
+import {
+  markStudioLoginPromptShown,
+  wasStudioLoginPromptShown,
+} from "@/lib/studio/login-prompt";
 // ─── ショートカット一覧 ───
 const SHORTCUTS = [
   { key: "Ctrl + Enter", desc: "プレビューを更新" },
@@ -677,7 +682,8 @@ function ToolBtn({
 
 // ─── メインページ ───
 export default function PlaygroundPage() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const isLoggedIn = sessionStatus === "authenticated" && !!session?.user;
 
   // ── コード状態（デフォルト空：ガイドを表示するため） ──
   const [code, setCode]           = useState("");
@@ -736,6 +742,37 @@ export default function PlaygroundPage() {
   const [publishCodePublic, setPublishCodePublic] = useState(false);
   const [publishedUrl, setPublishedUrl]       = useState<string | null>(null);
   const [urlCopied, setUrlCopied]             = useState(false);
+
+  // 未ログイン時ログイン促進（セッション中1回）
+  const [loginPrompt, setLoginPrompt] = useState<{ open: boolean; action: "save" | "publish" }>({
+    open: false,
+    action: "save",
+  });
+  const pendingStudioActionRef = useRef<(() => void) | null>(null);
+
+  const runWithLoginPrompt = useCallback(
+    (action: "save" | "publish", fn: () => void) => {
+      if (isLoggedIn || wasStudioLoginPromptShown()) {
+        fn();
+        return;
+      }
+      pendingStudioActionRef.current = fn;
+      setLoginPrompt({ open: true, action });
+    },
+    [isLoggedIn]
+  );
+
+  const handleLoginPromptContinue = () => {
+    markStudioLoginPromptShown();
+    setLoginPrompt((prev) => ({ ...prev, open: false }));
+    pendingStudioActionRef.current?.();
+    pendingStudioActionRef.current = null;
+  };
+
+  const handleLoginPromptClose = () => {
+    setLoginPrompt((prev) => ({ ...prev, open: false }));
+    pendingStudioActionRef.current = null;
+  };
 
   // 保存モーダル
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -929,12 +966,13 @@ export default function PlaygroundPage() {
   // 保存モーダルを開く（コードがある場合のみ）
   const handleSave = () => {
     if (!code.trim()) return;
-    // 既存タイトルがあれば引き継ぐ
-    try {
-      const prev = localStorage.getItem("jisapp_playground_title") ?? "";
-      setSaveTitle(prev);
-    } catch { /* noop */ }
-    setShowSaveModal(true);
+    runWithLoginPrompt("save", () => {
+      try {
+        const prev = localStorage.getItem("jisapp_playground_title") ?? "";
+        setSaveTitle(prev);
+      } catch { /* noop */ }
+      setShowSaveModal(true);
+    });
   };
 
   // 実際の保存処理（モーダルの「保存する」から呼び出す）
@@ -1222,7 +1260,7 @@ export default function PlaygroundPage() {
 
           {/* ③ 公開する */}
           <button
-            onClick={() => setShowPublishModal(true)}
+            onClick={() => runWithLoginPrompt("publish", () => setShowPublishModal(true))}
             disabled={!code.trim()}
             title="URLを発行して共有・出品"
             className={cn(
@@ -1627,6 +1665,11 @@ export default function PlaygroundPage() {
                       ? "マーケットに公開されます。URLを知らない人もアプリを見つけられます。"
                       : "URLを知っている人だけがアクセスできます。マーケットには掲載されません。"}
                   </div>
+                  {!isLoggedIn && !publishListed && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
+                      未ログインで URL のみ発行したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます。ログインするとマイページから管理できます。
+                    </div>
+                  )}
                   <div className="flex gap-3 pt-1">
                     <button
                       onClick={() => setShowPublishModal(false)}
@@ -1658,6 +1701,13 @@ export default function PlaygroundPage() {
           </div>
         </div>
       )}
+
+      <StudioLoginPromptModal
+        open={loginPrompt.open}
+        action={loginPrompt.action}
+        onContinue={handleLoginPromptContinue}
+        onClose={handleLoginPromptClose}
+      />
     </div>
   );
 }

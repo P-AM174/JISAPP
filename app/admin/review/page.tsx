@@ -297,6 +297,12 @@ export default function AdminDashboard() {
           <span className="text-gray-300">/</span>
           <span className="text-sm font-bold text-gray-700">運営管理</span>
           <div className="ml-auto flex items-center gap-2">
+            <Link
+              href="/admin/hero"
+              className="flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:border-violet-300 transition-colors"
+            >
+              ヒーロー編集
+            </Link>
             <button onClick={loadAll}
               className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-emerald-300 hover:text-emerald-600 transition-colors">
               <RefreshCw className="h-3 w-3" />更新

@@ -94,7 +94,10 @@ function SupabaseAppPage({ id }: { id: string }) {
       .maybeSingle()
       .then(({ data, error }) => {
         if (error || !data) { setNotFound(true); }
-        else { setApp(data as AppRow); }
+        else {
+          setApp(data as AppRow);
+          fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});
+        }
         setLoading(false);
       });
   }, [id]);

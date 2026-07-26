@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { buildSrcDoc } from "@/lib/products/build-srcdoc";
+import { touchAppLastAccessed } from "@/lib/apps/access";
 
 export async function GET(
   _request: Request,
@@ -17,6 +18,8 @@ export async function GET(
   if (error || !data || data.status !== "active") {
     return new NextResponse("Not Found", { status: 404 });
   }
+
+  touchAppLastAccessed(id).catch(() => {});
 
   const html = buildSrcDoc(
     data.html_code ?? "",

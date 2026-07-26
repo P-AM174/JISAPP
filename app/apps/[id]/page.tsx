@@ -93,7 +93,7 @@ function SupabaseAppPage({ id }: { id: string }) {
       .eq("id", id)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error || !data) { setNotFound(true); }
+        if (error || !data || data.status === "deleted") { setNotFound(true); }
         else {
           setApp(data as AppRow);
           fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});

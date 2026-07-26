@@ -36,10 +36,11 @@ import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { CATEGORIES } from "@/lib/categories";
 import { AppRunner } from "@/components/app-runner";
-import { ShareButtonRow } from "@/components/share-button";
+import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
 import { PROMPT_TEMPLATE } from "@/lib/playground/prompt-template";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
+import { supabase } from "@/lib/supabase";
 import {
   markStudioLoginPromptShown,
   wasStudioLoginPromptShown,
@@ -466,15 +467,17 @@ function ChatWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        inputRef.current?.focus();
-      }, 120);
-    }
+    if (!open) return;
+    const el = messagesRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    const t = setTimeout(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    }, 120);
+    return () => clearTimeout(t);
   }, [open, messages]);
 
   const send = async () => {
@@ -538,7 +541,7 @@ function ChatWidget() {
         </div>
 
         {/* メッセージ一覧 */}
-        <div className="flex flex-1 flex-col gap-3 overflow-y-auto bg-gray-50 px-4 py-4" style={{ minHeight: 0 }}>
+        <div ref={messagesRef} className="flex flex-1 flex-col gap-3 overflow-y-auto overscroll-contain bg-gray-50 px-4 py-4" style={{ minHeight: 0 }}>
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -742,6 +745,31 @@ export default function PlaygroundPage() {
   const [publishCodePublic, setPublishCodePublic] = useState(false);
   const [publishedUrl, setPublishedUrl]       = useState<string | null>(null);
   const [urlCopied, setUrlCopied]             = useState(false);
+  const [publishContext, setPublishContext]   = useState<{ projectId?: string; appId?: string } | null>(null);
+  const [lastPublishWasOverwrite, setLastPublishWasOverwrite] = useState(false);
+
+  const isRepublish = !!publishContext?.appId;
+
+  const applyPublishMeta = useCallback((meta: {
+    title?: string | null;
+    description?: string | null;
+    category?: string | null;
+    is_listed?: boolean;
+    code_public?: boolean;
+    app_id?: string | null;
+    project_id?: string;
+  }) => {
+    if (meta.title) setPublishTitle(meta.title);
+    if (meta.description != null) setPublishDesc(meta.description);
+    if (meta.category) setPublishCategory(meta.category);
+    if (meta.is_listed != null) setPublishListed(meta.is_listed);
+    if (meta.code_public != null) setPublishCodePublic(meta.code_public);
+    if (meta.app_id) {
+      setPublishContext({ projectId: meta.project_id, appId: meta.app_id });
+    } else if (meta.project_id) {
+      setPublishContext({ projectId: meta.project_id });
+    }
+  }, []);
 
   // 未ログイン時ログイン促進（セッション中1回）
   const [loginPrompt, setLoginPrompt] = useState<{ open: boolean; action: "save" | "publish" }>({
@@ -794,6 +822,18 @@ export default function PlaygroundPage() {
 
   const router = useRouter();
 
+  const openPublishModal = useCallback(() => {
+    setPublishedUrl(null);
+    setLastPublishWasOverwrite(false);
+    if (!isRepublish && !publishTitle.trim()) {
+      try {
+        const t = localStorage.getItem("jisapp_playground_title");
+        if (t) setPublishTitle(t);
+      } catch { /* noop */ }
+    }
+    setShowPublishModal(true);
+  }, [isRepublish, publishTitle]);
+
   const handlePublish = async () => {
     const title = publishTitle.trim() || "開発スタジオアプリ";
     if (!code.trim() || publishing) return;
@@ -804,6 +844,7 @@ export default function PlaygroundPage() {
     }
     setPublishing(true);
     try {
+      const overwriting = !!publishContext?.appId;
       const res = await fetch("/api/apps/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -814,18 +855,23 @@ export default function PlaygroundPage() {
           category: publishCategory || null,
           is_listed: publishListed,
           code_public: publishCodePublic,
+          app_id: publishContext?.appId,
+          project_id: publishContext?.projectId,
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "出品に失敗しました");
+      if (!res.ok) throw new Error(json.error ?? (isRepublish ? "上書きに失敗しました" : "出品に失敗しました"));
       const appUrl = `${window.location.origin}/apps/${json.id}`;
       setPublishedUrl(appUrl);
+      setLastPublishWasOverwrite(overwriting);
+      setPublishContext((prev) => ({ projectId: prev?.projectId, appId: json.id }));
       // コードとタイトルをlocalStorageに保存（マイプロジェクトに反映）
       try {
         localStorage.setItem("jisapp_playground_code", code);
         localStorage.setItem("jisapp_playground_title", title);
         const map = JSON.parse(localStorage.getItem("jisapp_published_map") ?? "{}");
-        map["saved_playground"] = {
+        const mapKey = publishContext?.projectId ?? "saved_playground";
+        map[mapKey] = {
           appId: json.id,
           url: appUrl,
           title,
@@ -855,13 +901,46 @@ export default function PlaygroundPage() {
       fetch(`/api/my-projects/${projectId}`)
         .then((r) => r.json())
         .then((d) => {
-          const html = d.project?.html_code ?? "";
+          const project = d.project;
+          const html = project?.html_code ?? "";
           if (html.trim()) {
             setCode(html);
             setPreviewHtml(html);
             setLastSavedCode(html);
-            if (d.project?.title) {
-              try { localStorage.setItem("jisapp_playground_title", d.project.title); } catch { /* noop */ }
+            if (project?.title) {
+              try { localStorage.setItem("jisapp_playground_title", project.title); } catch { /* noop */ }
+            }
+          }
+          if (project) {
+            applyPublishMeta({
+              title: project.title,
+              description: project.description,
+              category: project.category,
+              is_listed: project.is_listed ?? project.status === "listed",
+              app_id: project.app_id,
+              project_id: project.id,
+            });
+            if (project.app_id) {
+              supabase
+                .from("apps")
+                .select("title, description, category, is_listed, code_public")
+                .eq("id", project.app_id)
+                .maybeSingle()
+                .then(({ data }) => {
+                  if (data) {
+                    applyPublishMeta({
+                      title: data.title,
+                      description: data.description,
+                      category: data.category,
+                      is_listed: data.is_listed,
+                      code_public: data.code_public,
+                      app_id: project.app_id,
+                      project_id: project.id,
+                    });
+                  }
+                });
+            } else if (project.code_public != null) {
+              setPublishCodePublic(Boolean(project.code_public));
             }
           }
         })
@@ -876,8 +955,36 @@ export default function PlaygroundPage() {
         setPreviewHtml(saved);
         setLastSavedCode(saved);
       }
+      const map = JSON.parse(localStorage.getItem("jisapp_published_map") ?? "{}");
+      const existing = map["saved_playground"];
+      if (existing?.appId) {
+        applyPublishMeta({
+          title: existing.title,
+          description: existing.description,
+          category: existing.category,
+          is_listed: existing.is_listed,
+          app_id: existing.appId,
+        });
+        supabase
+          .from("apps")
+          .select("title, description, category, is_listed, code_public")
+          .eq("id", existing.appId)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) {
+              applyPublishMeta({
+                title: data.title,
+                description: data.description,
+                category: data.category,
+                is_listed: data.is_listed,
+                code_public: data.code_public,
+                app_id: existing.appId,
+              });
+            }
+          });
+      }
     } catch { /* noop */ }
-  }, []);
+  }, [applyPublishMeta]);
 
   useEffect(() => {
     try {
@@ -1087,7 +1194,7 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-50">
+    <div className="flex h-[100dvh] flex-col overflow-hidden overscroll-none bg-gray-50">
 
       {/* ══ トースト ══ */}
       <Toast message={toast.msg} show={toast.show} />
@@ -1166,44 +1273,43 @@ export default function PlaygroundPage() {
       )}
 
       {/* ══════════ ヘッダー ══════════ */}
-      <header className="flex shrink-0 items-center gap-1 border-b border-emerald-200 bg-white px-2 py-2 shadow-sm sm:gap-2 sm:px-3">
+      <header className="flex shrink-0 flex-col border-b border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-center">
 
-        <button
-          type="button"
-          onClick={handleBack}
-          className="relative flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">戻る</span>
-          {isDirty && (
-            <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400" title="未保存の変更があります" />
-          )}
-        </button>
+        {/* 上段: 戻る・タイトル・ガイド */}
+        <div className="flex min-w-0 items-center gap-1 px-2 py-2 sm:gap-2 sm:px-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="relative flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">戻る</span>
+            {isDirty && (
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400" title="未保存の変更があります" />
+            )}
+          </button>
 
-        <div className="mx-1 h-4 w-px bg-gray-200" />
+          <div className="mx-0.5 h-4 w-px bg-gray-200" />
 
-        {/* ロゴ */}
-        <div className="flex items-center gap-2">
-          <JisappLogoIcon className="h-7 w-7" />
-          <span className="text-sm font-black text-gray-900 whitespace-nowrap hidden sm:block">
-            アプリ開発スタジオ
-          </span>
-          <span className="text-sm font-black text-gray-900 whitespace-nowrap sm:hidden">
-            開発スタジオ
-          </span>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <JisappLogoIcon className="h-7 w-7 shrink-0" />
+            <span className="truncate text-sm font-black text-gray-900">
+              <span className="hidden sm:inline">アプリ開発スタジオ</span>
+              <span className="sm:hidden">開発スタジオ</span>
+            </span>
+          </div>
+
+          <button
+            onClick={() => setShowGuideModal(true)}
+            className="ml-auto flex shrink-0 items-center gap-1 rounded-xl bg-amber-100 px-2 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95 sm:gap-1.5 sm:px-3"
+          >
+            <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">初心者ガイド</span>
+          </button>
         </div>
 
-        {/* 初心者ガイドボタン（タイトル右） */}
-        <button
-          onClick={() => setShowGuideModal(true)}
-          className="ml-1 flex shrink-0 items-center gap-1 rounded-xl bg-amber-100 px-2 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95 sm:ml-2 sm:gap-1.5 sm:px-3"
-        >
-          <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:block">初心者ガイド</span>
-        </button>
-
-        {/* 右ツール群：下書き → プレビュー → 公開 */}
-        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+        {/* 下段（モバイル）/ 右側（PC）: アクションボタン */}
+        <div className="flex items-center gap-1 border-t border-gray-100 px-2 py-1.5 sm:ml-auto sm:border-0 sm:px-3 sm:py-2 sm:gap-1.5">
 
           {/* 自動実行トグル（PCのみ） */}
           <button
@@ -1225,7 +1331,7 @@ export default function PlaygroundPage() {
           <button
             onClick={handleSave}
             title="マイプロジェクトに下書き保存（非公開）"
-            className="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700 transition-all hover:bg-gray-100 active:scale-[0.98] sm:min-w-[5.5rem] sm:px-3"
+            className="flex flex-1 flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700 transition-all hover:bg-gray-100 active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3"
           >
             <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
               <Save className="h-3.5 w-3.5 shrink-0" />
@@ -1243,7 +1349,7 @@ export default function PlaygroundPage() {
             disabled={!code.trim()}
             title="右側のプレビューで動作を確認"
             className={cn(
-              "flex flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:min-w-[5.5rem] sm:px-3",
+              "flex flex-1 flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3",
               code.trim()
                 ? "border-emerald-600 bg-white text-emerald-700 hover:bg-emerald-50"
                 : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
@@ -1251,7 +1357,8 @@ export default function PlaygroundPage() {
           >
             <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
               <Play className="h-3.5 w-3.5 shrink-0" />
-              プレビュー更新
+              <span className="hidden sm:inline">プレビュー更新</span>
+              <span className="sm:hidden">更新</span>
             </span>
             <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-600/80 lg:block">
               右側で動作確認
@@ -1260,11 +1367,11 @@ export default function PlaygroundPage() {
 
           {/* ③ 公開する */}
           <button
-            onClick={() => runWithLoginPrompt("publish", () => setShowPublishModal(true))}
+            onClick={() => runWithLoginPrompt("publish", openPublishModal)}
             disabled={!code.trim()}
             title="URLを発行して共有・出品"
             className={cn(
-              "flex flex-col items-center rounded-xl px-2 py-1.5 shadow-sm transition-all active:scale-[0.98] sm:min-w-[5.5rem] sm:px-3",
+              "flex flex-1 flex-col items-center rounded-xl px-2 py-1.5 shadow-sm transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3",
               code.trim()
                 ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700"
                 : "cursor-not-allowed bg-gray-200 text-gray-400 shadow-none"
@@ -1498,8 +1605,8 @@ export default function PlaygroundPage() {
                   <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 shadow-lg shadow-emerald-300">
                     <CheckCircle2 className="h-7 w-7 text-white" />
                   </div>
-                  <p className="text-base font-black text-emerald-900">{publishListed ? "出品しました！" : "URLを発行しました！"}</p>
-                  <p className="mt-1 text-xs text-emerald-700">{publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
+                  <p className="text-base font-black text-emerald-900">{lastPublishWasOverwrite ? "上書きしました！" : publishListed ? "出品しました！" : "URLを発行しました！"}</p>
+                  <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? "同じURLで内容が更新されました" : publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
                 </div>
                 <div className="p-6 space-y-4">
                   <ShareButtonRow
@@ -1509,9 +1616,7 @@ export default function PlaygroundPage() {
                   />
                   <div>
                     <p className="mb-2 text-xs font-bold text-gray-600">アプリの URL</p>
-                    <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
-                      <span className="flex-1 truncate font-mono text-xs text-emerald-800">{publishedUrl}</span>
-                    </div>
+                    <AppUrlCopyField url={publishedUrl} className="border border-emerald-200 py-2.5" />
                   </div>
                   <p className="text-[11px] text-gray-400">
                     URLを知っている人なら誰でもアクセス・使用できます
@@ -1557,7 +1662,7 @@ export default function PlaygroundPage() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600">
                       <Rocket className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-base font-black text-gray-900">アプリを公開する</span>
+                    <span className="text-base font-black text-gray-900">{isRepublish ? "アプリを上書き公開" : "アプリを公開する"}</span>
                   </div>
                   <button
                     onClick={() => setShowPublishModal(false)}
@@ -1685,12 +1790,12 @@ export default function PlaygroundPage() {
                       {publishing ? (
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          {publishListed ? "出品中…" : "発行中…"}
+                          {isRepublish ? "上書き中…" : publishListed ? "出品中…" : "発行中…"}
                         </>
                       ) : (
                         <>
                           <Rocket className="h-4 w-4" />
-                          {publishListed ? "出品する" : "URLを発行する"}
+                          {isRepublish ? "上書きする" : publishListed ? "出品する" : "URLを発行する"}
                         </>
                       )}
                     </button>

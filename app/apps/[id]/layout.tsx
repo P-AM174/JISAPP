@@ -4,7 +4,7 @@ import {
   createPageMetadata,
   createSoftwareApplicationJsonLd,
 } from "@/lib/seo/metadata";
-import { getPublicAppSeo } from "@/lib/seo/public-apps";
+import { getShareableAppSeo } from "@/lib/seo/public-apps";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const app = await getPublicAppSeo(id);
+  const app = await getShareableAppSeo(id);
 
   if (!app) {
     return createPageMetadata({
@@ -31,12 +31,14 @@ export async function generateMetadata({
     title: app.title,
     description: app.description,
     path: `/apps/${app.id}`,
+    ogImage: `/apps/${app.id}/opengraph-image`,
+    noIndex: app.isListed === false,
   });
 }
 
 export default async function AppDetailLayout({ children, params }: LayoutProps) {
   const { id } = await params;
-  const app = await getPublicAppSeo(id);
+  const app = await getShareableAppSeo(id);
 
   return (
     <>

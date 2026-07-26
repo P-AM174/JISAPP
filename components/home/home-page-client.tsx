@@ -36,6 +36,7 @@ import {
   Menu,
   X,
   Package,
+  FolderOpen,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -260,6 +261,14 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
                 </div>
               )}
             </div>
+
+            <Link
+              href="/projects"
+              title="マイプロジェクト"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
+            >
+              <FolderOpen className="h-4 w-4" />
+            </Link>
 
             <Link
               href="/mypage"
@@ -675,20 +684,27 @@ function HomeQuickActions() {
             <ArrowRight className="h-5 w-5" />
           </span>
         </Link>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:mx-auto sm:max-w-3xl">
           <Link
             href="/requests"
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98] sm:max-w-xs"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
           >
             <MessageSquarePlus className="h-4 w-4" />
             開発依頼掲示板をみる
           </Link>
           <Link
             href="/search"
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-bold text-gray-800 transition-all hover:bg-gray-100 active:scale-[0.98] sm:max-w-xs"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-bold text-gray-800 transition-all hover:bg-gray-100 active:scale-[0.98]"
           >
             <SearchIcon className="h-4 w-4" />
             みんなが作ったアプリをさがす
+          </Link>
+          <Link
+            href="/projects"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-5 py-2.5 text-sm font-bold text-emerald-800 transition-all hover:bg-emerald-100 active:scale-[0.98]"
+          >
+            <FolderOpen className="h-4 w-4" />
+            マイプロジェクトへ
           </Link>
         </div>
       </div>
@@ -860,7 +876,7 @@ export function HomePageClient({
               </div>
             ))}
           </div>
-          <div className="mt-8 text-center">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/playground"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 hover:shadow-xl active:scale-95"
@@ -868,6 +884,13 @@ export function HomePageClient({
               <Terminal className="h-5 w-5" />
               アプリ開発スタジオへ
               <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/projects"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-white px-8 py-4 text-base font-black text-emerald-700 shadow-sm transition-all hover:bg-emerald-50 active:scale-95"
+            >
+              <FolderOpen className="h-5 w-5" />
+              マイプロジェクトへ
             </Link>
           </div>
         </div>

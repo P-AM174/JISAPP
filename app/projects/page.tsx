@@ -24,10 +24,11 @@ import {
   ShoppingBag,
   CheckCircle2,
   X,
+  LibraryBig,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
-import { ShareButton, ShareButtonRow } from "@/components/share-button";
+import { ShareButton, ShareButtonRow, CopyUrlButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { supabase } from "@/lib/supabase";
 
@@ -46,7 +47,17 @@ type Project = {
   appId?: string;
   url?: string;
   status?: "draft" | "listed" | "url_only";
+  category?: string;
+  libraryCount?: number;
 };
+
+function isPublishedProject(proj: Project) {
+  return !!(proj.appId || proj.url || proj.status === "listed" || proj.status === "url_only");
+}
+
+function getPublishActionLabel(proj: Project) {
+  return isPublishedProject(proj) ? "出品情報" : "出品 / URL発行";
+}
 
 function getPlaygroundHref(proj: Project) {
   if (proj.id === "saved_playground") return "/playground?load=1";
@@ -65,6 +76,7 @@ function mapServerProject(row: {
   is_listed: boolean;
   category: string | null;
   updated_at: string;
+  library_count?: number;
 }): Project {
   const lineCount = row.code_lines ?? (row.html_code ? row.html_code.split("\n").length : 0);
   const charCount = row.code_chars ?? row.html_code?.length ?? 0;
@@ -89,6 +101,8 @@ function mapServerProject(row: {
     appId: row.app_id ?? undefined,
     url: row.app_id ? `${origin}/apps/${row.app_id}` : undefined,
     status,
+    category: row.category ?? undefined,
+    libraryCount: row.library_count ?? 0,
   };
 }
 
@@ -158,7 +172,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                   className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 >
                   <Rocket className="h-3.5 w-3.5" />
-                  出品 / URL発行
+                  {getPublishActionLabel(proj)}
                 </button>
                 {proj.status === "listed" && onUnlist && (
                   <button
@@ -206,6 +220,12 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
             {proj.lines} 行
           </span>
           <span>{proj.chars.toLocaleString()} 文字</span>
+          {isPublishedProject(proj) && proj.libraryCount != null && (
+            <span className="flex items-center gap-1 text-teal-600">
+              <LibraryBig className="h-3 w-3" />
+              {proj.libraryCount}人がライブラリ登録
+            </span>
+          )}
         </div>
 
         {/* アクションボタン */}
@@ -223,16 +243,23 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
             >
               <Rocket className="h-3.5 w-3.5" />
-              出品 / URL発行
+              {getPublishActionLabel(proj)}
             </button>
           </div>
           {(proj.url || proj.appId) && (
-            <ShareButton
-              url={proj.url ?? getAppShareUrl(String(proj.appId))}
-              title={proj.title}
-              text={`${proj.title} | ジサップで作った無料アプリ`}
-              variant="outline"
-            />
+            <div className="flex gap-2">
+              <ShareButton
+                url={proj.url ?? getAppShareUrl(String(proj.appId))}
+                title={proj.title}
+                text={`${proj.title} | ジサップで作った無料アプリ`}
+                variant="outline"
+                className="flex-1"
+              />
+              <CopyUrlButton
+                url={proj.url ?? getAppShareUrl(String(proj.appId))}
+                className="flex-1"
+              />
+            </div>
           )}
         </div>
       </div>
@@ -343,6 +370,11 @@ export default function ProjectsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [unlisting, setUnlisting]     = useState(false);
 
+  const republishAppId = publishTarget
+    ? (publishedMap[publishTarget.id]?.appId ?? publishTarget.appId)
+    : undefined;
+  const isRepublish = !!republishAppId;
+
   // localStorage から出品済みマップを読み込む
   useEffect(() => {
     try {
@@ -377,10 +409,11 @@ export default function ProjectsPage() {
     }
 
     if (proj.appId && proj.url) {
+      const existing = publishedMap[proj.id];
       setPublishedUrl(proj.url);
-      setPublishTitle(proj.title);
-      setPublishDesc(proj.description ?? "");
-      setPublishCategory("");
+      setPublishTitle(existing?.title ?? proj.title);
+      setPublishDesc(existing?.description ?? proj.description ?? "");
+      setPublishCategory(existing?.category ?? proj.category ?? "");
     } else {
       const existing = publishedMap[proj.id];
       if (existing) {
@@ -391,8 +424,8 @@ export default function ProjectsPage() {
       } else {
         setPublishedUrl(null);
         setPublishTitle(proj.isDemo ? "" : proj.title);
-        setPublishDesc("");
-        setPublishCategory("");
+        setPublishDesc(proj.description ?? "");
+        setPublishCategory(proj.category ?? "");
       }
     }
   };
@@ -447,6 +480,7 @@ export default function ProjectsPage() {
 
     setPublishing(true);
     setPublishError(null);
+    const existingAppId = publishedMap[publishTarget.id]?.appId ?? publishTarget.appId;
     try {
       const res = await fetch("/api/apps/publish", {
         method: "POST",
@@ -459,6 +493,7 @@ export default function ProjectsPage() {
           is_listed,
           code_public: publishCodePublic,
           project_id: publishTarget.id !== "saved_playground" ? publishTarget.id : undefined,
+          app_id: existingAppId,
         }),
       });
       const json = await res.json();
@@ -616,15 +651,55 @@ export default function ProjectsPage() {
   }, []);
 
   const handleDeleteProject = async (id: string) => {
+    const proj = myProjects.find((p) => p.id === id);
+    const confirmMsg =
+      proj && isPublishedProject(proj)
+        ? `「${proj.title}」を削除しますか？\n出品も取り下げられ、トップページ・探すページから非表示になります。`
+        : "このプロジェクトを削除しますか？";
+
+    if (!confirm(confirmMsg)) return;
+
     if (id === "saved_playground") {
-      try { localStorage.removeItem("jisapp_playground_code"); } catch { /* noop */ }
+      try {
+        const map = JSON.parse(localStorage.getItem("jisapp_published_map") ?? "{}");
+        const existing = map["saved_playground"];
+        if (existing?.appId) {
+          const res = await fetch(`/api/apps/${existing.appId}`, { method: "DELETE" });
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            alert((d as { error?: string }).error ?? "アプリの取り下げに失敗しました");
+            return;
+          }
+        }
+        localStorage.removeItem("jisapp_playground_code");
+        delete map["saved_playground"];
+        localStorage.setItem("jisapp_published_map", JSON.stringify(map));
+      } catch {
+        alert("削除に失敗しました");
+        return;
+      }
     } else {
-      try { await fetch(`/api/my-projects/${id}`, { method: "DELETE" }); } catch { /* noop */ }
+      try {
+        const res = await fetch(`/api/my-projects/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          alert((d as { error?: string }).error ?? "削除に失敗しました");
+          return;
+        }
+      } catch {
+        alert("削除に失敗しました");
+        return;
+      }
     }
     try {
       const deleted: string[] = JSON.parse(localStorage.getItem("jisapp_deleted_projects") ?? "[]");
       if (!deleted.includes(id)) {
         localStorage.setItem("jisapp_deleted_projects", JSON.stringify([...deleted, id]));
+      }
+      const map = JSON.parse(localStorage.getItem("jisapp_published_map") ?? "{}");
+      if (map[id]) {
+        delete map[id];
+        localStorage.setItem("jisapp_published_map", JSON.stringify(map));
       }
     } catch { /* noop */ }
     setMyProjects((prev) => prev.filter((p) => p.id !== id));
@@ -881,10 +956,16 @@ export default function ProjectsPage() {
                   )}
                   <div>
                     <p className="mb-1 text-[10px] font-bold text-gray-500">アプリURL</p>
-                    <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
-                      <span className="flex-1 break-all font-mono text-[11px] text-emerald-700">{publishedUrl}</span>
-                    </div>
+                    <AppUrlCopyField url={publishedUrl} />
                   </div>
+                  {publishTarget && isPublishedProject(publishTarget) && (
+                    <div className="flex items-center gap-2 rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-teal-200">
+                      <LibraryBig className="h-4 w-4 shrink-0 text-teal-600" />
+                      <p className="text-xs font-bold text-teal-800">
+                        マイライブラリ登録: <span className="text-sm">{publishTarget.libraryCount ?? 0}</span> 人
+                      </p>
+                    </div>
+                  )}
                   <div className="flex flex-col gap-2">
                     <ShareButtonRow
                       url={publishedUrl}
@@ -997,7 +1078,7 @@ export default function ProjectsPage() {
               /* ─ 新規出品フォーム ─ */
               <>
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                  <h3 className="text-base font-black text-gray-900">🚀 アプリを出品する</h3>
+                  <h3 className="text-base font-black text-gray-900">{isRepublish ? "🔄 アプリを上書きする" : "🚀 アプリを出品する"}</h3>
                   <button onClick={() => setPublishTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
@@ -1051,11 +1132,11 @@ export default function ProjectsPage() {
                   )}
                   <button onClick={() => handlePublish(false)} disabled={publishing || publishTarget.isDemo || !publishTitle.trim()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white py-3 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />処理中…</> : <><CheckCircle2 className="h-4 w-4 text-gray-500" />URLだけ発行する（非公開）</>}
+                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />上書き中…</> : <><CheckCircle2 className="h-4 w-4 text-gray-500" />{isRepublish ? "上書きする" : "URLだけ発行する（非公開）"}</>}
                   </button>
                   <button onClick={() => handlePublish(true)} disabled={publishing || publishTarget.isDemo || !publishTitle.trim() || !publishCategory}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />出品中…</> : <><Rocket className="h-4 w-4" />出品する（トップに掲載）</>}
+                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />上書き中…</> : <><Rocket className="h-4 w-4" />{isRepublish ? "上書きする" : "出品する（トップに掲載）"}</>}
                   </button>
                   <p className="text-center text-[10px] text-gray-400">「URLだけ発行」はカテゴリ未選択でも利用できます</p>
                 </div>

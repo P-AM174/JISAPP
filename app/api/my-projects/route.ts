@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getLibraryCounts } from "@/lib/library-counts";
 
 async function getUserId(): Promise<string | null> {
   try {
@@ -53,7 +54,14 @@ export async function GET() {
     code_chars: html_code?.length ?? 0,
   }));
 
-  return NextResponse.json({ projects, logged_in: true });
+  const appIds = projects.map((p) => p.app_id).filter(Boolean) as string[];
+  const libraryCounts = await getLibraryCounts(appIds);
+  const projectsWithStats = projects.map((p) => ({
+    ...p,
+    library_count: p.app_id ? libraryCounts[p.app_id] ?? 0 : 0,
+  }));
+
+  return NextResponse.json({ projects: projectsWithStats, logged_in: true });
 }
 
 /** POST /api/my-projects — プロジェクト作成・更新 */

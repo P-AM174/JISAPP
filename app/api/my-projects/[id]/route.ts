@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { removeAppFromCatalogByOwner } from "@/lib/apps/catalog-removal";
 
 async function getUserId(): Promise<string | null> {
   try {
@@ -14,7 +15,7 @@ async function getUserId(): Promise<string | null> {
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-/** DELETE /api/my-projects/[id] */
+/** DELETE /api/my-projects/[id] — プロジェクト削除＋出品アプリをカタログから除外 */
 export async function DELETE(_req: Request, context: RouteContext) {
   const userId = await getUserId();
   if (!userId) {
@@ -23,6 +24,27 @@ export async function DELETE(_req: Request, context: RouteContext) {
 
   const { id } = await context.params;
   const supabase = createServerSupabaseClient();
+
+  const { data: project, error: fetchError } = await supabase
+    .from("user_projects")
+    .select("app_id")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (fetchError) {
+    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+  }
+
+  if (project?.app_id) {
+    const removed = await removeAppFromCatalogByOwner(project.app_id, userId);
+    if (!removed.ok) {
+      return NextResponse.json(
+        { error: removed.error ?? "アプリの取り下げに失敗しました" },
+        { status: removed.status ?? 500 }
+      );
+    }
+  }
 
   const { error } = await supabase
     .from("user_projects")
@@ -34,7 +56,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, delistedAppId: project?.app_id ?? null });
 }
 
 /** GET /api/my-projects/[id] — 単一プロジェクト取得（コード読み込み用） */

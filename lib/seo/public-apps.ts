@@ -17,17 +17,24 @@ function isUUID(value: string): boolean {
 }
 
 export async function getPublicAppSeo(id: string): Promise<PublicAppSeo | null> {
+  const app = await getShareableAppSeo(id);
+  if (!app || app.isListed === false) return null;
+  return app;
+}
+
+/** 共有・OGP用（URLのみ発行のアプリも含む active アプリ） */
+export async function getShareableAppSeo(
+  id: string
+): Promise<(PublicAppSeo & { isListed?: boolean }) | null> {
   if (isUUID(id)) {
     try {
-      const query = supabase
+      const { data, error } = await supabase
         .from("apps")
         .select("id, title, description, category, creator_name, status, is_listed, created_at")
         .eq("id", id)
         .maybeSingle();
 
-      const { data, error } = await query;
       if (error || !data || data.status !== "active") return null;
-      if (data.is_listed === false) return null;
 
       return {
         id: data.id,
@@ -36,6 +43,7 @@ export async function getPublicAppSeo(id: string): Promise<PublicAppSeo | null> 
         category: data.category,
         creatorName: data.creator_name,
         updatedAt: data.created_at ? new Date(data.created_at) : undefined,
+        isListed: data.is_listed ?? true,
       };
     } catch {
       return null;
@@ -56,6 +64,7 @@ export async function getPublicAppSeo(id: string): Promise<PublicAppSeo | null> 
       category: product.category,
       creatorName: product.creator?.name ?? null,
       updatedAt: product.updatedAt,
+      isListed: true,
     };
   } catch {
     return null;

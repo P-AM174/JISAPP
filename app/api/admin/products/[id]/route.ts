@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { removeAppFromCatalog } from "@/lib/apps/catalog-removal";
 import { revalidateCatalogPages } from "@/lib/revalidate-catalog";
 import { updateProductStatus, deleteProduct } from "@/lib/services/store";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -57,10 +58,9 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   if (isUUID(id)) {
-    const supabase = createServerSupabaseClient();
-    const { error } = await supabase.from("apps").delete().eq("id", id);
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    const removed = await removeAppFromCatalog(id);
+    if (!removed.ok) {
+      return NextResponse.json({ error: removed.error ?? "削除に失敗しました" }, { status: 500 });
     }
     revalidateCatalogPages();
     return NextResponse.json({ ok: true });

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { revalidateCatalogPages } from "@/lib/revalidate-catalog";
+import { removeAppFromCatalogByOwner } from "@/lib/apps/catalog-removal";
 
 const supabase = createServerSupabaseClient();
 
@@ -75,6 +77,32 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (body.is_listed !== undefined) {
+    revalidateCatalogPages();
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+/** DELETE /api/apps/[id] — 出品者がアプリをカタログから削除 */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const removed = await removeAppFromCatalogByOwner(id, userId);
+  if (!removed.ok) {
+    return NextResponse.json(
+      { error: removed.error ?? "削除に失敗しました" },
+      { status: removed.status ?? 500 }
+    );
   }
 
   return NextResponse.json({ success: true });

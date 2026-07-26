@@ -27,6 +27,7 @@ export async function GET() {
     .from("apps")
     .select("id, title, description, category, status, is_listed, is_playground_app, creator_name, creator_id, created_at")
     .eq("is_playground_app", true)
+    .neq("status", "deleted")
     .order("created_at", { ascending: false });
 
   const maxAppNumber = realProducts.reduce((max, p) => Math.max(max, p.appNumber), 0);

@@ -28,6 +28,40 @@ async function addAppToUserLibrary(
   );
 }
 
+async function userOwnsApp(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  userId: string,
+  appId: string,
+  projectId?: string
+): Promise<boolean> {
+  if (projectId) {
+    const { data } = await supabase
+      .from("user_projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", userId)
+      .eq("app_id", appId)
+      .maybeSingle();
+    if (data) return true;
+  }
+
+  const { data: byProject } = await supabase
+    .from("user_projects")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("app_id", appId)
+    .maybeSingle();
+  if (byProject) return true;
+
+  const { data: byCreator } = await supabase
+    .from("apps")
+    .select("id")
+    .eq("id", appId)
+    .eq("creator_id", userId)
+    .maybeSingle();
+  return !!byCreator;
+}
+
 export async function POST(request: Request) {
   // コンテンツサイズ事前チェック
   const contentLength = request.headers.get("content-length");
@@ -46,6 +80,7 @@ export async function POST(request: Request) {
     is_listed?: boolean;
     code_public?: boolean;
     project_id?: string;
+    app_id?: string;
   };
 
   try {
@@ -78,34 +113,67 @@ export async function POST(request: Request) {
 
   const creatorName = (body.creator_name ?? "").trim() || sessionCreatorName || "ゲスト";
   const now = new Date().toISOString();
+  const appPayload = {
+    title,
+    description: (body.description ?? "").trim() || null,
+    html_code,
+    css_code: body.css_code ?? null,
+    js_code: body.js_code ?? null,
+    category: body.category ?? null,
+    is_listed: body.is_listed ?? true,
+    code_public: body.code_public ?? false,
+    status: "active" as const,
+    last_accessed_at: now,
+  };
 
   const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("apps")
-    .insert({
-      title,
-      description: (body.description ?? "").trim() || null,
-      html_code,
-      css_code: body.css_code ?? null,
-      js_code: body.js_code ?? null,
-      creator_name: creatorName,
-      creator_id: sessionUserId,
-      category: body.category ?? null,
-      is_listed: body.is_listed ?? true,
-      code_public: body.code_public ?? false,
-      is_playground_app: true,
-      status: "active",
-      last_accessed_at: now,
-    })
-    .select("id")
-    .single();
+  const overwriteAppId = (body.app_id ?? "").trim() || null;
+  let appId: string;
 
-  if (error) {
-    console.error("[publish]", error);
-    return NextResponse.json(
-      { error: "保存に失敗しました: " + error.message },
-      { status: 500 }
-    );
+  if (overwriteAppId) {
+    if (!sessionUserId) {
+      return NextResponse.json({ error: "上書き公開にはログインが必要です" }, { status: 401 });
+    }
+    const owns = await userOwnsApp(supabase, sessionUserId, overwriteAppId, body.project_id);
+    if (!owns) {
+      return NextResponse.json({ error: "このアプリを上書きする権限がありません" }, { status: 403 });
+    }
+
+    const { data, error } = await supabase
+      .from("apps")
+      .update(appPayload)
+      .eq("id", overwriteAppId)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("[publish overwrite]", error);
+      return NextResponse.json(
+        { error: "上書きに失敗しました: " + error.message },
+        { status: 500 }
+      );
+    }
+    appId = data.id;
+  } else {
+    const { data, error } = await supabase
+      .from("apps")
+      .insert({
+        ...appPayload,
+        creator_name: creatorName,
+        creator_id: sessionUserId,
+        is_playground_app: true,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("[publish]", error);
+      return NextResponse.json(
+        { error: "保存に失敗しました: " + error.message },
+        { status: 500 }
+      );
+    }
+    appId = data.id;
   }
 
   // ログイン済みならマイプロジェクト・マイライブラリにも登録
@@ -118,11 +186,11 @@ export async function POST(request: Request) {
       html_code,
       css_code: body.css_code ?? null,
       js_code: body.js_code ?? null,
-      app_id: data.id,
+      app_id: appId,
       status,
       is_listed: body.is_listed ?? true,
       category: body.category ?? null,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     };
 
     if (body.project_id) {
@@ -131,15 +199,21 @@ export async function POST(request: Request) {
         .update(projectRow)
         .eq("id", body.project_id)
         .eq("user_id", sessionUserId);
-    } else {
+    } else if (!overwriteAppId) {
       await supabase.from("user_projects").insert(projectRow);
+    } else {
+      await supabase
+        .from("user_projects")
+        .update(projectRow)
+        .eq("user_id", sessionUserId)
+        .eq("app_id", appId);
     }
 
-    await addAppToUserLibrary(supabase, sessionUserId, data.id, {
+    await addAppToUserLibrary(supabase, sessionUserId, appId, {
       name: title,
       category: body.category ?? null,
     });
   }
 
-  return NextResponse.json({ id: data.id }, { status: 201 });
+  return NextResponse.json({ id: appId, updated: !!overwriteAppId }, { status: overwriteAppId ? 200 : 201 });
 }

@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
-import { getPublicAppSeo } from "@/lib/seo/public-apps";
+import { getShareableAppSeo } from "@/lib/seo/public-apps";
 import { CATEGORY_MAP } from "@/lib/categories";
-import { SITE_BRAND } from "@/lib/seo/site";
 import { loadLogoDataUri, loadNotoSansJP, OG_SIZE, OG_THEME } from "@/lib/seo/og-assets";
 
 export const runtime = "nodejs";
@@ -15,7 +14,7 @@ export default async function Image({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const app = await getPublicAppSeo(id);
+  const app = await getShareableAppSeo(id);
   const title = app?.title ?? "無料Webアプリ";
   const description =
     app?.description?.slice(0, 80) ?? "AIで作ったコードを貼るだけで公開";
@@ -149,17 +148,20 @@ export default async function Image({
               alignItems: "center",
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: OG_THEME.brandText }}>
-              by {creatorName}
-            </div>
             <div
               style={{
+                padding: "10px 20px",
+                borderRadius: 999,
+                background: OG_THEME.heroAccent,
+                color: OG_THEME.white,
                 fontSize: 18,
-                fontWeight: 700,
-                color: OG_THEME.emerald600,
+                fontWeight: 800,
               }}
             >
-              {SITE_BRAND} · タップして今すぐ試す
+              jisapp.app
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: OG_THEME.brandText }}>
+              by {creatorName}
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Share2, Link2, Mail, X } from "lucide-react";
+import { Share2, Link2, Mail, X, Copy, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   copyShareUrl,
@@ -230,6 +230,126 @@ export function ShareButton({
         shareText={shareText}
       />
     </>
+  );
+}
+
+type CopyUrlButtonProps = {
+  url: string;
+  className?: string;
+  size?: "sm" | "md";
+  variant?: "solid" | "outline" | "ghost";
+  label?: string;
+};
+
+/** ワンタップでアプリURLをコピー */
+export function CopyUrlButton({
+  url,
+  className,
+  size = "sm",
+  variant = "outline",
+  label = "アプリURLをコピー",
+}: CopyUrlButtonProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const ok = await copyShareUrl(url);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const pad = size === "sm" ? "px-2.5 py-2 text-xs" : "px-4 py-3 text-sm";
+  const base =
+    variant === "solid"
+      ? copied
+        ? "bg-emerald-700 text-white"
+        : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+      : variant === "ghost"
+        ? "bg-transparent text-gray-600 hover:bg-gray-100"
+        : copied
+          ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
+          : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50";
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className={cn(
+        "flex w-full items-center justify-center gap-1.5 rounded-xl font-bold transition-all active:scale-[0.98]",
+        pad,
+        base,
+        className
+      )}
+    >
+      {copied ? (
+        <>
+          <CheckCircle2 className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          コピーしました
+        </>
+      ) : (
+        <>
+          <Copy className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          {label}
+        </>
+      )}
+    </button>
+  );
+}
+
+/** URL表示＋インラインコピーボタン */
+export function AppUrlCopyField({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const ok = await copyShareUrl(url);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200",
+        className
+      )}
+    >
+      <span className="min-w-0 flex-1 break-all font-mono text-[11px] text-emerald-700 sm:text-xs">
+        {url}
+      </span>
+      <button
+        type="button"
+        onClick={handleCopy}
+        title="URLをコピー"
+        aria-label={copied ? "コピーしました" : "URLをコピー"}
+        className={cn(
+          "flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-bold transition-all active:scale-95 sm:text-xs",
+          copied
+            ? "bg-emerald-600 text-white"
+            : "bg-white text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
+        )}
+      >
+        {copied ? (
+          <>
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">コピー済</span>
+          </>
+        ) : (
+          <>
+            <Copy className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">コピー</span>
+          </>
+        )}
+      </button>
+    </div>
   );
 }
 

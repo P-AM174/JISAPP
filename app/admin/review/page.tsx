@@ -7,8 +7,9 @@ import {
   ShieldCheck, AlertTriangle, CheckCircle2, X,
   Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
-  Tag, Layers, Flag, Hash, Search, UserX,
+  Flag, Hash, Search, UserX, MessageSquare, Star,
 } from "lucide-react";
+import { ADMIN_FLAG_OPTIONS, adminFlagLabel } from "@/lib/support/admin-flags";
 
 // ─── 型定義 ────────────────────────────────────────────────────────
 type Creator = { id: string; name: string | null; email: string };
@@ -23,12 +24,32 @@ type Product = {
   status: string;
   isPlaygroundApp: boolean;
   isDemo: boolean;
+  isListed: boolean;
+  isFeatured: boolean;
+  adminFlags: string[];
   listingType: string;
   productType: string;
   sourceUrl: string | null;
+  source?: "supabase" | "prisma";
   creator: Creator;
   createdAt: string;
 };
+
+type Inquiry = {
+  id: string;
+  user_id: string | null;
+  email: string;
+  name: string | null;
+  subject: string;
+  body: string;
+  status: string;
+  admin_reply: string | null;
+  replied_at: string | null;
+  created_at: string;
+};
+
+type Tab = "dashboard" | "apps" | "inquiries" | "reports" | "users";
+type AppSubTab = "listed" | "url_only";
 
 type Report = {
   id: string;
@@ -51,8 +72,6 @@ type UserRecord = {
   purchaseCount: number;
 };
 
-type Tab = "dashboard" | "apps" | "reports" | "users";
-
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   active:   { label: "公開中",   cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
   pending:  { label: "審査待ち", cls: "bg-amber-50   text-amber-700   ring-amber-200"  },
@@ -63,12 +82,6 @@ const REPORT_STATUS: Record<string, { label: string; cls: string }> = {
   pending:   { label: "未対応",   cls: "bg-rose-50    text-rose-600    ring-rose-200"   },
   resolved:  { label: "対応済み", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200"},
   dismissed: { label: "却下",     cls: "bg-gray-100   text-gray-500    ring-gray-200"   },
-};
-
-const LISTING_LABEL: Record<string, string> = {
-  file:       "ファイル販売",
-  playground: "開発スタジオ",
-  external:   "外部リンク",
 };
 
 function AppNum({ n }: { n: number }) {
@@ -87,14 +100,18 @@ export default function AdminDashboard() {
   const [pwError, setPwError] = useState(false);
 
   const [products,           setProducts]           = useState<Product[]>([]);
+  const [inquiries,          setInquiries]          = useState<Inquiry[]>([]);
+  const [openInquiryCount,   setOpenInquiryCount]   = useState(0);
   const [reports,            setReports]            = useState<Report[]>([]);
   const [users,              setUsers]              = useState<UserRecord[]>([]);
   const [userCount,          setUserCount]          = useState(0);
   const [pendingReportCount, setPendingReportCount] = useState(0);
   const [mounted,            setMounted]            = useState(false);
   const [tab,                setTab]                = useState<Tab>("dashboard");
+  const [appSubTab,          setAppSubTab]          = useState<AppSubTab>("listed");
   const [actionMsg,          setActionMsg]          = useState("");
   const [loadingId,          setLoadingId]          = useState<string | null>(null);
+  const [replyDrafts,        setReplyDrafts]        = useState<Record<string, string>>({});
 
   // 検索
   const [appSearch,  setAppSearch]  = useState("");
@@ -104,10 +121,11 @@ export default function AdminDashboard() {
 
   const loadAll = async () => {
     try {
-      const [prodRes, repRes, userRes] = await Promise.all([
+      const [prodRes, repRes, userRes, inqRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/reports"),
         fetch("/api/admin/users"),
+        fetch("/api/admin/inquiries"),
       ]);
       if (prodRes.ok) {
         const data = await prodRes.json();
@@ -126,6 +144,11 @@ export default function AdminDashboard() {
         const d = await userRes.json();
         setUsers(d.users ?? []);
       }
+      if (inqRes.ok) {
+        const d = await inqRes.json();
+        setInquiries(d.inquiries ?? []);
+        setOpenInquiryCount(d.openCount ?? 0);
+      }
     } catch {
       setAuthed(false);
     }
@@ -139,15 +162,21 @@ export default function AdminDashboard() {
   // 検索フィルター
   const filteredProducts = useMemo(() => {
     const q = appSearch.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(p =>
+    const base = products.filter((p) =>
+      appSubTab === "listed" ? p.isListed : !p.isListed
+    );
+    if (!q) return base;
+    return base.filter(p =>
       String(p.appNumber).includes(q) ||
       p.title.toLowerCase().includes(q) ||
       (p.creator.name ?? "").toLowerCase().includes(q) ||
       p.creator.email.toLowerCase().includes(q) ||
       (p.category ?? "").toLowerCase().includes(q)
     );
-  }, [products, appSearch]);
+  }, [products, appSearch, appSubTab]);
+
+  const listedCount = useMemo(() => products.filter((p) => p.isListed).length, [products]);
+  const urlOnlyCount = useMemo(() => products.filter((p) => !p.isListed).length, [products]);
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
@@ -242,6 +271,52 @@ export default function AdminDashboard() {
     setLoadingId(null);
   };
 
+  const handleToggleFeatured = async (product: Product) => {
+    if (product.source !== "supabase") return;
+    setLoadingId(product.id);
+    const res = await fetch(`/api/admin/products/${product.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isFeatured: !product.isFeatured }),
+    });
+    if (res.ok) {
+      await loadAll();
+      notify(product.isFeatured ? "注目から外しました" : "注目のアプリに設定しました");
+    }
+    setLoadingId(null);
+  };
+
+  const handleToggleFlag = async (product: Product, flagId: string) => {
+    if (product.source !== "supabase") return;
+    setLoadingId(`${product.id}-${flagId}`);
+    const res = await fetch(`/api/admin/products/${product.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toggleFlag: flagId }),
+    });
+    if (res.ok) await loadAll();
+    setLoadingId(null);
+  };
+
+  const handleReplyInquiry = async (inquiry: Inquiry) => {
+    const reply = (replyDrafts[inquiry.id] ?? "").trim();
+    if (!reply) return;
+    setLoadingId(inquiry.id);
+    const res = await fetch(`/api/admin/inquiries/${inquiry.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reply }),
+    });
+    if (res.ok) {
+      setReplyDrafts((prev) => ({ ...prev, [inquiry.id]: "" }));
+      await loadAll();
+      notify("返信を送信しました");
+    } else {
+      alert("返信に失敗しました");
+    }
+    setLoadingId(null);
+  };
+
   // ══════ ログイン画面 ══════
   if (!authed) {
     return (
@@ -319,6 +394,7 @@ export default function AdminDashboard() {
           {([
             { id: "dashboard", label: "📊 ダッシュボード" },
             { id: "apps",      label: "📱 アプリ管理",    count: products.length,       countCls: "bg-gray-400"    },
+            { id: "inquiries", label: "💬 問い合わせ",    count: openInquiryCount,    countCls: "bg-blue-500"    },
             { id: "reports",   label: "🚨 報告",          count: pendingReports.length, countCls: "bg-rose-500"    },
             { id: "users",     label: "👤 ユーザー管理",   count: users.length,          countCls: "bg-emerald-500" },
           ] as { id: Tab; label: string; count?: number; countCls?: string }[]).map(t => (
@@ -445,6 +521,24 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-base font-black text-gray-900">アプリ管理</h2>
+              <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
+                <button
+                  onClick={() => setAppSubTab("listed")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                    appSubTab === "listed" ? "bg-white text-emerald-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  出品済み ({listedCount})
+                </button>
+                <button
+                  onClick={() => setAppSubTab("url_only")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                    appSubTab === "url_only" ? "bg-white text-violet-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  URL発行のみ ({urlOnlyCount})
+                </button>
+              </div>
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">{filteredProducts.length} 件</span>
               {/* 検索バー */}
               <div className="ml-auto flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm w-full sm:w-80">
@@ -467,19 +561,20 @@ export default function AdminDashboard() {
             {filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 text-center shadow-sm">
                 <ShieldCheck className="h-12 w-12 text-gray-200" />
-                <p className="font-bold text-gray-600">{appSearch ? "該当するアプリが見つかりません" : "出品データがありません"}</p>
+                <p className="font-bold text-gray-600">{appSearch ? "該当するアプリが見つかりません" : appSubTab === "listed" ? "出品済みアプリはありません" : "URL発行のみのアプリはありません"}</p>
               </div>
             ) : (
               <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
                 <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-xs">
+                <table className="w-full min-w-[900px] text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-[10px] uppercase tracking-widest text-gray-400">
                       <th className="px-4 py-3">管理番号</th>
                       <th className="px-4 py-3">タイトル</th>
                       <th className="px-4 py-3">カテゴリ</th>
                       <th className="px-4 py-3">ステータス</th>
-                      <th className="px-4 py-3">種別</th>
+                      <th className="px-4 py-3">フラグ</th>
+                      <th className="px-4 py-3">注目</th>
                       <th className="px-4 py-3">出品者</th>
                       <th className="px-4 py-3">登録日</th>
                       <th className="px-4 py-3">操作</th>
@@ -502,7 +597,52 @@ export default function AdminDashboard() {
                           <td className="px-4 py-2.5">
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${st.cls}`}>{st.label}</span>
                           </td>
-                          <td className="px-4 py-2.5 text-gray-500">{LISTING_LABEL[p.listingType] ?? p.listingType}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex flex-wrap gap-1 max-w-[140px]">
+                              {p.source === "supabase" ? ADMIN_FLAG_OPTIONS.map((f) => {
+                                const active = p.adminFlags.includes(f.id);
+                                return (
+                                  <button
+                                    key={f.id}
+                                    type="button"
+                                    onClick={() => handleToggleFlag(p, f.id)}
+                                    disabled={loadingId === `${p.id}-${f.id}`}
+                                    className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ring-1 transition-colors ${
+                                      active
+                                        ? "bg-amber-50 text-amber-700 ring-amber-200"
+                                        : "bg-gray-50 text-gray-400 ring-gray-200 hover:bg-gray-100"
+                                    }`}
+                                  >
+                                    {f.label}
+                                  </button>
+                                );
+                              }) : (
+                                <span className="text-gray-300">—</span>
+                              )}
+                              {p.adminFlags.filter((f) => !ADMIN_FLAG_OPTIONS.some((o) => o.id === f)).map((f) => (
+                                <span key={f} className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-500">{adminFlagLabel(f)}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {p.source === "supabase" ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFeatured(p)}
+                                disabled={loadingId === p.id}
+                                className={`flex items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] font-bold transition-colors ${
+                                  p.isFeatured
+                                    ? "bg-violet-50 text-violet-700 ring-1 ring-violet-200"
+                                    : "bg-gray-50 text-gray-400 ring-1 ring-gray-200 hover:bg-violet-50 hover:text-violet-600"
+                                }`}
+                              >
+                                <Star className={`h-3 w-3 ${p.isFeatured ? "fill-violet-500" : ""}`} />
+                                {p.isFeatured ? "注目中" : "設定"}
+                              </button>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </td>
                           <td className="px-4 py-2.5 text-gray-400 max-w-[140px] truncate">{p.creator.name ?? p.creator.email}</td>
                           <td className="px-4 py-2.5 text-gray-400">{p.createdAt}</td>
                           <td className="px-4 py-2.5">
@@ -520,6 +660,82 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════ 問い合わせ ══════ */}
+        {tab === "inquiries" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-base font-black text-gray-900">運営への問い合わせ</h2>
+              {openInquiryCount > 0 && (
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">未返信 {openInquiryCount} 件</span>
+              )}
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">計 {inquiries.length} 件</span>
+            </div>
+
+            {inquiries.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 text-center shadow-sm">
+                <MessageSquare className="h-12 w-12 text-gray-200" />
+                <p className="font-bold text-gray-600">問い合わせはありません</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {inquiries.map((inq) => {
+                  const isOpen = inq.status === "open";
+                  return (
+                    <div key={inq.id} className={`rounded-2xl bg-white shadow-sm ring-1 ${isOpen ? "ring-blue-200" : "ring-black/5"} overflow-hidden`}>
+                      <div className="p-5">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${
+                            isOpen ? "bg-blue-50 text-blue-700 ring-blue-200" :
+                            inq.status === "replied" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" :
+                            "bg-gray-100 text-gray-500 ring-gray-200"
+                          }`}>
+                            {isOpen ? "未返信" : inq.status === "replied" ? "返信済み" : inq.status}
+                          </span>
+                          <p className="font-bold text-sm text-gray-900">{inq.subject}</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-2">
+                          {inq.name ? `${inq.name} · ` : ""}{inq.email}
+                          {inq.user_id ? " · ログインユーザー" : ""}
+                          {" · "}{inq.created_at.slice(0, 16).replace("T", " ")}
+                        </p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{inq.body}</p>
+                        {inq.admin_reply && (
+                          <div className="mt-4 rounded-xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
+                            <p className="text-[10px] font-bold text-emerald-700 mb-1">運営からの返信</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{inq.admin_reply}</p>
+                            {inq.replied_at && (
+                              <p className="mt-2 text-[10px] text-gray-400">{inq.replied_at.slice(0, 16).replace("T", " ")}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {isOpen && (
+                        <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-2">
+                          <textarea
+                            rows={3}
+                            value={replyDrafts[inq.id] ?? ""}
+                            onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [inq.id]: e.target.value }))}
+                            placeholder="返信内容を入力..."
+                            className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleReplyInquiry(inq)}
+                            disabled={loadingId === inq.id || !(replyDrafts[inq.id] ?? "").trim()}
+                            className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            {loadingId === inq.id ? "送信中..." : "返信を送信（メール＋通知）"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

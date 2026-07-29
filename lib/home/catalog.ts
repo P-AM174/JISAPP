@@ -152,18 +152,40 @@ export async function getAppsByCategory(categoryId: string, limit = 100): Promis
     .slice(0, limit);
 }
 
+export async function getFeaturedApps(limit = 8): Promise<CatalogApp[]> {
+  noStore();
+  try {
+    const { data, error } = await supabase
+      .from("apps")
+      .select("id, title, description, category, creator_name, creator_id, created_at")
+      .eq("status", "active")
+      .eq("is_featured", true)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data?.length) return [];
+
+    const stampCounts = await getStampCounts(data.map((a) => a.id));
+    return data.map((app) => ({ ...app, stamp_count: stampCounts[app.id] ?? 0 }));
+  } catch {
+    return [];
+  }
+}
+
 export type HomeCatalogData = {
   playgroundApps: CatalogApp[];
   popularMonth: CatalogApp[];
   popularCreators: PopularCreator[];
+  featuredApps: CatalogApp[];
 };
 
 export async function getHomeCatalogData(): Promise<HomeCatalogData> {
-  const [playgroundApps, popularMonth, popularCreators] = await Promise.all([
+  const [playgroundApps, popularMonth, popularCreators, featuredApps] = await Promise.all([
     getPopularApps(50),
     getPopularMonthApps(5),
     getPopularCreators(),
+    getFeaturedApps(8),
   ]);
 
-  return { playgroundApps, popularMonth, popularCreators };
+  return { playgroundApps, popularMonth, popularCreators, featuredApps };
 }

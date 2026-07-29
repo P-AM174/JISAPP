@@ -80,12 +80,22 @@ function SimpleCodeGuide({
   onManualInput?: () => void;
   onOpenGuide?: () => void;
 }) {
-  const steps = [
-    "ChatGPT などの AI に作りたいアプリを伝える",
-    "出力された HTML コードをすべてコピーする",
-    "「クリップボードから貼り付け」を押す",
-    "「プレビュー」タブで動作を確認する",
-    "問題なければ「公開する」から URL を発行する",
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(PROMPT_TEMPLATE);
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2500);
+    } catch { /* noop */ }
+  };
+
+  const steps: { text: string; copyPrompt?: boolean }[] = [
+    { text: "専用プロンプトを AI に送り、作りたいアプリを伝える", copyPrompt: true },
+    { text: "出力された HTML コードをすべてコピーする" },
+    { text: "「クリップボードから貼り付け」を押す" },
+    { text: "「プレビュー」タブで動作を確認する" },
+    { text: "問題なければ「公開/URL発行」から URL を発行する" },
   ];
 
   return (
@@ -97,11 +107,37 @@ function SimpleCodeGuide({
       </p>
       <ol className="mt-4 space-y-2.5">
         {steps.map((step, i) => (
-          <li key={step} className="flex gap-3 rounded-xl bg-white px-3 py-2.5 ring-1 ring-emerald-100">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
-              {i + 1}
-            </span>
-            <span className="text-xs leading-relaxed text-gray-700">{step}</span>
+          <li key={step.text} className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-emerald-100">
+            <div className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
+                {i + 1}
+              </span>
+              <span className="text-xs leading-relaxed text-gray-700">{step.text}</span>
+            </div>
+            {step.copyPrompt && (
+              <button
+                type="button"
+                onClick={handleCopyPrompt}
+                className={cn(
+                  "mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all active:scale-[0.98] touch-manipulation",
+                  promptCopied
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-sky-600 text-white hover:bg-sky-500"
+                )}
+              >
+                {promptCopied ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    コピー済み
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    専用プロンプトをコピー
+                  </>
+                )}
+              </button>
+            )}
           </li>
         ))}
       </ol>
@@ -141,7 +177,6 @@ function SimpleCodeGuide({
 
 // ─── ガイド画面（コードがない状態） ───
 function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
-  const [showPrompt, setShowPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -153,79 +188,18 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   };
 
   return (
-    <>
-      {/* ── 指示文モーダル ── */}
-      {showPrompt && (
-        <div
-          className="fixed inset-0 z-[500] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
-          onClick={() => setShowPrompt(false)}
-        >
-          <div
-            className="w-full max-w-lg overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* ヘッダー */}
-            <div className="relative bg-gradient-to-br from-sky-500 to-blue-600 px-6 pb-5 pt-6 text-white">
-              <button
-                onClick={() => setShowPrompt(false)}
-                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 hover:bg-white/35 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <p className="text-xs font-black tracking-widest opacity-80">✦ ジサップ専用の指示文</p>
-              <h2 className="mt-1.5 text-lg font-black leading-snug">AIにそのまま送れる指示文をコピーしよう！</h2>
-            </div>
-
-            {/* 本文 */}
-            <div className="space-y-4 p-5">
-              <p className="text-sm text-gray-600 leading-relaxed">
-                📌 <span className="font-bold">【ここに作りたいアプリ名を入れる】</span> の部分だけ書き換えて、そのままAIに送るだけ！
-                最初は質問だけ返ってくるので、はい/いいえで答えるとコードが出ます。
-              </p>
-
-              <div className="overflow-hidden rounded-2xl border border-sky-200 bg-sky-50">
-                <div className="flex items-center justify-between bg-sky-600 px-4 py-2.5">
-                  <span className="text-xs font-black text-white">📋 AIへの指示文</span>
-                  <button
-                    onClick={handleCopy}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black transition-all active:scale-95",
-                      copied ? "bg-emerald-500 text-white" : "bg-white text-sky-700 hover:bg-sky-50"
-                    )}
-                  >
-                    {copied ? <><CheckCircle2 className="h-3.5 w-3.5" />コピー済み！</> : <><Copy className="h-3.5 w-3.5" />コピーする</>}
-                  </button>
-                </div>
-                <pre className="max-h-44 overflow-y-auto px-4 py-3 font-mono text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap">
-                  {PROMPT_TEMPLATE}
-                </pre>
-              </div>
-
-              <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                ⚠️ コピーしたら <span className="font-black">【ここに作りたいアプリ名を入れる】</span> を「家計簿」「タイマー」など作りたいものに書き換えてからAIに送ってね！
-              </div>
-
-              <button
-                onClick={() => setShowPrompt(false)}
-                className="w-full rounded-xl bg-gray-100 py-3 text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
-              >
-                閉じる
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="flex min-h-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-emerald-50 via-white to-white px-6 py-6">
 
         {/* タイトル */}
         <div className="text-center">
           <h2 className="text-xl font-black text-gray-800">
-            AIで生成したコードを
-            <span className="text-emerald-500 md:hidden">下にペーストするだけ！</span>
-            <span className="hidden text-emerald-500 md:inline">左にペーストするだけ！</span>
+            コードを貼り付けると
+            <span className="text-emerald-600">ここに表示されます</span>
           </h2>
-          <p className="mt-1 text-sm text-gray-500">サーバーもデータベースも設定不要。コードを貼り付けると、ここに動くアプリが表示されます。</p>
+          <p className="mt-1 text-sm text-gray-500">
+            <span className="md:hidden">「コード」タブに HTML を貼り付けると、このプレビュー画面にアプリが表示されます。</span>
+            <span className="hidden md:inline">右のコード画面に HTML を貼り付けると、左側のこの画面にアプリが表示されます。</span>
+          </p>
         </div>
 
         {/* ステップ */}
@@ -233,14 +207,27 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
           <div className="flex items-start gap-3 rounded-2xl bg-blue-50 p-3.5 shadow-sm ring-1 ring-blue-200">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">1</div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-gray-800">AIにアイデアを伝える</p>
-              <p className="mt-0.5 text-xs text-gray-500">ChatGPT・Claude・Gemini などに作りたいアプリを送る</p>
+              <p className="text-sm font-bold text-gray-800">専用プロンプトを AI に送る</p>
+              <p className="mt-0.5 text-xs text-gray-500">ChatGPT・Claude・Gemini などに、ジサップ用の指示文を送る</p>
               <button
-                onClick={() => setShowPrompt(true)}
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-500 active:scale-95"
+                type="button"
+                onClick={handleCopy}
+                className={cn(
+                  "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold shadow-sm transition-all active:scale-95 touch-manipulation",
+                  copied ? "bg-emerald-100 text-emerald-700" : "bg-blue-600 text-white hover:bg-blue-500"
+                )}
               >
-                <Copy className="h-4 w-4" />
-                👆 ここをタップして指示文をコピー！
+                {copied ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    コピー済み
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    専用プロンプトをコピー
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -248,8 +235,8 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
           <div className="flex items-start gap-3 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-amber-100">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-600">2</div>
             <div>
-              <p className="text-sm font-bold text-gray-800">AIの質問に答えて、コードをコピー</p>
-              <p className="mt-0.5 text-xs text-gray-500">保存機能が必要か等の質問にはい/いいえで答える → HTMLコードが出たらすべてコピー</p>
+              <p className="text-sm font-bold text-gray-800">AI の質問に答えて、コードをコピー</p>
+              <p className="mt-0.5 text-xs text-gray-500">保存機能の要否などに答えると HTML コードが出力される</p>
             </div>
           </div>
 
@@ -257,22 +244,22 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-sm font-black text-white">3</div>
             <div>
               <p className="text-sm font-bold text-emerald-800">
-                <span className="md:hidden">下のパネルに貼り付ける</span>
-                <span className="hidden md:inline">左のパネルに貼り付ける</span>
+                <span className="md:hidden">「コード」タブに貼り付ける</span>
+                <span className="hidden md:inline">右のコード画面に貼り付ける</span>
               </p>
-              <p className="mt-0.5 text-xs text-emerald-600">「クリップボードから貼り付けて実行」ボタンを押すだけ！</p>
+              <p className="mt-0.5 text-xs text-emerald-700">「クリップボードから貼り付け」を押してから「プレビュー」で確認する</p>
             </div>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={onOpenDrawer}
-          className="text-[11px] text-gray-400 underline decoration-dotted underline-offset-2 hover:text-emerald-600 transition-colors"
+          className="text-[11px] text-gray-400 underline decoration-dotted underline-offset-2 hover:text-emerald-600 transition-colors touch-manipulation"
         >
-          💡 ChatGPT・Claude が作ったHTMLコードなら何でもそのまま動きます
+          コード画面を開く
         </button>
       </div>
-    </>
   );
 }
 
@@ -1474,7 +1461,7 @@ export default function PlaygroundPage() {
             </span>
           </button>
 
-          {/* ③ 公開する */}
+          {/* ③ 公開/URL発行 */}
           <button
             type="button"
             onClick={() => runWithLoginPrompt("publish", openPublishModal)}
@@ -1487,9 +1474,9 @@ export default function PlaygroundPage() {
                 : "cursor-not-allowed bg-gray-200 text-gray-400 shadow-none"
             )}
           >
-            <span className="flex items-center gap-1 text-[11px] font-black sm:text-xs">
+            <span className="flex items-center gap-1 text-[10px] font-black sm:text-xs">
               <Rocket className="h-3.5 w-3.5 shrink-0" />
-              公開する
+              公開/URL発行
             </span>
             <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-100 lg:block">
               URL発行・共有
@@ -1545,7 +1532,12 @@ export default function PlaygroundPage() {
                 <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
                   <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
                   <span className="truncate text-[11px] text-gray-400">
-                    {showGuide ? "コードを貼り付けると表示されます" : "プレビュー"}
+                    {showGuide ? (
+                      <>
+                        <span className="md:hidden">コードタブに貼り付けると表示</span>
+                        <span className="hidden md:inline">右のコード画面に貼り付けると表示</span>
+                      </>
+                    ) : "プレビュー"}
                   </span>
                 </div>
                 <button
@@ -1657,7 +1649,12 @@ export default function PlaygroundPage() {
             <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
               <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
               <span className="truncate text-[11px] text-gray-400">
-                {showGuide ? "コードを貼り付けると表示されます" : "プレビュー"}
+                {showGuide ? (
+                  <>
+                    <span className="md:hidden">コードタブに貼り付けると表示</span>
+                    <span className="hidden md:inline">右のコード画面に貼り付けると表示</span>
+                  </>
+                ) : "プレビュー"}
               </span>
             </div>
             <button

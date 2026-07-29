@@ -50,10 +50,8 @@ import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import type { ModalApp } from "@/components/app-catalog/types";
 import { getCreatorProfilePath } from "@/components/app-catalog/utils";
 
-// ─── 通知データ（将来的にAPIから取得）───
-const NOTIFICATIONS: { id: number; Icon: React.ComponentType<{ className?: string }>; iconBg: string; iconColor: string; text: string; href: string; time: string }[] = [];
+import { ContactFormModal } from "@/components/support/contact-form-modal";
 
-// ─── チャットルーム型 ───
 type ChatRoom = {
   id: string;
   title: string;
@@ -62,13 +60,32 @@ type ChatRoom = {
   lastMessage?: string;
 };
 
+type UserNotification = {
+  id: string;
+  title: string;
+  body: string;
+  href: string | null;
+  isRead: boolean;
+  createdAt: string;
+};
+
 // ─── ヘッダー ───
-function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
+function SiteHeader({
+  query,
+  setQuery,
+  onOpenContact,
+}: {
+  query: string;
+  setQuery: (v: string) => void;
+  onOpenContact: () => void;
+}) {
   const router = useRouter();
+  const { status } = useSession();
 
   // 通知
   const [showNotif, setShowNotif] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
 
   // ハンバーガーメニュー
@@ -83,6 +100,51 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followedList, setFollowedList]       = useState<Array<{ id: number; name: string; handle: string; avatar: string; color: string }>>([]);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      setNotifications([]);
+      setHasUnread(false);
+      return;
+    }
+    fetch("/api/notifications")
+      .then((r) => (r.ok ? r.json() : { notifications: [], unreadCount: 0 }))
+      .then((d) => {
+        setNotifications(d.notifications ?? []);
+        setHasUnread((d.unreadCount ?? 0) > 0);
+      })
+      .catch(() => {
+        setNotifications([]);
+        setHasUnread(false);
+      });
+  }, [status]);
+
+  const markAllRead = async () => {
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setHasUnread(false);
+    } catch {
+      /* noop */
+    }
+  };
+
+  const formatNotifTime = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      const diff = Date.now() - d.getTime();
+      if (diff < 60000) return "たった今";
+      if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
+      if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
+      return d.toLocaleDateString("ja-JP");
+    } catch {
+      return "";
+    }
+  };
 
   // 外側クリックで通知を閉じる
   useEffect(() => {
@@ -215,39 +277,41 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
                       <span className="text-sm font-black text-gray-900">お知らせ</span>
                       {hasUnread && (
                         <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                          {NOTIFICATIONS.length}
+                          {notifications.filter((n) => !n.isRead).length}
                         </span>
                       )}
                     </div>
                     <button
-                      onClick={() => setHasUnread(false)}
+                      onClick={markAllRead}
                       className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700"
                     >
                       すべて既読にする
                     </button>
                   </div>
                   <div className="max-h-[420px] overflow-y-auto">
-                    {NOTIFICATIONS.map((n, i) => (
-                      <Link
-                        key={n.id}
-                        href={n.href}
-                        onClick={() => setShowNotif(false)}
-                        className={`flex gap-3 px-4 py-3 transition-colors hover:bg-gray-50 ${
-                          i < NOTIFICATIONS.length - 1 ? "border-b border-gray-50" : ""
-                        } ${hasUnread && i < 4 ? "bg-blue-50/30" : ""}`}
-                      >
-                        <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${n.iconBg}`}>
-                          <n.Icon className={`h-4 w-4 ${n.iconColor}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs leading-relaxed text-gray-700 line-clamp-2">{n.text}</p>
-                          <p className="mt-1 text-[10px] text-gray-400">{n.time}</p>
-                        </div>
-                        {hasUnread && i < 4 && (
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-                        )}
-                      </Link>
-                    ))}
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-8 text-center text-xs text-gray-400">お知らせはありません</p>
+                    ) : (
+                      notifications.map((n, i) => (
+                        <Link
+                          key={n.id}
+                          href={n.href ?? "/mypage"}
+                          onClick={() => setShowNotif(false)}
+                          className={`flex gap-3 px-4 py-3 transition-colors hover:bg-gray-50 ${
+                            i < notifications.length - 1 ? "border-b border-gray-50" : ""
+                          } ${!n.isRead ? "bg-blue-50/30" : ""}`}
+                        >
+                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+                            <Bell className="h-4 w-4 text-emerald-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-800 line-clamp-1">{n.title}</p>
+                            <p className="text-xs leading-relaxed text-gray-600 line-clamp-2">{n.body}</p>
+                            <p className="mt-1 text-[10px] text-gray-400">{formatNotifTime(n.createdAt)}</p>
+                          </div>
+                        </Link>
+                      ))
+                    )}
                   </div>
                   <div className="border-t border-gray-100 px-4 py-2.5 text-center">
                     <Link
@@ -473,6 +537,17 @@ function SiteHeader({ query, setQuery }: { query: string; setQuery: (v: string) 
           {/* ヘルプ */}
           <nav className="px-3 py-3 pb-8">
             <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">サポート</p>
+            <button
+              type="button"
+              onClick={() => { closeMenu(); onOpenContact(); }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <MessageSquare className="h-4 w-4" />
+              </span>
+              運営への問い合わせ
+              <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300" />
+            </button>
             <Link
               href="/playground"
               onClick={closeMenu}
@@ -803,7 +878,8 @@ export function HomePageClient({
   heroSlides: HeroSlidePublic[];
 }) {
   const [query,           setQuery]           = useState("");
-  const { playgroundApps, popularMonth, popularCreators } = initialData;
+  const [showContact,     setShowContact]     = useState(false);
+  const { playgroundApps, popularMonth, popularCreators, featuredApps } = initialData;
   const loadingPG = false;
   const [pgCategoryFilter, setPgCategoryFilter] = useState<string>("all");
   const [selectedApp, setSelectedApp]         = useState<ModalApp | null>(null);
@@ -831,7 +907,7 @@ export function HomePageClient({
 
   return (
     <div className="min-h-screen bg-[#f3f6f4]">
-      <SiteHeader query={query} setQuery={setQuery} />
+      <SiteHeader query={query} setQuery={setQuery} onOpenContact={() => setShowContact(true)} />
 
       <HeroCarousel slides={heroSlides} />
       <HomeQuickActions />
@@ -899,6 +975,23 @@ export function HomePageClient({
       <HomeLibrarySection />
 
       <main id="browse" className="mx-auto max-w-6xl space-y-12 px-4 py-10">
+
+        {/* ─── 注目のアプリ（管理者選定） ─── */}
+        {featuredApps.length > 0 && (
+          <section>
+            <SectionHeader
+              icon={<Zap className="h-5 w-5 text-violet-500" />}
+              title="注目のアプリ"
+              sub="運営がピックアップしたおすすめアプリ"
+              href="/search?sort=featured"
+            />
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {featuredApps.map((app) => (
+                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ─── 今月の人気アプリ TOP5 ─── */}
         {popularMonth.length > 0 && (
@@ -1272,6 +1365,7 @@ export function HomePageClient({
           <JisappLogo href="/" />
           <p className="text-xs text-gray-400">© 2026 ジサップ — AIコードを貼るだけの開発スタジオ</p>
           <div className="flex flex-wrap justify-center gap-4 text-xs text-gray-400">
+            <button type="button" onClick={() => setShowContact(true)} className="hover:text-emerald-600">運営への問い合わせ</button>
             <Link href="/mypage" className="hover:text-emerald-600">マイページ</Link>
             <Link href="/playground" className="hover:text-emerald-600">アプリ開発スタジオへ</Link>
             <Link href="/terms" className="hover:text-emerald-600">利用規約</Link>
@@ -1294,6 +1388,8 @@ export function HomePageClient({
       {selectedApp && (
         <AppDetailModal app={selectedApp} onClose={() => setSelectedApp(null)} />
       )}
+
+      <ContactFormModal open={showContact} onClose={() => setShowContact(false)} />
     </div>
   );
 }

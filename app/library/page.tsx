@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { CATEGORY_MAP } from "@/lib/categories";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type LibraryEntry = {
   appId: string;
@@ -32,6 +33,8 @@ export default function LibraryPage() {
 
   const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [removeTarget, setRemoveTarget] = useState<LibraryEntry | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -45,16 +48,22 @@ export default function LibraryPage() {
   }, [isLoggedIn, status]);
 
   const handleRemove = async (appId: string) => {
-    // 楽観的更新
     const previous = library;
     setLibrary((prev) => prev.filter((e) => e.appId !== appId));
     try {
       const res = await fetch(`/api/library?appId=${encodeURIComponent(appId)}`, { method: "DELETE" });
       if (!res.ok) throw new Error("削除失敗");
     } catch {
-      // API失敗時はロールバック
       setLibrary(previous);
     }
+  };
+
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
+    setRemoving(true);
+    await handleRemove(removeTarget.appId);
+    setRemoving(false);
+    setRemoveTarget(null);
   };
 
   const getGradient = (entry: LibraryEntry) => {
@@ -164,7 +173,7 @@ export default function LibraryPage() {
                     開く
                   </button>
                   <button
-                    onClick={() => handleRemove(entry.appId)}
+                    onClick={() => setRemoveTarget(entry)}
                     className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-300 hover:bg-rose-50 hover:text-rose-400 transition-colors"
                     title="ライブラリから削除"
                   >
@@ -176,6 +185,20 @@ export default function LibraryPage() {
           </div>
         )}
       </main>
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        title="ライブラリから削除"
+        message={
+          removeTarget
+            ? `「${removeTarget.name ?? "アプリ"}」をマイライブラリから削除しますか？`
+            : ""
+        }
+        confirmLabel="削除する"
+        loading={removing}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

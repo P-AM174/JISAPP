@@ -8,6 +8,7 @@ import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { cn } from "@/lib/utils";
+import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 
 type AppRunnerProps = {
   html?: string | null;
@@ -159,7 +160,7 @@ export function AppRunner({
         ref={iframeRef}
         key={`${syncKey}-${iframeKey}`}
         srcDoc={documentHtml}
-        sandbox="allow-scripts allow-forms allow-modals"
+        sandbox={APP_IFRAME_SANDBOX}
         className="min-h-0 flex-1 w-full border-0 bg-white"
         title={title}
       />

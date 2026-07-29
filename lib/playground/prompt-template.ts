@@ -22,7 +22,15 @@ Tailwind CSSやBootstrapなどのCDN（外部読み込み）は、環境制限�
   ・保存: await window.Zisup.saveData('識別名', データ)
   ・読込: await window.Zisup.loadData('識別名')
   ※ async/await で読み込み完了を待ってから画面を表示してください。
-・保存が不要と答えた場合は、localStorage も Zisup API も使わないでください。`;
+・保存が不要と答えた場合は、localStorage も Zisup API も使わないでください。
+
+【外部API連携（必要な場合）】
+・天気・為替・公開APIなど外部データが必要な場合:
+  1. まず通常の fetch(url) を試してください（API側がCORS対応している場合）。
+  2. CORSエラーになる場合は window.Zisup.fetch(url, { method, headers, body }) を使ってください。
+     例: const res = await window.Zisup.fetch('https://api.example.com/data');
+          const data = res.body;
+  ※ URLは https のみ。APIキーをコードに書く場合、閲覧者に見える可能性があるため、公開APIキー等のみ使用してください。`;
 
 export const REPORT_TEMPLATE = `【研究テーマ】
 （例：おこづかいを記録するアプリを作った）

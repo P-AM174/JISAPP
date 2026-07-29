@@ -7,7 +7,7 @@ import {
   ShieldCheck, AlertTriangle, CheckCircle2, X,
   Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
-  Flag, Hash, Search, UserX, MessageSquare, Star,
+  Flag, Hash, Search, UserX, MessageSquare, Star, Code2, Mail, Bell, Send,
 } from "lucide-react";
 import { ADMIN_FLAG_OPTIONS, adminFlagLabel } from "@/lib/support/admin-flags";
 
@@ -50,6 +50,7 @@ type Inquiry = {
 
 type Tab = "dashboard" | "apps" | "inquiries" | "reports" | "users";
 type AppSubTab = "listed" | "url_only";
+type MessageChannel = "bell" | "email" | "both";
 
 type Report = {
   id: string;
@@ -112,6 +113,18 @@ export default function AdminDashboard() {
   const [actionMsg,          setActionMsg]          = useState("");
   const [loadingId,          setLoadingId]          = useState<string | null>(null);
   const [replyDrafts,        setReplyDrafts]        = useState<Record<string, string>>({});
+  const [messageTarget,      setMessageTarget]      = useState<UserRecord | null>(null);
+  const [messageTitle,       setMessageTitle]       = useState("");
+  const [messageBody,        setMessageBody]        = useState("");
+  const [messageChannel,     setMessageChannel]     = useState<MessageChannel>("both");
+  const [codeTarget,         setCodeTarget]         = useState<Product | null>(null);
+  const [codeData,           setCodeData]           = useState<{
+    title: string;
+    html_code: string;
+    css_code: string;
+    js_code: string;
+  } | null>(null);
+  const [codeTab,            setCodeTab]            = useState<"html" | "css" | "js">("html");
 
   // 検索
   const [appSearch,  setAppSearch]  = useState("");
@@ -313,6 +326,52 @@ export default function AdminDashboard() {
       notify("返信を送信しました");
     } else {
       alert("返信に失敗しました");
+    }
+    setLoadingId(null);
+  };
+
+  const handleSendUserMessage = async () => {
+    if (!messageTarget) return;
+    setLoadingId(messageTarget.id);
+    const res = await fetch(`/api/admin/users/${messageTarget.id}/message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: messageTitle,
+        message: messageBody,
+        channel: messageChannel,
+      }),
+    });
+    if (res.ok) {
+      setMessageTarget(null);
+      setMessageTitle("");
+      setMessageBody("");
+      setMessageChannel("both");
+      notify(`「${messageTarget.name ?? messageTarget.email}」にメッセージを送信しました`);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert((data as { error?: string }).error ?? "送信に失敗しました");
+    }
+    setLoadingId(null);
+  };
+
+  const handleViewCode = async (product: Product) => {
+    setCodeTarget(product);
+    setCodeData(null);
+    setCodeTab("html");
+    setLoadingId(product.id);
+    const res = await fetch(`/api/admin/apps/${product.id}/code`);
+    if (res.ok) {
+      const data = await res.json();
+      setCodeData({
+        title: data.title,
+        html_code: data.html_code ?? "",
+        css_code: data.css_code ?? "",
+        js_code: data.js_code ?? "",
+      });
+    } else {
+      alert("コードの取得に失敗しました");
+      setCodeTarget(null);
     }
     setLoadingId(null);
   };
@@ -646,13 +705,24 @@ export default function AdminDashboard() {
                           <td className="px-4 py-2.5 text-gray-400 max-w-[140px] truncate">{p.creator.name ?? p.creator.email}</td>
                           <td className="px-4 py-2.5 text-gray-400">{p.createdAt}</td>
                           <td className="px-4 py-2.5">
-                            <button onClick={() => handleDeleteProduct(p)} disabled={loadingId === p.id}
-                              className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
-                              {loadingId === p.id
-                                ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
-                                : <Trash2 className="h-3 w-3" />}
-                              強制削除
-                            </button>
+                            <div className="flex flex-wrap gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleViewCode(p)}
+                                disabled={loadingId === p.id}
+                                className="flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50"
+                              >
+                                <Code2 className="h-3 w-3" />
+                                コード
+                              </button>
+                              <button onClick={() => handleDeleteProduct(p)} disabled={loadingId === p.id}
+                                className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
+                                {loadingId === p.id
+                                  ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
+                                  : <Trash2 className="h-3 w-3" />}
+                                削除
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -891,13 +961,28 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3 text-center font-bold text-gray-700">{u.purchaseCount}</td>
                         <td className="px-4 py-3 text-gray-400">{u.createdAt}</td>
                           <td className="px-4 py-3">
-                          <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
-                            className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
-                            {loadingId === u.id
-                              ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
-                              : <UserX className="h-3 w-3" />}
-                            強制退会
-                          </button>
+                          <div className="flex flex-wrap gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMessageTarget(u);
+                                setMessageTitle("");
+                                setMessageBody("");
+                                setMessageChannel("both");
+                              }}
+                              className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+                            >
+                              <Send className="h-3 w-3" />
+                              メッセージ
+                            </button>
+                            <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
+                              className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50">
+                              {loadingId === u.id
+                                ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
+                                : <UserX className="h-3 w-3" />}
+                              強制退会
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -910,6 +995,106 @@ export default function AdminDashboard() {
         )}
 
       </main>
+
+      {messageTarget && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={() => setMessageTarget(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-black text-gray-900">ユーザーにメッセージ送信</h3>
+              <button type="button" onClick={() => setMessageTarget(null)}><X className="h-4 w-4 text-gray-400" /></button>
+            </div>
+            <p className="mb-4 text-xs text-gray-500">
+              宛先: {messageTarget.name ?? "（名前なし）"} · {messageTarget.email}
+            </p>
+            <div className="mb-4 flex gap-2">
+              {([
+                { id: "bell" as const, label: "通知ベル", icon: Bell },
+                { id: "email" as const, label: "メール", icon: Mail },
+                { id: "both" as const, label: "両方", icon: Send },
+              ]).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setMessageChannel(id)}
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-xl border px-2 py-2 text-[11px] font-bold transition-colors ${
+                    messageChannel === id
+                      ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={messageTitle}
+              onChange={(e) => setMessageTitle(e.target.value)}
+              placeholder="件名"
+              className="mb-3 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
+            />
+            <textarea
+              rows={5}
+              value={messageBody}
+              onChange={(e) => setMessageBody(e.target.value)}
+              placeholder="メッセージ本文"
+              className="mb-4 w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
+            />
+            <button
+              type="button"
+              onClick={handleSendUserMessage}
+              disabled={loadingId === messageTarget.id}
+              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {loadingId === messageTarget.id ? "送信中..." : "送信する"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {codeTarget && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={() => { setCodeTarget(null); setCodeData(null); }}>
+          <div className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div>
+                <h3 className="text-sm font-black text-gray-900">ソースコード（管理者閲覧）</h3>
+                <p className="text-xs text-gray-500">{codeData?.title ?? codeTarget.title}</p>
+              </div>
+              <button type="button" onClick={() => { setCodeTarget(null); setCodeData(null); }}>
+                <X className="h-4 w-4 text-gray-400" />
+              </button>
+            </div>
+            {!codeData ? (
+              <div className="flex justify-center py-16">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-1 border-b border-gray-100 px-4 pt-3">
+                  {(["html", "css", "js"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setCodeTab(tab)}
+                      className={`rounded-t-lg px-4 py-2 text-xs font-bold uppercase ${
+                        codeTab === tab ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-100"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                <pre className="flex-1 overflow-auto bg-gray-950 p-4 text-xs leading-relaxed text-emerald-100">
+                  <code>{codeTab === "html" ? codeData.html_code : codeTab === "css" ? codeData.css_code : codeData.js_code || "（空）"}</code>
+                </pre>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

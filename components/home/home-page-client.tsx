@@ -1299,8 +1299,8 @@ export function HomePageClient({
               },
               {
                 Icon: Lock,
-                title: "ブラウザ完結で安心・安全",
-                desc: "アプリはブラウザの sandbox 内で動作し、外部サーバーへの不正アクセスはできません。作る側も使う側も安心して利用できます。",
+                title: "安全な実行環境",
+                desc: "アプリはブラウザの sandbox 内で動作します。外部API（HTTPS）も window.Zisup.fetch 経由で利用でき、作る側も使う側も安心して利用できます。",
                 bg: "bg-emerald-50",
                 iconColor: "text-emerald-600",
               },

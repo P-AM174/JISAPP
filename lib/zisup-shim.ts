@@ -73,8 +73,30 @@ export const ZISUP_SHIM_SCRIPT = `
     loadData: function (key) {
       return request({ __zisup_type: 'load', key: String(key) });
     },
+
+    /**
+     * 外部APIへHTTPSリクエスト（CORSで直接fetchできない場合用プロキシ経由）。
+     * @param {string} url - https:// で始まるAPI URL
+     * @param {object} [options] - method, headers, body
+     * @returns {Promise<{ok:boolean,status:number,body:any}>}
+     */
+    fetch: function (url, options) {
+      options = options || {};
+      var headers = options.headers || {};
+      var body = options.body;
+      if (body !== undefined && body !== null && typeof body !== 'string') {
+        body = JSON.stringify(body);
+      }
+      return request({
+        __zisup_type: 'fetch',
+        url: String(url),
+        method: options.method || 'GET',
+        headers: headers,
+        body: body,
+      });
+    },
   };
 
-  console.log('[Zisup] API ready (v2 cloud-sync)');
+  console.log('[Zisup] API ready (v3 cloud-sync + external fetch)');
 })();
 `;

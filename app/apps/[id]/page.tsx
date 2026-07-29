@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { supabase, type AppRow } from "@/lib/supabase";
 import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
+import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncLoginButton } from "@/components/app-runner";
@@ -229,7 +230,7 @@ function SupabaseAppPage({ id }: { id: string }) {
             ref={iframeRef}
             key={`${id}-${enableCloud ? userId : "local"}-${iframeKey}`}
             srcDoc={srcDoc}
-            sandbox="allow-scripts allow-forms allow-modals"
+            sandbox={APP_IFRAME_SANDBOX}
             className="flex-1 border-0 bg-white w-full"
             style={{ minHeight: "calc(100vh - 53px)" }}
             title={app.title}
@@ -570,7 +571,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             </div>
             <iframe
               srcDoc={previewSrc}
-              sandbox="allow-scripts"
+              sandbox={APP_IFRAME_SANDBOX}
               className="h-[440px] w-full border-0 bg-white"
               title={`${app.name} デモ`}
             />
@@ -659,22 +660,22 @@ function MarketplaceAppPage({ id }: { id: string }) {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">詳細（任意）</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">詳細 *</label>
                   <textarea
                     value={reportDetail}
                     onChange={e => setReportDetail(e.target.value)}
-                    placeholder="具体的な問題点を教えてください"
+                    placeholder="具体的な問題点を入力してください（5文字以上）"
                     rows={3}
                     className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-rose-400 focus:bg-white transition resize-none"
                   />
                 </div>
-                {!reportReason && (
+                {(!reportReason || reportDetail.trim().length < 5) && (
                   <p className="flex items-center gap-1 text-xs text-amber-600">
-                    <AlertCircle className="h-3.5 w-3.5" />理由を選択してください
+                    <AlertCircle className="h-3.5 w-3.5" />理由の選択と詳細（5文字以上）が必要です
                   </p>
                 )}
                 <button
-                  disabled={!reportReason || reportLoading}
+                  disabled={!reportReason || reportDetail.trim().length < 5 || reportLoading}
                   onClick={async () => {
                     if (!reportReason) return;
                     setReportLoading(true);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 
 export function MiniPreview({
   id,
@@ -78,7 +79,7 @@ export function MiniPreview({
               pointerEvents: "none",
               border: "none",
             }}
-            sandbox="allow-scripts"
+            sandbox={APP_IFRAME_SANDBOX}
             tabIndex={-1}
             aria-hidden
             onLoad={() => setLoaded(true)}

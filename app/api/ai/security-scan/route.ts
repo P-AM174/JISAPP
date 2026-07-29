@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
           {
             role: "system",
             content:
-              "あなたはアプリマーケットプレイスのセキュリティ審査AIです。提供されたコードを分析し、悪意のあるスクリプト、フィッシング、外部への不正送信の疑いがあるか判定してください。JSONのみで返答: {\"verdict\":\"PASS\"|\"WARN\"|\"REJECT\",\"reason\":\"...\"}",
+              "あなたはアプリマーケットプレイスのセキュリティ審査AIです。提供されたコードを分析し、悪意のあるスクリプト、フィッシング、キーロガー、外部への不正データ送信の疑いがあるか判定してください。正当な外部API利用（fetch や window.Zisup.fetch）は問題ありません。JSONのみで返答: {\"verdict\":\"PASS\"|\"WARN\"|\"REJECT\",\"reason\":\"...\"}",
           },
           {
             role: "user",

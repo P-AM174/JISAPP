@@ -15,7 +15,9 @@ import {
   LibraryBig,
   ChevronRight,
   Star,
+  Flag,
 } from "lucide-react";
+import { AppReportModal } from "./app-report-modal";
 import { cn } from "@/lib/utils";
 import { ShareButtonRow } from "@/components/share-button";
 import { CreatorFollowButton } from "@/components/creator-follow-button";
@@ -103,6 +105,7 @@ export function AppDetailModal({
 
   const [requestText, setRequestText] = useState("");
   const [requestState, setRequestState] = useState<"idle" | "loading" | "done">("idle");
+  const [reportOpen, setReportOpen] = useState(false);
 
   const handleRequest = useCallback(async () => {
     if (!requestText.trim()) return;
@@ -365,9 +368,24 @@ export function AppDetailModal({
                 マイライブラリに追加
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="flex w-full items-center justify-center gap-1.5 py-1 text-xs text-gray-400 hover:text-rose-500 transition-colors"
+            >
+              <Flag className="h-3.5 w-3.5" />
+              このアプリを報告する
+            </button>
           </div>
         </div>
       </div>
+
+      <AppReportModal
+        appId={app.id}
+        appName={app.name}
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
     </div>
   );
 }

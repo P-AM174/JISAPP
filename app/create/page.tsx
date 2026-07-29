@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import {
   Upload,
   ImagePlus,
@@ -242,7 +243,7 @@ function BrowserPreview({ html }: { html: string }) {
           <iframe
             key={key}
             srcDoc={html}
-            sandbox="allow-scripts"
+            sandbox={APP_IFRAME_SANDBOX}
             className="h-full w-full border-0"
             title="preview"
           />

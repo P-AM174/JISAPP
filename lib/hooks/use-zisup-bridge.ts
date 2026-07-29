@@ -43,6 +43,34 @@ async function loadFromCloud(appId: string, key: string): Promise<string | null>
   return json.value ?? null;
 }
 
+async function proxyFetchFromApp(input: {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  appId?: string;
+}) {
+  const res = await fetch("/api/zisup/fetch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const json = (await res.json()) as {
+    ok?: boolean;
+    status?: number;
+    body?: unknown;
+    error?: string;
+  };
+  if (!res.ok) {
+    throw new Error(json.error ?? "外部APIへの接続に失敗しました");
+  }
+  return {
+    ok: !!json.ok,
+    status: json.status ?? res.status,
+    body: json.body ?? null,
+  };
+}
+
 /**
  * Zisup postMessage ブリッジ。
  *
@@ -109,11 +137,36 @@ export function useZisupBridge(
         key?: string;
         value?: string;
       };
-      if (!d || (d.__zisup_type !== "save" && d.__zisup_type !== "load")) return;
+      if (!d || (d.__zisup_type !== "save" && d.__zisup_type !== "load" && d.__zisup_type !== "fetch")) return;
       if (e.source !== iframeRef.current?.contentWindow) return;
 
       const { __zisup_id: id, key, value } = d;
-      if (!id || !key) return;
+      if (!id) return;
+
+      if (d.__zisup_type === "fetch") {
+        const fetchPayload = d as {
+          url?: string;
+          method?: string;
+          headers?: Record<string, string>;
+          body?: string;
+        };
+        if (!fetchPayload.url) return;
+        try {
+          const result = await proxyFetchFromApp({
+            url: fetchPayload.url,
+            method: fetchPayload.method,
+            headers: fetchPayload.headers,
+            body: fetchPayload.body,
+            appId,
+          });
+          send(id, JSON.stringify(result));
+        } catch (err) {
+          send(id, null, err instanceof Error ? err.message : "外部APIエラー");
+        }
+        return;
+      }
+
+      if (!key) return;
 
       if (d.__zisup_type === "save") {
         if (cloudUserId) {

@@ -23,8 +23,9 @@ export default function TermsPage() {
           </p>
           <h2 className="text-base font-bold text-gray-900">アプリ実行環境について</h2>
           <p>
-            初期バージョンでは、購入者の安全を最優先し、サンドボックス内で外部ネットワークへの通信を行うアプリは動作しない、または審査対象外とします。
-            ブラウザ内で完結するツール、または window.Zisup API を用いたデータ保存機能のご利用を推奨します。
+            アプリはサンドボックス内で実行されます。外部API（HTTPS）への通信が可能です。
+            CORSで直接接続できない場合は window.Zisup.fetch を利用してください。
+            ブラウザ内で完結するツール、外部API連携、window.Zisup API によるデータ保存が利用できます。
           </p>
           <h2 className="text-base font-bold text-gray-900">出品・購入</h2>
           <p>

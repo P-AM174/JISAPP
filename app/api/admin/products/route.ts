@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { listProductsForAdmin, countUsers, countPendingReports } from "@/lib/services/store";
+import { countPendingSupabaseReports } from "@/lib/reports/supabase-reports";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 function isUUID(id: string) {
@@ -18,11 +19,13 @@ export async function GET() {
     return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
-  const [prismaProducts, userCount, pendingReportCount] = await Promise.all([
+  const [prismaProducts, userCount, pendingPrismaReports, pendingSupabaseReports] = await Promise.all([
     listProductsForAdmin(),
     countUsers(),
     countPendingReports(),
+    countPendingSupabaseReports(),
   ]);
+  const pendingReportCount = pendingPrismaReports + pendingSupabaseReports;
 
   const realProducts = prismaProducts.filter((p) => !p.isDemo);
 

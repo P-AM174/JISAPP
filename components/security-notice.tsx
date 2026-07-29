@@ -10,8 +10,9 @@ export function SecurityNotice({ className = "" }: SecurityNoticeProps) {
     >
       <p className="font-bold">セキュリティに関するお知らせ</p>
       <p className="mt-1">
-        ※初期バージョンのジサップでは、セキュリティのため外部APIとの通信（fetch/axios等）を行うアプリは動作しないか、審査対象外となります。ブラウザ内で完結するツールや、window.Zisup
-        APIを用いた保存機能をご利用ください。
+        外部API（HTTPS）との通信が利用できます。CORSで直接接続できないAPIは{" "}
+        <code className="rounded bg-amber-100 px-1">window.Zisup.fetch(url)</code>{" "}
+        をご利用ください。APIキーをコードに含める場合、閲覧者に見える可能性がある点にご注意ください。
       </p>
     </div>
   );

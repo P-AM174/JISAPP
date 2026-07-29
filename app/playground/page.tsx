@@ -70,6 +70,75 @@ function Toast({ message, show }: { message: string; show: boolean }) {
   );
 }
 
+// ─── コード未入力時の簡易ガイド ───
+function SimpleCodeGuide({
+  onPaste,
+  onManualInput,
+  onOpenGuide,
+}: {
+  onPaste?: () => void;
+  onManualInput?: () => void;
+  onOpenGuide?: () => void;
+}) {
+  const steps = [
+    "ChatGPT などの AI に作りたいアプリを伝える",
+    "出力された HTML コードをすべてコピーする",
+    "「クリップボードから貼り付け」を押す",
+    "「プレビュー」タブで動作を確認する",
+    "問題なければ「公開する」から URL を発行する",
+  ];
+
+  return (
+    <div className="flex h-full flex-col overflow-y-auto bg-gradient-to-b from-emerald-50/80 to-white px-4 py-5">
+      <p className="text-xs font-bold tracking-wide text-emerald-700">使い方</p>
+      <h2 className="mt-1 text-base font-black text-gray-900">AI が作ったコードを貼り付けて動かす</h2>
+      <p className="mt-2 text-xs leading-relaxed text-gray-500">
+        プログラミングの知識は不要です。HTML コードを貼り付けるだけでアプリが動きます。
+      </p>
+      <ol className="mt-4 space-y-2.5">
+        {steps.map((step, i) => (
+          <li key={step} className="flex gap-3 rounded-xl bg-white px-3 py-2.5 ring-1 ring-emerald-100">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
+              {i + 1}
+            </span>
+            <span className="text-xs leading-relaxed text-gray-700">{step}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-4 flex flex-col gap-2">
+        {onPaste && (
+          <button
+            type="button"
+            onClick={onPaste}
+            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] touch-manipulation"
+          >
+            <Clipboard className="h-4 w-4" />
+            クリップボードから貼り付け
+          </button>
+        )}
+        {onManualInput && (
+          <button
+            type="button"
+            onClick={onManualInput}
+            className="rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 touch-manipulation"
+          >
+            手動で入力する
+          </button>
+        )}
+        {onOpenGuide && (
+          <button
+            type="button"
+            onClick={onOpenGuide}
+            className="text-xs font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2 touch-manipulation"
+          >
+            詳しい手順を見る
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── ガイド画面（コードがない状態） ───
 function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -729,6 +798,7 @@ export default function PlaygroundPage() {
   const [autoRun, setAutoRun]           = useState(true);
   const [copied, setCopied]             = useState(false);
   const [activePane, setActivePane]     = useState<"editor" | "preview">("editor");
+  const [codeInputStarted, setCodeInputStarted] = useState(false);
   const [iframeKey, setIframeKey]       = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -815,6 +885,7 @@ export default function PlaygroundPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const drawerTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const mobileTextareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumRef  = useRef<HTMLDivElement>(null);
   const searchRef   = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1043,13 +1114,19 @@ export default function PlaygroundPage() {
   const handleClear = () => {
     applyCode("");
     setPreviewHtml("");
+    setCodeInputStarted(false);
+    mobileTextareaRef.current?.focus();
     drawerTextareaRef.current?.focus();
   };
 
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text.trim()) applyCode(text);
+      if (text.trim()) {
+        applyCode(text);
+        setCodeInputStarted(true);
+      }
+      mobileTextareaRef.current?.focus();
       drawerTextareaRef.current?.focus();
     } catch {
       alert("クリップボードへのアクセスを許可してください（ブラウザの設定）");
@@ -1060,7 +1137,25 @@ export default function PlaygroundPage() {
     if (!code.trim()) return;
     setPreviewHtml(code);
     setIframeKey((k) => k + 1);
+    setActivePane("preview");
   }, [code]);
+
+  const handlePasteAndRun = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text.trim()) {
+        applyCode(text);
+        setPreviewHtml(text);
+        setIframeKey((k) => k + 1);
+        setCodeInputStarted(true);
+        setActivePane("preview");
+      } else {
+        mobileTextareaRef.current?.focus();
+      }
+    } catch {
+      alert("クリップボードへのアクセスを許可してください");
+    }
+  };
 
   const handleCopyCode = async () => {
     try {
@@ -1174,8 +1269,18 @@ export default function PlaygroundPage() {
   const charCount = code.length;
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
+  const showCodeEditor = code.trim().length > 0 || codeInputStarted;
   const showGuide = !previewHtml.trim();
   const isDirty = code.trim() !== "" && code !== lastSavedCode;
+
+  const focusCodeEditor = useCallback(() => {
+    setCodeInputStarted(true);
+    setActivePane("editor");
+    requestAnimationFrame(() => {
+      mobileTextareaRef.current?.focus();
+      drawerTextareaRef.current?.focus();
+    });
+  }, []);
 
 
   const handleBack = () => {
@@ -1273,7 +1378,7 @@ export default function PlaygroundPage() {
       )}
 
       {/* ══════════ ヘッダー ══════════ */}
-      <header className="flex shrink-0 flex-col border-b border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-center">
+      <header className="relative z-30 flex shrink-0 flex-col border-b border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-center">
 
         {/* 上段: 戻る・タイトル・ガイド */}
         <div className="flex min-w-0 items-center gap-1 px-2 py-2 sm:gap-2 sm:px-3">
@@ -1300,11 +1405,13 @@ export default function PlaygroundPage() {
           </div>
 
           <button
+            type="button"
             onClick={() => setShowGuideModal(true)}
-            className="ml-auto flex shrink-0 items-center gap-1 rounded-xl bg-amber-100 px-2 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95 sm:gap-1.5 sm:px-3"
+            className="ml-auto flex shrink-0 items-center gap-1 rounded-xl bg-amber-100 px-2 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95 sm:gap-1.5 sm:px-3 touch-manipulation"
           >
             <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden sm:inline">初心者ガイド</span>
+            <span className="md:hidden">使い方</span>
+            <span className="hidden md:inline">初心者ガイド</span>
           </button>
         </div>
 
@@ -1329,9 +1436,10 @@ export default function PlaygroundPage() {
 
           {/* ① 下書き保存 */}
           <button
+            type="button"
             onClick={handleSave}
             title="マイプロジェクトに下書き保存（非公開）"
-            className="flex flex-1 flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700 transition-all hover:bg-gray-100 active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3"
+            className="flex flex-1 flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700 transition-all hover:bg-gray-100 active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation"
           >
             <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
               <Save className="h-3.5 w-3.5 shrink-0" />
@@ -1345,11 +1453,12 @@ export default function PlaygroundPage() {
 
           {/* ② プレビュー更新 */}
           <button
+            type="button"
             onClick={handleRun}
             disabled={!code.trim()}
-            title="右側のプレビューで動作を確認"
+            title="左側のプレビューで動作を確認"
             className={cn(
-              "flex flex-1 flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3",
+              "flex flex-1 flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation",
               code.trim()
                 ? "border-emerald-600 bg-white text-emerald-700 hover:bg-emerald-50"
                 : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
@@ -1361,17 +1470,18 @@ export default function PlaygroundPage() {
               <span className="sm:hidden">更新</span>
             </span>
             <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-600/80 lg:block">
-              右側で動作確認
+              左側で動作確認
             </span>
           </button>
 
           {/* ③ 公開する */}
           <button
+            type="button"
             onClick={() => runWithLoginPrompt("publish", openPublishModal)}
             disabled={!code.trim()}
             title="URLを発行して共有・出品"
             className={cn(
-              "flex flex-1 flex-col items-center rounded-xl px-2 py-1.5 shadow-sm transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3",
+              "flex flex-1 flex-col items-center rounded-xl px-2 py-1.5 shadow-sm transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation",
               code.trim()
                 ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700"
                 : "cursor-not-allowed bg-gray-200 text-gray-400 shadow-none"
@@ -1386,61 +1496,156 @@ export default function PlaygroundPage() {
             </span>
           </button>
         </div>
-      </header>
 
-      {/* ══════════ メインコンテンツ（レスポンシブ分割） ══════════ */}
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-
-        {/* ── コードパネル（モバイル：下部常時表示 / PC：左ペイン） ── */}
-        <div className="order-2 flex h-[200px] shrink-0 flex-col border-t-[3px] border-t-black bg-white md:order-1 md:h-auto md:w-[42%] md:border-r-[3px] md:border-r-black md:border-t-0">
-
-          {/* パネルヘッダー */}
-          <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-              <Clipboard className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="md:hidden">⬇ ここにコードを貼り付ける</span>
-              <span className="hidden md:inline">⬅ ここにコードを貼り付ける</span>
-            </span>
-            <div className="flex items-center gap-0.5">
-              <button onClick={undo} disabled={!canUndo} title="元に戻す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
-                <Undo2 className="h-3.5 w-3.5" />
-              </button>
-              <button onClick={handleClear} title="全削除" className="rounded p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* ワンクリック貼り付けボタン */}
-          <button
-            onClick={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
-            className="flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-2.5 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99]"
-          >
-            <Clipboard className="h-4 w-4" />
-            クリップボードから貼り付けて実行
-          </button>
-
-          {/* テキストエリア */}
-          <textarea
-            ref={drawerTextareaRef}
-            value={code}
-            onChange={(e) => applyCode(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={"ここにコードを貼り付けてください\n（AIが生成したHTMLをそのまま貼り付けるだけでOK）"}
-            spellCheck={false}
-            className="flex-1 min-h-0 resize-none bg-white p-3 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 focus:outline-none"
-          />
-
-          {/* フッター */}
-          <div className="flex shrink-0 items-center border-t border-gray-100 bg-gray-50 px-3 py-1.5">
-            <span className="text-[10px] text-gray-400">
-              {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
-            </span>
+        {/* モバイル: コード / プレビュー 切り替え */}
+        <div className="shrink-0 border-t border-gray-100 bg-white px-3 py-2 md:hidden">
+          <div className="flex rounded-xl bg-gray-100 p-1">
+            <button
+              type="button"
+              onClick={() => setActivePane("editor")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold transition-all touch-manipulation",
+                activePane === "editor"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-gray-500"
+              )}
+            >
+              <Code2 className="h-4 w-4" />
+              コード
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePane("preview")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold transition-all touch-manipulation",
+                activePane === "preview"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-gray-500"
+              )}
+            >
+              <Eye className="h-4 w-4" />
+              プレビュー
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* ── プレビューパネル（モバイル：上部 / PC：右ペイン） ── */}
-        <div className="order-1 flex min-h-0 flex-1 flex-col bg-white md:order-2">
+      {/* ══════════ メインコンテンツ ══════════ */}
+
+      {/* ── モバイル: 全画面切り替え ── */}
+      <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden md:hidden">
+          {activePane === "preview" ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+              <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-gray-100 px-3 py-2">
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                </div>
+                <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
+                  <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
+                  <span className="truncate text-[11px] text-gray-400">
+                    {showGuide ? "コードを貼り付けると表示されます" : "プレビュー"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { if (code.trim()) { setPreviewHtml(code); setIframeKey((k) => k + 1); } }}
+                  title="再読み込み"
+                  className="shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600 touch-manipulation"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-hidden">
+                {showGuide ? (
+                  <GuideScreen
+                    onOpenDrawer={focusCodeEditor}
+                  />
+                ) : (
+                  <AppRunner key={iframeKey} srcDoc={previewHtml} title="プレビュー" className="h-full min-h-0" />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+              <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                  <Clipboard className="h-3.5 w-3.5 text-emerald-500" />
+                  HTMLコードを貼り付ける
+                </span>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors touch-manipulation">
+                    <Undo2 className="h-4 w-4" />
+                  </button>
+                  <button type="button" onClick={handleClear} title="全削除" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors touch-manipulation">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              {showCodeEditor && (
+                <button
+                  type="button"
+                  onClick={handlePasteAndRun}
+                  className="relative z-10 flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99] touch-manipulation"
+                >
+                  <Clipboard className="h-4 w-4" />
+                  クリップボードから貼り付け
+                </button>
+              )}
+              <div className="relative z-0 min-h-0 flex-1 overflow-hidden">
+                {showCodeEditor ? (
+                  <textarea
+                    ref={mobileTextareaRef}
+                    value={code}
+                    onChange={(e) => applyCode(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={"ここにHTMLコードを貼り付け\n（AIが生成したコードをそのまま貼り付け）"}
+                    spellCheck={false}
+                    className="block h-full w-full resize-none bg-white p-3 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 focus:outline-none"
+                  />
+                ) : (
+                  <SimpleCodeGuide
+                    onPaste={handlePasteAndRun}
+                    onManualInput={focusCodeEditor}
+                    onOpenGuide={() => setShowGuideModal(true)}
+                  />
+                )}
+              </div>
+              <div className="relative z-10 flex shrink-0 items-center justify-between border-t border-gray-100 bg-gray-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+                <span className="text-[10px] text-gray-400">
+                  {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!code.trim()) {
+                      setToast({ msg: "コードを貼り付けてください", show: true });
+                      setTimeout(() => setToast({ msg: "", show: false }), 2500);
+                      return;
+                    }
+                    handleRun();
+                  }}
+                  className={cn(
+                    "flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold transition-all touch-manipulation",
+                    code.trim()
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "bg-gray-200 text-gray-500"
+                  )}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  プレビューへ
+                </button>
+              </div>
+            </div>
+          )}
+      </div>
+
+      {/* ── PC: 左右分割（プレビュー左・コード右） ── */}
+      <div className="relative z-0 hidden min-h-0 flex-1 md:flex md:flex-row">
+
+        {/* ── プレビューパネル（左） ── */}
+        <div className="flex min-h-0 flex-1 flex-col bg-white">
 
           {/* ブラウザクローム */}
           <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-gray-100 px-3 py-2">
@@ -1456,6 +1661,7 @@ export default function PlaygroundPage() {
               </span>
             </div>
             <button
+              type="button"
               onClick={() => { if (code.trim()) { setPreviewHtml(code); setIframeKey((k) => k + 1); } }}
               title="再読み込み"
               className="shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600"
@@ -1469,12 +1675,71 @@ export default function PlaygroundPage() {
             <div className="absolute inset-0 overflow-y-auto">
               {showGuide ? (
                 <GuideScreen
-                  onOpenDrawer={() => drawerTextareaRef.current?.focus()}
+                  onOpenDrawer={focusCodeEditor}
                 />
               ) : (
                 <AppRunner key={iframeKey} srcDoc={previewHtml} title="プレビュー" className="h-full" />
               )}
             </div>
+          </div>
+        </div>
+
+        {/* ── コードパネル（右） ── */}
+        <div className="flex h-auto w-[42%] shrink-0 flex-col border-l-[3px] border-l-black bg-white">
+
+          {/* パネルヘッダー */}
+          <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+              <Clipboard className="h-3.5 w-3.5 text-emerald-500" />
+              ここにコードを貼り付ける
+            </span>
+            <div className="flex items-center gap-0.5">
+              <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                <Undo2 className="h-3.5 w-3.5" />
+              </button>
+              <button type="button" onClick={handleClear} title="全削除" className="rounded p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {showCodeEditor && (
+            <button
+              type="button"
+              onClick={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
+              className="flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-2.5 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99]"
+            >
+              <Clipboard className="h-4 w-4" />
+              クリップボードから貼り付けて実行
+            </button>
+          )}
+
+          {/* テキストエリア or 簡易ガイド */}
+          {showCodeEditor ? (
+            <textarea
+              ref={drawerTextareaRef}
+              value={code}
+              onChange={(e) => applyCode(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={"ここにコードを貼り付けてください\n（AIが生成したHTMLをそのまま貼り付けるだけでOK）"}
+              spellCheck={false}
+              className="flex-1 min-h-0 resize-none bg-white p-3 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 focus:outline-none"
+            />
+          ) : (
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <SimpleCodeGuide
+                onPaste={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
+                onManualInput={focusCodeEditor}
+                onOpenGuide={() => setShowGuideModal(true)}
+              />
+            </div>
+          )}
+
+          {/* フッター */}
+          <div className="flex shrink-0 items-center border-t border-gray-100 bg-gray-50 px-3 py-1.5">
+            <span className="text-[10px] text-gray-400">
+              {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
+            </span>
           </div>
         </div>
       </div>

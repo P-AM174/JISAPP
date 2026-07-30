@@ -1,8 +1,16 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { revalidateCatalogPages } from "@/lib/revalidate-catalog";
 
+type RemovalOptions = {
+  /** 管理者による強制削除（マイライブラリ利用不可） */
+  admin?: boolean;
+};
+
 /** トップ・検索カタログから非表示（status=deleted, is_listed=false） */
-export async function removeAppFromCatalog(appId: string): Promise<{ ok: boolean; error?: string }> {
+export async function removeAppFromCatalog(
+  appId: string,
+  options?: RemovalOptions
+): Promise<{ ok: boolean; error?: string }> {
   const supabase = createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -10,6 +18,7 @@ export async function removeAppFromCatalog(appId: string): Promise<{ ok: boolean
     .update({
       status: "deleted",
       is_listed: false,
+      admin_deleted: options?.admin ?? false,
     })
     .eq("id", appId)
     .select("id")

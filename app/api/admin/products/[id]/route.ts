@@ -96,7 +96,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   if (isUUID(id)) {
-    const removed = await removeAppFromCatalog(id);
+    const removed = await removeAppFromCatalog(id, { admin: true });
     if (!removed.ok) {
       return NextResponse.json({ error: removed.error ?? "削除に失敗しました" }, { status: 500 });
     }

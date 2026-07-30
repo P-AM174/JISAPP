@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
@@ -11,13 +13,11 @@ import {
   SlidersHorizontal,
   MessageSquare,
   Tag,
-  ArrowRight,
   FileText,
   Terminal,
   Rocket,
 } from "lucide-react";
 
-// ─── 型 ───
 type AppRequest = {
   id: string;
   title: string;
@@ -30,9 +30,14 @@ type AppRequest = {
 
 const CATEGORIES = ["すべて", "ゲーム", "便利ツール", "学習・教育", "エンタメ", "生産性", "その他"];
 
-// ダミーデータは廃止（ユーザー投稿のみ表示）
+function formatDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString("ja-JP");
+  } catch {
+    return iso;
+  }
+}
 
-// ─── リクエストカード ───
 function RequestCard({ req }: { req: AppRequest }) {
   return (
     <Link href={`/requests/${req.id}`} className="group block">
@@ -53,35 +58,57 @@ function RequestCard({ req }: { req: AppRequest }) {
           <span className="flex items-center gap-1">
             <Tag className="h-3 w-3" /> {req.authorName}
           </span>
-          <span className="ml-auto">{req.createdAt}</span>
+          <span className="ml-auto">{formatDate(req.createdAt)}</span>
         </div>
       </div>
     </Link>
   );
 }
 
-// ─── 投稿モーダル ───
-function PostModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: AppRequest) => void }) {
-  const [title,      setTitle]      = useState("");
-  const [content,    setContent]    = useState("");
-  const [category,   setCategory]   = useState("便利ツール");
-  const [authorName, setAuthorName] = useState("");
-  const [error,      setError]      = useState("");
+function PostModal({
+  onClose,
+  onSubmit,
+  defaultAuthorName,
+}: {
+  onClose: () => void;
+  onSubmit: (r: AppRequest) => void;
+  defaultAuthorName: string;
+}) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("便利ツール");
+  const [authorName, setAuthorName] = useState(defaultAuthorName);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) { setError("タイトルと内容は必須です。"); return; }
-    const newReq: AppRequest = {
-      id:          `u_${Date.now()}`,
-      title:       title.trim(),
-      content:     content.trim(),
-      category,
-      authorName:  authorName.trim() || "匿名ユーザー",
-      createdAt:   new Date().toLocaleDateString("ja-JP"),
-      responses:   0,
-    };
-    onSubmit(newReq);
-    onClose();
+    if (!title.trim() || !content.trim()) {
+      setError("タイトルと内容は必須です。");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: content.trim(),
+          category,
+          authorName: authorName.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "投稿に失敗しました");
+      onSubmit(data.request);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "投稿に失敗しました");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -89,21 +116,28 @@ function PostModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: A
       <div className="w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl" style={{ maxHeight: "90vh" }}>
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="text-base font-black text-gray-900">欲しいアプリをリクエスト</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="h-5 w-5" />
+          </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
           {error && <p className="rounded-xl bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600">{error}</p>}
 
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
-            <p className="font-bold mb-0.5">💡 リクエストのコツ</p>
+            <p className="mb-0.5 font-bold">リクエストのコツ</p>
             <p>「どんなことができるアプリか」をなるべく具体的に書くと、他のユーザーがAIで作りやすくなります。</p>
           </div>
 
           <div>
             <label className="mb-1.5 block text-xs font-bold text-gray-700">カテゴリ <span className="text-rose-500">*</span></label>
-            <select value={category} onChange={e => setCategory(e.target.value)}
-              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20">
-              {CATEGORIES.filter(c => c !== "すべて").map(c => <option key={c} value={c}>{c}</option>)}
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+            >
+              {CATEGORIES.filter((c) => c !== "すべて").map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
           </div>
 
@@ -111,39 +145,57 @@ function PostModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: A
             <label className="mb-1.5 block text-xs font-bold text-gray-700">
               アプリのタイトル <span className="text-rose-500">*</span>
             </label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="例：タイピング練習ゲームが欲しい"
               maxLength={80}
-              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
+              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+            />
           </div>
 
           <div>
             <label className="mb-1.5 block text-xs font-bold text-gray-700">
               どんなアプリが欲しいか <span className="text-rose-500">*</span>
             </label>
-            <textarea value={content} onChange={e => setContent(e.target.value)} rows={4}
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={4}
               placeholder="どんな機能が欲しいか、どんなときに使いたいかを書いてください。"
               maxLength={500}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+            />
             <p className="mt-1 text-right text-[10px] text-gray-400">{content.length}/500</p>
           </div>
 
           <div>
             <label className="mb-1.5 block text-xs font-bold text-gray-700">ニックネーム（任意）</label>
-            <input type="text" value={authorName} onChange={e => setAuthorName(e.target.value)}
+            <input
+              type="text"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
               placeholder="匿名ユーザー"
               maxLength={30}
-              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
+              className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+            />
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            >
               キャンセル
             </button>
-            <button type="submit"
-              className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
-              リクエストを投稿
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {submitting ? "投稿中…" : "リクエストを投稿"}
             </button>
           </div>
         </form>
@@ -152,51 +204,84 @@ function PostModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: A
   );
 }
 
-// ─── メインページ ───
 export default function RequestsPage() {
-  const [requests,     setRequests]     = useState<AppRequest[]>([]);
-  const [showModal,    setShowModal]    = useState(false);
-  const [query,        setQuery]        = useState("");
-  const [activeTab,    setActiveTab]    = useState("すべて");
-  const [sortNew,      setSortNew]      = useState(true);
-  const [mounted,      setMounted]      = useState(false);
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [requests, setRequests] = useState<AppRequest[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [query, setQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("すべて");
+  const [sortNew, setSortNew] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  const isLoggedIn = status === "authenticated";
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+    try {
+      const res = await fetch("/api/requests");
+      if (res.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent("/requests")}`);
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "読み込みに失敗しました");
+      setRequests(data.requests ?? []);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "読み込みに失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("jisapp_app_requests");
-      if (raw) {
-        const saved: AppRequest[] = JSON.parse(raw);
-        setRequests(saved);
-      }
-    } catch { /* noop */ }
-    setMounted(true);
-  }, []);
+    if (status === "loading") return;
+    if (!isLoggedIn) {
+      router.push(`/login?callbackUrl=${encodeURIComponent("/requests")}`);
+      return;
+    }
+    loadRequests();
+  }, [status, isLoggedIn, loadRequests, router]);
 
   const handlePost = (req: AppRequest) => {
-    const updated = [req, ...requests];
-    try {
-      localStorage.setItem("jisapp_app_requests", JSON.stringify(updated));
-    } catch { /* noop */ }
-    setRequests([req, ...requests]);
+    setRequests((prev) => [req, ...prev]);
   };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = requests.filter(r => {
+    let list = requests.filter((r) => {
       const matchCat = activeTab === "すべて" || r.category === activeTab;
-      const matchQ   = !q || r.title.toLowerCase().includes(q) || r.content.toLowerCase().includes(q);
+      const matchQ = !q || r.title.toLowerCase().includes(q) || r.content.toLowerCase().includes(q);
       return matchCat && matchQ;
     });
-    if (sortNew) list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    else         list = [...list].sort((a, b) => b.responses - a.responses);
+    if (sortNew) {
+      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else {
+      list = [...list].sort((a, b) => b.responses - a.responses);
+    }
     return list;
   }, [requests, query, activeTab, sortNew]);
 
+  if (status === "loading" || !isLoggedIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f6f4] text-sm text-gray-500">
+        読み込み中…
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f3f6f4]">
-      {showModal && <PostModal onClose={() => setShowModal(false)} onSubmit={handlePost} />}
+      {showModal && (
+        <PostModal
+          onClose={() => setShowModal(false)}
+          onSubmit={handlePost}
+          defaultAuthorName={session?.user?.name ?? ""}
+        />
+      )}
 
-      {/* ─── ヘッダー ─── */}
       <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <BackButton label="戻る" hideLabelOnMobile />
@@ -204,8 +289,11 @@ export default function RequestsPage() {
           <span className="text-sm text-gray-400">/</span>
           <span className="text-sm font-semibold text-gray-700">アプリリクエスト</span>
           <div className="ml-auto">
-            <button onClick={() => setShowModal(true)}
-              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            >
               <Plus className="h-3.5 w-3.5" /> リクエストを投稿
             </button>
           </div>
@@ -213,50 +301,64 @@ export default function RequestsPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        {/* ─── ヒーロー ─── */}
         <div className="mb-8 text-center">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-700">
-            <JisappLogoIcon className="h-3.5 w-3.5" /> ジサップユーザーがAIで作ってくれるかも
+            <JisappLogoIcon className="h-3.5 w-3.5" /> ログインユーザー限定の依頼掲示板
           </div>
-          <h1 className="text-2xl font-black text-gray-900 sm:text-3xl">こんなアプリが欲しい！</h1>
+          <h1 className="text-2xl font-black text-gray-900 sm:text-3xl">こんなアプリが欲しい</h1>
           <p className="mt-2 text-sm text-gray-500">
             アイデアをリクエストすると、他のジサップユーザーがAIを使って作って返信してくれます。
           </p>
           <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <button onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-8 py-3 text-sm font-black text-white shadow-md hover:bg-emerald-700">
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-8 py-3 text-sm font-black text-white shadow-md hover:bg-emerald-700"
+            >
               <Plus className="h-4 w-4" /> リクエストを投稿する
             </button>
-            <Link href="/playground"
-              className="inline-flex items-center gap-2 rounded-2xl border-2 border-emerald-200 bg-white px-7 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50">
+            <Link
+              href="/playground"
+              className="inline-flex items-center gap-2 rounded-2xl border-2 border-emerald-200 bg-white px-7 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
+            >
               <Terminal className="h-4 w-4" /> 自分で作ってみる
             </Link>
           </div>
         </div>
 
-        {/* ─── フィルタバー ─── */}
         <div className="mb-5 space-y-3">
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input type="text" value={query} onChange={e => setQuery(e.target.value)}
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="キーワードで検索..."
-              className="h-10 w-full rounded-full border border-gray-200 bg-white pl-9 pr-4 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
+              className="h-10 w-full rounded-full border border-gray-200 bg-white pl-9 pr-4 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+            />
           </div>
           <div className="flex items-center gap-2">
             <div className="flex flex-1 gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {CATEGORIES.map(cat => (
-                <button key={cat} type="button" onClick={() => setActiveTab(cat)}
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveTab(cat)}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                     activeTab === cat ? "bg-emerald-600 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200 hover:ring-emerald-300"
-                  }`}>
+                  }`}
+                >
                   {cat}
                 </button>
               ))}
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <SlidersHorizontal className="h-3.5 w-3.5 text-gray-400" />
-              <select value={sortNew ? "new" : "popular"} onChange={e => setSortNew(e.target.value === "new")}
-                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-600 outline-none focus:border-emerald-400">
+              <select
+                value={sortNew ? "new" : "popular"}
+                onChange={(e) => setSortNew(e.target.value === "new")}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-600 outline-none focus:border-emerald-400"
+              >
                 <option value="new">新着順</option>
                 <option value="popular">返信が多い順</option>
               </select>
@@ -264,37 +366,56 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        <p className="mb-4 text-xs text-gray-500">
-          {mounted ? <><span className="font-semibold text-emerald-700">{filtered.length}件</span> のリクエスト</> : "読み込み中..."}
-        </p>
-
-        {/* ─── カードグリッド ─── */}
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map(req => <RequestCard key={req.id} req={req} />)}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-white py-20 text-center">
-            <FileText className="h-8 w-8 text-gray-300" />
-            <p className="font-bold text-gray-600">該当するリクエストが見つかりませんでした</p>
-            <p className="text-sm text-gray-400">最初にリクエストしてみましょう！</p>
-            <button onClick={() => setShowModal(true)}
-              className="mt-1 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
-              リクエストを投稿する
+        {loadError && (
+          <div className="mb-4 flex items-center justify-between rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <span>{loadError}</span>
+            <button type="button" onClick={loadRequests} className="font-bold underline">
+              再試行
             </button>
           </div>
         )}
 
-        {/* ─── 自分でも作れる訴求 ─── */}
-        <div className="mt-12 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 p-8 text-white text-center shadow-lg">
-          <div className="mb-2 text-2xl">🛠️</div>
-          <h2 className="text-lg font-black">自分でも作れます！</h2>
+        <p className="mb-4 text-xs text-gray-500">
+          {loading ? (
+            "読み込み中..."
+          ) : (
+            <>
+              <span className="font-semibold text-emerald-700">{filtered.length}件</span> のリクエスト
+            </>
+          )}
+        </p>
+
+        {!loading && filtered.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((req) => (
+              <RequestCard key={req.id} req={req} />
+            ))}
+          </div>
+        ) : !loading ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-white py-20 text-center">
+            <FileText className="h-8 w-8 text-gray-300" />
+            <p className="font-bold text-gray-600">該当するリクエストが見つかりませんでした</p>
+            <p className="text-sm text-gray-400">最初にリクエストしてみましょう</p>
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="mt-1 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+            >
+              リクエストを投稿する
+            </button>
+          </div>
+        ) : null}
+
+        <div className="mt-12 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 p-8 text-center text-white shadow-lg">
+          <h2 className="text-lg font-black">自分でも作れます</h2>
           <p className="mt-2 text-sm text-white/80">
-            AIにアイデアを伝えてコードを生成してもらい、開発スタジオに貼るだけ。<br className="hidden sm:block"/>
+            AIにアイデアを伝えてコードを生成してもらい、開発スタジオに貼るだけ。
             プログラミング知識ゼロでも、あなたのアイデアをアプリにできます。
           </p>
-          <Link href="/playground"
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-3 text-sm font-black text-emerald-700 shadow-md hover:bg-emerald-50 transition-colors">
+          <Link
+            href="/playground"
+            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-3 text-sm font-black text-emerald-700 shadow-md hover:bg-emerald-50 transition-colors"
+          >
             <Rocket className="h-4 w-4" />
             開発スタジオで試してみる
           </Link>

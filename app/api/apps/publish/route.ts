@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import {
+  snapshotFromAppRow,
+  upsertLibrarySnapshot,
+} from "@/lib/library/snapshots";
+import {
+  queueLibraryUpdatesOnRepublish,
+} from "@/lib/library/pending-updates";
 
 const MAX_CODE_BYTES = 512 * 1024; // 512KB
 const LIBRARY_KEY = "__in_library__";
@@ -81,6 +88,8 @@ export async function POST(request: Request) {
     code_public?: boolean;
     project_id?: string;
     app_id?: string;
+    reset_user_data?: boolean;
+    update_notes?: string;
   };
 
   try {
@@ -139,9 +148,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "このアプリを上書きする権限がありません" }, { status: 403 });
     }
 
+    const { data: existingApp } = await supabase
+      .from("apps")
+      .select("code_version")
+      .eq("id", overwriteAppId)
+      .maybeSingle();
+
+    const nextCodeVersion = (existingApp?.code_version ?? 1) + 1;
+    const resetUserData = body.reset_user_data === true;
+    const updateNotes = (body.update_notes ?? "").trim();
+    if (updateNotes.length > 200) {
+      return NextResponse.json({ error: "更新内容は200文字以内で入力してください" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("apps")
-      .update(appPayload)
+      .update({
+        ...appPayload,
+        code_version: nextCodeVersion,
+        admin_deleted: false,
+      })
       .eq("id", overwriteAppId)
       .select("id")
       .single();
@@ -154,6 +180,22 @@ export async function POST(request: Request) {
       );
     }
     appId = data.id;
+
+    const publisherSnapshot = snapshotFromAppRow({
+      ...appPayload,
+      code_version: nextCodeVersion,
+    });
+    await upsertLibrarySnapshot(supabase, sessionUserId, appId, publisherSnapshot);
+
+    await queueLibraryUpdatesOnRepublish({
+      supabase,
+      appId,
+      publisherUserId: sessionUserId,
+      appTitle: title,
+      codeVersion: nextCodeVersion,
+      resetUserData,
+      updateNotes: updateNotes || null,
+    });
   } else {
     const { data, error } = await supabase
       .from("apps")
@@ -213,6 +255,14 @@ export async function POST(request: Request) {
       name: title,
       category: body.category ?? null,
     });
+
+    if (!overwriteAppId) {
+      const snap = snapshotFromAppRow({
+        ...appPayload,
+        code_version: 1,
+      });
+      await upsertLibrarySnapshot(supabase, sessionUserId, appId, snap);
+    }
   }
 
   return NextResponse.json({ id: appId, updated: !!overwriteAppId }, { status: overwriteAppId ? 200 : 201 });

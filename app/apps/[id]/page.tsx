@@ -30,7 +30,8 @@ import {
   Flag,
   AlertCircle,
 } from "lucide-react";
-import { supabase, type AppRow } from "@/lib/supabase";
+import { type AppRow } from "@/lib/supabase";
+import { AppUpdateModal, type PendingUpdateInfo } from "@/components/library/app-update-modal";
 import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
@@ -59,6 +60,10 @@ function SupabaseAppPage({ id }: { id: string }) {
   const [codeTab, setCodeTab] = useState<"html" | "css" | "js">("html");
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  const [creatorRemoved, setCreatorRemoved] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<PendingUpdateInfo | null>(null);
+  const [updateProcessing, setUpdateProcessing] = useState(false);
+  const [adminRemoved, setAdminRemoved] = useState(false);
 
   const loginCallbackUrl = `/apps/${id}`;
   const {
@@ -87,21 +92,52 @@ function SupabaseAppPage({ id }: { id: string }) {
     if (enableCloud) setIframeKey((k) => k + 1);
   }, [enableCloud]);
 
+  const loadRuntime = async () => {
+    const res = await fetch(`/api/apps/${id}/runtime`);
+    const data = await res.json();
+    if (res.status === 410) {
+      setAdminRemoved(true);
+      setNotFound(true);
+      return false;
+    }
+    if (!res.ok) {
+      setNotFound(true);
+      return false;
+    }
+    setApp(data.app as AppRow);
+    setCreatorRemoved(!!data.creatorRemoved);
+    setPendingUpdate(data.pendingUpdate ?? null);
+    if (data.app?.status === "active") {
+      fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});
+    }
+    return true;
+  };
+
   useEffect(() => {
-    supabase
-      .from("apps")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error || !data || data.status === "deleted") { setNotFound(true); }
-        else {
-          setApp(data as AppRow);
-          fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});
-        }
-        setLoading(false);
-      });
+    loadRuntime().finally(() => setLoading(false));
   }, [id]);
+
+  const handleUpdateAction = async (action: "accept" | "decline") => {
+    setUpdateProcessing(true);
+    try {
+      const res = await fetch("/api/library/pending-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appId: id, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "操作に失敗しました");
+      if (action === "accept") {
+        await loadRuntime();
+        setIframeKey((k) => k + 1);
+      }
+      setPendingUpdate(null);
+    } catch {
+      /* noop */
+    } finally {
+      setUpdateProcessing(false);
+    }
+  };
 
   const loadSourceCode = async () => {
     if (codePanelOpen && sourceCode) {
@@ -143,8 +179,12 @@ function SupabaseAppPage({ id }: { id: string }) {
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
           <span className="text-3xl">🔍</span>
         </div>
-        <p className="text-lg font-bold text-gray-700">アプリが見つかりませんでした</p>
-        <p className="text-sm text-gray-400">URLが正しいか確認してください</p>
+        <p className="text-lg font-bold text-gray-700">
+          {adminRemoved ? "このアプリは運営により削除されました" : "アプリが見つかりませんでした"}
+        </p>
+        <p className="text-sm text-gray-400">
+          {adminRemoved ? "マイライブラリからも利用できません" : "URLが正しいか確認してください"}
+        </p>
         <Link href="/" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-700">
           トップに戻る
         </Link>
@@ -194,6 +234,12 @@ function SupabaseAppPage({ id }: { id: string }) {
           </div>
         </div>
       </header>
+
+      {creatorRemoved && (
+        <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
+          出品者がアプリを削除しました。マイライブラリに保存しているため、引き続きご利用いただけます。
+        </div>
+      )}
 
       {/* アプリ実行エリア（全画面 iframe） */}
       <main className="relative flex flex-1 flex-col">
@@ -253,6 +299,17 @@ function SupabaseAppPage({ id }: { id: string }) {
         onClose={() => setSyncModalOpen(false)}
         onAddedToLibrary={() => setInLibrary(true)}
       />
+
+      {pendingUpdate && inLibrary && (
+        <AppUpdateModal
+          open
+          pending={pendingUpdate}
+          appTitle={app.title}
+          processing={updateProcessing}
+          onAccept={() => handleUpdateAction("accept")}
+          onDecline={() => handleUpdateAction("decline")}
+        />
+      )}
 
       {/* フッター（最小限） */}
       <div className="border-t border-gray-100 bg-gray-50 py-2 text-center">

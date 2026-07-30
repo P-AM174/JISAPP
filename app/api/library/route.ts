@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { snapshotFromAppRow, upsertLibrarySnapshot, deleteLibrarySnapshot } from "@/lib/library/snapshots";
 
 const supabase = createServerSupabaseClient();
 
@@ -79,6 +80,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const { data: appRow } = await supabase
+    .from("apps")
+    .select("title, description, html_code, css_code, js_code, category, code_version, admin_deleted, status")
+    .eq("id", appId)
+    .maybeSingle();
+
+  if (appRow && !appRow.admin_deleted && appRow.status === "active") {
+    await upsertLibrarySnapshot(
+      supabase,
+      userId,
+      appId,
+      snapshotFromAppRow({
+        title: appRow.title,
+        description: appRow.description,
+        html_code: appRow.html_code,
+        css_code: appRow.css_code,
+        js_code: appRow.js_code,
+        category: appRow.category ?? category ?? null,
+        code_version: appRow.code_version,
+      })
+    );
+  }
+
   return NextResponse.json({ ok: true });
 }
 
@@ -105,6 +129,13 @@ export async function DELETE(req: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await deleteLibrarySnapshot(supabase, userId, appId);
+  await supabase
+    .from("library_pending_updates")
+    .delete()
+    .eq("user_id", userId)
+    .eq("app_id", appId);
 
   return NextResponse.json({ ok: true });
 }

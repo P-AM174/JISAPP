@@ -804,6 +804,8 @@ export default function PlaygroundPage() {
   const [urlCopied, setUrlCopied]             = useState(false);
   const [publishContext, setPublishContext]   = useState<{ projectId?: string; appId?: string } | null>(null);
   const [lastPublishWasOverwrite, setLastPublishWasOverwrite] = useState(false);
+  const [publishResetUserData, setPublishResetUserData] = useState(false);
+  const [publishUpdateNotes, setPublishUpdateNotes] = useState("");
 
   const isRepublish = !!publishContext?.appId;
 
@@ -883,6 +885,8 @@ export default function PlaygroundPage() {
   const openPublishModal = useCallback(() => {
     setPublishedUrl(null);
     setLastPublishWasOverwrite(false);
+    setPublishResetUserData(false);
+    setPublishUpdateNotes("");
     if (!isRepublish && !publishTitle.trim()) {
       try {
         const t = localStorage.getItem("jisapp_playground_title");
@@ -915,6 +919,8 @@ export default function PlaygroundPage() {
           code_public: publishCodePublic,
           app_id: publishContext?.appId,
           project_id: publishContext?.projectId,
+          reset_user_data: isRepublish ? publishResetUserData : undefined,
+          update_notes: isRepublish ? publishUpdateNotes.trim() || undefined : undefined,
         }),
       });
       const json = await res.json();
@@ -2027,6 +2033,60 @@ export default function PlaygroundPage() {
                       </span>
                     </label>
                   </div>
+                  {isRepublish && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-gray-700">
+                        マイライブラリ登録者への更新内容
+                        <span className="ml-1 text-[10px] font-normal text-gray-400">（任意・200字まで）</span>
+                      </label>
+                      <textarea
+                        value={publishUpdateNotes}
+                        onChange={(e) => setPublishUpdateNotes(e.target.value)}
+                        placeholder={
+                          publishResetUserData
+                            ? "例：UIを大幅に変更しました。保存データは互換性がないため、アップデート時にリセットされます。"
+                            : "例：ダークモードを追加しました。保存データはそのまま使えます。"
+                        }
+                        rows={3}
+                        maxLength={200}
+                        className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                      />
+                      <p className="mt-1 text-right text-[10px] text-gray-400">{publishUpdateNotes.length}/200</p>
+                    </div>
+                  )}
+                  {isRepublish && (
+                    <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-4">
+                      <p className="mb-3 text-xs font-bold text-amber-900">マイライブラリ登録者の保存データ</p>
+                      <label className="flex cursor-pointer items-start gap-3">
+                        <input
+                          type="radio"
+                          name="resetUserData"
+                          checked={!publishResetUserData}
+                          onChange={() => setPublishResetUserData(false)}
+                          className="mt-0.5 h-4 w-4 border-amber-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-xs leading-relaxed text-amber-900">
+                          <span className="font-bold">データを引き継ぐ</span>
+                          <br />
+                          ユーザーはアップデートの確認後、保存データを維持したまま新しいコードを選べます
+                        </span>
+                      </label>
+                      <label className="mt-3 flex cursor-pointer items-start gap-3">
+                        <input
+                          type="radio"
+                          name="resetUserData"
+                          checked={publishResetUserData}
+                          onChange={() => setPublishResetUserData(true)}
+                          className="mt-0.5 h-4 w-4 border-amber-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-xs leading-relaxed text-amber-900">
+                          <span className="font-bold">アップデート時にデータをリセット</span>
+                          <br />
+                          ユーザーがアップデートを選んだ場合、保存データが消える可能性があることを案内します
+                        </span>
+                      </label>
+                    </div>
+                  )}
                   <div className="rounded-xl bg-gray-50 px-4 py-3 text-xs text-gray-500">
                     {publishListed
                       ? "マーケットに公開されます。URLを知らない人もアプリを見つけられます。"

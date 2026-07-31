@@ -664,6 +664,29 @@ export default function PlaygroundPage() {
 
   const isRepublish = !!publishContext?.appId;
 
+  useEffect(() => {
+    if (!showPublishModal) return;
+    const scrollY = window.scrollY;
+    const { style } = document.body;
+    const prev = {
+      overflow: style.overflow,
+      position: style.position,
+      top: style.top,
+      width: style.width,
+    };
+    style.overflow = "hidden";
+    style.position = "fixed";
+    style.top = `-${scrollY}px`;
+    style.width = "100%";
+    return () => {
+      style.overflow = prev.overflow;
+      style.position = prev.position;
+      style.top = prev.top;
+      style.width = prev.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [showPublishModal]);
+
   const applyPublishMeta = useCallback((meta: {
     title?: string | null;
     description?: string | null;
@@ -1759,7 +1782,7 @@ export default function PlaygroundPage() {
       {/* ── 出品モーダル ── */}
       {showPublishModal && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overscroll-none"
           onClick={(e) => {
             if (e.target === e.currentTarget && !publishedUrl) {
               setShowPublishModal(false);
@@ -1767,19 +1790,22 @@ export default function PlaygroundPage() {
             }
           }}
         >
-          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden">
+          <div
+            className="flex w-full max-w-md max-h-[90dvh] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
 
             {/* ── 成功後の URL 表示 ── */}
             {publishedUrl ? (
               <>
-                <div className="bg-emerald-50 px-6 py-5 text-center">
+                <div className="shrink-0 bg-emerald-50 px-6 py-5 text-center">
                   <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 shadow-lg shadow-emerald-300">
                     <CheckCircle2 className="h-7 w-7 text-white" />
                   </div>
                   <p className="text-base font-black text-emerald-900">{lastPublishWasOverwrite ? "上書きしました！" : publishListed ? "出品しました！" : "URLを発行しました！"}</p>
                   <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? "同じURLで内容が更新されました" : publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
                 </div>
-                <div className="p-6 space-y-4">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
                   <ShareButtonRow
                     url={publishedUrl}
                     title={publishTitle}
@@ -1828,7 +1854,7 @@ export default function PlaygroundPage() {
             ) : (
               <>
                 {/* ── 出品フォーム ── */}
-                <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600">
                       <Rocket className="h-4 w-4 text-white" />
@@ -1842,6 +1868,7 @@ export default function PlaygroundPage() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <div className="space-y-4 p-6">
                   {/* 公開モード切り替え */}
                   <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-bold">
@@ -2025,6 +2052,7 @@ export default function PlaygroundPage() {
                       )}
                     </button>
                   </div>
+                </div>
                 </div>
               </>
             )}

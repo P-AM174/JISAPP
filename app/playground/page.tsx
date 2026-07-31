@@ -27,10 +27,6 @@ import {
   HelpCircle,
   ArrowRight,
   ArrowLeft,
-  MessageCircle,
-  Send,
-  Bot,
-  Minimize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -159,7 +155,7 @@ function SimpleCodeGuide({
             onClick={onOpenSecrets}
             className="mt-2.5 w-full rounded-lg bg-violet-600 py-2 text-xs font-bold text-white hover:bg-violet-700 touch-manipulation"
           >
-            シークレット管理を開く
+            APIキーを開く
           </button>
         )}
       </div>
@@ -413,12 +409,12 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
-                <p className="text-sm font-black text-violet-900">🔑 天気APIなどを使うアプリはシークレット必須</p>
+                <p className="text-sm font-black text-violet-900">🔑 AI・天気APIなどを使う場合</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-violet-800">
                   {SECRETS_STUDIO_GUIDE}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-violet-700">
-                  プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、開発スタジオ上部の「シークレット」からキーを登録してください。
+                  プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、「プレビュー更新」の横にある「APIキー」から登録してください。
                 </p>
               </div>
             </div>
@@ -459,7 +455,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
                   <p className="text-sm font-black text-violet-900 mb-1">🔑 APIキーが必要なアプリ</p>
                   <p className="text-xs leading-relaxed text-violet-800">
-                    コードにキーを書かず、ヘッダーの「シークレット」から登録。AIに「secret: &apos;WEATHER&apos; を使って」と指示されている場合は、同じ名前で登録してください。
+                    コードにキーを書かず、「プレビュー更新」の横「APIキー」から登録。AIに「secret: &apos;GEMINI&apos; を使って」と指示されている場合は、同じ名前で登録してください。
                   </p>
                 </div>
               </div>
@@ -549,192 +545,6 @@ function GuideModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  );
-}
-
-// ─── チャットウィジェット ───
-type ChatMessage = { role: "user" | "assistant"; content: string };
-
-const INITIAL_MESSAGE: ChatMessage = {
-  role: "assistant",
-  content:
-    "こんにちは！ジサップへようこそ！🎉\n「APIキーの設定って何？」とか「AIにどう質問すれば面白いアプリが作れる？」など、使い方のコツを何でも聞いてね！",
-};
-
-function ChatWidget() {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const el = messagesRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-    const t = setTimeout(() => {
-      inputRef.current?.focus({ preventScroll: true });
-    }, 120);
-    return () => clearTimeout(t);
-  }, [open, messages]);
-
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    const userMsg: ChatMessage = { role: "user", content: text };
-    const next = [...messages, userMsg];
-    setMessages(next);
-    setInput("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/playground-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: next.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.content ?? "うまく答えられませんでした😅" },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "通信エラーが発生しました。もう一度試してね🙏" },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      {/* チャットウィンドウ */}
-      <div
-        className={cn(
-          "fixed bottom-20 right-5 z-[600] flex w-[340px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/10 transition-all duration-300",
-          open
-            ? "translate-y-0 opacity-100 pointer-events-auto"
-            : "translate-y-4 opacity-0 pointer-events-none"
-        )}
-        style={{ maxHeight: "520px" }}
-      >
-        {/* ヘッダー */}
-        <div className="flex shrink-0 items-center gap-3 bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-            <Bot className="h-4 w-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-black text-white">ジサップ AIアシスタント</p>
-            <p className="text-[10px] text-emerald-100">使い方・プロンプト相談なんでも</p>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
-          >
-            <Minimize2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        {/* メッセージ一覧 */}
-        <div ref={messagesRef} className="flex flex-1 flex-col gap-3 overflow-y-auto overscroll-contain bg-gray-50 px-4 py-4" style={{ minHeight: 0 }}>
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex gap-2",
-                msg.role === "user" ? "flex-row-reverse" : "flex-row"
-              )}
-            >
-              {msg.role === "assistant" && (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                  <Bot className="h-3.5 w-3.5 text-emerald-600" />
-                </div>
-              )}
-              <div
-                className={cn(
-                  "max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
-                  msg.role === "user"
-                    ? "bg-emerald-600 text-white rounded-tr-sm"
-                    : "bg-white text-gray-800 shadow-sm ring-1 ring-gray-100 rounded-tl-sm"
-                )}
-              >
-                {msg.content}
-              </div>
-            </div>
-          ))}
-
-          {/* ローディング */}
-          {loading && (
-            <div className="flex gap-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                <Bot className="h-3.5 w-3.5 text-emerald-600" />
-              </div>
-              <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-white px-4 py-3 shadow-sm ring-1 ring-gray-100">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400" style={{ animationDelay: "0ms" }} />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400" style={{ animationDelay: "150ms" }} />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400" style={{ animationDelay: "300ms" }} />
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* 入力エリア */}
-        <div className="shrink-0 border-t border-gray-100 bg-white px-3 py-3">
-          <div className="flex items-center gap-2 rounded-2xl bg-gray-100 px-3 py-1.5">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="使い方を質問する..."
-              className="flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
-            />
-            <button
-              onClick={send}
-              disabled={!input.trim() || loading}
-              className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all",
-                input.trim() && !loading
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-90"
-                  : "bg-gray-300 text-gray-400 cursor-not-allowed"
-              )}
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <p className="mt-1.5 text-center text-[10px] text-gray-400">
-            使い方・プロンプトのコツを相談できます
-          </p>
-        </div>
-      </div>
-
-      {/* フローティングボタン */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "fixed bottom-5 right-5 z-[600] flex items-center gap-2.5 rounded-full px-5 py-3 text-sm font-bold text-white shadow-2xl transition-all duration-300 active:scale-95",
-          open
-            ? "bg-gray-700 shadow-gray-900/30 hover:bg-gray-800"
-            : "bg-gradient-to-r from-emerald-600 to-green-500 shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105"
-        )}
-      >
-        {open ? (
-          <X className="h-5 w-5" />
-        ) : (
-          <>
-            <MessageCircle className="h-5 w-5" />
-            <span>ジサップの使い方を質問する</span>
-          </>
-        )}
-      </button>
-    </>
   );
 }
 
@@ -835,6 +645,7 @@ export default function PlaygroundPage() {
   const [iframeKey, setIframeKey]       = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [apiKeysLoading, setApiKeysLoading] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [toast, setToast]               = useState<{ msg: string; show: boolean }>({ msg: "", show: false });
   const [publishing, setPublishing]     = useState(false);
@@ -1281,6 +1092,53 @@ export default function PlaygroundPage() {
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 2500);
   };
 
+  const openApiKeys = useCallback(async () => {
+    const run = async () => {
+      if (!session?.user) return;
+
+      if (!publishContext?.appId) {
+        setApiKeysLoading(true);
+        try {
+          let title = "";
+          try {
+            title = localStorage.getItem("jisapp_playground_title") ?? "";
+          } catch {
+            /* noop */
+          }
+          const res = await fetch("/api/playground/ensure-app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              app_id: publishContext?.appId,
+              project_id: publishContext?.projectId,
+              html_code: code,
+              title: title || undefined,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "準備に失敗しました");
+          setPublishContext((prev) => ({ ...prev, appId: data.appId as string }));
+        } catch (e) {
+          showToast(e instanceof Error ? e.message : "APIキーの準備に失敗しました");
+          return;
+        } finally {
+          setApiKeysLoading(false);
+        }
+      }
+
+      setShowSettings(true);
+    };
+
+    if (!isLoggedIn) {
+      runWithLoginPrompt("save", () => {
+        void run();
+      });
+      return;
+    }
+
+    await run();
+  }, [session?.user, publishContext, code, isLoggedIn, runWithLoginPrompt]);
+
   // ── キーボードショートカット ──
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); handleRun(); return; }
@@ -1354,7 +1212,7 @@ export default function PlaygroundPage() {
         onOpenSecrets={() => {
           setSecretWarningOpen(false);
           setShowPublishModal(false);
-          setShowSettings(true);
+          void openApiKeys();
         }}
         onProceed={async () => {
           setSecretWarningOpen(false);
@@ -1362,12 +1220,13 @@ export default function PlaygroundPage() {
         }}
       />
 
-      {/* ══ シークレット管理 ══ */}
+      {/* ══ APIキー管理 ══ */}
       <SecretsSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
         appId={publishContext?.appId}
         appTitle={publishTitle || undefined}
+        mode="studio"
       />
 
       {/* ══════════ ヘッダー ══════════ */}
@@ -1406,18 +1265,6 @@ export default function PlaygroundPage() {
             <span className="md:hidden">使い方</span>
             <span className="hidden md:inline">初心者ガイド</span>
           </button>
-
-          {session?.user && (
-            <button
-              type="button"
-              onClick={() => setShowSettings(true)}
-              title="シークレット管理"
-              className="flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-bold text-gray-600 transition-all hover:bg-gray-50 sm:px-3 touch-manipulation"
-            >
-              <Key className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">シークレット</span>
-            </button>
-          )}
         </div>
 
         {/* 下段（モバイル）/ 右側（PC）: アクションボタン */}
@@ -1479,6 +1326,25 @@ export default function PlaygroundPage() {
             </span>
           </button>
 
+          {/* ②b APIキー */}
+          <button
+            type="button"
+            onClick={() => void openApiKeys()}
+            disabled={apiKeysLoading}
+            title="Gemini・天気APIなどのキーをコードに書かず登録"
+            className={cn(
+              "flex flex-1 flex-col items-center rounded-xl border border-violet-200 bg-violet-50 px-2 py-1.5 text-violet-800 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation hover:bg-violet-100 disabled:opacity-50",
+            )}
+          >
+            <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
+              <Key className="h-3.5 w-3.5 shrink-0" />
+              <span>{apiKeysLoading ? "準備中…" : "APIキー"}</span>
+            </span>
+            <span className="mt-0.5 hidden text-[9px] font-medium text-violet-600/80 lg:block">
+              コードに書かない
+            </span>
+          </button>
+
           {/* ③ 公開/URL発行 */}
           <button
             type="button"
@@ -1533,23 +1399,8 @@ export default function PlaygroundPage() {
             </button>
           </div>
         </div>
-      </header>
 
-      {session?.user && (
-        <div className="relative z-20 flex shrink-0 items-center gap-2 border-b border-violet-100 bg-violet-50/90 px-3 py-2 sm:px-4">
-          <Key className="h-3.5 w-3.5 shrink-0 text-violet-600" />
-          <p className="min-w-0 flex-1 text-[11px] leading-snug text-violet-900 sm:text-xs">
-            {SECRETS_STUDIO_GUIDE}
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowSettings(true)}
-            className="shrink-0 rounded-lg bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-violet-700 sm:text-xs"
-          >
-            シークレット
-          </button>
-        </div>
-      )}
+      </header>
 
       {/* ══════════ メインコンテンツ ══════════ */}
 
@@ -1589,7 +1440,13 @@ export default function PlaygroundPage() {
                     onOpenDrawer={focusCodeEditor}
                   />
                 ) : (
-                  <AppRunner key={iframeKey} srcDoc={previewHtml} title="プレビュー" className="h-full min-h-0" />
+                  <AppRunner
+                    key={iframeKey}
+                    srcDoc={previewHtml}
+                    title="プレビュー"
+                    className="h-full min-h-0"
+                    appId={publishContext?.appId ?? "playground"}
+                  />
                 )}
               </div>
             </div>
@@ -1641,7 +1498,7 @@ export default function PlaygroundPage() {
                     onPaste={handlePasteAndRun}
                     onManualInput={focusCodeEditor}
                     onOpenGuide={() => setShowGuideModal(true)}
-                    onOpenSecrets={session?.user ? () => setShowSettings(true) : undefined}
+                    onOpenSecrets={() => void openApiKeys()}
                   />
                 )}
               </div>
@@ -1716,7 +1573,13 @@ export default function PlaygroundPage() {
                   onOpenDrawer={focusCodeEditor}
                 />
               ) : (
-                <AppRunner key={iframeKey} srcDoc={previewHtml} title="プレビュー" className="h-full" />
+                <AppRunner
+                  key={iframeKey}
+                  srcDoc={previewHtml}
+                  title="プレビュー"
+                  className="h-full"
+                  appId={publishContext?.appId ?? "playground"}
+                />
               )}
             </div>
           </div>
@@ -1775,7 +1638,7 @@ export default function PlaygroundPage() {
                 onPaste={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
                 onManualInput={focusCodeEditor}
                 onOpenGuide={() => setShowGuideModal(true)}
-                onOpenSecrets={session?.user ? () => setShowSettings(true) : undefined}
+                onOpenSecrets={() => void openApiKeys()}
               />
             </div>
           )}
@@ -1790,8 +1653,6 @@ export default function PlaygroundPage() {
       </div>
 
       {/* チャットウィジェット（非表示中） */}
-      {/* <ChatWidget /> */}
-
       {/* ── 離脱確認モーダル ── */}
       {showLeaveModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

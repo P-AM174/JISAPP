@@ -47,7 +47,7 @@ export function EmbeddedSecretWarningModal({
             </ul>
           )}
           <p className="text-xs leading-relaxed text-gray-600">
-            「シークレット管理」にキーを登録し、コードでは{" "}
+            「APIキー」にキーを登録し、コードでは{" "}
             <code className="rounded bg-gray-100 px-1">secret: &apos;NAME&apos;</code>{" "}
             だけ指定する方法が安全です。
           </p>
@@ -58,7 +58,7 @@ export function EmbeddedSecretWarningModal({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-700"
             >
               <Key className="h-4 w-4" />
-              シークレット管理を開く
+              APIキーを開く
             </button>
             <button
               type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Key, Plus, Trash2, X } from "lucide-react";
+import { Key, Plus, Trash2, X } from "lucide-react";
 import type { AttachType, SecretMeta } from "@/lib/secrets/constants";
 
 type Props = {
@@ -9,15 +9,17 @@ type Props = {
   onClose: () => void;
   appId?: string | null;
   appTitle?: string;
+  /** studio = 開発スタジオ（APIキー）、app = マイプロジェクト */
+  mode?: "studio" | "app";
 };
 
-export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) {
-  const [tab, setTab] = useState<"ai" | "app">("ai");
-  const [aiConfigured, setAiConfigured] = useState(false);
-  const [aiInput, setAiInput] = useState("");
-  const [aiSaving, setAiSaving] = useState(false);
-  const [aiError, setAiError] = useState("");
-
+export function SecretsSettingsModal({
+  open,
+  onClose,
+  appId,
+  appTitle,
+  mode = "app",
+}: Props) {
   const [appSecrets, setAppSecrets] = useState<SecretMeta[]>([]);
   const [appLoading, setAppLoading] = useState(false);
   const [appError, setAppError] = useState("");
@@ -27,17 +29,6 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
   const [attachType, setAttachType] = useState<AttachType>("header");
   const [paramName, setParamName] = useState("appid");
   const [savingAppSecret, setSavingAppSecret] = useState(false);
-
-  const loadAiStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/secrets/user");
-      if (!res.ok) return;
-      const data = await res.json();
-      setAiConfigured(!!data.ai?.configured);
-    } catch {
-      /* noop */
-    }
-  }, []);
 
   const loadAppSecrets = useCallback(async () => {
     if (!appId) return;
@@ -57,48 +48,12 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
 
   useEffect(() => {
     if (!open) return;
-    loadAiStatus();
     if (appId) loadAppSecrets();
-    else setTab("ai");
-  }, [open, appId, loadAiStatus, loadAppSecrets]);
-
-  const saveAiKey = async () => {
-    setAiSaving(true);
-    setAiError("");
-    try {
-      const res = await fetch("/api/secrets/user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: aiInput.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "保存に失敗しました");
-      setAiConfigured(true);
-      setAiInput("");
-    } catch (e) {
-      setAiError(e instanceof Error ? e.message : "保存に失敗しました");
-    } finally {
-      setAiSaving(false);
+    else {
+      setAppSecrets([]);
+      setShowAddForm(false);
     }
-  };
-
-  const deleteAiKey = async () => {
-    setAiSaving(true);
-    setAiError("");
-    try {
-      const res = await fetch("/api/secrets/user", { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "削除に失敗しました");
-      }
-      setAiConfigured(false);
-      setAiInput("");
-    } catch (e) {
-      setAiError(e instanceof Error ? e.message : "削除に失敗しました");
-    } finally {
-      setAiSaving(false);
-    }
-  };
+  }, [open, appId, loadAppSecrets]);
 
   const saveAppSecret = async () => {
     if (!appId) return;
@@ -163,8 +118,14 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
             <Key className="h-5 w-5 text-emerald-600" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-black text-gray-900">シークレット管理</h2>
-            <p className="text-xs text-gray-500">APIキーをコードに書かず安全に保管</p>
+            <h2 className="text-base font-black text-gray-900">
+              {mode === "studio" ? "APIキー" : "シークレット管理"}
+            </h2>
+            <p className="text-xs text-gray-500">
+              {mode === "studio"
+                ? "キーをコードに書かず、ここに貼り付けて保管"
+                : "APIキーをコードに書かず安全に保管"}
+            </p>
           </div>
           <button
             type="button"
@@ -175,89 +136,21 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
           </button>
         </div>
 
-        <div className="flex gap-1 border-b border-gray-100 px-4 pt-2">
-          <button
-            type="button"
-            onClick={() => setTab("ai")}
-            className={`rounded-t-xl px-4 py-2 text-xs font-bold transition-colors ${
-              tab === "ai" ? "bg-emerald-50 text-emerald-700" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            AIキー（開発用）
-          </button>
-          {appId && (
-            <button
-              type="button"
-              onClick={() => setTab("app")}
-              className={`rounded-t-xl px-4 py-2 text-xs font-bold transition-colors ${
-                tab === "app" ? "bg-emerald-50 text-emerald-700" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              アプリ用シークレット
-            </button>
-          )}
-        </div>
-
         <div className="overflow-y-auto p-6">
-          {tab === "ai" && (
-            <div className="space-y-4">
-              <p className="text-xs leading-relaxed text-gray-500">
-                開発スタジオのAIチャット用キーです。サーバーに暗号化して保存され、コードには含まれません。
-                OpenAI（sk-...）または Groq（gsk_...）に対応しています。
-              </p>
-              {aiError && (
-                <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{aiError}</p>
-              )}
-              {aiConfigured && (
-                <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span className="text-xs font-semibold text-emerald-700">AI APIキー登録済み</span>
-                </div>
-              )}
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-600">
-                  {aiConfigured ? "新しいキーで上書き" : "APIキー"}
-                </label>
-                <input
-                  type="password"
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="sk-... または gsk_..."
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 font-mono text-sm outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20"
-                />
-              </div>
-              <div className="flex gap-2">
-                {aiConfigured && (
-                  <button
-                    type="button"
-                    onClick={deleteAiKey}
-                    disabled={aiSaving}
-                    className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    削除
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={saveAiKey}
-                  disabled={aiSaving || !aiInput.trim()}
-                  className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {aiSaving ? "保存中…" : "保存する"}
-                </button>
-              </div>
+          {!appId ? (
+            <div className="space-y-3">
+              <p className="text-sm leading-relaxed text-gray-600">読み込み中…</p>
             </div>
-          )}
-
-          {tab === "app" && appId && (
+          ) : (
             <div className="space-y-4">
               <p className="text-xs leading-relaxed text-gray-500">
-                {appTitle ? `「${appTitle}」` : "このアプリ"} の公開版で使う外部APIキーです。
-                コードでは <code className="rounded bg-gray-100 px-1">secret: &apos;名前&apos;</code> だけ指定します。
+                {mode === "studio"
+                  ? "Gemini・OpenAI・天気APIなど、外部サービスのキーを登録します。コードには secret: 'GEMINI' のように名前だけ書いてください。"
+                  : `${appTitle ? `「${appTitle}」` : "このアプリ"} の公開版で使う外部APIキーです。コードでは secret: '名前' だけ指定します。`}
               </p>
               <div className="rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2.5 text-[11px] leading-relaxed text-violet-900">
                 例:{" "}
-                <code>await Zisup.fetch(url, {"{ secret: 'WEATHER' }"})</code>
+                <code>await Zisup.fetch(url, {"{ secret: 'GEMINI' }"})</code>
               </div>
               {appError && (
                 <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{appError}</p>
@@ -301,7 +194,7 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
                       type="text"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value.toUpperCase())}
-                      placeholder="WEATHER"
+                      placeholder="GEMINI"
                       maxLength={32}
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm outline-none focus:border-emerald-400"
                     />
@@ -323,7 +216,7 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400"
                     >
                       <option value="header">HTTPヘッダー（Authorization 等）</option>
-                      <option value="query">URLパラメータ（?appid= 等）</option>
+                      <option value="query">URLパラメータ（?key= 等）</option>
                     </select>
                   </div>
                   {attachType === "query" && (
@@ -333,7 +226,7 @@ export function SecretsSettingsModal({ open, onClose, appId, appTitle }: Props) 
                         type="text"
                         value={paramName}
                         onChange={(e) => setParamName(e.target.value)}
-                        placeholder="appid"
+                        placeholder="key"
                         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400"
                       />
                     </div>

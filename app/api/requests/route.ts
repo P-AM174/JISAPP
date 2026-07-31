@@ -40,7 +40,7 @@ export async function GET() {
   }
 
   const ids = (requests ?? []).map((r) => r.id);
-  let responseCounts: Record<string, number> = {};
+  const responseCounts: Record<string, number> = {};
   if (ids.length > 0) {
     const { data: responses } = await supabase
       .from("app_request_responses")

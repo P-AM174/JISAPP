@@ -1,18 +1,34 @@
 import { ZISUP_SHIM_SCRIPT } from "@/lib/zisup-shim";
 
+const MOBILE_VIEWPORT_META =
+  '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">';
+
+const MOBILE_NO_ZOOM_STYLE =
+  "<style>html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}input,textarea,select{font-size:16px}</style>";
+
+/** iframe 内アプリでもタップ時のズームを抑止 */
+function normalizeMobileViewport(docHtml: string): string {
+  if (/<meta\s+name=["']viewport["'][^>]*>/i.test(docHtml)) {
+    return docHtml.replace(/<meta\s+name=["']viewport["'][^>]*>/i, MOBILE_VIEWPORT_META);
+  }
+  if (/<head[^>]*>/i.test(docHtml)) {
+    return docHtml.replace(/<head[^>]*>/i, (m) => m + MOBILE_VIEWPORT_META);
+  }
+  return docHtml;
+}
+
 /** Zisup シムを <head> の先頭（最初の <script> より前）に注入するヘルパー */
 export function injectZisupShim(docHtml: string): string {
-  const shimTag = `<script>${ZISUP_SHIM_SCRIPT}</script>`;
-  // <head> タグがあればその直後に注入
-  if (/<head[^>]*>/i.test(docHtml)) {
-    return docHtml.replace(/<head[^>]*>/i, (m) => m + shimTag);
+  const doc = normalizeMobileViewport(docHtml);
+  const headInjection = MOBILE_NO_ZOOM_STYLE + `<script>${ZISUP_SHIM_SCRIPT}</script>`;
+
+  if (/<head[^>]*>/i.test(doc)) {
+    return doc.replace(/<head[^>]*>/i, (m) => m + headInjection);
   }
-  // <html> タグがあれば直後に <head> ごと注入
-  if (/<html[^>]*>/i.test(docHtml)) {
-    return docHtml.replace(/<html[^>]*>/i, (m) => m + `<head>${shimTag}</head>`);
+  if (/<html[^>]*>/i.test(doc)) {
+    return doc.replace(/<html[^>]*>/i, (m) => m + `<head>${MOBILE_VIEWPORT_META}${headInjection}</head>`);
   }
-  // フォールバック：先頭に追加
-  return shimTag + docHtml;
+  return MOBILE_VIEWPORT_META + headInjection + doc;
 }
 
 /** HTML / CSS / JS 断片を iframe 用の完全な HTML ドキュメントに結合 */
@@ -52,7 +68,7 @@ export function buildSrcDoc(
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+${MOBILE_VIEWPORT_META}
 <style>${c}</style>
 </head>
 <body>

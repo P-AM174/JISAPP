@@ -9,6 +9,9 @@ export const SITE_TITLE = `${SITE_BRAND}｜${SITE_TAGLINE}`;
 export const SITE_DESCRIPTION =
   "ChatGPT・Claude・Geminiで作ったコードを貼るだけ。サーバー設定不要で、誰でも無料でアプリを作って公開・共有できます。";
 
+/** SNSシェア用（トップページと共通） */
+export const SITE_OG_IMAGE = "/opengraph-image";
+
 export function getSiteUrl(): string {
   const url =
     process.env.NEXT_PUBLIC_SITE_URL ??

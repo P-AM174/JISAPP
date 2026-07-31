@@ -13,6 +13,9 @@ type PageMetadataOptions = {
   path?: string;
   noIndex?: boolean;
   ogImage?: string;
+  /** SNSプレビュー用（未指定時は title / description と同じ） */
+  ogTitle?: string;
+  ogDescription?: string;
 };
 
 export const noIndexMetadata: Metadata = {
@@ -26,9 +29,13 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
     path,
     noIndex = false,
     ogImage,
+    ogTitle,
+    ogDescription,
   } = options;
 
   const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_TITLE;
+  const shareTitle = ogTitle ?? pageTitle;
+  const shareDescription = ogDescription ?? description;
   const canonical = path ? absoluteUrl(path) : getSiteUrl();
   const imageMeta = ogImage
     ? {
@@ -47,15 +54,15 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
       type: "website",
       locale: "ja_JP",
       siteName: SITE_NAME,
-      title: pageTitle,
-      description,
+      title: shareTitle,
+      description: shareDescription,
       url: canonical,
       ...(imageMeta ? { images: [imageMeta] } : {}),
     },
     twitter: {
       card: "summary_large_image",
-      title: pageTitle,
-      description,
+      title: shareTitle,
+      description: shareDescription,
       ...(imageMeta ? { images: [imageMeta.url] } : {}),
     },
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),

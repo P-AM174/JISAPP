@@ -5,6 +5,7 @@ import {
   createSoftwareApplicationJsonLd,
 } from "@/lib/seo/metadata";
 import { getShareableAppSeo } from "@/lib/seo/public-apps";
+import { SITE_DESCRIPTION, SITE_OG_IMAGE, SITE_TITLE } from "@/lib/seo/site";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -31,7 +32,9 @@ export async function generateMetadata({
     title: app.title,
     description: app.description,
     path: `/apps/${app.id}`,
-    ogImage: `/apps/${app.id}/opengraph-image`,
+    ogImage: SITE_OG_IMAGE,
+    ogTitle: SITE_TITLE,
+    ogDescription: SITE_DESCRIPTION,
     noIndex: app.isListed === false,
   });
 }

@@ -49,6 +49,7 @@ async function proxyFetchFromApp(input: {
   headers?: Record<string, string>;
   body?: string;
   appId?: string;
+  secret?: string;
 }) {
   const res = await fetch("/api/zisup/fetch", {
     method: "POST",
@@ -149,6 +150,7 @@ export function useZisupBridge(
           method?: string;
           headers?: Record<string, string>;
           body?: string;
+          secret?: string;
         };
         if (!fetchPayload.url) return;
         try {
@@ -158,6 +160,7 @@ export function useZisupBridge(
             headers: fetchPayload.headers,
             body: fetchPayload.body,
             appId,
+            secret: fetchPayload.secret,
           });
           send(id, JSON.stringify(result));
         } catch (err) {

@@ -25,8 +25,12 @@ import {
   CheckCircle2,
   X,
   LibraryBig,
+  Key,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
+import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
+import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
 import { ShareButton, ShareButtonRow, CopyUrlButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
@@ -363,6 +367,10 @@ export default function ProjectsPage() {
   const [urlCopied, setUrlCopied]             = useState(false);
   const [publishError, setPublishError]       = useState<string | null>(null);
   const [publishResetUserData, setPublishResetUserData] = useState(false);
+  const [showSecretsModal, setShowSecretsModal] = useState(false);
+  const [secretWarningOpen, setSecretWarningOpen] = useState(false);
+  const [secretFindings, setSecretFindings] = useState<{ label: string }[]>([]);
+  const [pendingListed, setPendingListed] = useState<boolean | null>(null);
   const [publishUpdateNotes, setPublishUpdateNotes] = useState("");
 
   // 編集モード
@@ -481,6 +489,22 @@ export default function ProjectsPage() {
       setPublishError("コードが見つかりません。開発スタジオでコードを保存してから出品してください。");
       return;
     }
+
+    const findings = detectEmbeddedSecrets(html_code);
+    if (findings.length > 0) {
+      setSecretFindings(findings);
+      setPendingListed(is_listed);
+      setSecretWarningOpen(true);
+      return;
+    }
+
+    await executePublish(is_listed, html_code);
+  };
+
+  const executePublish = async (is_listed: boolean, html_code: string) => {
+    if (!publishTarget || publishing) return;
+    const title = publishTitle.trim();
+    if (!title) return;
 
     setPublishing(true);
     setPublishError(null);
@@ -922,6 +946,46 @@ export default function ProjectsPage() {
       </main>
 
       {/* ══════════ 出品モーダル ══════════ */}
+      <EmbeddedSecretWarningModal
+        open={secretWarningOpen}
+        findings={secretFindings}
+        onClose={() => {
+          setSecretWarningOpen(false);
+          setPendingListed(null);
+        }}
+        onOpenSecrets={() => {
+          setSecretWarningOpen(false);
+          setPendingListed(null);
+          setShowSecretsModal(true);
+        }}
+        onProceed={async () => {
+          if (pendingListed === null || !publishTarget) return;
+          let html_code = "";
+          if (publishTarget.id === "saved_playground") {
+            try { html_code = localStorage.getItem("jisapp_playground_code") ?? ""; } catch { /**/ }
+          } else {
+            try {
+              const codeRes = await fetch(`/api/my-projects/${publishTarget.id}`);
+              if (codeRes.ok) {
+                const d = await codeRes.json();
+                html_code = d.project?.html_code ?? "";
+              }
+            } catch { /* noop */ }
+          }
+          const listed = pendingListed;
+          setSecretWarningOpen(false);
+          setPendingListed(null);
+          await executePublish(listed, html_code);
+        }}
+      />
+
+      <SecretsSettingsModal
+        open={showSecretsModal}
+        onClose={() => setShowSecretsModal(false)}
+        appId={republishAppId ?? undefined}
+        appTitle={publishTitle || publishTarget?.title}
+      />
+
       {publishTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
@@ -964,6 +1028,16 @@ export default function ProjectsPage() {
                     <p className="mb-1 text-[10px] font-bold text-gray-500">アプリURL</p>
                     <AppUrlCopyField url={publishedUrl} />
                   </div>
+                  {republishAppId && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSecretsModal(true)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100"
+                    >
+                      <Key className="h-3.5 w-3.5" />
+                      アプリ用シークレットを管理
+                    </button>
+                  )}
                   {publishTarget && isPublishedProject(publishTarget) && (
                     <div className="flex items-center gap-2 rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-teal-200">
                       <LibraryBig className="h-4 w-4 shrink-0 text-teal-600" />
@@ -1133,6 +1207,16 @@ export default function ProjectsPage() {
                       </span>
                     </label>
                   </div>
+                  {isRepublish && republishAppId && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSecretsModal(true)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100"
+                    >
+                      <Key className="h-3.5 w-3.5" />
+                      アプリ用シークレットを管理
+                    </button>
+                  )}
                   {isRepublish && (
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-700">

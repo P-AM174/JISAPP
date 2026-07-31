@@ -38,8 +38,12 @@ import { CATEGORIES } from "@/lib/categories";
 import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
-import { PROMPT_TEMPLATE } from "@/lib/playground/prompt-template";
+import { PROMPT_TEMPLATE, SECRETS_STUDIO_GUIDE } from "@/lib/playground/prompt-template";
+import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
+import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
+import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
+import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
 import { supabase } from "@/lib/supabase";
 import {
   markStudioLoginPromptShown,
@@ -75,10 +79,12 @@ function SimpleCodeGuide({
   onPaste,
   onManualInput,
   onOpenGuide,
+  onOpenSecrets,
 }: {
   onPaste?: () => void;
   onManualInput?: () => void;
   onOpenGuide?: () => void;
+  onOpenSecrets?: () => void;
 }) {
   const [promptCopied, setPromptCopied] = useState(false);
 
@@ -141,6 +147,22 @@ function SimpleCodeGuide({
           </li>
         ))}
       </ol>
+      <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
+        <p className="flex items-center gap-1.5 text-xs font-black text-violet-900">
+          <Key className="h-3.5 w-3.5 shrink-0" />
+          外部APIを使うアプリの場合
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-violet-800">{SECRETS_STUDIO_GUIDE}</p>
+        {onOpenSecrets && (
+          <button
+            type="button"
+            onClick={onOpenSecrets}
+            className="mt-2.5 w-full rounded-lg bg-violet-600 py-2 text-xs font-bold text-white hover:bg-violet-700 touch-manipulation"
+          >
+            シークレット管理を開く
+          </button>
+        )}
+      </div>
       <div className="mt-4 flex flex-col gap-2">
         {onPaste && (
           <button
@@ -238,6 +260,11 @@ function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
               <p className="text-sm font-bold text-gray-800">AI の質問に答えて、コードをコピー</p>
               <p className="mt-0.5 text-xs text-gray-500">保存機能の要否などに答えると HTML コードが出力される</p>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-3.5 text-xs leading-relaxed text-violet-800">
+            <p className="font-bold text-violet-900">外部APIを使う場合</p>
+            <p className="mt-1">{SECRETS_STUDIO_GUIDE}</p>
           </div>
 
           <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 p-3.5 shadow-sm ring-1 ring-emerald-200">
@@ -384,6 +411,16 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                   作りたいアプリの名前に書き換えてから送ってね！
                 </p>
               </div>
+
+              <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
+                <p className="text-sm font-black text-violet-900">🔑 天気APIなどを使うアプリはシークレット必須</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-violet-800">
+                  {SECRETS_STUDIO_GUIDE}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-violet-700">
+                  プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、開発スタジオ上部の「シークレット」からキーを登録してください。
+                </p>
+              </div>
             </div>
           )}
 
@@ -417,6 +454,13 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-sky-700 leading-relaxed">AIと会話しながら自分だけのアプリを完成させよう！</p>
+                </div>
+
+                <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
+                  <p className="text-sm font-black text-violet-900 mb-1">🔑 APIキーが必要なアプリ</p>
+                  <p className="text-xs leading-relaxed text-violet-800">
+                    コードにキーを書かず、ヘッダーの「シークレット」から登録。AIに「secret: &apos;WEATHER&apos; を使って」と指示されている場合は、同じ名前で登録してください。
+                  </p>
                 </div>
               </div>
             </div>
@@ -778,6 +822,8 @@ export default function PlaygroundPage() {
   // ── 検索 ──
   const [searchQuery, setSearchQuery]   = useState("");
   const [showSearch, setShowSearch]     = useState(false);
+  const [secretWarningOpen, setSecretWarningOpen] = useState(false);
+  const [secretFindings, setSecretFindings] = useState<{ label: string }[]>([]);
   const [matchCount, setMatchCount]     = useState(0);
   const [currentMatch, setCurrentMatch] = useState(0);
 
@@ -790,8 +836,6 @@ export default function PlaygroundPage() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
-  const [apiKey, setApiKey]             = useState("");
-  const [apiKeyInput, setApiKeyInput]   = useState("");
   const [toast, setToast]               = useState<{ msg: string; show: boolean }>({ msg: "", show: false });
   const [publishing, setPublishing]     = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -904,6 +948,20 @@ export default function PlaygroundPage() {
       setTimeout(() => setToast({ msg: "", show: false }), 3000);
       return;
     }
+
+    const findings = detectEmbeddedSecrets(code);
+    if (findings.length > 0) {
+      setSecretFindings(findings);
+      setSecretWarningOpen(true);
+      return;
+    }
+
+    await executePublish();
+  };
+
+  const executePublish = async () => {
+    const title = publishTitle.trim() || "開発スタジオアプリ";
+    if (!code.trim() || publishing) return;
     setPublishing(true);
     try {
       const overwriting = !!publishContext?.appId;
@@ -954,8 +1012,37 @@ export default function PlaygroundPage() {
     }
   };
 
-  // 行番号とスクロール同期
-  const syncLineNumbers = () => { /* 行番号は非表示のためno-op */ };
+  // 行番号とスクロール同期（CodeEditorPanel 内で処理）
+  const syncLineNumbers = () => { /* noop */ };
+
+  const getActiveTextarea = () =>
+    drawerTextareaRef.current ?? mobileTextareaRef.current;
+
+  const jumpToMatch = useCallback(
+    (direction: "next" | "prev") => {
+      if (!searchQuery.trim() || matchCount === 0) return;
+      const q = searchQuery.toLowerCase();
+      const src = code.toLowerCase();
+      const positions: number[] = [];
+      let idx = 0;
+      while ((idx = src.indexOf(q, idx)) !== -1) {
+        positions.push(idx);
+        idx += q.length;
+      }
+      const nextIdx =
+        direction === "next"
+          ? currentMatch % matchCount
+          : (currentMatch - 2 + matchCount) % matchCount;
+      setCurrentMatch(nextIdx + 1);
+      const pos = positions[nextIdx];
+      const ta = getActiveTextarea();
+      if (!ta) return;
+      ta.focus();
+      ta.setSelectionRange(pos, pos + searchQuery.length);
+      ta.scrollTop = Math.max(0, (code.substring(0, pos).split("\n").length - 1) * 20 - 100);
+    },
+    [searchQuery, matchCount, currentMatch, code]
+  );
 
   // ── ?project=ID または ?load=1 でコードを復元 ──
   useEffect(() => {
@@ -1050,13 +1137,6 @@ export default function PlaygroundPage() {
     } catch { /* noop */ }
   }, [applyPublishMeta]);
 
-  useEffect(() => {
-    try {
-      const key = localStorage.getItem("jisapp_api_key") ?? "";
-      setApiKey(key);
-      setApiKeyInput(key);
-    } catch { /* noop */ }
-  }, []);
 
   // ── 自動実行（コードがある場合のみ） ──
   useEffect(() => {
@@ -1079,29 +1159,6 @@ export default function PlaygroundPage() {
     setMatchCount(count);
     setCurrentMatch(count > 0 ? 1 : 0);
   }, [searchQuery, code]);
-
-  // ── 検索ジャンプ ──
-  const jumpToMatch = useCallback(
-    (direction: "next" | "prev") => {
-      if (!searchQuery.trim() || matchCount === 0 || !drawerTextareaRef.current) return;
-      const q = searchQuery.toLowerCase();
-      const src = code.toLowerCase();
-      const positions: number[] = [];
-      let idx = 0;
-      while ((idx = src.indexOf(q, idx)) !== -1) { positions.push(idx); idx += q.length; }
-      const nextIdx =
-        direction === "next"
-          ? currentMatch % matchCount
-          : (currentMatch - 2 + matchCount) % matchCount;
-      setCurrentMatch(nextIdx + 1);
-      const pos = positions[nextIdx];
-      const ta = drawerTextareaRef.current;
-      ta.focus();
-      ta.setSelectionRange(pos, pos + searchQuery.length);
-      ta.scrollTop = Math.max(0, (code.substring(0, pos).split("\n").length - 1) * 20 - 100);
-    },
-    [searchQuery, matchCount, currentMatch, code]
-  );
 
   // ── ツールハンドラ ──
   const handleClear = () => {
@@ -1162,10 +1219,7 @@ export default function PlaygroundPage() {
   const handleSave = () => {
     if (!code.trim()) return;
     runWithLoginPrompt("save", () => {
-      try {
-        const prev = localStorage.getItem("jisapp_playground_title") ?? "";
-        setSaveTitle(prev);
-      } catch { /* noop */ }
+      setSaveTitle("");
       setShowSaveModal(true);
     });
   };
@@ -1221,14 +1275,6 @@ export default function PlaygroundPage() {
     }
   };
 
-  const handleSaveApiKey = () => {
-    try {
-      localStorage.setItem("jisapp_api_key", apiKeyInput);
-      setApiKey(apiKeyInput);
-      setShowSettings(false);
-      showToast("APIキーを保存しました ✓");
-    } catch { /* noop */ }
-  };
 
   const showToast = (msg: string) => {
     setToast({ msg, show: true });
@@ -1301,74 +1347,28 @@ export default function PlaygroundPage() {
       {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} />}
 
 
-      {/* ══ 設定モーダル ══ */}
-      {showSettings && (
-        <div
-          className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
-          onClick={() => setShowSettings(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl ring-1 ring-black/10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
-                <Key className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-gray-900">AI APIキー設定</h2>
-                <p className="text-xs text-gray-500">ブラウザに安全に保存されます</p>
-              </div>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="ml-auto rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-600">
-                  OpenAI / Groq APIキー
-                </label>
-                <input
-                  type="password"
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="sk-... または gsk_..."
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 font-mono text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20"
-                />
-                <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
-                  ※ このキーはあなたのブラウザのLocalStorageにのみ保存されます。外部サーバーへは送信されません。
-                </p>
-              </div>
-              {apiKey && (
-                <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span className="text-xs font-semibold text-emerald-700">
-                    APIキー設定済み（{apiKey.slice(0, 8)}…）
-                  </span>
-                </div>
-              )}
-              <div className="flex gap-2.5 pt-1">
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={handleSaveApiKey}
-                  className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-[0.98]"
-                >
-                  <Save className="h-4 w-4" />
-                  設定を保存
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <EmbeddedSecretWarningModal
+        open={secretWarningOpen}
+        findings={secretFindings}
+        onClose={() => setSecretWarningOpen(false)}
+        onOpenSecrets={() => {
+          setSecretWarningOpen(false);
+          setShowPublishModal(false);
+          setShowSettings(true);
+        }}
+        onProceed={async () => {
+          setSecretWarningOpen(false);
+          await executePublish();
+        }}
+      />
+
+      {/* ══ シークレット管理 ══ */}
+      <SecretsSettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        appId={publishContext?.appId}
+        appTitle={publishTitle || undefined}
+      />
 
       {/* ══════════ ヘッダー ══════════ */}
       <header className="relative z-30 flex shrink-0 flex-col border-b border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-center">
@@ -1406,6 +1406,18 @@ export default function PlaygroundPage() {
             <span className="md:hidden">使い方</span>
             <span className="hidden md:inline">初心者ガイド</span>
           </button>
+
+          {session?.user && (
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              title="シークレット管理"
+              className="flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-bold text-gray-600 transition-all hover:bg-gray-50 sm:px-3 touch-manipulation"
+            >
+              <Key className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">シークレット</span>
+            </button>
+          )}
         </div>
 
         {/* 下段（モバイル）/ 右側（PC）: アクションボタン */}
@@ -1523,6 +1535,22 @@ export default function PlaygroundPage() {
         </div>
       </header>
 
+      {session?.user && (
+        <div className="relative z-20 flex shrink-0 items-center gap-2 border-b border-violet-100 bg-violet-50/90 px-3 py-2 sm:px-4">
+          <Key className="h-3.5 w-3.5 shrink-0 text-violet-600" />
+          <p className="min-w-0 flex-1 text-[11px] leading-snug text-violet-900 sm:text-xs">
+            {SECRETS_STUDIO_GUIDE}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowSettings(true)}
+            className="shrink-0 rounded-lg bg-violet-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-violet-700 sm:text-xs"
+          >
+            シークレット
+          </button>
+        </div>
+      )}
+
       {/* ══════════ メインコンテンツ ══════════ */}
 
       {/* ── モバイル: 全画面切り替え ── */}
@@ -1593,20 +1621,27 @@ export default function PlaygroundPage() {
               )}
               <div className="relative z-0 min-h-0 flex-1 overflow-hidden">
                 {showCodeEditor ? (
-                  <textarea
-                    ref={mobileTextareaRef}
-                    value={code}
-                    onChange={(e) => applyCode(e.target.value)}
+                  <CodeEditorPanel
+                    code={code}
+                    onChange={applyCode}
                     onKeyDown={handleKeyDown}
                     placeholder={"ここにHTMLコードを貼り付け\n（AIが生成したコードをそのまま貼り付け）"}
-                    spellCheck={false}
-                    className="block h-full w-full resize-none bg-white p-3 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 focus:outline-none"
+                    textareaRef={mobileTextareaRef}
+                    lineNumRef={lineNumRef}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    showSearch={showSearch}
+                    onToggleSearch={setShowSearch}
+                    matchCount={matchCount}
+                    currentMatch={currentMatch}
+                    onJumpMatch={jumpToMatch}
                   />
                 ) : (
                   <SimpleCodeGuide
                     onPaste={handlePasteAndRun}
                     onManualInput={focusCodeEditor}
                     onOpenGuide={() => setShowGuideModal(true)}
+                    onOpenSecrets={session?.user ? () => setShowSettings(true) : undefined}
                   />
                 )}
               </div>
@@ -1719,14 +1754,20 @@ export default function PlaygroundPage() {
 
           {/* テキストエリア or 簡易ガイド */}
           {showCodeEditor ? (
-            <textarea
-              ref={drawerTextareaRef}
-              value={code}
-              onChange={(e) => applyCode(e.target.value)}
+            <CodeEditorPanel
+              code={code}
+              onChange={applyCode}
               onKeyDown={handleKeyDown}
               placeholder={"ここにコードを貼り付けてください\n（AIが生成したHTMLをそのまま貼り付けるだけでOK）"}
-              spellCheck={false}
-              className="flex-1 min-h-0 resize-none bg-white p-3 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 focus:outline-none"
+              textareaRef={drawerTextareaRef}
+              lineNumRef={lineNumRef}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              showSearch={showSearch}
+              onToggleSearch={setShowSearch}
+              matchCount={matchCount}
+              currentMatch={currentMatch}
+              onJumpMatch={jumpToMatch}
             />
           ) : (
             <div className="min-h-0 flex-1 overflow-hidden">
@@ -1734,6 +1775,7 @@ export default function PlaygroundPage() {
                 onPaste={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
                 onManualInput={focusCodeEditor}
                 onOpenGuide={() => setShowGuideModal(true)}
+                onOpenSecrets={session?.user ? () => setShowSettings(true) : undefined}
               />
             </div>
           )}

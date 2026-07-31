@@ -42,20 +42,26 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.assign_app_number()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   IF NEW.app_number IS NULL THEN
     NEW.app_number := nextval('apps_app_number_seq');
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS apps_assign_app_number ON public.apps;
 CREATE TRIGGER apps_assign_app_number
   BEFORE INSERT ON public.apps
   FOR EACH ROW
   EXECUTE FUNCTION public.assign_app_number();
+
+GRANT USAGE, SELECT ON SEQUENCE public.apps_app_number_seq TO postgres, anon, authenticated, service_role;
 
 -- ─── 運営問い合わせ ───
 CREATE TABLE IF NOT EXISTS public.support_inquiries (

@@ -7,6 +7,11 @@ export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優
 ・「データの保存機能は必要ですか？（次回開いても残したいデータがあるか）」について、はい/いいえで答えやすい形で質問してください。
 ・ユーザーが答えるまで、コードは書かないでください。
 
+【外部連携・AI利用が話題に出たとき】
+・ユーザーが「AIを使って」「ChatGPTと連携」「天気API」「他のアプリと連携」「外部サービス」など、外部APIやAPIキーが必要になりそうな要望を出したときだけ、コードを書く前または書いた直後にシークレットの説明をしてください。
+・その場合、APIキーをコードに書かない理由と、ジサップの「シークレット」への登録方法を短く案内してください。
+・最初の返答の段階では、外部APIについては能動的に質問しないでください。
+
 【コードを書くときのルール（ユーザーが答えた後に適用）】
 ユーザーが質問に答えたあと、以下のジサップ専用ルールを厳守して、1つの index.html にすべてを含めたコードを出力してください。
 
@@ -24,13 +29,24 @@ Tailwind CSSやBootstrapなどのCDN（外部読み込み）は、環境制限�
   ※ async/await で読み込み完了を待ってから画面を表示してください。
 ・保存が不要と答えた場合は、localStorage も Zisup API も使わないでください。
 
-【外部API連携（必要な場合）】
-・天気・為替・公開APIなど外部データが必要な場合:
-  1. まず通常の fetch(url) を試してください（API側がCORS対応している場合）。
-  2. CORSエラーになる場合は window.Zisup.fetch(url, { method, headers, body }) を使ってください。
-     例: const res = await window.Zisup.fetch('https://api.example.com/data');
-          const data = res.body;
-  ※ URLは https のみ。APIキーをコードに書く場合、閲覧者に見える可能性があるため、公開APIキー等のみ使用してください。`;
+【APIキー・シークレット（外部APIを使う場合は必須）】
+・APIキー・トークン・秘密鍵を HTML / JavaScript / CSS に絶対に書かないでください（const API_KEY = '...' なども禁止）。
+・外部APIを使うコードでは、必ず window.Zisup.fetch の secret オプションを使ってください。
+  例: const res = await window.Zisup.fetch('https://api.example.com/data', { secret: 'WEATHER' });
+       const data = res.body;
+・コードに書くのは secret の名前（大文字英字、例: WEATHER, MAPS_API）だけにしてください。
+・コードを出力したあと、ユーザーに必ず次を案内してください:
+  「ジサップ開発スタジオ上部の『シークレット』から WEATHER などの名前でAPIキーを登録してください。キーをコードに直接書くと見えてしまいます。」
+・CORSで通常の fetch(url) が使える公開APIだけ、secret なしの fetch も可。
+
+【外部API連携の実装手順】
+  1. まず通常の fetch(url) を試す（API側がCORS対応している場合）。
+  2. CORSエラーになる、またはAPIキーが必要な場合は window.Zisup.fetch(url, { secret: 'NAME' }) を使う。
+  ※ URLは https のみ。URLパラメータ型（?appid= 等）のAPIも、シークレット管理で設定できます。`;
+
+/** 開発スタジオUI用の短い説明文 */
+export const SECRETS_STUDIO_GUIDE =
+  "天気APIなど外部サービスを使うアプリでは、APIキーをコードに書かず「シークレット」に登録してください。コードには secret: 'WEATHER' のように名前だけ書きます。";
 
 export const REPORT_TEMPLATE = `【研究テーマ】
 （例：おこづかいを記録するアプリを作った）

@@ -1,5 +1,6 @@
 -- Supabase API ロールにテーブル権限を付与
 GRANT ALL ON public.apps TO postgres, anon, authenticated, service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.apps_app_number_seq TO postgres, anon, authenticated, service_role;
 GRANT ALL ON public.playground_drafts TO postgres, anon, authenticated, service_role;
 GRANT ALL ON public.app_user_data TO postgres, anon, authenticated, service_role;
 

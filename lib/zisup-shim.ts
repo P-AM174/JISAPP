@@ -93,6 +93,7 @@ export const ZISUP_SHIM_SCRIPT = `
         method: options.method || 'GET',
         headers: headers,
         body: body,
+        secret: options.secret ? String(options.secret) : undefined,
       });
     },
   };

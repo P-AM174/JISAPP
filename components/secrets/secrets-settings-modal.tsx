@@ -145,12 +145,12 @@ export function SecretsSettingsModal({
             <div className="space-y-4">
               <p className="text-xs leading-relaxed text-gray-500">
                 {mode === "studio"
-                  ? "Gemini・OpenAI・天気APIなど、外部サービスのキーを登録します。コードには secret: 'GEMINI' のように名前だけ書いてください。"
+                  ? "外部API・AI（OpenAI、天気API、地図APIなど）のキーを登録します。コードに書く secret 名と、ここで登録する名前を同じ大文字にしてください。"
                   : `${appTitle ? `「${appTitle}」` : "このアプリ"} の公開版で使う外部APIキーです。コードでは secret: '名前' だけ指定します。`}
               </p>
               <div className="rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2.5 text-[11px] leading-relaxed text-violet-900">
                 例:{" "}
-                <code>await Zisup.fetch(url, {"{ secret: 'GEMINI' }"})</code>
+                <code>await Zisup.fetch(url, {"{ secret: 'WEATHER' }"})</code>
               </div>
               {appError && (
                 <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{appError}</p>
@@ -194,10 +194,11 @@ export function SecretsSettingsModal({
                       type="text"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value.toUpperCase())}
-                      placeholder="GEMINI"
+                      placeholder="例: WEATHER, OPENAI, MAPS"
                       maxLength={32}
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm outline-none focus:border-emerald-400"
                     />
+                    <p className="mt-1 text-[10px] text-gray-400">コード内の secret 名と同じ名前にしてください</p>
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-bold text-gray-700">APIキーの値</label>
@@ -205,6 +206,7 @@ export function SecretsSettingsModal({
                       type="password"
                       value={newValue}
                       onChange={(e) => setNewValue(e.target.value)}
+                      placeholder="取得したAPIキーを貼り付け"
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm outline-none focus:border-emerald-400"
                     />
                   </div>
@@ -226,7 +228,7 @@ export function SecretsSettingsModal({
                         type="text"
                         value={paramName}
                         onChange={(e) => setParamName(e.target.value)}
-                        placeholder="key"
+                        placeholder="例: key, appid, api_key"
                         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400"
                       />
                     </div>

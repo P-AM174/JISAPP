@@ -193,99 +193,21 @@ function SimpleCodeGuide({
   );
 }
 
-// ─── ガイド画面（コードがない状態） ───
-function GuideScreen({ onOpenDrawer }: { onOpenDrawer: () => void }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(PROMPT_TEMPLATE);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch { /* noop */ }
-  };
-
+// ─── プレビュー空状態（案内はエディタ側のみ） ───
+function PreviewPlaceholder() {
   return (
-      <div className="flex min-h-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-emerald-50 via-white to-white px-6 py-6">
-
-        {/* タイトル */}
-        <div className="text-center">
-          <h2 className="text-xl font-black text-gray-800">
-            コードを貼り付けると
-            <span className="text-emerald-600">ここに表示されます</span>
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            <span className="md:hidden">「コード」タブに HTML を貼り付けると、このプレビュー画面にアプリが表示されます。</span>
-            <span className="hidden md:inline">右のコード画面に HTML を貼り付けると、左側のこの画面にアプリが表示されます。</span>
-          </p>
-        </div>
-
-        {/* ステップ */}
-        <div className="w-full max-w-sm space-y-2.5">
-          <div className="flex items-start gap-3 rounded-2xl bg-blue-50 p-3.5 shadow-sm ring-1 ring-blue-200">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">1</div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-gray-800">専用プロンプトを AI に送る</p>
-              <p className="mt-0.5 text-xs text-gray-500">ChatGPT・Claude・Gemini などに、ジサップ用の指示文を送る</p>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className={cn(
-                  "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold shadow-sm transition-all active:scale-95 touch-manipulation",
-                  copied ? "bg-emerald-100 text-emerald-700" : "bg-blue-600 text-white hover:bg-blue-500"
-                )}
-              >
-                {copied ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    コピー済み
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    専用プロンプトをコピー
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-amber-100">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-600">2</div>
-            <div>
-              <p className="text-sm font-bold text-gray-800">AI の質問に答えて、コードをコピー</p>
-              <p className="mt-0.5 text-xs text-gray-500">保存機能の要否などに答えると HTML コードが出力される</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-3.5 text-xs leading-relaxed text-violet-800">
-            <p className="font-bold text-violet-900">外部APIを使う場合</p>
-            <p className="mt-1">{SECRETS_STUDIO_GUIDE}</p>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 p-3.5 shadow-sm ring-1 ring-emerald-200">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-sm font-black text-white">3</div>
-            <div>
-              <p className="text-sm font-bold text-emerald-800">
-                <span className="md:hidden">「コード」タブに貼り付ける</span>
-                <span className="hidden md:inline">右のコード画面に貼り付ける</span>
-              </p>
-              <p className="mt-0.5 text-xs text-emerald-700">「クリップボードから貼り付け」を押してから「プレビュー」で確認する</p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onOpenDrawer}
-          className="text-[11px] text-gray-400 underline decoration-dotted underline-offset-2 hover:text-emerald-600 transition-colors touch-manipulation"
-        >
-          コード画面を開く
-        </button>
-      </div>
+    <div className="flex h-full flex-col items-center justify-center bg-gradient-to-b from-emerald-50 via-white to-white px-6 py-6 text-center">
+      <h2 className="text-xl font-black text-gray-800">
+        コードを貼り付けると
+        <span className="text-emerald-600">ここに表示されます</span>
+      </h2>
+      <p className="mt-1 text-sm text-gray-500">
+        <span className="md:hidden">「コード」タブに HTML を貼り付けると、このプレビュー画面にアプリが表示されます。</span>
+        <span className="hidden md:inline">左のコード画面に HTML を貼り付けると、右側のこの画面にアプリが表示されます。</span>
+      </p>
+    </div>
   );
 }
-
 
 // ─── ガイドモーダルのステップ定義 ───
 // ─── ガイドモーダル（4ステップ） ───
@@ -455,7 +377,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
                   <p className="text-sm font-black text-violet-900 mb-1">🔑 APIキーが必要なアプリ</p>
                   <p className="text-xs leading-relaxed text-violet-800">
-                    コードにキーを書かず、「プレビュー更新」の横「APIキー」から登録。AIに「secret: &apos;GEMINI&apos; を使って」と指示されている場合は、同じ名前で登録してください。
+                    コードにキーを書かず、「プレビュー更新」の横「APIキー」から登録。AIがコード内で指定した secret 名（例: secret: &apos;WEATHER&apos;）と同じ名前で登録してください。
                   </p>
                 </div>
               </div>
@@ -847,7 +769,6 @@ export default function PlaygroundPage() {
   };
 
   // 行番号とスクロール同期（CodeEditorPanel 内で処理）
-  const syncLineNumbers = () => { /* noop */ };
 
   const getActiveTextarea = () =>
     drawerTextareaRef.current ?? mobileTextareaRef.current;
@@ -874,6 +795,9 @@ export default function PlaygroundPage() {
       ta.focus();
       ta.setSelectionRange(pos, pos + searchQuery.length);
       ta.scrollTop = Math.max(0, (code.substring(0, pos).split("\n").length - 1) * 20 - 100);
+      if (lineNumRef.current) {
+        lineNumRef.current.style.transform = `translateY(-${ta.scrollTop}px)`;
+      }
     },
     [searchQuery, matchCount, currentMatch, code]
   );
@@ -1331,7 +1255,7 @@ export default function PlaygroundPage() {
             type="button"
             onClick={handleRun}
             disabled={!code.trim()}
-            title="左側のプレビューで動作を確認"
+            title="右側のプレビューで動作を確認"
             className={cn(
               "flex flex-1 flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation",
               code.trim()
@@ -1345,7 +1269,7 @@ export default function PlaygroundPage() {
               <span className="sm:hidden">更新</span>
             </span>
             <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-600/80 lg:block">
-              左側で動作確認
+              右側で動作確認
             </span>
           </button>
 
@@ -1354,7 +1278,7 @@ export default function PlaygroundPage() {
             type="button"
             onClick={() => void openApiKeys()}
             disabled={apiKeysLoading}
-            title="Gemini・天気APIなどのキーをコードに書かず登録"
+            title="外部API・AIのキーをコードに書かず登録"
             className={cn(
               "flex flex-1 flex-col items-center rounded-xl border border-violet-200 bg-violet-50 px-2 py-1.5 text-violet-800 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation hover:bg-violet-100 disabled:opacity-50",
             )}
@@ -1443,7 +1367,7 @@ export default function PlaygroundPage() {
                     {showGuide ? (
                       <>
                         <span className="md:hidden">コードタブに貼り付けると表示</span>
-                        <span className="hidden md:inline">右のコード画面に貼り付けると表示</span>
+                        <span className="hidden md:inline">左のコード画面に貼り付けると表示</span>
                       </>
                     ) : "プレビュー"}
                   </span>
@@ -1459,9 +1383,7 @@ export default function PlaygroundPage() {
               </div>
               <div className="min-h-0 flex-1 overflow-hidden">
                 {showGuide ? (
-                  <GuideScreen
-                    onOpenDrawer={focusCodeEditor}
-                  />
+                  <PreviewPlaceholder />
                 ) : (
                   <AppRunner
                     key={iframeKey}
@@ -1499,7 +1421,7 @@ export default function PlaygroundPage() {
                   クリップボードから貼り付け
                 </button>
               )}
-              <div className="relative z-0 min-h-0 flex-1 overflow-hidden">
+              <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
                 {showCodeEditor ? (
                   <CodeEditorPanel
                     code={code}
@@ -1554,62 +1476,11 @@ export default function PlaygroundPage() {
           )}
       </div>
 
-      {/* ── PC: 左右分割（プレビュー左・コード右） ── */}
+      {/* ── PC: 左右分割（コード左・プレビュー右） ── */}
       <div className="relative z-0 hidden min-h-0 flex-1 md:flex md:flex-row">
 
-        {/* ── プレビューパネル（左） ── */}
-        <div className="flex min-h-0 flex-1 flex-col bg-white">
-
-          {/* ブラウザクローム */}
-          <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-gray-100 px-3 py-2">
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-            </div>
-            <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
-              <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
-              <span className="truncate text-[11px] text-gray-400">
-                {showGuide ? (
-                  <>
-                    <span className="md:hidden">コードタブに貼り付けると表示</span>
-                    <span className="hidden md:inline">右のコード画面に貼り付けると表示</span>
-                  </>
-                ) : "プレビュー"}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => { if (code.trim()) { setPreviewHtml(code); setIframeKey((k) => k + 1); } }}
-              title="再読み込み"
-              className="shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {/* プレビュー or ガイド */}
-          <div className="relative min-h-0 flex-1 overflow-hidden">
-            <div className="absolute inset-0 overflow-y-auto">
-              {showGuide ? (
-                <GuideScreen
-                  onOpenDrawer={focusCodeEditor}
-                />
-              ) : (
-                <AppRunner
-                  key={iframeKey}
-                  srcDoc={previewHtml}
-                  title="プレビュー"
-                  className="h-full"
-                  appId={publishContext?.appId ?? "playground"}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── コードパネル（右） ── */}
-        <div className="flex h-auto w-[42%] shrink-0 flex-col border-l-[3px] border-l-black bg-white">
+        {/* ── コードパネル（左） ── */}
+        <div className="flex min-h-0 w-[42%] shrink-0 flex-col border-r-[3px] border-r-black bg-white">
 
           {/* パネルヘッダー */}
           <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
@@ -1671,6 +1542,50 @@ export default function PlaygroundPage() {
             <span className="text-[10px] text-gray-400">
               {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
             </span>
+          </div>
+        </div>
+
+        {/* ── プレビューパネル（右） ── */}
+        <div className="flex min-h-0 flex-1 flex-col bg-white">
+
+          {/* ブラウザクローム */}
+          <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-gray-100 px-3 py-2">
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+            </div>
+            <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
+              <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
+              <span className="truncate text-[11px] text-gray-400">
+                {showGuide ? "左のコード画面に貼り付けると表示" : "プレビュー"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { if (code.trim()) { setPreviewHtml(code); setIframeKey((k) => k + 1); } }}
+              title="再読み込み"
+              className="shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* プレビュー or 空状態 */}
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div className="absolute inset-0 overflow-y-auto">
+              {showGuide ? (
+                <PreviewPlaceholder />
+              ) : (
+                <AppRunner
+                  key={iframeKey}
+                  srcDoc={previewHtml}
+                  title="プレビュー"
+                  className="h-full"
+                  appId={publishContext?.appId ?? "playground"}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import type { RefObject } from "react";
+import { useLayoutEffect } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -40,14 +41,22 @@ export function CodeEditorPanel({
   const lines = code.split("\n");
   const lineCount = Math.max(lines.length, 1);
 
-  const syncScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+  const syncLineNumbers = (scrollTop: number) => {
     if (lineNumRef.current) {
-      lineNumRef.current.scrollTop = e.currentTarget.scrollTop;
+      lineNumRef.current.style.transform = `translateY(-${scrollTop}px)`;
     }
   };
 
+  const syncScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    syncLineNumbers(e.currentTarget.scrollTop);
+  };
+
+  useLayoutEffect(() => {
+    syncLineNumbers(textareaRef.current?.scrollTop ?? 0);
+  }, [code, lineCount, textareaRef]);
+
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
+    <div className={cn("flex h-full min-h-0 flex-1 flex-col overflow-hidden", className)}>
       <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50 px-2 py-1.5">
         <button
           type="button"
@@ -108,25 +117,31 @@ export function CodeEditorPanel({
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
-          ref={lineNumRef}
           aria-hidden
-          className="shrink-0 overflow-hidden border-r border-gray-100 bg-gray-50 py-3 pr-2 pl-2 text-right font-mono text-[10px] leading-5 text-gray-400 select-none"
+          className="relative min-h-0 shrink-0 self-stretch overflow-hidden border-r border-gray-100 bg-gray-50"
           style={{ minWidth: "2.5rem" }}
         >
-          {Array.from({ length: lineCount }, (_, i) => (
-            <div key={i}>{i + 1}</div>
-          ))}
+          <div
+            ref={lineNumRef}
+            className="pointer-events-none py-3 pr-2 pl-2 text-right font-mono text-xs leading-5 text-gray-400 select-none will-change-transform"
+          >
+            {Array.from({ length: lineCount }, (_, i) => (
+              <div key={i}>{i + 1}</div>
+            ))}
+          </div>
         </div>
-        <textarea
-          ref={textareaRef}
-          value={code}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={onKeyDown}
-          onScroll={syncScroll}
-          placeholder={placeholder}
-          spellCheck={false}
-          className="min-h-0 flex-1 resize-none bg-white py-3 pr-3 pl-2 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400"
-        />
+        <div className="relative min-h-0 min-w-0 flex-1">
+          <textarea
+            ref={textareaRef}
+            value={code}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            onScroll={syncScroll}
+            placeholder={placeholder}
+            spellCheck={false}
+            className="absolute inset-0 h-full w-full resize-none overflow-y-auto overscroll-contain bg-white py-3 pr-3 pl-2 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 [-webkit-overflow-scrolling:touch] touch-pan-y"
+          />
+        </div>
       </div>
     </div>
   );

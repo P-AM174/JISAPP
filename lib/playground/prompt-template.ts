@@ -19,14 +19,14 @@ export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優
 1. 生成した HTML を開発スタジオのコード欄に貼り付ける
 2. 上部の「プレビュー更新」ボタンの横にある「APIキー」を開く
 3. 次の内容でキーを登録する
-   ・名前（大文字）: 【GEMINI / OPENAI / WEATHER など、コードで使う名前】
+   ・名前（大文字）: 【WEATHER / OPENAI / MAPS など、コードで使う名前】
    ・値: 取得したAPIキー（AIza... / sk-... など）
    ・付け方: サービスの仕様に合わせて選ぶ
-     - Gemini など URLパラメータ型 → 「URLパラメータ」、パラメータ名「key」
-     - OpenAI など Authorization ヘッダー型 → 「HTTPヘッダー」
+     - URLパラメータ型（Google Gemini 等） → 「URLパラメータ」、パラメータ名「key」
+     - Authorization ヘッダー型（OpenAI 等） → 「HTTPヘッダー」
 4. 「プレビュー更新」で動作確認する
 
-コード側では、キーの値は書かず secret: 'GEMINI' のように名前だけ指定します。
+コード側では、キーの値は書かず secret: 'API_NAME' のように名前だけ指定します（API_NAME は登録名と同じ大文字）。
 ---
 
 【コードを書くときのルール（ユーザーが答えた後に適用）】
@@ -69,7 +69,7 @@ HTMLコードを出力したあと、最後に必ず次のような短い手順�
 【APIキーの登録手順】
 1. このコードをジサップ開発スタジオに貼り付ける
 2. 「プレビュー更新」の横「APIキー」を開く
-3. 名前「GEMINI」（コードの secret 名と同じ）でキーを登録
+3. 名前（コード内の secret 名と同じ。例: WEATHER, OPENAI, MAPS など）でキーを登録
 4. 「プレビュー更新」で確認
 ※ キーをコードに直接書かないでください
 ---
@@ -81,7 +81,7 @@ HTMLコードを出力したあと、最後に必ず次のような短い手順�
 
 /** 開発スタジオUI用の短い説明文 */
 export const SECRETS_STUDIO_GUIDE =
-  "AI（Gemini・OpenAIなど）や天気APIを使うときは、「プレビュー更新」の横「APIキー」にキーを貼り付けてください。コードには secret: 'GEMINI' のように名前だけ書きます。";
+  "外部API・AI（OpenAI、天気API、地図APIなど）を使うときは、「プレビュー更新」の横「APIキー」にキーを登録してください。コードには secret: 'API_NAME' のように名前だけ書き、値は書きません（API_NAME は登録名と同じ大文字）。";
 
 export const REPORT_TEMPLATE = `【研究テーマ】
 （例：おこづかいを記録するアプリを作った）

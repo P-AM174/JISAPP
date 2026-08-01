@@ -75,7 +75,7 @@ export function PromptBuilderModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+        className="flex h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-start gap-3 border-b border-sky-100 bg-gradient-to-br from-sky-500 to-blue-600 px-5 py-4 text-white">
@@ -189,6 +189,32 @@ export function PromptBuilderModal({
                 </p>
               </div>
 
+              {error && (
+                <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
+              )}
+
+              {/* 入力欄の直下に置き、キーボードやプレビューで隠れないようにする */}
+              <button
+                type="button"
+                onClick={() => void handleCopyTemplate()}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
+                  copied === "template" ? "bg-emerald-600" : "bg-sky-600 hover:bg-sky-500"
+                )}
+              >
+                {copied === "template" ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    コピーしました！AIに貼り付けて送ってください
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    完成したプロンプトをコピー
+                  </>
+                )}
+              </button>
+
               <div>
                 <p className="mb-1.5 text-xs font-bold text-gray-700">プレビュー（AIに送る文）</p>
                 <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 font-mono text-[10px] leading-relaxed text-slate-600">
@@ -219,58 +245,36 @@ export function PromptBuilderModal({
                 <li>2. 「必須ルールだけコピー」を押す</li>
                 <li>3. 要望文のあとに貼り付けて送信</li>
               </ol>
-            </>
-          )}
 
-          {error && (
-            <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
+              {error && (
+                <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => void handleCopyRules()}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
+                  copied === "rules" ? "bg-emerald-600" : "bg-amber-600 hover:bg-amber-500"
+                )}
+              >
+                {copied === "rules" ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    コピーしました！要望文の末尾に貼ってください
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    必須ルールだけコピー
+                  </>
+                )}
+              </button>
+            </>
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {tab === "template" ? (
-            <button
-              type="button"
-              onClick={() => void handleCopyTemplate()}
-              className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
-                copied === "template" ? "bg-emerald-600" : "bg-sky-600 hover:bg-sky-500"
-              )}
-            >
-              {copied === "template" ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  コピーしました！AIに貼り付けて送ってください
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  完成したプロンプトをコピー
-                </>
-              )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void handleCopyRules()}
-              className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
-                copied === "rules" ? "bg-emerald-600" : "bg-amber-600 hover:bg-amber-500"
-              )}
-            >
-              {copied === "rules" ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  コピーしました！要望文の末尾に貼ってください
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  必須ルールだけコピー
-                </>
-              )}
-            </button>
-          )}
+        <div className="flex shrink-0 flex-col border-t border-gray-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={onClose}

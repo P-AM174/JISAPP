@@ -198,15 +198,18 @@ const TOC = [
 export function SummerResearchGuide() {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
   const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
+  const [promptBuilderKey, setPromptBuilderKey] = useState(0);
 
   const openPromptBuilder = (tab: "template" | "rules" = "template") => {
     setPromptBuilderTab(tab);
+    setPromptBuilderKey((k) => k + 1);
     setPromptBuilderOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-[#f3f4f2]">
       <PromptBuilderModal
+        key={promptBuilderKey}
         open={promptBuilderOpen}
         onClose={() => setPromptBuilderOpen(false)}
         initialTab={promptBuilderTab}

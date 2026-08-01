@@ -32,6 +32,8 @@ export function PromptBuilderModal({
   const [copied, setCopied] = useState<"template" | "rules" | null>(null);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  /** 開くたびに input を作り直し、ブラウザ自動入力や前回値の残存を防ぐ */
+  const [formKey, setFormKey] = useState(0);
   const closeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -39,18 +41,23 @@ export function PromptBuilderModal({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (closeTimerRef.current != null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    if (!open) {
+      setAppName("");
+      setDetails("");
+      setCopied(null);
+      setError("");
+      return;
+    }
+    setFormKey((k) => k + 1);
     setTab(initialTab);
     setAppName("");
     setDetails("");
     setCopied(null);
     setError("");
-    return () => {
-      if (closeTimerRef.current != null) {
-        window.clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    };
   }, [open, initialTab]);
 
   if (!open || !mounted) return null;
@@ -173,6 +180,7 @@ export function PromptBuilderModal({
                   作りたいアプリ <span className="text-rose-500">*</span>
                 </label>
                 <input
+                  key={`app-name-${formKey}`}
                   type="text"
                   value={appName}
                   onChange={(e) => {
@@ -180,6 +188,11 @@ export function PromptBuilderModal({
                     if (error) setError("");
                   }}
                   placeholder="例：日記アプリ、家計簿、TODOリスト"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  name={`jisapp_prompt_app_${formKey}`}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                 />
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -205,12 +218,15 @@ export function PromptBuilderModal({
                   <span className="font-medium text-gray-400">（任意）</span>
                 </label>
                 <textarea
+                  key={`app-details-${formKey}`}
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   rows={4}
                   placeholder={
                     "例：\n・パステルカラーでかわいい見た目\n・日付ごとにメモを残せる\n・写真は不要\n・スマホで使いやすく"
                   }
+                  autoComplete="off"
+                  name={`jisapp_prompt_details_${formKey}`}
                   className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                 />
                 <p className="mt-1 text-[10px] text-gray-400">

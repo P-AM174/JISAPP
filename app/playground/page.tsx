@@ -84,9 +84,11 @@ function SimpleCodeGuide({
 }) {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
   const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
+  const [promptBuilderKey, setPromptBuilderKey] = useState(0);
 
   const openPromptBuilder = (tab: "template" | "rules" = "template") => {
     setPromptBuilderTab(tab);
+    setPromptBuilderKey((k) => k + 1);
     setPromptBuilderOpen(true);
   };
 
@@ -101,6 +103,7 @@ function SimpleCodeGuide({
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-gradient-to-b from-emerald-50/80 to-white px-4 py-5">
       <PromptBuilderModal
+        key={promptBuilderKey}
         open={promptBuilderOpen}
         onClose={() => setPromptBuilderOpen(false)}
         onReturnToEditor={() => setPromptBuilderOpen(false)}
@@ -204,12 +207,14 @@ function GuideModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
   const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
+  const [promptBuilderKey, setPromptBuilderKey] = useState(0);
   const total = 4;
   const isFirst = step === 0;
   const isLast  = step === total - 1;
 
   const openPromptBuilder = (tab: "template" | "rules" = "template") => {
     setPromptBuilderTab(tab);
+    setPromptBuilderKey((k) => k + 1);
     setPromptBuilderOpen(true);
   };
 
@@ -277,6 +282,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {step === 0 && (
             <div className="space-y-4">
               <PromptBuilderModal
+                key={promptBuilderKey}
                 open={promptBuilderOpen}
                 onClose={() => setPromptBuilderOpen(false)}
                 onReturnToEditor={() => {
@@ -682,14 +688,12 @@ export default function PlaygroundPage() {
     setLastPublishWasOverwrite(false);
     setPublishResetUserData(false);
     setPublishUpdateNotes("");
-    if (!isRepublish && !publishTitle.trim()) {
-      try {
-        const t = localStorage.getItem("jisapp_playground_title");
-        if (t) setPublishTitle(t);
-      } catch { /* noop */ }
+    // 再公開以外は前回タイトルを入れず空欄から（新規作成のたびに残らないように）
+    if (!isRepublish) {
+      setPublishTitle("");
     }
     setShowPublishModal(true);
-  }, [isRepublish, publishTitle]);
+  }, [isRepublish]);
 
   const handlePublish = async () => {
     const title = publishTitle.trim() || "開発スタジオアプリ";
@@ -1626,10 +1630,7 @@ export default function PlaygroundPage() {
                 onClick={() => {
                   setShowLeaveModal(false);
                   setLeaveAfterSave(true);
-                  try {
-                    const prev = localStorage.getItem("jisapp_playground_title") ?? "";
-                    setSaveTitle(prev);
-                  } catch { /* noop */ }
+                  setSaveTitle("");
                   setShowSaveModal(true);
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98]"
@@ -1688,6 +1689,8 @@ export default function PlaygroundPage() {
                   placeholder="例：タスク管理アプリ、計算機..."
                   maxLength={60}
                   autoFocus
+                  autoComplete="off"
+                  name="jisapp_save_project_title"
                   className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 />
                 <p className="mt-1.5 text-[11px] text-gray-400">マイプロジェクトページに表示される名前です</p>
@@ -1838,6 +1841,8 @@ export default function PlaygroundPage() {
                       placeholder="例：タスク管理ツール、計算機アプリ..."
                       maxLength={60}
                       autoFocus
+                      autoComplete="off"
+                      name="jisapp_publish_app_title"
                       className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                     />
                   </div>

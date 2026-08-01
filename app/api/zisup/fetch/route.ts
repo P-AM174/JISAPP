@@ -5,6 +5,9 @@ import { applySecretToRequest } from "@/lib/secrets/apply-secret";
 import { validateSecretName } from "@/lib/secrets/constants";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
+/** Gemini 等の AI API 呼び出し向け（Vercel Pro 以上推奨） */
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   let body: {
     url?: string;
@@ -71,8 +74,13 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "外部APIへの接続に失敗しました";
-    const status = message.includes("abort") ? 504 : 400;
-    return NextResponse.json({ error: message }, { status });
+    const raw = err instanceof Error ? err.message : "外部APIへの接続に失敗しました";
+    const timedOut =
+      raw.includes("タイムアウト") ||
+      raw.toLowerCase().includes("abort");
+    const message = timedOut
+      ? "外部APIの応答がタイムアウトしました。AIの処理に時間がかかっている可能性があります。"
+      : raw;
+    return NextResponse.json({ error: message }, { status: timedOut ? 504 : 400 });
   }
 }

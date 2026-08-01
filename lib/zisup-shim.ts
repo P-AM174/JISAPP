@@ -6,7 +6,7 @@
  * このスクリプトは buildSrcDoc() によって全アプリの <head> 先頭に自動注入される。
  * アプリ側コード（index.html）の変更は不要。
  */
-export const ZISUP_REQUEST_TIMEOUT_MS = 25_000;
+export const ZISUP_REQUEST_TIMEOUT_MS = 55_000;
 
 export const ZISUP_SHIM_SCRIPT = `
 (function () {

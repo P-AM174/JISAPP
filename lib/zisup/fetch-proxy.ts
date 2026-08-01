@@ -8,7 +8,8 @@ const BLOCKED_HOSTS = new Set([
 
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_RESPONSE_BYTES = 512 * 1024;
-const FETCH_TIMEOUT_MS = 22_000;
+/** AI API（Gemini 等）向け。Vercel maxDuration（60秒）より短く設定 */
+export const FETCH_TIMEOUT_MS = 50_000;
 
 function isPrivateIp(hostname: string): boolean {
   if (/^10\./.test(hostname)) return true;
@@ -97,6 +98,16 @@ export async function proxyExternalFetch(input: {
     }
 
     return { ok: res.ok, status: res.status, contentType, body };
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.name === "AbortError" || err.message.toLowerCase().includes("abort"))
+    ) {
+      throw new Error(
+        "外部APIの応答がタイムアウトしました。AIの処理に時間がかかっている可能性があります。しばらく待ってから再試行してください。"
+      );
+    }
+    throw err;
   } finally {
     clearTimeout(timer);
   }

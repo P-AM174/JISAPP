@@ -3,6 +3,7 @@ import {
   SITE_NAME,
   SITE_TITLE,
   SITE_DESCRIPTION,
+  SITE_OG_IMAGE,
   absoluteUrl,
   getSiteUrl,
 } from "@/lib/seo/site";
@@ -22,13 +23,20 @@ export const noIndexMetadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** 検索エンジンには載せないが、SNSシェア用 OGP は出したいページ向け */
+export function createNoIndexPageMetadata(
+  options: Omit<PageMetadataOptions, "noIndex"> = {}
+): Metadata {
+  return createPageMetadata({ ...options, noIndex: true });
+}
+
 export function createPageMetadata(options: PageMetadataOptions = {}): Metadata {
   const {
     title,
     description = SITE_DESCRIPTION,
     path,
     noIndex = false,
-    ogImage,
+    ogImage = SITE_OG_IMAGE,
     ogTitle,
     ogDescription,
   } = options;
@@ -37,14 +45,12 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
   const shareTitle = ogTitle ?? pageTitle;
   const shareDescription = ogDescription ?? description;
   const canonical = path ? absoluteUrl(path) : getSiteUrl();
-  const imageMeta = ogImage
-    ? {
-        url: ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage),
-        width: ogImage.includes("opengraph") ? 1200 : 512,
-        height: ogImage.includes("opengraph") ? 630 : 512,
-        alt: SITE_NAME,
-      }
-    : null;
+  const imageMeta = {
+    url: ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage),
+    width: ogImage.includes("opengraph") ? 1200 : 512,
+    height: ogImage.includes("opengraph") ? 630 : 512,
+    alt: shareTitle,
+  };
 
   return {
     ...(title ? { title } : {}),
@@ -57,13 +63,13 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
       title: shareTitle,
       description: shareDescription,
       url: canonical,
-      ...(imageMeta ? { images: [imageMeta] } : {}),
+      images: [imageMeta],
     },
     twitter: {
       card: "summary_large_image",
       title: shareTitle,
       description: shareDescription,
-      ...(imageMeta ? { images: [imageMeta.url] } : {}),
+      images: [imageMeta.url],
     },
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),
   };

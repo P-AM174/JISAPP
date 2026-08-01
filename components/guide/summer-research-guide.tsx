@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { cn } from "@/lib/utils";
-import { PROMPT_TEMPLATE, REPORT_TEMPLATE } from "@/lib/playground/prompt-template";
+import { REPORT_TEMPLATE } from "@/lib/playground/prompt-template";
+import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal";
 
 function CopyButton({
   text,
@@ -90,12 +91,13 @@ const STEPS = [
   {
     id: "prompt",
     num: "3",
-    title: "AIへの指示文をコピーする",
+    title: "AIへの指示文を作ってコピーする",
     body: [
-      "下のボタンで指示文をコピーします。",
-      "「【ここに作りたいアプリ名を入れる】」の部分だけ、Step 1で決めた名前（例：おこづかいメモ）に書き換えます。",
+      "下のボタンを押して、作りたいアプリ名を入力します。",
+      "仕様やデザインの希望があれば任意で書けます（空欄でもOK）。",
+      "完成した指示文をコピーします。",
     ],
-    tip: "指示文はジサップ専用のルールが入っているので、そのまま使うのがおすすめです。",
+    tip: "指示文にはジサップ専用のルールが自動で入るので、そのままAIに送るのがおすすめです。",
     hasPrompt: true,
   },
   {
@@ -104,7 +106,7 @@ const STEPS = [
     title: "AIに送って、質問に答える",
     body: [
       "ChatGPT、Gemini、Claude など、使えるAIを開きます。",
-      "書き換えた指示文をそのまま送信します。",
+      "コピーした指示文をそのまま貼り付けて送信します。",
       "AIが「保存機能は必要ですか？」と質問してきたら、はい/いいえで答えます（このときコードはまだ出ません）。",
       "答えると、ジサップ用のHTMLコードが返ってきます（1〜2分かかることもあります）。",
     ],
@@ -194,8 +196,21 @@ const TOC = [
 ] as const;
 
 export function SummerResearchGuide() {
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
+  const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
+
+  const openPromptBuilder = (tab: "template" | "rules" = "template") => {
+    setPromptBuilderTab(tab);
+    setPromptBuilderOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-[#f3f4f2]">
+      <PromptBuilderModal
+        open={promptBuilderOpen}
+        onClose={() => setPromptBuilderOpen(false)}
+        initialTab={promptBuilderTab}
+      />
       <header className="border-b border-gray-200 bg-white px-4 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <JisappLogo href="/" />
@@ -338,10 +353,24 @@ export function SummerResearchGuide() {
                 {"hasPrompt" in step && step.hasPrompt && (
                   <div className="space-y-3 rounded-xl border border-sky-200 bg-sky-50 p-4">
                     <p className="text-xs font-bold text-sky-800">AIへの指示文（ジサップ専用）</p>
-                    <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg bg-white p-3 font-mono text-[11px] leading-relaxed text-slate-700">
-                      {PROMPT_TEMPLATE}
-                    </pre>
-                    <CopyButton text={PROMPT_TEMPLATE} label="指示文をコピーする" />
+                    <p className="text-xs leading-relaxed text-sky-800">
+                      アプリ名を入力すると、ジサップ用ルールが入った指示文ができます。自分で書く場合は「必須ルールだけ」を要望の末尾に貼ってください。
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => openPromptBuilder("template")}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-bold text-white hover:bg-sky-500"
+                    >
+                      <Terminal className="h-4 w-4" />
+                      テンプレートから作成
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openPromptBuilder("rules")}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100"
+                    >
+                      必須ルールだけコピー（自分で書く人向け）
+                    </button>
                   </div>
                 )}
 

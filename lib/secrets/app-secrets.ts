@@ -86,6 +86,43 @@ export async function upsertAppSecret(params: {
   );
 }
 
+export async function updateAppSecret(params: {
+  userId: string;
+  appId: string;
+  name: string;
+  value?: string;
+  header_name?: string;
+  prefix?: string;
+  attach_type?: AttachType;
+  param_name?: string | null;
+}): Promise<void> {
+  const existing = await getAppSecretConfig(params.appId, params.name);
+  if (!existing) {
+    throw new Error("シークレットが見つかりません");
+  }
+
+  const nextValue = params.value?.trim() ? params.value.trim() : existing.value;
+
+  await upsertAppSecret({
+    userId: params.userId,
+    appId: params.appId,
+    name: params.name,
+    value: nextValue,
+    header_name: params.header_name ?? existing.header_name,
+    prefix: params.prefix ?? existing.prefix,
+    attach_type: params.attach_type ?? existing.attach_type,
+    param_name:
+      (params.attach_type ?? existing.attach_type) === "query"
+        ? params.param_name ?? existing.param_name
+        : null,
+  });
+}
+
+export async function appSecretExists(appId: string, name: string): Promise<boolean> {
+  const config = await getAppSecretConfig(appId, name);
+  return config !== null;
+}
+
 export async function deleteAppSecret(appId: string, name: string): Promise<void> {
   const supabase = createServerSupabaseClient();
   await supabase.from("app_secrets").delete().eq("app_id", appId).eq("name", name);

@@ -27,6 +27,7 @@ import {
   HelpCircle,
   ArrowRight,
   ArrowLeft,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -34,10 +35,11 @@ import { CATEGORIES } from "@/lib/categories";
 import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
-import { PROMPT_TEMPLATE, SECRETS_STUDIO_GUIDE } from "@/lib/playground/prompt-template";
+import { SECRETS_STUDIO_GUIDE } from "@/lib/playground/prompt-template";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
 import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
+import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal";
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
 import { supabase } from "@/lib/supabase";
@@ -82,18 +84,16 @@ function SimpleCodeGuide({
   onOpenGuide?: () => void;
   onOpenSecrets?: () => void;
 }) {
-  const [promptCopied, setPromptCopied] = useState(false);
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
+  const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
 
-  const handleCopyPrompt = async () => {
-    try {
-      await navigator.clipboard.writeText(PROMPT_TEMPLATE);
-      setPromptCopied(true);
-      setTimeout(() => setPromptCopied(false), 2500);
-    } catch { /* noop */ }
+  const openPromptBuilder = (tab: "template" | "rules" = "template") => {
+    setPromptBuilderTab(tab);
+    setPromptBuilderOpen(true);
   };
 
-  const steps: { text: string; copyPrompt?: boolean }[] = [
-    { text: "専用プロンプトを AI に送り、作りたいアプリを伝える", copyPrompt: true },
+  const steps: { text: string; buildPrompt?: boolean }[] = [
+    { text: "専用プロンプトを AI に送り、作りたいアプリを伝える", buildPrompt: true },
     { text: "出力された HTML コードをすべてコピーする" },
     { text: "「クリップボードから貼り付け」を押す" },
     { text: "「プレビュー」タブで動作を確認する" },
@@ -102,6 +102,11 @@ function SimpleCodeGuide({
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-gradient-to-b from-emerald-50/80 to-white px-4 py-5">
+      <PromptBuilderModal
+        open={promptBuilderOpen}
+        onClose={() => setPromptBuilderOpen(false)}
+        initialTab={promptBuilderTab}
+      />
       <p className="text-xs font-bold tracking-wide text-emerald-700">使い方</p>
       <h2 className="mt-1 text-base font-black text-gray-900">AI が作ったコードを貼り付けて動かす</h2>
       <p className="mt-2 text-xs leading-relaxed text-gray-500">
@@ -116,29 +121,24 @@ function SimpleCodeGuide({
               </span>
               <span className="text-xs leading-relaxed text-gray-700">{step.text}</span>
             </div>
-            {step.copyPrompt && (
-              <button
-                type="button"
-                onClick={handleCopyPrompt}
-                className={cn(
-                  "mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all active:scale-[0.98] touch-manipulation",
-                  promptCopied
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-sky-600 text-white hover:bg-sky-500"
-                )}
-              >
-                {promptCopied ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    コピー済み
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    専用プロンプトをコピー
-                  </>
-                )}
-              </button>
+            {step.buildPrompt && (
+              <div className="mt-2.5 space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => openPromptBuilder("template")}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-sky-600 py-2 text-xs font-bold text-white transition-all hover:bg-sky-500 active:scale-[0.98] touch-manipulation"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  テンプレートから作成
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openPromptBuilder("rules")}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 py-2 text-xs font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98] touch-manipulation"
+                >
+                  必須ルールだけコピー（自分で書く人向け）
+                </button>
+              </div>
             )}
           </li>
         ))}
@@ -214,17 +214,15 @@ function PreviewPlaceholder() {
 
 function GuideModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
-  const [promptCopied, setPromptCopied] = useState(false);
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
+  const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
   const total = 4;
   const isFirst = step === 0;
   const isLast  = step === total - 1;
 
-  const copyPrompt = async () => {
-    try {
-      await navigator.clipboard.writeText(PROMPT_TEMPLATE);
-      setPromptCopied(true);
-      setTimeout(() => setPromptCopied(false), 2500);
-    } catch { /* noop */ }
+  const openPromptBuilder = (tab: "template" | "rules" = "template") => {
+    setPromptBuilderTab(tab);
+    setPromptBuilderOpen(true);
   };
 
   // ステップカラー定義
@@ -290,43 +288,48 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {/* ══ STEP 1 ══ */}
           {step === 0 && (
             <div className="space-y-4">
+              <PromptBuilderModal
+                open={promptBuilderOpen}
+                onClose={() => setPromptBuilderOpen(false)}
+                initialTab={promptBuilderTab}
+              />
               <p className="text-base font-bold leading-relaxed text-[#334155]">
                 プログラミング知識ゼロでOK！<br />
-                下の指示文をそのままAIに送ろう（最初は質問だけ返ってきます）
+                作りたいアプリを入力して、完成した指示文をAIに送ろう
               </p>
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
-                <div className="flex items-center justify-between border-b border-sky-200 bg-sky-600 px-4 py-2.5">
+                <div className="border-b border-sky-200 bg-sky-600 px-4 py-2.5">
                   <span className="text-xs font-black text-white">✦ ジサップ専用プロンプト</span>
+                </div>
+                <div className="space-y-3 px-4 py-4">
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    アプリ名や希望の機能を入力すると、ジサップ用のルールが入った指示文が自動でできます。コピーして ChatGPT・Claude・Gemini などに貼り付けて送ってください。
+                  </p>
                   <button
-                    onClick={copyPrompt}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-black transition-all active:scale-95",
-                      promptCopied
-                        ? "bg-emerald-500 text-white"
-                        : "bg-white text-sky-700 hover:bg-sky-50"
-                    )}
+                    type="button"
+                    onClick={() => openPromptBuilder("template")}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-black text-sky-700 shadow-sm ring-1 ring-sky-200 transition-all hover:bg-sky-50 active:scale-[0.99]"
                   >
-                    {promptCopied
-                      ? <><CheckCircle2 className="h-3.5 w-3.5" />コピー済み！</>
-                      : <><Copy className="h-3.5 w-3.5" />コピーする</>}
-
+                    <Sparkles className="h-4 w-4" />
+                    テンプレートから作成
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openPromptBuilder("rules")}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 py-2.5 text-xs font-bold text-amber-800 ring-1 ring-amber-200 transition-all hover:bg-amber-100 active:scale-[0.99]"
+                  >
+                    必須ルールだけコピー（自分で書く人向け）
                   </button>
                 </div>
-                <pre className="max-h-44 overflow-y-auto px-4 py-3 font-mono text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap">
-                  {PROMPT_TEMPLATE}
-                </pre>
               </div>
 
               <div className="rounded-2xl bg-amber-100 border border-amber-300 px-4 py-3">
                 <p className="text-sm font-black text-amber-800">
-                  ⚠️ 送る前に必ずここを書き換えてね！
+                  💡 自分でプロンプトを書く場合
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-amber-700">
-                  <span className="rounded bg-amber-300 px-1.5 py-0.5 font-black">【ここに作りたいアプリ名を入れる】</span>
-                  <br />↓<br />
-                  「10秒タイマー」「筋トレ記録」「家計簿」など、<br />
-                  作りたいアプリの名前に書き換えてから送ってね！
+                  要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。テンプレートならアプリ名だけでOKです。
                 </p>
               </div>
 
@@ -946,8 +949,12 @@ export default function PlaygroundPage() {
     if (!session?.user) return null;
 
     let title = "";
+    let storedAppId = "";
     try {
       title = localStorage.getItem("jisapp_playground_title") ?? "";
+      if (!publishContext?.projectId) {
+        storedAppId = localStorage.getItem("jisapp_playground_app_id") ?? "";
+      }
     } catch {
       /* noop */
     }
@@ -956,7 +963,7 @@ export default function PlaygroundPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        app_id: publishContext?.appId,
+        app_id: publishContext?.appId || storedAppId || undefined,
         project_id: publishContext?.projectId,
         html_code: code,
         title: title || undefined,
@@ -966,6 +973,11 @@ export default function PlaygroundPage() {
     if (!res.ok) throw new Error(data.error ?? "準備に失敗しました");
     const appId = data.appId as string;
     setPublishContext((prev) => ({ ...prev, appId }));
+    try {
+      localStorage.setItem("jisapp_playground_app_id", appId);
+    } catch {
+      /* noop */
+    }
     return appId;
   }, [publishContext, session?.user, code]);
 

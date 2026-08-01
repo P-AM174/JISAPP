@@ -1,6 +1,9 @@
+/** テンプレート内のアプリ名プレースホルダー */
+export const PROMPT_APP_NAME_PLACEHOLDER = "【ここに作りたいアプリ名を入れる】";
+
 /** 開発スタジオ・自由研究ガイド共通の AI 指示文（1プロンプト・逆質問型） */
 export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優秀なフロントエンドエンジニアです。
-「【ここに作りたいアプリ名を入れる】」を作りたいです。
+「${PROMPT_APP_NAME_PLACEHOLDER}」を作りたいです。
 
 【最初の返答のルール（重要）】
 ・この最初の返答では、HTMLコードは絶対に出力しないでください。
@@ -78,6 +81,50 @@ HTMLコードを出力したあと、最後に必ず次のような短い手順�
   1. まず通常の fetch(url) を試す（API側がCORS対応している場合のみ）。
   2. CORSエラーになる、またはAPIキーが必要な場合は window.Zisup.fetch(url, { secret: 'NAME' }) を使う。
   ※ URLは https のみ。`;
+
+/**
+ * ユーザー入力をテンプレートに組み込んだ完成プロンプトを生成する。
+ * @param appName 作りたいアプリ名（必須）
+ * @param details 仕様・デザイン・機能など（任意）
+ */
+export function buildPromptFromTemplate(appName: string, details?: string): string {
+  const name = appName.trim() || PROMPT_APP_NAME_PLACEHOLDER;
+  let prompt = PROMPT_TEMPLATE.split(PROMPT_APP_NAME_PLACEHOLDER).join(name);
+
+  const extra = details?.trim();
+  if (extra) {
+    const insert = `
+
+【追加の要望・仕様（ユーザー入力）】
+${extra}
+・上記の要望をできるだけ反映してください。矛盾する場合はジサップのルール（シングルHTML・CDN禁止・APIキーは secret のみ）を優先してください。`;
+    // 「最初の返答のルール」の直前に挿入して、AIが要望を見落とさないようにする
+    const marker = "【最初の返答のルール（重要）】";
+    if (prompt.includes(marker)) {
+      prompt = prompt.replace(marker, `${insert}\n\n${marker}`);
+    } else {
+      prompt = `${prompt}${insert}`;
+    }
+  }
+
+  return prompt;
+}
+
+/**
+ * テンプレを使わず自分でプロンプトを書く人向け。
+ * 要望文の末尾に貼り付けて使う必須ルール（短縮版）。
+ */
+export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守ってください）】
+・完成コードは必ず1つの index.html にまとめる（HTML/CSS/JSのファイル分割禁止）
+・Tailwind・Bootstrapなど外部CDNは一切使わない。デザインは生のCSS（Vanilla CSS）で書く
+・最初の返答ではコードを出さず、「データの保存機能は必要ですか？」と質問する。ユーザーが答えるまでコードは書かない
+・保存が必要と答えた場合のみ window.Zisup.saveData / loadData を使う（localStorageは使わない）
+  保存: await window.Zisup.saveData('識別名', データ)
+  読込: await window.Zisup.loadData('識別名')
+・保存不要なら localStorage も Zisup の保存APIも使わない
+・APIキー・トークンをコードに絶対に書かない。外部APIは window.Zisup.fetch(url, { secret: 'NAME' }) を使う
+・secret 名は大文字英字（例: GEMINI, OPENAI, WEATHER）。キーの値はユーザーがジサップの「APIキー」画面で登録する
+・コード出力後、APIキーが必要な場合は登録手順を短く案内する`;
 
 /** 開発スタジオUI用の短い説明文 */
 export const SECRETS_STUDIO_GUIDE =

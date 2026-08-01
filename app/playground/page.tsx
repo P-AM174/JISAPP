@@ -77,12 +77,10 @@ function SimpleCodeGuide({
   onPaste,
   onManualInput,
   onOpenGuide,
-  onOpenSecrets,
 }: {
   onPaste?: () => void;
   onManualInput?: () => void;
   onOpenGuide?: () => void;
-  onOpenSecrets?: () => void;
 }) {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
   const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
@@ -95,7 +93,7 @@ function SimpleCodeGuide({
   const steps: { text: string; buildPrompt?: boolean }[] = [
     { text: "専用プロンプトを AI に送り、作りたいアプリを伝える", buildPrompt: true },
     { text: "出力された HTML コードをすべてコピーする" },
-    { text: "「クリップボードから貼り付け」を押す" },
+    { text: "下のボタンで、コピーしたコードをここに入れる" },
     { text: "「プレビュー」タブで動作を確認する" },
     { text: "問題なければ「公開/URL発行」から URL を発行する" },
   ];
@@ -143,32 +141,21 @@ function SimpleCodeGuide({
           </li>
         ))}
       </ol>
-      <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
-        <p className="flex items-center gap-1.5 text-xs font-black text-violet-900">
-          <Key className="h-3.5 w-3.5 shrink-0" />
-          外部APIを使うアプリの場合
-        </p>
-        <p className="mt-1.5 text-xs leading-relaxed text-violet-800">{SECRETS_STUDIO_GUIDE}</p>
-        {onOpenSecrets && (
-          <button
-            type="button"
-            onClick={onOpenSecrets}
-            className="mt-2.5 w-full rounded-lg bg-violet-600 py-2 text-xs font-bold text-white hover:bg-violet-700 touch-manipulation"
-          >
-            APIキーを開く
-          </button>
-        )}
-      </div>
       <div className="mt-4 flex flex-col gap-2">
         {onPaste && (
-          <button
-            type="button"
-            onClick={onPaste}
-            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] touch-manipulation"
-          >
-            <Clipboard className="h-4 w-4" />
-            クリップボードから貼り付け
-          </button>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-3 py-3">
+            <p className="text-center text-[11px] font-bold leading-relaxed text-emerald-800">
+              ① AIでコードをコピー　→　② このボタン
+            </p>
+            <button
+              type="button"
+              onClick={onPaste}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] touch-manipulation"
+            >
+              <Clipboard className="h-4 w-4" />
+              コピーしたコードをここに入れる
+            </button>
+          </div>
         )}
         {onManualInput && (
           <button
@@ -1447,7 +1434,7 @@ export default function PlaygroundPage() {
                   className="relative z-10 flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99] touch-manipulation"
                 >
                   <Clipboard className="h-4 w-4" />
-                  クリップボードから貼り付け
+                  コピーしたコードをここに入れる
                 </button>
               )}
               <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -1472,7 +1459,6 @@ export default function PlaygroundPage() {
                     onPaste={handlePasteAndRun}
                     onManualInput={focusCodeEditor}
                     onOpenGuide={() => setShowGuideModal(true)}
-                    onOpenSecrets={() => void openApiKeys()}
                   />
                 )}
               </div>
@@ -1534,7 +1520,7 @@ export default function PlaygroundPage() {
               className="flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-2.5 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99]"
             >
               <Clipboard className="h-4 w-4" />
-              クリップボードから貼り付けて実行
+              コピーしたコードをここに入れて実行
             </button>
           )}
 
@@ -1561,7 +1547,6 @@ export default function PlaygroundPage() {
                 onPaste={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
                 onManualInput={focusCodeEditor}
                 onOpenGuide={() => setShowGuideModal(true)}
-                onOpenSecrets={() => void openApiKeys()}
               />
             </div>
           )}

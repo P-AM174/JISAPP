@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, Copy, FileText, Sparkles, X } from "lucide-react";
 import {
   buildPromptFromTemplate,
@@ -30,7 +31,12 @@ export function PromptBuilderModal({
   const [details, setDetails] = useState("");
   const [copied, setCopied] = useState<"template" | "rules" | null>(null);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +53,7 @@ export function PromptBuilderModal({
     };
   }, [open, initialTab]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const preview = buildPromptFromTemplate(
     appName.trim() || "（アプリ名）",
@@ -91,34 +97,33 @@ export function PromptBuilderModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[460] flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[500] flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
         className="relative flex h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="閉じる"
-          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white ring-1 ring-white/40 transition-colors hover:bg-white/40"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <div className="flex shrink-0 items-start gap-3 border-b border-sky-100 bg-gradient-to-br from-sky-500 to-blue-600 px-5 py-4 pr-14 text-white">
+        <div className="flex shrink-0 items-start gap-3 border-b border-sky-100 bg-gradient-to-br from-sky-500 to-blue-600 px-4 py-4 text-white sm:px-5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/20">
             <Sparkles className="h-5 w-5" />
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pt-0.5">
             <h2 className="text-base font-black">AIに送るプロンプト</h2>
             <p className="mt-0.5 text-xs text-sky-100">
               テンプレート作成、または必須ルールだけコピー
             </p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="閉じる"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 shadow-md ring-1 ring-black/10 transition-colors hover:bg-slate-100 active:scale-95"
+          >
+            <X className="h-5 w-5" strokeWidth={2.5} />
+          </button>
         </div>
 
         <div className="shrink-0 border-b border-gray-100 bg-gray-50 px-4 py-2">
@@ -299,6 +304,7 @@ export function PromptBuilderModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

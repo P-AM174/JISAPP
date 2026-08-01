@@ -11,6 +11,10 @@ import { cn } from "@/lib/utils";
 type Props = {
   open: boolean;
   onClose: () => void;
+  /** コピー後「戻る」で呼ぶ（未指定時は onClose）。ガイド経由なら両方閉じる想定 */
+  onReturnToEditor?: () => void;
+  /** コピー後の戻りボタン文言 */
+  returnAfterCopyLabel?: string;
   /** 開いたときの初期タブ */
   initialTab?: "template" | "rules";
 };
@@ -20,6 +24,8 @@ const APP_EXAMPLES = ["日記アプリ", "家計簿", "TODOリスト", "タイ�
 export function PromptBuilderModal({
   open,
   onClose,
+  onReturnToEditor,
+  returnAfterCopyLabel = "エディタに戻る",
   initialTab = "template",
 }: Props) {
   const [tab, setTab] = useState<"template" | "rules">(initialTab);
@@ -42,6 +48,10 @@ export function PromptBuilderModal({
     details
   );
 
+  const handleReturnToEditor = () => {
+    (onReturnToEditor ?? onClose)();
+  };
+
   const handleCopyTemplate = async () => {
     const name = appName.trim();
     if (!name) {
@@ -52,7 +62,6 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(buildPromptFromTemplate(name, details));
       setCopied("template");
-      setTimeout(() => setCopied(null), 2500);
     } catch {
       setError("コピーに失敗しました。もう一度お試しください");
     }
@@ -63,7 +72,6 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(PROMPT_RULES_SHORT);
       setCopied("rules");
-      setTimeout(() => setCopied(null), 2500);
     } catch {
       setError("コピーに失敗しました。もう一度お試しください");
     }
@@ -215,6 +223,16 @@ export function PromptBuilderModal({
                 )}
               </button>
 
+              {copied === "template" && (
+                <button
+                  type="button"
+                  onClick={handleReturnToEditor}
+                  className="flex w-full items-center justify-center rounded-xl border-2 border-emerald-600 bg-white py-3 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-50 active:scale-[0.99]"
+                >
+                  {returnAfterCopyLabel}
+                </button>
+              )}
+
               <div>
                 <p className="mb-1.5 text-xs font-bold text-gray-700">プレビュー（AIに送る文）</p>
                 <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 font-mono text-[10px] leading-relaxed text-slate-600">
@@ -270,18 +288,38 @@ export function PromptBuilderModal({
                   </>
                 )}
               </button>
+
+              {copied === "rules" && (
+                <button
+                  type="button"
+                  onClick={handleReturnToEditor}
+                  className="flex w-full items-center justify-center rounded-xl border-2 border-emerald-600 bg-white py-3 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-50 active:scale-[0.99]"
+                >
+                  {returnAfterCopyLabel}
+                </button>
+              )}
             </>
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col border-t border-gray-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="py-1.5 text-center text-xs text-gray-400 hover:text-gray-600"
-          >
-            閉じる
-          </button>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {copied ? (
+            <button
+              type="button"
+              onClick={handleReturnToEditor}
+              className="flex w-full items-center justify-center rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.99]"
+            >
+              {returnAfterCopyLabel}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-1.5 text-center text-xs text-gray-400 hover:text-gray-600"
+            >
+              閉じる
+            </button>
+          )}
         </div>
       </div>
     </div>

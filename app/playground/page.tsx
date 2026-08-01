@@ -103,6 +103,7 @@ function SimpleCodeGuide({
       <PromptBuilderModal
         open={promptBuilderOpen}
         onClose={() => setPromptBuilderOpen(false)}
+        onReturnToEditor={() => setPromptBuilderOpen(false)}
         initialTab={promptBuilderTab}
       />
       <p className="text-xs font-bold tracking-wide text-emerald-700">使い方</p>
@@ -278,6 +279,10 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <PromptBuilderModal
                 open={promptBuilderOpen}
                 onClose={() => setPromptBuilderOpen(false)}
+                onReturnToEditor={() => {
+                  setPromptBuilderOpen(false);
+                  onClose();
+                }}
                 initialTab={promptBuilderTab}
               />
               <p className="text-base font-bold leading-relaxed text-[#334155]">

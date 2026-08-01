@@ -35,6 +35,8 @@ export function PromptBuilderModal({
   useEffect(() => {
     if (!open) return;
     setTab(initialTab);
+    setAppName("");
+    setDetails("");
     setCopied(null);
     setError("");
     return () => {

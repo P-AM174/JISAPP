@@ -4,6 +4,8 @@ import {
   SITE_TITLE,
   SITE_DESCRIPTION,
   SITE_OG_IMAGE,
+  SITE_OG_IMAGE_WIDTH,
+  SITE_OG_IMAGE_HEIGHT,
   absoluteUrl,
   getSiteUrl,
 } from "@/lib/seo/site";
@@ -45,11 +47,19 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
   const shareTitle = ogTitle ?? pageTitle;
   const shareDescription = ogDescription ?? description;
   const canonical = path ? absoluteUrl(path) : getSiteUrl();
+  const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
+  const isSiteOg =
+    ogImage === SITE_OG_IMAGE ||
+    ogImage.endsWith("/og.png") ||
+    ogImage.includes("opengraph") ||
+    ogImage.includes("site-opengraph");
   const imageMeta = {
-    url: ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage),
-    width: ogImage.includes("opengraph") ? 1200 : 512,
-    height: ogImage.includes("opengraph") ? 630 : 512,
+    url: imageUrl,
+    secureUrl: imageUrl,
+    width: isSiteOg ? SITE_OG_IMAGE_WIDTH : 512,
+    height: isSiteOg ? SITE_OG_IMAGE_HEIGHT : 512,
     alt: shareTitle,
+    type: "image/png" as const,
   };
 
   return {
@@ -69,7 +79,8 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
       card: "summary_large_image",
       title: shareTitle,
       description: shareDescription,
-      images: [imageMeta.url],
+      // 絶対URLの文字列を明示（X カード取得用）
+      images: [imageUrl],
     },
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),
   };

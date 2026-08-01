@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { createNoIndexPageMetadata } from "@/lib/seo/metadata";
+import { createPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = createNoIndexPageMetadata({
+/** 開発スタジオは URL シェア用に OGP / X カードを出す（noindex にしない） */
+export const metadata: Metadata = createPageMetadata({
   title: "開発スタジオ",
   description:
     "AIが作ったHTMLコードを貼り付けるだけでアプリが動く無料の開発スタジオ。プレビュー・APIキー登録・URL発行までブラウザだけで完結。",

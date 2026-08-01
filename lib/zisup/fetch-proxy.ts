@@ -8,7 +8,7 @@ const BLOCKED_HOSTS = new Set([
 
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_RESPONSE_BYTES = 512 * 1024;
-const FETCH_TIMEOUT_MS = 15_000;
+const FETCH_TIMEOUT_MS = 22_000;
 
 function isPrivateIp(hostname: string): boolean {
   if (/^10\./.test(hostname)) return true;

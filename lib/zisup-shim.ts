@@ -6,6 +6,8 @@
  * このスクリプトは buildSrcDoc() によって全アプリの <head> 先頭に自動注入される。
  * アプリ側コード（index.html）の変更は不要。
  */
+export const ZISUP_REQUEST_TIMEOUT_MS = 25_000;
+
 export const ZISUP_SHIM_SCRIPT = `
 (function () {
   'use strict';
@@ -24,14 +26,13 @@ export const ZISUP_SHIM_SCRIPT = `
         reject(e);
         return;
       }
-      /* タイムアウト 8 秒 */
+      /* タイムアウト（外部APIプロキシの上限15秒 + 余裕） */
       setTimeout(function () {
         if (_pending[id]) {
           delete _pending[id];
-          /* タイムアウト時はローカルフォールバック */
           reject(new Error('[Zisup] タイムアウト: 親ウィンドウと通信できませんでした'));
         }
-      }, 8000);
+      }, ${ZISUP_REQUEST_TIMEOUT_MS});
     });
   }
 

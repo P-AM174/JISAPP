@@ -141,7 +141,7 @@ export function useZisupBridge(
       if (!d || (d.__zisup_type !== "save" && d.__zisup_type !== "load" && d.__zisup_type !== "fetch")) return;
       if (e.source !== iframeRef.current?.contentWindow) return;
 
-      const { __zisup_id: id, key, value } = d;
+      const { __zisup_id: id } = d;
       if (!id) return;
 
       if (d.__zisup_type === "fetch") {
@@ -152,7 +152,10 @@ export function useZisupBridge(
           body?: string;
           secret?: string;
         };
-        if (!fetchPayload.url) return;
+        if (!fetchPayload.url) {
+          send(id, null, "URLが必要です");
+          return;
+        }
         try {
           const result = await proxyFetchFromApp({
             url: fetchPayload.url,
@@ -169,6 +172,7 @@ export function useZisupBridge(
         return;
       }
 
+      const { key, value } = d;
       if (!key) return;
 
       if (d.__zisup_type === "save") {

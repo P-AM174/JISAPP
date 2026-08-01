@@ -941,12 +941,47 @@ export default function PlaygroundPage() {
     }
   };
 
-  const handleRun = useCallback(() => {
+  const ensurePreviewAppId = useCallback(async (): Promise<string | null> => {
+    if (publishContext?.appId) return publishContext.appId;
+    if (!session?.user) return null;
+
+    let title = "";
+    try {
+      title = localStorage.getItem("jisapp_playground_title") ?? "";
+    } catch {
+      /* noop */
+    }
+
+    const res = await fetch("/api/playground/ensure-app", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_id: publishContext?.appId,
+        project_id: publishContext?.projectId,
+        html_code: code,
+        title: title || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "準備に失敗しました");
+    const appId = data.appId as string;
+    setPublishContext((prev) => ({ ...prev, appId }));
+    return appId;
+  }, [publishContext, session?.user, code]);
+
+  const handleRun = useCallback(async () => {
     if (!code.trim()) return;
+    if (session?.user) {
+      try {
+        await ensurePreviewAppId();
+      } catch {
+        /* secret 未使用のアプリは appId なしでもプレビュー可能 */
+      }
+    }
     setPreviewHtml(code);
     setIframeKey((k) => k + 1);
     setActivePane("preview");
-  }, [code]);
+  }, [code, session?.user, ensurePreviewAppId]);
 
   const handlePasteAndRun = async () => {
     try {
@@ -1046,25 +1081,7 @@ export default function PlaygroundPage() {
       if (!publishContext?.appId) {
         setApiKeysLoading(true);
         try {
-          let title = "";
-          try {
-            title = localStorage.getItem("jisapp_playground_title") ?? "";
-          } catch {
-            /* noop */
-          }
-          const res = await fetch("/api/playground/ensure-app", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              app_id: publishContext?.appId,
-              project_id: publishContext?.projectId,
-              html_code: code,
-              title: title || undefined,
-            }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? "準備に失敗しました");
-          setPublishContext((prev) => ({ ...prev, appId: data.appId as string }));
+          await ensurePreviewAppId();
         } catch (e) {
           showToast(e instanceof Error ? e.message : "APIキーの準備に失敗しました");
           return;
@@ -1084,7 +1101,7 @@ export default function PlaygroundPage() {
     }
 
     await run();
-  }, [session?.user, publishContext, code, isLoggedIn, runWithLoginPrompt]);
+  }, [session?.user, publishContext?.appId, isLoggedIn, runWithLoginPrompt, ensurePreviewAppId]);
 
   // ── キーボードショートカット ──
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

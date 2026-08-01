@@ -209,7 +209,6 @@ export function SummerResearchGuide() {
       <PromptBuilderModal
         open={promptBuilderOpen}
         onClose={() => setPromptBuilderOpen(false)}
-        returnAfterCopyLabel="ガイドに戻る"
         initialTab={promptBuilderTab}
       />
       <header className="border-b border-gray-200 bg-white px-4 py-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Copy, FileText, Sparkles, X } from "lucide-react";
 import {
   buildPromptFromTemplate,
@@ -11,10 +11,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** コピー後「戻る」で呼ぶ（未指定時は onClose）。ガイド経由なら両方閉じる想定 */
+  /** コピー成功後に呼ぶ（未指定時は onClose）。ガイド経由なら両方閉じる想定 */
   onReturnToEditor?: () => void;
-  /** コピー後の戻りボタン文言 */
-  returnAfterCopyLabel?: string;
   /** 開いたときの初期タブ */
   initialTab?: "template" | "rules";
 };
@@ -25,7 +23,6 @@ export function PromptBuilderModal({
   open,
   onClose,
   onReturnToEditor,
-  returnAfterCopyLabel = "エディタに戻る",
   initialTab = "template",
 }: Props) {
   const [tab, setTab] = useState<"template" | "rules">(initialTab);
@@ -33,12 +30,19 @@ export function PromptBuilderModal({
   const [details, setDetails] = useState("");
   const [copied, setCopied] = useState<"template" | "rules" | null>(null);
   const [error, setError] = useState("");
+  const closeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setTab(initialTab);
     setCopied(null);
     setError("");
+    return () => {
+      if (closeTimerRef.current != null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
   }, [open, initialTab]);
 
   if (!open) return null;
@@ -48,8 +52,14 @@ export function PromptBuilderModal({
     details
   );
 
-  const handleReturnToEditor = () => {
-    (onReturnToEditor ?? onClose)();
+  const scheduleReturnAfterCopy = () => {
+    if (closeTimerRef.current != null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      (onReturnToEditor ?? onClose)();
+    }, 700);
   };
 
   const handleCopyTemplate = async () => {
@@ -62,6 +72,7 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(buildPromptFromTemplate(name, details));
       setCopied("template");
+      scheduleReturnAfterCopy();
     } catch {
       setError("コピーに失敗しました。もう一度お試しください");
     }
@@ -72,6 +83,7 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(PROMPT_RULES_SHORT);
       setCopied("rules");
+      scheduleReturnAfterCopy();
     } catch {
       setError("コピーに失敗しました。もう一度お試しください");
     }
@@ -83,10 +95,19 @@ export function PromptBuilderModal({
       onClick={onClose}
     >
       <div
-        className="flex h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+        className="relative flex h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start gap-3 border-b border-sky-100 bg-gradient-to-br from-sky-500 to-blue-600 px-5 py-4 text-white">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="閉じる"
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white ring-1 ring-white/40 transition-colors hover:bg-white/40"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="flex shrink-0 items-start gap-3 border-b border-sky-100 bg-gradient-to-br from-sky-500 to-blue-600 px-5 py-4 pr-14 text-white">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/20">
             <Sparkles className="h-5 w-5" />
           </div>
@@ -96,13 +117,6 @@ export function PromptBuilderModal({
               テンプレート作成、または必須ルールだけコピー
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-1.5 text-white/80 hover:bg-white/20"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         <div className="shrink-0 border-b border-gray-100 bg-gray-50 px-4 py-2">
@@ -144,7 +158,7 @@ export function PromptBuilderModal({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {tab === "template" ? (
             <>
               <div>
@@ -201,10 +215,10 @@ export function PromptBuilderModal({
                 <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
               )}
 
-              {/* 入力欄の直下に置き、キーボードやプレビューで隠れないようにする */}
               <button
                 type="button"
                 onClick={() => void handleCopyTemplate()}
+                disabled={copied === "template"}
                 className={cn(
                   "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
                   copied === "template" ? "bg-emerald-600" : "bg-sky-600 hover:bg-sky-500"
@@ -213,7 +227,7 @@ export function PromptBuilderModal({
                 {copied === "template" ? (
                   <>
                     <CheckCircle2 className="h-4 w-4" />
-                    コピーしました！AIに貼り付けて送ってください
+                    コピーしました！
                   </>
                 ) : (
                   <>
@@ -222,16 +236,6 @@ export function PromptBuilderModal({
                   </>
                 )}
               </button>
-
-              {copied === "template" && (
-                <button
-                  type="button"
-                  onClick={handleReturnToEditor}
-                  className="flex w-full items-center justify-center rounded-xl border-2 border-emerald-600 bg-white py-3 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-50 active:scale-[0.99]"
-                >
-                  {returnAfterCopyLabel}
-                </button>
-              )}
 
               <div>
                 <p className="mb-1.5 text-xs font-bold text-gray-700">プレビュー（AIに送る文）</p>
@@ -271,6 +275,7 @@ export function PromptBuilderModal({
               <button
                 type="button"
                 onClick={() => void handleCopyRules()}
+                disabled={copied === "rules"}
                 className={cn(
                   "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
                   copied === "rules" ? "bg-emerald-600" : "bg-amber-600 hover:bg-amber-500"
@@ -279,7 +284,7 @@ export function PromptBuilderModal({
                 {copied === "rules" ? (
                   <>
                     <CheckCircle2 className="h-4 w-4" />
-                    コピーしました！要望文の末尾に貼ってください
+                    コピーしました！
                   </>
                 ) : (
                   <>
@@ -288,37 +293,7 @@ export function PromptBuilderModal({
                   </>
                 )}
               </button>
-
-              {copied === "rules" && (
-                <button
-                  type="button"
-                  onClick={handleReturnToEditor}
-                  className="flex w-full items-center justify-center rounded-xl border-2 border-emerald-600 bg-white py-3 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-50 active:scale-[0.99]"
-                >
-                  {returnAfterCopyLabel}
-                </button>
-              )}
             </>
-          )}
-        </div>
-
-        <div className="flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          {copied ? (
-            <button
-              type="button"
-              onClick={handleReturnToEditor}
-              className="flex w-full items-center justify-center rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.99]"
-            >
-              {returnAfterCopyLabel}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-1.5 text-center text-xs text-gray-400 hover:text-gray-600"
-            >
-              閉じる
-            </button>
           )}
         </div>
       </div>

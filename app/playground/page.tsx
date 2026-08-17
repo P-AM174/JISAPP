@@ -17,6 +17,7 @@ import {
   Zap,
   Copy,
   CheckCircle2,
+  Download,
   X,
   Settings,
   Save,
@@ -1072,6 +1073,64 @@ export default function PlaygroundPage() {
     }
   };
 
+  const buildCodeFileName = () => {
+    let base = publishTitle.trim();
+    if (!base) {
+      try { base = localStorage.getItem("jisapp_playground_title") ?? ""; } catch { /* noop */ }
+    }
+    const safeBase = (base || "jisapp-code")
+      .replace(/[\\/:*?"<>|]/g, "_")
+      .replace(/\s+/g, "_")
+      .slice(0, 40);
+    const now = new Date();
+    const stamp = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("");
+    return `${safeBase}-${stamp}.txt`;
+  };
+
+  // iPhone は download 属性が使えないことがあるため、共有シート → ダウンロード → コピー の順に試す
+  const handleSaveCodeFile = async () => {
+    if (!code.trim()) return;
+    const fileName = buildCodeFileName();
+
+    if (typeof File !== "undefined" && navigator.canShare) {
+      const file = new File([code], fileName, { type: "text/plain" });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: fileName });
+          return;
+        } catch (e) {
+          if (e instanceof DOMException && e.name === "AbortError") return;
+        }
+      }
+    }
+
+    const anchor = document.createElement("a");
+    if ("download" in anchor) {
+      const url = URL.createObjectURL(
+        new Blob([code], { type: "text/plain;charset=utf-8" })
+      );
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`${fileName} を保存しました ✓`);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(code);
+      showToast("このブラウザでは保存できないため、コードをコピーしました。メモアプリに貼り付けてください");
+    } catch {
+      showToast("保存できませんでした。コードを選択してコピーしてください");
+    }
+  };
+
   // 保存モーダルを開く（コードがある場合のみ）
   const handleSave = () => {
     if (!code.trim()) return;
@@ -1501,6 +1560,15 @@ export default function PlaygroundPage() {
                   >
                     {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveCodeFile()}
+                    disabled={!code.trim()}
+                    title="コードをテキストファイルで保存"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-30 touch-manipulation"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
                   <button type="button" onClick={handleClear} title="全削除" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors touch-manipulation">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -1599,6 +1667,15 @@ export default function PlaygroundPage() {
                 )}
               >
                 {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSaveCodeFile()}
+                disabled={!code.trim()}
+                title="コードをテキストファイルで保存"
+                className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-30"
+              >
+                <Download className="h-3.5 w-3.5" />
               </button>
               <button type="button" onClick={handleClear} title="全削除" className="rounded p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors">
                 <Trash2 className="h-3.5 w-3.5" />

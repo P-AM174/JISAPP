@@ -676,9 +676,9 @@ export default function PlaygroundPage() {
 
   const drawerTextareaRef = useRef<HTMLTextAreaElement>(null);
   const mobileTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const lineNumRef  = useRef<HTMLDivElement>(null);
-  const searchRef   = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** ?project= / ?load=1 で既存アプリを開いたときだけ true（新規は前回アプリを引き継がない） */
+  const isRestoredSessionRef = useRef(false);
   const [editorFocused, setEditorFocused] = useState(false);
 
   const router = useRouter();
@@ -769,12 +769,19 @@ export default function PlaygroundPage() {
 
   // 行番号とスクロール同期（CodeEditorPanel 内で処理）
 
-  const getActiveTextarea = () =>
-    drawerTextareaRef.current ?? mobileTextareaRef.current;
+  // 表示中のエディタを返す（モバイル/PC 両方 DOM にあるため matchMedia で判定）
+  const getActiveTextarea = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    if (isDesktop) {
+      return drawerTextareaRef.current ?? mobileTextareaRef.current;
+    }
+    return mobileTextareaRef.current ?? drawerTextareaRef.current;
+  }, []);
 
-  const jumpToMatch = useCallback(
-    (direction: "next" | "prev") => {
-      if (!searchQuery.trim() || matchCount === 0) return;
+  const selectMatchAt = useCallback(
+    (matchIndex: number) => {
+      if (!searchQuery.trim()) return;
       const q = searchQuery.toLowerCase();
       const src = code.toLowerCase();
       const positions: number[] = [];
@@ -783,28 +790,47 @@ export default function PlaygroundPage() {
         positions.push(idx);
         idx += q.length;
       }
+      if (positions.length === 0) return;
+      const safeIndex = ((matchIndex % positions.length) + positions.length) % positions.length;
+      const pos = positions[safeIndex];
+      const ta = getActiveTextarea();
+      if (!ta) return;
+
+      setCurrentMatch(safeIndex + 1);
+      ta.focus();
+      ta.setSelectionRange(pos, pos + searchQuery.length);
+
+      const style = window.getComputedStyle(ta);
+      const lineHeight = parseFloat(style.lineHeight) || 20;
+      const paddingTop = parseFloat(style.paddingTop) || 0;
+      const lineIndex = code.slice(0, pos).split("\n").length - 1;
+      ta.scrollTop = Math.max(0, paddingTop + lineIndex * lineHeight - ta.clientHeight / 3);
+    },
+    [searchQuery, code, getActiveTextarea]
+  );
+
+  const jumpToMatch = useCallback(
+    (direction: "next" | "prev") => {
+      if (!searchQuery.trim() || matchCount === 0) return;
       const nextIdx =
         direction === "next"
           ? currentMatch % matchCount
           : (currentMatch - 2 + matchCount) % matchCount;
-      setCurrentMatch(nextIdx + 1);
-      const pos = positions[nextIdx];
-      const ta = getActiveTextarea();
-      if (!ta) return;
-      ta.focus();
-      ta.setSelectionRange(pos, pos + searchQuery.length);
-      ta.scrollTop = Math.max(0, (code.substring(0, pos).split("\n").length - 1) * 20 - 100);
-      if (lineNumRef.current) {
-        lineNumRef.current.style.transform = `translateY(-${ta.scrollTop}px)`;
-      }
+      selectMatchAt(nextIdx);
     },
-    [searchQuery, matchCount, currentMatch, code]
+    [searchQuery, matchCount, currentMatch, selectMatchAt]
   );
 
   // ── ?project=ID または ?load=1 でコードを復元 ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const projectId = params.get("project");
+    const isRestore = !!projectId || params.get("load") === "1";
+    isRestoredSessionRef.current = isRestore;
+    if (!isRestore) {
+      // 新規セッション：前回アプリのAPIキーを引き継がないよう紐付けを破棄
+      try { localStorage.removeItem("jisapp_playground_app_id"); } catch { /* noop */ }
+    }
     if (projectId) {
       fetch(`/api/my-projects/${projectId}`)
         .then((r) => r.json())
@@ -908,14 +934,35 @@ export default function PlaygroundPage() {
 
   // ── 検索マッチ数 ──
   useEffect(() => {
-    if (!searchQuery.trim()) { setMatchCount(0); setCurrentMatch(0); return; }
+    if (!searchQuery.trim()) {
+      setMatchCount(0);
+      setCurrentMatch(0);
+      return;
+    }
     const q = searchQuery.toLowerCase();
     const src = code.toLowerCase();
-    let count = 0, idx = 0;
-    while ((idx = src.indexOf(q, idx)) !== -1) { count++; idx += q.length; }
+    let count = 0;
+    let idx = 0;
+    while ((idx = src.indexOf(q, idx)) !== -1) {
+      count++;
+      idx += q.length;
+    }
     setMatchCount(count);
-    setCurrentMatch(count > 0 ? 1 : 0);
+    setCurrentMatch((prev) => {
+      if (count === 0) return 0;
+      if (prev >= 1 && prev <= count) return prev;
+      return 1;
+    });
   }, [searchQuery, code]);
+
+  // 検索語が変わったときだけ先頭マッチへ移動（入力中のコード編集では飛ばない）
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const t = window.setTimeout(() => selectMatchAt(0), 0);
+    return () => window.clearTimeout(t);
+    // selectMatchAt は code 変更でも変わるが、ここでは query 変更時のみ実行したい
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- searchQuery only
+  }, [searchQuery]);
 
   // ── ツールハンドラ ──
   const handleClear = () => {
@@ -947,9 +994,11 @@ export default function PlaygroundPage() {
     let title = "";
     let storedAppId = "";
     try {
-      title = localStorage.getItem("jisapp_playground_title") ?? "";
-      if (!publishContext?.projectId) {
-        storedAppId = localStorage.getItem("jisapp_playground_app_id") ?? "";
+      if (isRestoredSessionRef.current) {
+        title = localStorage.getItem("jisapp_playground_title") ?? "";
+        if (!publishContext?.projectId) {
+          storedAppId = localStorage.getItem("jisapp_playground_app_id") ?? "";
+        }
       }
     } catch {
       /* noop */
@@ -1009,11 +1058,15 @@ export default function PlaygroundPage() {
   };
 
   const handleCopyCode = async () => {
+    if (!code.trim()) return;
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* noop */ }
+      showToast("コードを全部コピーしました ✓");
+    } catch {
+      showToast("コピーできませんでした。ブラウザの設定を確認してください");
+    }
   };
 
   // 保存モーダルを開く（コードがある場合のみ）
@@ -1120,7 +1173,6 @@ export default function PlaygroundPage() {
     if ((e.ctrlKey || e.metaKey) && e.key === "f") {
       e.preventDefault();
       setShowSearch(true);
-      setTimeout(() => searchRef.current?.focus(), 50);
       return;
     }
     if (e.key === "Tab") {
@@ -1431,6 +1483,21 @@ export default function PlaygroundPage() {
                   <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors touch-manipulation">
                     <Undo2 className="h-4 w-4" />
                   </button>
+                  <button type="button" onClick={redo} disabled={!canRedo} title="やり直す" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors touch-manipulation">
+                    <Redo2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyCode()}
+                    disabled={!code.trim()}
+                    title="コードを全部コピー"
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-lg transition-colors disabled:opacity-30 touch-manipulation",
+                      copied ? "text-emerald-600" : "text-gray-400 hover:bg-gray-100"
+                    )}
+                  >
+                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </button>
                   <button type="button" onClick={handleClear} title="全削除" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors touch-manipulation">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -1454,7 +1521,6 @@ export default function PlaygroundPage() {
                     onKeyDown={handleKeyDown}
                     placeholder={"ここにHTMLコードを貼り付け\n（AIが生成したコードをそのまま貼り付け）"}
                     textareaRef={mobileTextareaRef}
-                    lineNumRef={lineNumRef}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     showSearch={showSearch}
@@ -1516,6 +1582,21 @@ export default function PlaygroundPage() {
               <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
                 <Undo2 className="h-3.5 w-3.5" />
               </button>
+              <button type="button" onClick={redo} disabled={!canRedo} title="やり直す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                <Redo2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCopyCode()}
+                disabled={!code.trim()}
+                title="コードを全部コピー"
+                className={cn(
+                  "rounded p-1.5 transition-colors disabled:opacity-30",
+                  copied ? "text-emerald-600" : "text-gray-400 hover:bg-gray-100"
+                )}
+              >
+                {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
               <button type="button" onClick={handleClear} title="全削除" className="rounded p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -1541,7 +1622,6 @@ export default function PlaygroundPage() {
               onKeyDown={handleKeyDown}
               placeholder={"ここにコードを貼り付けてください\n（AIが生成したHTMLをそのまま貼り付けるだけでOK）"}
               textareaRef={drawerTextareaRef}
-              lineNumRef={lineNumRef}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               showSearch={showSearch}

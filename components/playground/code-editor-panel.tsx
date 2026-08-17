@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import type { RefObject } from "react";
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -11,7 +11,6 @@ type Props = {
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
-  lineNumRef: RefObject<HTMLDivElement | null>;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   showSearch: boolean;
@@ -22,13 +21,15 @@ type Props = {
   className?: string;
 };
 
+/** leading-5 = 1.25rem。行番号と textarea で揃える */
+const LINE_HEIGHT_PX = 20;
+
 export function CodeEditorPanel({
   code,
   onChange,
   onKeyDown,
   placeholder,
   textareaRef,
-  lineNumRef,
   searchQuery,
   onSearchChange,
   showSearch,
@@ -38,6 +39,9 @@ export function CodeEditorPanel({
   onJumpMatch,
   className,
 }: Props) {
+  const lineNumRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const lines = code.split("\n");
   const lineCount = Math.max(lines.length, 1);
 
@@ -55,8 +59,20 @@ export function CodeEditorPanel({
     syncLineNumbers(textareaRef.current?.scrollTop ?? 0);
   }, [code, lineCount, textareaRef]);
 
+  // 表示中のパネルだけ検索欄にフォーカス（モバイル/PCの二重マウント対策）
+  useEffect(() => {
+    if (!showSearch) return;
+    const root = rootRef.current;
+    if (!root || root.getClientRects().length === 0) return;
+    const t = window.setTimeout(() => searchInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [showSearch]);
+
   return (
-    <div className={cn("flex h-full min-h-0 flex-1 flex-col overflow-hidden", className)}>
+    <div
+      ref={rootRef}
+      className={cn("flex h-full min-h-0 flex-1 flex-col overflow-hidden", className)}
+    >
       <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50 px-2 py-1.5">
         <button
           type="button"
@@ -72,9 +88,22 @@ export function CodeEditorPanel({
         {showSearch && (
           <>
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onJumpMatch(e.shiftKey ? "prev" : "next");
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  onSearchChange("");
+                  onToggleSearch(false);
+                  textareaRef.current?.focus();
+                }
+              }}
               placeholder="コード内を検索..."
               className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs outline-none focus:border-emerald-400"
             />
@@ -123,10 +152,17 @@ export function CodeEditorPanel({
         >
           <div
             ref={lineNumRef}
-            className="pointer-events-none py-3 pr-2 pl-2 text-right font-mono text-xs leading-5 text-gray-400 select-none will-change-transform"
+            className="pointer-events-none py-3 pr-2 pl-2 text-right font-mono text-xs text-gray-400 select-none will-change-transform"
+            style={{ lineHeight: `${LINE_HEIGHT_PX}px` }}
           >
             {Array.from({ length: lineCount }, (_, i) => (
-              <div key={i}>{i + 1}</div>
+              <div
+                key={i}
+                className="overflow-hidden"
+                style={{ height: LINE_HEIGHT_PX, lineHeight: `${LINE_HEIGHT_PX}px` }}
+              >
+                {i + 1}
+              </div>
             ))}
           </div>
         </div>
@@ -139,7 +175,9 @@ export function CodeEditorPanel({
             onScroll={syncScroll}
             placeholder={placeholder}
             spellCheck={false}
-            className="absolute inset-0 h-full w-full resize-none overflow-y-auto overscroll-contain bg-white py-3 pr-3 pl-2 font-mono text-xs leading-5 text-gray-800 outline-none placeholder:text-gray-400 [-webkit-overflow-scrolling:touch] touch-pan-y"
+            wrap="off"
+            className="absolute inset-0 h-full w-full resize-none overflow-auto overscroll-contain whitespace-pre bg-white py-3 pr-3 pl-2 font-mono text-xs text-gray-800 outline-none placeholder:text-gray-400 [-webkit-overflow-scrolling:touch] touch-pan-y"
+            style={{ lineHeight: `${LINE_HEIGHT_PX}px` }}
           />
         </div>
       </div>

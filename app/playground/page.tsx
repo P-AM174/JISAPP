@@ -780,7 +780,7 @@ export default function PlaygroundPage() {
   }, []);
 
   const selectMatchAt = useCallback(
-    (matchIndex: number) => {
+    (matchIndex: number, focusEditor = false) => {
       if (!searchQuery.trim()) return;
       const q = searchQuery.toLowerCase();
       const src = code.toLowerCase();
@@ -796,8 +796,9 @@ export default function PlaygroundPage() {
       const ta = getActiveTextarea();
       if (!ta) return;
 
+      // 検索欄に入力中は focus を奪わない（奪うと続きの文字がコードに入ってしまう）
       setCurrentMatch(safeIndex + 1);
-      ta.focus();
+      if (focusEditor) ta.focus();
       ta.setSelectionRange(pos, pos + searchQuery.length);
 
       const style = window.getComputedStyle(ta);
@@ -816,7 +817,9 @@ export default function PlaygroundPage() {
         direction === "next"
           ? currentMatch % matchCount
           : (currentMatch - 2 + matchCount) % matchCount;
-      selectMatchAt(nextIdx);
+      // 検索欄以外から呼ばれたとき（▲▼クリック）はエディタ側を選択表示する
+      const typingInSearch = document.activeElement instanceof HTMLInputElement;
+      selectMatchAt(nextIdx, !typingInSearch);
     },
     [searchQuery, matchCount, currentMatch, selectMatchAt]
   );

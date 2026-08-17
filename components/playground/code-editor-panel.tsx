@@ -135,6 +135,7 @@ export function CodeEditorPanel({
               onClick={() => {
                 onSearchChange("");
                 onToggleSearch(false);
+                textareaRef.current?.focus();
               }}
               className="rounded p-1 text-gray-400 hover:bg-gray-100"
             >

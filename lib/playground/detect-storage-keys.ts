@@ -98,7 +98,7 @@ export function compareStorageUsage(
       kind: "save_removed",
       title: "データを保存する部分がなくなっています",
       detail:
-        "新しいコードには、データを保存したり読み込んだりする部分が見つかりません。このまま公開すると、今まで使ってくれた人が入力した内容は、アプリを開いても表示されなくなります。",
+        "新しいコードには、データを保存したり読み込んだりする処理が見つかりません。このまま公開すると、利用者がこれまで入力した内容は、アプリを開いても表示されなくなります。",
       severity: "warn",
       removedKeys: prev.zisupKeys.length ? prev.zisupKeys : prev.localStorageKeys,
     });
@@ -111,7 +111,7 @@ export function compareStorageUsage(
       kind: "mode_zisup_to_local",
       title: "データの保存場所が「ジサップ」から「その端末の中だけ」に変わっています",
       detail:
-        "今まではジサップ側にデータを預けていましたが、新しいコードはスマホやパソコンの中だけに保存しようとしています。今までのデータは表示されなくなり、別の端末で開いたときにも引き継がれなくなります。",
+        "これまではジサップ側にデータを保存していましたが、新しいコードはスマホやパソコンの中だけに保存しようとしています。これまでのデータは表示されなくなり、別の端末で開いたときにも引き継がれなくなります。",
       severity: "warn",
       removedKeys: prev.zisupKeys,
       addedKeys: curr.localStorageKeys,
@@ -122,7 +122,7 @@ export function compareStorageUsage(
       kind: "mode_local_to_zisup",
       title: "データの保存場所が「端末の中」から「ジサップ」に変わっています",
       detail:
-        "保存の仕組みとしては良い変更ですが、今まで端末の中にあったデータは自動では移りません。使ってくれていた人は、中身が空の状態からのスタートになります。",
+        "保存の仕組みとしては良い変更ですが、これまで端末の中にあったデータは自動では移りません。利用者は、中身が空の状態からのスタートになります。",
       severity: "warn",
       removedKeys: prev.localStorageKeys,
       addedKeys: curr.zisupKeys,
@@ -140,7 +140,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_renamed",
         title: "データにつけた名前が変わっています",
-        detail: `アプリは、データに名前をつけて保存しています。前は${formatKeys(removed)}でしたが、今回は${formatKeys(added)}になっています。名前が変わると、前のデータは残っていてもアプリが見つけられず、使ってくれた人には「入力した内容が全部消えた」ように見えます。`,
+        detail: `アプリは、データに名前をつけて保存しています。前は${formatKeys(removed)}でしたが、今回は${formatKeys(added)}になっています。名前が変わると、前のデータは残っていてもアプリが見つけられないため、利用者の画面では入力した内容がすべて消えた状態で表示されます。`,
         severity: "warn",
         removedKeys: removed,
         addedKeys: added,
@@ -157,7 +157,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_added",
         title: "新しく保存する項目が増えています",
-        detail: `${formatKeys(added)} が増えました。今までのデータはそのまま使えます。意図した追加なら、そのまま公開して問題ありません。`,
+        detail: `${formatKeys(added)} が増えました。これまでのデータはそのまま使えます。意図した追加であれば、そのまま公開して問題ありません。`,
         severity: "info",
         addedKeys: added,
       });
@@ -220,7 +220,7 @@ export function buildStorageFixPrompt(findings: StorageChangeFinding[]): string 
   lines.push("");
   lines.push("【何が問題か】");
   lines.push(
-    "このアプリはすでに公開していて、使ってくれている人の保存データがあります。"
+    "このアプリはすでに公開していて、利用者が保存したデータがあります。"
   );
   if (saveRemoved) {
     lines.push(
@@ -268,6 +268,15 @@ export function buildStorageFixPrompt(findings: StorageChangeFinding[]): string 
   lines.push(
     "5. 修正後の index.html を、省略せずに1ファイルまるごと出力してください（「変更部分のみ」は不可）"
   );
+
+  if (oldKeys.length > 0) {
+    lines.push("");
+    lines.push(
+      `※どうしても新しい名前で作りたい場合は、名前を戻す代わりに、起動時に古い名前 ${oldKeys
+        .map((k) => `'${k}'`)
+        .join(" / ")} からデータを読み込み、新しい形式に変換して保存し直す引き継ぎ処理を必ず入れてください。`
+    );
+  }
 
   if (oldKeys.length > 0 || newKeys.length > 0) {
     lines.push("");

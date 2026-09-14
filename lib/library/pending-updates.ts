@@ -3,10 +3,15 @@ import { createUserNotification } from "@/lib/notifications/create-notification"
 import {
   clearUserAppDataExceptLibrary,
   getLibraryUserIds,
+  getLibrarySnapshot,
   snapshotFromAppRow,
   upsertLibrarySnapshot,
   type AppCodeSnapshot,
 } from "@/lib/library/snapshots";
+import {
+  compareStorageUsage,
+  hasStorageWarnings,
+} from "@/lib/playground/detect-storage-keys";
 
 type Supabase = ReturnType<typeof createServerSupabaseClient>;
 
@@ -16,7 +21,32 @@ export type PendingUpdate = {
   app_title: string;
   update_notes: string | null;
   created_at: string;
+  /** 利用者が今使っているコードと比べて、データの保存先が変わっているか */
+  storage_changed?: boolean;
 };
+
+type CodeRow = { html_code?: string | null; js_code?: string | null };
+
+function storageSource(row: CodeRow): string {
+  return `${row.html_code ?? ""}\n${row.js_code ?? ""}`;
+}
+
+/**
+ * 利用者が今使っているコード（スナップショット）と最新コードを比べて、
+ * 保存データが読み込めなくなる変更が入っていないか調べる。
+ */
+export async function detectPendingStorageChange(
+  supabase: Supabase,
+  userId: string,
+  appId: string,
+  live: CodeRow
+): Promise<boolean> {
+  const snap = await getLibrarySnapshot(supabase, userId, appId);
+  if (!snap) return false;
+  return hasStorageWarnings(
+    compareStorageUsage(storageSource(snap), storageSource(live))
+  );
+}
 
 function notificationBody(updateNotes: string | null, resetUserData: boolean): string {
   if (updateNotes) {

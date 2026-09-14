@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import {
   acceptPendingUpdate,
   declinePendingUpdate,
+  detectPendingStorageChange,
   getPendingUpdate,
   snapshotFromLiveApp,
 } from "@/lib/library/pending-updates";
@@ -24,7 +25,24 @@ export async function GET(req: Request) {
 
   const supabase = createServerSupabaseClient();
   const pending = await getPendingUpdate(supabase, userId, appId);
-  return NextResponse.json({ pending });
+  if (!pending) {
+    return NextResponse.json({ pending: null });
+  }
+
+  const { data: live } = await supabase
+    .from("apps")
+    .select("html_code, js_code")
+    .eq("id", appId)
+    .maybeSingle();
+
+  return NextResponse.json({
+    pending: {
+      ...pending,
+      storage_changed: live
+        ? await detectPendingStorageChange(supabase, userId, appId, live)
+        : false,
+    },
+  });
 }
 
 /** アップデート承認/却下: POST /api/library/pending-update */

@@ -8,7 +8,11 @@ import {
   upsertLibrarySnapshot,
   userHasInLibrary,
 } from "@/lib/library/snapshots";
-import { getPendingUpdate } from "@/lib/library/pending-updates";
+import {
+  detectPendingStorageChange,
+  getPendingUpdate,
+  type PendingUpdate,
+} from "@/lib/library/pending-updates";
 
 export async function GET(
   _request: Request,
@@ -48,9 +52,15 @@ export async function GET(
     return NextResponse.json({ error: "アプリが見つかりません" }, { status: 404 });
   }
 
-  let pendingUpdate = null;
+  let pendingUpdate: PendingUpdate | null = null;
   if (inLibrary && userId) {
     pendingUpdate = await getPendingUpdate(supabase, userId, id);
+    if (pendingUpdate) {
+      pendingUpdate = {
+        ...pendingUpdate,
+        storage_changed: await detectPendingStorageChange(supabase, userId, id, app),
+      };
+    }
   }
 
   const serveSnapshot = async () => {

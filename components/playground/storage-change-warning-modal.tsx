@@ -75,7 +75,7 @@ export function StorageChangeWarningModal({
             {view === "explain" ? (
               <>
                 <Database className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" strokeWidth={2.5} />
-                このまま公開すると、みんなの記録が消えて見えます
+                このまま公開すると、保存データが読み込めなくなります
               </>
             ) : (
               <>
@@ -101,8 +101,8 @@ export function StorageChangeWarningModal({
               <div className="space-y-1.5 text-xs leading-relaxed text-amber-900">
                 <p className="font-bold">アプリは、データに名前をつけて保存しています</p>
                 <p>
-                  新しいコードは、その名前や保存場所が前と違っています。すると前のデータは残っていても
-                  アプリが見つけられず、使ってくれた人の画面では「入力した内容が全部消えた」ように見えます。
+                  新しいコードでは、その名前や保存場所が前のバージョンと違っています。前のデータは残っていても
+                  アプリが見つけられないため、利用者の画面では入力した内容がすべて消えた状態で表示されます。
                 </p>
               </div>
             </div>
@@ -136,10 +136,10 @@ export function StorageChangeWarningModal({
             )}
 
             <div className="rounded-xl bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
-              <p className="font-bold text-gray-700">どうするのがいい？</p>
+              <p className="font-bold text-gray-700">どうすればいいか</p>
               <p className="mt-1">
-                前と同じ名前に戻せば、みんなの記録はそのまま使えます。直し方が分からなくても大丈夫です。
-                下のボタンで、AIにそのまま送れる指示文をコピーできます。
+                保存に使う名前を前のバージョンと同じに戻せば、これまでのデータをそのまま引き継げます。
+                修正方法が分からない場合は、下のボタンでAIにそのまま送れる指示文をコピーできます。
               </p>
             </div>
 
@@ -158,9 +158,9 @@ export function StorageChangeWarningModal({
                   onClick={onProceedWithReset}
                   className="w-full rounded-xl border border-amber-300 bg-amber-50 py-3 text-xs font-bold leading-relaxed text-amber-900 hover:bg-amber-100"
                 >
-                  作り直しでいいので公開する
+                  データを初期化する前提で公開する
                   <span className="mt-0.5 block text-[10px] font-semibold text-amber-700">
-                    使っている人に「データが消えます」と知らせて公開します
+                    利用者に「保存データが初期化されます」と知らせて公開します
                   </span>
                 </button>
               )}
@@ -178,8 +178,8 @@ export function StorageChangeWarningModal({
             <ol className="space-y-2">
               {[
                 "下の「指示文をコピー」を押す",
-                "コードを作ってもらった AI（ChatGPT・Claude・Gemini など）に貼り付けて送る",
-                "出てきた新しいコードを、開発スタジオに貼り付け直して公開する",
+                "コードを作成したAI（ChatGPT・Claude・Gemini など）に貼り付けて送る",
+                "返ってきた新しいコードを開発スタジオに貼り付け直して、もう一度公開する",
               ].map((step, i) => (
                 <li
                   key={step}

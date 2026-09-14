@@ -52,7 +52,13 @@ import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
 import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
 import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal";
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
+import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
 import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
+import {
+  compareStorageUsage,
+  hasStorageWarnings,
+  type StorageChangeFinding,
+} from "@/lib/playground/detect-storage-keys";
 import { supabase } from "@/lib/supabase";
 import {
   markStudioLoginPromptShown,
@@ -619,6 +625,10 @@ export default function PlaygroundPage() {
   const [showSearch, setShowSearch]     = useState(false);
   const [secretWarningOpen, setSecretWarningOpen] = useState(false);
   const [secretFindings, setSecretFindings] = useState<{ label: string }[]>([]);
+  const [storageWarningOpen, setStorageWarningOpen] = useState(false);
+  const [storageFindings, setStorageFindings] = useState<StorageChangeFinding[]>([]);
+  const storageWarningAckRef = useRef(false);
+  const secretWarningAckRef = useRef(false);
   const [matchCount, setMatchCount]     = useState(0);
   const [currentMatch, setCurrentMatch] = useState(0);
 
@@ -750,6 +760,8 @@ export default function PlaygroundPage() {
     setLastPublishWasOverwrite(false);
     setPublishResetUserData(false);
     setPublishUpdateNotes("");
+    storageWarningAckRef.current = false;
+    secretWarningAckRef.current = false;
     // 再公開以外は前回タイトルを入れず空欄から（新規作成のたびに残らないように）
     if (!isRepublish) {
       setPublishTitle("");
@@ -766,11 +778,32 @@ export default function PlaygroundPage() {
       return;
     }
 
-    const findings = detectEmbeddedSecrets(code);
-    if (findings.length > 0) {
-      setSecretFindings(findings);
-      setSecretWarningOpen(true);
-      return;
+    if (!secretWarningAckRef.current) {
+      const findings = detectEmbeddedSecrets(code);
+      if (findings.length > 0) {
+        setSecretFindings(findings);
+        setSecretWarningOpen(true);
+        return;
+      }
+    }
+
+    // 上書き公開時: 保存先（識別名・保存方法）の変化を公開前に指摘
+    if (isRepublish && publishContext?.appId && !storageWarningAckRef.current) {
+      try {
+        const res = await fetch(`/api/apps/${publishContext.appId}/owner-code`);
+        if (res.ok) {
+          const data = (await res.json()) as { html_code?: string };
+          const prevCode = data.html_code ?? "";
+          const storageDiff = compareStorageUsage(prevCode, code);
+          if (hasStorageWarnings(storageDiff)) {
+            setStorageFindings(storageDiff);
+            setStorageWarningOpen(true);
+            return;
+          }
+        }
+      } catch {
+        /* 比較に失敗しても公開は止めない */
+      }
     }
 
     await executePublish();
@@ -1363,8 +1396,26 @@ export default function PlaygroundPage() {
           void openApiKeys();
         }}
         onProceed={async () => {
+          secretWarningAckRef.current = true;
           setSecretWarningOpen(false);
-          await executePublish();
+          await handlePublish();
+        }}
+      />
+
+      <StorageChangeWarningModal
+        open={storageWarningOpen}
+        findings={storageFindings}
+        onClose={() => setStorageWarningOpen(false)}
+        onProceed={async () => {
+          storageWarningAckRef.current = true;
+          setStorageWarningOpen(false);
+          await handlePublish();
+        }}
+        onProceedWithReset={async () => {
+          storageWarningAckRef.current = true;
+          setPublishResetUserData(true);
+          setStorageWarningOpen(false);
+          await handlePublish();
         }}
       />
 

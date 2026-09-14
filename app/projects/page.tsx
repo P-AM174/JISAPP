@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/back-button";
@@ -37,7 +37,13 @@ import {
 import { cn } from "@/lib/utils";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
+import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
 import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
+import {
+  compareStorageUsage,
+  hasStorageWarnings,
+  type StorageChangeFinding,
+} from "@/lib/playground/detect-storage-keys";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
 import { ShareButton, ShareButtonRow, CopyUrlButton, AppUrlCopyField } from "@/components/share-button";
@@ -378,7 +384,12 @@ export default function ProjectsPage() {
   const [showSecretsModal, setShowSecretsModal] = useState(false);
   const [secretWarningOpen, setSecretWarningOpen] = useState(false);
   const [secretFindings, setSecretFindings] = useState<{ label: string }[]>([]);
+  const [storageWarningOpen, setStorageWarningOpen] = useState(false);
+  const [storageFindings, setStorageFindings] = useState<StorageChangeFinding[]>([]);
   const [pendingListed, setPendingListed] = useState<boolean | null>(null);
+  const [pendingHtmlForPublish, setPendingHtmlForPublish] = useState<string | null>(null);
+  const storageWarningAckRef = useRef(false);
+  const secretWarningAckRef = useRef(false);
   const [publishUpdateNotes, setPublishUpdateNotes] = useState("");
 
   // 編集モード
@@ -416,6 +427,9 @@ export default function ProjectsPage() {
     setPublishCodePublic(false);
     setPublishResetUserData(false);
     setPublishUpdateNotes("");
+    storageWarningAckRef.current = false;
+    secretWarningAckRef.current = false;
+    setPendingHtmlForPublish(null);
 
     if (proj.appId) {
       supabase
@@ -498,12 +512,35 @@ export default function ProjectsPage() {
       return;
     }
 
-    const findings = detectEmbeddedSecrets(html_code);
-    if (findings.length > 0) {
-      setSecretFindings(findings);
-      setPendingListed(is_listed);
-      setSecretWarningOpen(true);
-      return;
+    if (!secretWarningAckRef.current) {
+      const findings = detectEmbeddedSecrets(html_code);
+      if (findings.length > 0) {
+        setSecretFindings(findings);
+        setPendingListed(is_listed);
+        setPendingHtmlForPublish(html_code);
+        setSecretWarningOpen(true);
+        return;
+      }
+    }
+
+    const existingAppId = publishedMap[publishTarget.id]?.appId ?? publishTarget.appId;
+    if (existingAppId && !storageWarningAckRef.current) {
+      try {
+        const res = await fetch(`/api/apps/${existingAppId}/owner-code`);
+        if (res.ok) {
+          const data = (await res.json()) as { html_code?: string };
+          const storageDiff = compareStorageUsage(data.html_code ?? "", html_code);
+          if (hasStorageWarnings(storageDiff)) {
+            setStorageFindings(storageDiff);
+            setPendingListed(is_listed);
+            setPendingHtmlForPublish(html_code);
+            setStorageWarningOpen(true);
+            return;
+          }
+        }
+      } catch {
+        /* 比較失敗時は公開を止めない */
+      }
     }
 
     await executePublish(is_listed, html_code);
@@ -962,29 +999,52 @@ export default function ProjectsPage() {
         onClose={() => {
           setSecretWarningOpen(false);
           setPendingListed(null);
+          setPendingHtmlForPublish(null);
         }}
         onOpenSecrets={() => {
           setSecretWarningOpen(false);
           setPendingListed(null);
+          setPendingHtmlForPublish(null);
           setShowSecretsModal(true);
         }}
         onProceed={async () => {
-          if (pendingListed === null || !publishTarget) return;
-          let html_code = "";
-          if (publishTarget.id === "saved_playground") {
-            try { html_code = localStorage.getItem("jisapp_playground_code") ?? ""; } catch { /**/ }
-          } else {
-            try {
-              const codeRes = await fetch(`/api/my-projects/${publishTarget.id}`);
-              if (codeRes.ok) {
-                const d = await codeRes.json();
-                html_code = d.project?.html_code ?? "";
-              }
-            } catch { /* noop */ }
-          }
+          if (pendingListed === null) return;
           const listed = pendingListed;
+          secretWarningAckRef.current = true;
           setSecretWarningOpen(false);
           setPendingListed(null);
+          setPendingHtmlForPublish(null);
+          await handlePublish(listed);
+        }}
+      />
+
+      <StorageChangeWarningModal
+        open={storageWarningOpen}
+        findings={storageFindings}
+        onClose={() => {
+          setStorageWarningOpen(false);
+          setPendingListed(null);
+          setPendingHtmlForPublish(null);
+        }}
+        onProceed={async () => {
+          if (pendingListed === null || !pendingHtmlForPublish) return;
+          storageWarningAckRef.current = true;
+          const listed = pendingListed;
+          const html_code = pendingHtmlForPublish;
+          setStorageWarningOpen(false);
+          setPendingListed(null);
+          setPendingHtmlForPublish(null);
+          await executePublish(listed, html_code);
+        }}
+        onProceedWithReset={async () => {
+          if (pendingListed === null || !pendingHtmlForPublish) return;
+          storageWarningAckRef.current = true;
+          setPublishResetUserData(true);
+          const listed = pendingListed;
+          const html_code = pendingHtmlForPublish;
+          setStorageWarningOpen(false);
+          setPendingListed(null);
+          setPendingHtmlForPublish(null);
           await executePublish(listed, html_code);
         }}
       />

@@ -156,14 +156,16 @@ export function AppRunner({
         </div>
       )}
 
-      <iframe
-        ref={iframeRef}
-        key={`${syncKey}-${iframeKey}`}
-        srcDoc={documentHtml}
-        sandbox={APP_IFRAME_SANDBOX}
-        className="min-h-0 flex-1 w-full border-0 bg-white"
-        title={title}
-      />
+      <div className="min-h-0 flex-1 overflow-auto">
+        <iframe
+          ref={iframeRef}
+          key={`${syncKey}-${iframeKey}`}
+          srcDoc={documentHtml}
+          sandbox={APP_IFRAME_SANDBOX}
+          className="h-full w-full border-0 bg-white"
+          title={title}
+        />
+      </div>
 
       <SyncInfoModal
         open={syncModalOpen}

@@ -74,7 +74,7 @@ export default function AppRunPage() {
   }, [id, status]);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f3f4f2]">
+    <div className="app-viewport flex flex-col overflow-hidden bg-[#f3f4f2]">
       <header className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">

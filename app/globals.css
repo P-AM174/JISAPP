@@ -54,6 +54,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* アプリ実行画面の器。実際に見えている高さに合わせる（dvh 非対応環境は vh にフォールバック） */
+.app-viewport {
+  height: 100vh;
+  height: 100dvh;
+}
+
 html {
   scroll-behavior: smooth;
   overscroll-behavior-y: none;

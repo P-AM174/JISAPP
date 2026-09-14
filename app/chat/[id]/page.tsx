@@ -436,7 +436,7 @@ export default function ChatPage() {
     room.status === "動作確認待ち" && !aiMediationRunning && !isCompleted;
 
   return (
-    <div className="flex h-screen flex-col bg-[#f3f6f4]">
+    <div className="app-viewport flex flex-col bg-[#f3f6f4]">
       {/* ─── ヘッダー ─── */}
       <header className="shrink-0 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">

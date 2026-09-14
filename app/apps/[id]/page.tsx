@@ -200,9 +200,9 @@ function SupabaseAppPage({ id }: { id: string }) {
   const srcDoc = buildAppSrcDoc(app.html_code ?? "", app.css_code, app.js_code);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="app-viewport flex flex-col overflow-hidden bg-white">
       {/* ヘッダー */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm">
+      <header className="shrink-0 border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex h-13 max-w-5xl items-center gap-3 px-4 py-2">
           <BackButton />
           <div className="flex flex-1 flex-col min-w-0">
@@ -241,15 +241,15 @@ function SupabaseAppPage({ id }: { id: string }) {
       </header>
 
       {creatorRemoved && (
-        <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
+        <div className="shrink-0 border-b border-amber-100 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
           出品者がアプリを削除しました。マイライブラリに保存しているため、引き続きご利用いただけます。
         </div>
       )}
 
-      {/* アプリ実行エリア（全画面 iframe） */}
-      <main className="relative flex flex-1 flex-col">
+      {/* アプリ実行エリア（残りの高さいっぱい。スクロールは iframe の中だけ） */}
+      <main className="relative flex min-h-0 flex-1 flex-col">
         {codePanelOpen && app.code_public && (
-          <div className="border-b border-violet-100 bg-gray-950 text-gray-100">
+          <div className="shrink-0 border-b border-violet-100 bg-gray-950 text-gray-100">
             <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2">
               {(["html", "css", "js"] as const).map((tab) => (
                 <button
@@ -277,16 +277,17 @@ function SupabaseAppPage({ id }: { id: string }) {
           </div>
         )}
         {syncReady ? (
-          <iframe
-            ref={iframeRef}
-            key={`${id}-${enableCloud ? userId : "local"}-${iframeKey}`}
-            srcDoc={srcDoc}
-            sandbox={APP_IFRAME_SANDBOX}
-            className="flex-1 border-0 bg-white w-full"
-            style={{ minHeight: "calc(100vh - 53px)" }}
-            title={app.title}
-            allow="clipboard-write"
-          />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <iframe
+              ref={iframeRef}
+              key={`${id}-${enableCloud ? userId : "local"}-${iframeKey}`}
+              srcDoc={srcDoc}
+              sandbox={APP_IFRAME_SANDBOX}
+              className="h-full w-full border-0 bg-white"
+              title={app.title}
+              allow="clipboard-write"
+            />
+          </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
             読み込み中…
@@ -316,8 +317,8 @@ function SupabaseAppPage({ id }: { id: string }) {
         />
       )}
 
-      {/* フッター（最小限） */}
-      <div className="border-t border-gray-100 bg-gray-50 py-2 text-center">
+      {/* フッター（最小限。スマホでは画面を広く使うため隠す） */}
+      <div className="hidden shrink-0 border-t border-gray-100 bg-gray-50 py-2 text-center sm:block">
         <p className="text-[10px] text-gray-400">
           <Link href="/playground" className="hover:text-emerald-600">ジサップ 開発スタジオ</Link>
           {" "}で作成されました ·{" "}

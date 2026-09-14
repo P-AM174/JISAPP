@@ -2,9 +2,10 @@ export const SITE_NAME = "ジサップ";
 
 export const SITE_BRAND = "ジサップ（Jisapp）";
 
-export const SITE_TAGLINE = "AIで作ったコードを貼るだけ！無料アプリ開発スタジオ";
+export const SITE_TAGLINE = "無料個人アプリ開発ならジサップ";
 
-export const SITE_TITLE = `${SITE_BRAND}｜${SITE_TAGLINE}`;
+/** タグラインにブランド名が入るため、SITE_BRAND とは重複させない */
+export const SITE_TITLE = `${SITE_TAGLINE}（Jisapp）`;
 
 export const SITE_DESCRIPTION =
   "ChatGPT・Claude・Geminiで作ったコードを貼るだけ。サーバー設定不要で、誰でも無料でアプリを作って公開・共有できます。";

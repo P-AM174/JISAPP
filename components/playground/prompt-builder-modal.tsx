@@ -29,6 +29,7 @@ export function PromptBuilderModal({
   const [tab, setTab] = useState<"template" | "rules">(initialTab);
   const [appName, setAppName] = useState("");
   const [details, setDetails] = useState("");
+  const [useJisappDesign, setUseJisappDesign] = useState(true);
   const [copied, setCopied] = useState<"template" | "rules" | null>(null);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -48,6 +49,7 @@ export function PromptBuilderModal({
     if (!open) {
       setAppName("");
       setDetails("");
+      setUseJisappDesign(true);
       setCopied(null);
       setError("");
       return;
@@ -56,6 +58,7 @@ export function PromptBuilderModal({
     setTab(initialTab);
     setAppName("");
     setDetails("");
+    setUseJisappDesign(true);
     setCopied(null);
     setError("");
   }, [open, initialTab]);
@@ -64,7 +67,8 @@ export function PromptBuilderModal({
 
   const preview = buildPromptFromTemplate(
     appName.trim() || "（アプリ名）",
-    details
+    details,
+    { useJisappDesign }
   );
 
   const scheduleReturnAfterCopy = () => {
@@ -85,7 +89,9 @@ export function PromptBuilderModal({
     }
     setError("");
     try {
-      await navigator.clipboard.writeText(buildPromptFromTemplate(name, details));
+      await navigator.clipboard.writeText(
+        buildPromptFromTemplate(name, details, { useJisappDesign })
+      );
       setCopied("template");
       scheduleReturnAfterCopy();
     } catch {
@@ -113,13 +119,13 @@ export function PromptBuilderModal({
         className="relative flex h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start gap-3 border-b border-sky-100 bg-gradient-to-br from-sky-500 to-blue-600 px-4 py-4 text-white sm:px-5">
+        <div className="flex shrink-0 items-start gap-3 border-b border-emerald-100 bg-gradient-to-br from-emerald-500 to-teal-600 px-4 py-4 text-white sm:px-5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/20">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 className="text-base font-black">AIに送るプロンプト</h2>
-            <p className="mt-0.5 text-xs text-sky-100">
+            <p className="mt-0.5 text-xs text-emerald-50">
               テンプレート作成、または必須ルールだけコピー
             </p>
           </div>
@@ -145,7 +151,7 @@ export function PromptBuilderModal({
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[11px] font-bold transition-colors",
                 tab === "template"
-                  ? "bg-sky-600 text-white shadow-sm"
+                  ? "bg-emerald-600 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               )}
             >
@@ -162,7 +168,7 @@ export function PromptBuilderModal({
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[11px] font-bold transition-colors",
                 tab === "rules"
-                  ? "bg-sky-600 text-white shadow-sm"
+                  ? "bg-emerald-600 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               )}
             >
@@ -193,7 +199,7 @@ export function PromptBuilderModal({
                   autoCapitalize="off"
                   spellCheck={false}
                   name={`jisapp_prompt_app_${formKey}`}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 />
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {APP_EXAMPLES.map((ex) => (
@@ -204,7 +210,7 @@ export function PromptBuilderModal({
                         setAppName(ex);
                         if (error) setError("");
                       }}
-                      className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 hover:bg-sky-100"
+                      className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
                     >
                       {ex}
                     </button>
@@ -227,12 +233,36 @@ export function PromptBuilderModal({
                   }
                   autoComplete="off"
                   name={`jisapp_prompt_details_${formKey}`}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 />
                 <p className="mt-1 text-[10px] text-gray-400">
                   空欄でもOK。あとからAIに追加で頼めます。
                 </p>
               </div>
+
+              <label
+                className={cn(
+                  "flex cursor-pointer gap-3 rounded-2xl border px-4 py-3 transition-colors",
+                  useJisappDesign
+                    ? "border-emerald-300 bg-emerald-50"
+                    : "border-gray-200 bg-white hover:bg-gray-50"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={useJisappDesign}
+                  onChange={(e) => setUseJisappDesign(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
+                />
+                <span className="min-w-0">
+                  <span className="block text-xs font-black text-gray-900">
+                    ジサップオリジナルデザインを使う
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-relaxed text-gray-500">
+                    透明感のあるグラデーション＆すりガラス風の見た目を指定します。デザインを自分で決めたいときは外してください。
+                  </span>
+                </span>
+              </label>
 
               {error && (
                 <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
@@ -244,7 +274,7 @@ export function PromptBuilderModal({
                 disabled={copied === "template"}
                 className={cn(
                   "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
-                  copied === "template" ? "bg-emerald-600" : "bg-sky-600 hover:bg-sky-500"
+                  copied === "template" ? "bg-teal-600" : "bg-emerald-600 hover:bg-emerald-500"
                 )}
               >
                 {copied === "template" ? (
@@ -285,7 +315,7 @@ export function PromptBuilderModal({
                 </pre>
               </div>
 
-              <ol className="space-y-1.5 rounded-xl bg-sky-50 px-4 py-3 text-xs leading-relaxed text-sky-900">
+              <ol className="space-y-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-900">
                 <li>1. 自分の要望文をAIに書く（または貼る）</li>
                 <li>2. 「必須ルールだけコピー」を押す</li>
                 <li>3. 要望文のあとに貼り付けて送信</li>

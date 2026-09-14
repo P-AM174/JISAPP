@@ -83,13 +83,112 @@ HTMLコードを出力したあと、最後に必ず次のような短い手順�
   ※ URLは https のみ。`;
 
 /**
+ * ジサップオリジナルデザイン（オーロラグラデーション＋グラスモーフィズム）の指定。
+ * 自分でデザインしたい人は使わないため、テンプレートには任意で差し込む。
+ */
+export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの厳格な指定】
+以下の仕様に従って、Vanilla CSSのみでデザインを構築してください。外部フレームワーク（Tailwind等）は使用しないでください。
+
+1. 全体コンセプト
+「オーロラグラデーション」と「グラスモーフィズム（すりガラス）」を組み合わせた、モダンで透過感のあるプロフェッショナルなデザイン。
+
+2. カラーパレット & CSS変数
+:root {
+  /* ベースカラー（エメラルドグリーンとブルーの爽やかな組み合わせ） */
+  --color-primary: #059669; /* メインカラー（エメラルド） */
+  --color-teal: #06b6d4;    /* アクセントカラー（ティール） */
+
+  /* 状態表示カラー */
+  --danger: #ef4444;        /* エラーや削除などの危険操作 */
+  --success: #10b981;       /* 完了や成功 */
+
+  /* グラデーション */
+  --grad-primary: linear-gradient(135deg, #059669 0%, #3b82f6 50%, #10b981 100%);
+  --grad-button: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+
+  /* グラスモーフィズム（すりガラス）用の透明カラー */
+  --bg-card: rgba(255, 255, 255, 0.75);   /* カードやモーダルの背景 */
+  --bg-input: rgba(255, 255, 255, 0.6);   /* 入力欄やボタンの背景 */
+  --border-glass: rgba(255, 255, 255, 0.5); /* 薄い白枠線 */
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* 柔らかい影 */
+
+  /* テキストカラー */
+  --text-main: #0f172a;  /* 見出しやメインテキスト（濃いグレー） */
+  --text-sub: #334155;   /* サブテキスト */
+  --text-light: #64748b; /* 補足やプレースホルダーなど（薄いグレー） */
+}
+
+3. 背景スタイル・全体設定
+body {
+  /* 全体のフォント設定（OS標準のきれいなフォントを優先） */
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased; /* 文字をきれいにレンダリング */
+
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+
+  /* 背景ベースカラー（淡いブルーグレー） */
+  background-color: #e0e7ff;
+
+  /* メッシュグラデーション（4つの淡い光の玉を配置） */
+  background-image:
+    radial-gradient(at 10% 0%, rgba(5, 150, 105, 0.25) 0px, transparent 50%), /* 左上：エメラルド */
+    radial-gradient(at 90% 10%, rgba(16, 185, 129, 0.25) 0px, transparent 50%), /* 右上：グリーン */
+    radial-gradient(at 80% 90%, rgba(244, 63, 94, 0.15) 0px, transparent 50%),  /* 右下：ほんのりピンク */
+    radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.25) 0px, transparent 50%); /* 左下：ブルー */
+
+  /* スクロールしても背景のグラデーションを固定する */
+  background-attachment: fixed;
+}
+
+4. コンポーネントの仕様（グラスモーフィズム）
+・カード・ヘッダー・モーダル・サイドメニューなどの背景は必ず --bg-card や --bg-input などの半透明な白（rgba）にする。
+・背景のぼかしとして必ず backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); を適用する。
+・境界線は border: 1px solid var(--border-glass); を適用する。
+・ヘッダーの最上部には header::before で高さ3pxの --grad-primary のラインを引く。
+
+5. ボタン・入力UI
+・メインボタンは --grad-button を背景にし、文字は白。ホバー時に transform: translateY(-2px) と影を濃くする。角丸は 9999px（完全なピル型）。
+・入力欄（input, textarea, select）はフォーカス時に border-color: var(--color-teal); および box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3); を適用し、背景を白（rgba不透明度0.9程度）に変化させる。
+
+6. タイポグラフィとアイコン【最重要】
+・フォント: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif
+・見出しや強調部分は font-weight: 700 または 800 を使用し、メリハリをつける。
+・【厳守】絵文字（📱や✨など）は一切使用禁止。すべてのアイコンは、線の太さ（stroke-width="2"〜"2.5"）を統一したインラインSVGを使用すること。
+
+7. レイアウトとアニメーション
+・モバイルファースト設計（max-width: 640px; margin: 0 auto;）。
+・コンテンツ表示時に下から少しフェードインするCSSアニメーション（@keyframes fadeIn）を適用する。
+・ボタンやカードのホバー時は transition: all 0.2s; で滑らかに状態を変化させること。`;
+
+type BuildPromptOptions = {
+  /** ジサップオリジナルデザインの指定を差し込むか */
+  useJisappDesign?: boolean;
+};
+
+/**
  * ユーザー入力をテンプレートに組み込んだ完成プロンプトを生成する。
  * @param appName 作りたいアプリ名（必須）
  * @param details 仕様・デザイン・機能など（任意）
+ * @param options ジサップオリジナルデザインを使うかなど
  */
-export function buildPromptFromTemplate(appName: string, details?: string): string {
+export function buildPromptFromTemplate(
+  appName: string,
+  details?: string,
+  options?: BuildPromptOptions
+): string {
   const name = appName.trim() || PROMPT_APP_NAME_PLACEHOLDER;
   let prompt = PROMPT_TEMPLATE.split(PROMPT_APP_NAME_PLACEHOLDER).join(name);
+
+  if (options?.useJisappDesign) {
+    const designMarker = "【データ保存（必要な場合のみ）】";
+    const designBlock = `${PROMPT_JISAPP_DESIGN}\n\n`;
+    prompt = prompt.includes(designMarker)
+      ? prompt.replace(designMarker, `${designBlock}${designMarker}`)
+      : `${prompt}\n\n${PROMPT_JISAPP_DESIGN}`;
+  }
 
   const extra = details?.trim();
   if (extra) {

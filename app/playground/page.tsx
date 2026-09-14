@@ -9,7 +9,7 @@ import {
   ChevronUp,
   Search,
   Trash2,
-  Clipboard,
+  ClipboardPaste,
   Play,
   RefreshCw,
   Code2,
@@ -106,7 +106,7 @@ function SimpleCodeGuide({
   const steps: { text: string; buildPrompt?: boolean }[] = [
     { text: "専用プロンプトを AI に送り、作りたいアプリを伝える", buildPrompt: true },
     { text: "出力された HTML コードをすべてコピーする" },
-    { text: "下のボタンで、コピーしたコードをここに入れる" },
+    { text: "上の「コードを貼り付ける」ボタンを押す" },
     { text: "「プレビュー」タブで動作を確認する" },
     { text: "問題なければ「公開/URL発行」から URL を発行する" },
   ];
@@ -120,7 +120,23 @@ function SimpleCodeGuide({
         onReturnToEditor={() => setPromptBuilderOpen(false)}
         initialTab={promptBuilderTab}
       />
-      <p className="text-xs font-bold tracking-wide text-emerald-700">使い方</p>
+      {onPaste && (
+        <div className="rounded-2xl border-2 border-emerald-500 bg-white p-3 shadow-md shadow-emerald-100">
+          <button
+            type="button"
+            onClick={onPaste}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-4 text-base font-black text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.98] touch-manipulation"
+          >
+            <ClipboardPaste className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+            コードを貼り付ける
+          </button>
+          <p className="mt-2 text-center text-[11px] font-bold leading-relaxed text-emerald-800">
+            AI でコピーした HTML コードを、ここに貼り付けます
+          </p>
+        </div>
+      )}
+
+      <p className="mt-5 text-xs font-bold tracking-wide text-emerald-700">使い方</p>
       <h2 className="mt-1 text-base font-black text-gray-900">AI が作ったコードを貼り付けて動かす</h2>
       <p className="mt-2 text-xs leading-relaxed text-gray-500">
         プログラミングの知識は不要です。HTML コードを貼り付けるだけでアプリが動きます。
@@ -157,21 +173,6 @@ function SimpleCodeGuide({
         ))}
       </ol>
       <div className="mt-4 flex flex-col gap-2">
-        {onPaste && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-3 py-3">
-            <p className="text-center text-[11px] font-bold leading-relaxed text-emerald-800">
-              ① AIでコードをコピー　→　② このボタン
-            </p>
-            <button
-              type="button"
-              onClick={onPaste}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] touch-manipulation"
-            >
-              <Clipboard className="h-4 w-4" />
-              コピーしたコードをここに入れる
-            </button>
-          </div>
-        )}
         {onManualInput && (
           <button
             type="button"
@@ -1599,8 +1600,8 @@ export default function PlaygroundPage() {
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
               <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-                  <Clipboard className="h-3.5 w-3.5 text-emerald-500" />
-                  HTMLコードを貼り付ける
+                  <Code2 className="h-3.5 w-3.5 text-emerald-500" />
+                  HTMLコード
                 </span>
                 <div className="flex items-center gap-1">
                   <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors touch-manipulation">
@@ -1639,10 +1640,10 @@ export default function PlaygroundPage() {
                 <button
                   type="button"
                   onClick={handlePasteAndRun}
-                  className="relative z-10 flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99] touch-manipulation"
+                  className="relative z-10 flex shrink-0 items-center justify-center gap-2 border-b-2 border-emerald-700 bg-emerald-600 py-3.5 text-sm font-black text-white transition-colors hover:bg-emerald-700 active:scale-[0.99] touch-manipulation"
                 >
-                  <Clipboard className="h-4 w-4" />
-                  コピーしたコードをここに入れる
+                  <ClipboardPaste className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                  コードを貼り付ける
                 </button>
               )}
               <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -1707,8 +1708,8 @@ export default function PlaygroundPage() {
           {/* パネルヘッダー */}
           <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
             <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-              <Clipboard className="h-3.5 w-3.5 text-emerald-500" />
-              ここにコードを貼り付ける
+              <Code2 className="h-3.5 w-3.5 text-emerald-500" />
+              HTMLコード
             </span>
             <div className="flex items-center gap-0.5">
               <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
@@ -1748,10 +1749,10 @@ export default function PlaygroundPage() {
             <button
               type="button"
               onClick={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
-              className="flex shrink-0 items-center justify-center gap-2 border-b border-emerald-100 bg-emerald-50 py-2.5 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.99]"
+              className="flex shrink-0 items-center justify-center gap-2 border-b-2 border-emerald-700 bg-emerald-600 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 active:scale-[0.99]"
             >
-              <Clipboard className="h-4 w-4" />
-              コピーしたコードをここに入れて実行
+              <ClipboardPaste className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+              コードを貼り付ける
             </button>
           )}
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CATEGORY_MAP } from "@/lib/categories";
+import { CategoryIcon } from "@/lib/category-icon";
 import { HERO_BG_PATTERN_CLASS, HERO_THEME_STYLES } from "@/lib/hero/themes";
 import type { HeroSlidePublic } from "@/lib/hero/types";
 import { HeroSlideCopy } from "./hero-slide-copy";
@@ -76,11 +77,11 @@ export function HeroSlideCard({ slide }: { slide: HeroSlidePublic }) {
                   >
                     <div
                       className={cn(
-                        "mb-2 flex h-16 items-center justify-center rounded-xl bg-gradient-to-br text-2xl",
+                        "mb-2 flex h-16 items-center justify-center rounded-xl bg-gradient-to-br",
                         cat?.gradient ?? "from-emerald-500 to-teal-600"
                       )}
                     >
-                      {cat?.emoji ?? "✨"}
+                      <CategoryIcon categoryId={app.category} className="h-7 w-7 text-white" />
                     </div>
                     <p className="line-clamp-2 text-sm font-bold text-gray-900 group-hover:text-emerald-700">
                       {app.title}

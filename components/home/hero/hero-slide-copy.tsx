@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { HERO_THEME_STYLES } from "@/lib/hero/themes";
 import type { HeroSlidePublic } from "@/lib/hero/types";
 
@@ -44,9 +44,18 @@ export function HeroSlideCopy({
         </Link>
       )}
       <div className={`mt-4 flex flex-wrap gap-3 text-[11px] text-white/70 ${centered ? "justify-center" : "justify-center md:justify-start"}`}>
-        <span>✓ プログラミング不要</span>
-        <span>✓ サーバー設定ゼロ</span>
-        <span>✓ AIコードを貼るだけ</span>
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+          プログラミング不要
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+          サーバー設定ゼロ
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+          AIコードを貼るだけ
+        </span>
       </div>
     </div>
   );

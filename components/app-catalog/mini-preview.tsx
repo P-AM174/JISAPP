@@ -2,16 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
+import { CategoryIcon } from "@/lib/category-icon";
 
 export function MiniPreview({
   id,
   fallbackGradient,
-  fallbackEmoji,
+  fallbackCategoryId,
   height = 120,
 }: {
   id: string | number;
   fallbackGradient: string;
-  fallbackEmoji?: string;
+  /** 読み込み前に表示するカテゴリアイコン用 */
+  fallbackCategoryId?: string | null;
   height?: number;
 }) {
   const [loaded, setLoaded] = useState(false);
@@ -55,9 +57,11 @@ export function MiniPreview({
           className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${fallbackGradient} opacity-75`}
           style={{ top: "26px" }}
         >
-          {fallbackEmoji && (
-            <span className="text-3xl drop-shadow">{fallbackEmoji}</span>
-          )}
+          <CategoryIcon
+            categoryId={fallbackCategoryId}
+            className="h-8 w-8 text-white drop-shadow"
+            strokeWidth={2.25}
+          />
         </div>
       )}
 

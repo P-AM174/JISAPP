@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Check, Copy, FileText, Blocks, Globe } from "lucide-react";
+import { ExternalLink, Check, Copy, FileText, Blocks, Globe, Lightbulb } from "lucide-react";
 import { useState } from "react";
 import type { ProductType } from "@/lib/products/types";
 import { PRODUCT_TYPE_LABELS } from "@/lib/products/types";
@@ -30,14 +30,14 @@ const RECEIVE_CONFIG: Record<
   notion: {
     label: "Notionにテンプレートを複製する",
     sub: "Notion の共有ページが開きます",
-    note: "💡 ページ右上の「…」→「Duplicate（複製）」を押すと、ワンタッチで自分のワークスペースにコピーできます",
+    note: "ページ右上の「…」→「Duplicate（複製）」を押すと、ワンタッチで自分のワークスペースにコピーできます",
     icon: FileText,
     gradient: "from-gray-800 to-gray-900",
   },
   replit: {
     label: "ReplitでコードをFork（複製）する",
     sub: "Replit のテンプレートページが開きます",
-    note: "💡 ページ上部の「Fork」ボタンを押すと、自分のアカウントに複製されます",
+    note: "ページ上部の「Fork」ボタンを押すと、自分のアカウントに複製されます",
     icon: Blocks,
     gradient: "from-orange-500 to-amber-600",
   },
@@ -95,8 +95,9 @@ export function ProductReceiveArea({
       </button>
 
       {cfg.note && (
-        <p className="mt-3 rounded-xl bg-gray-50 px-3 py-2.5 text-xs leading-relaxed text-gray-600 ring-1 ring-gray-100">
-          {cfg.note}
+        <p className="mt-3 flex items-start gap-1.5 rounded-xl bg-gray-50 px-3 py-2.5 text-xs leading-relaxed text-gray-600 ring-1 ring-gray-100">
+          <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+          <span>{cfg.note}</span>
         </p>
       )}
 

@@ -26,12 +26,20 @@ import {
   X,
   LibraryBig,
   Key,
+  ClipboardList,
+  Lightbulb,
+  PenLine,
+  EyeOff,
+  RefreshCw,
+  AlertTriangle,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
+import { CategoryIcon } from "@/lib/category-icon";
 import { ShareButton, ShareButtonRow, CopyUrlButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { supabase } from "@/lib/supabase";
@@ -239,8 +247,8 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
               href={getPlaygroundHref(proj)}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-emerald-100 hover:text-emerald-700 active:scale-[0.98]"
             >
-              <Wrench className="h-3.5 w-3.5" />
-              🛠️ 編集する
+              <Wrench className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              編集する
             </Link>
             <button
               onClick={() => onPublish?.(proj)}
@@ -784,8 +792,9 @@ export default function ProjectsPage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
                 アプリ開発スタジオ
               </p>
-              <h2 className="mt-1 text-xl font-black">
-                あなたのコードが集まる場所 ✨
+              <h2 className="mt-1 flex items-center gap-1.5 text-xl font-black">
+                あなたのコードが集まる場所
+                <Sparkles className="h-5 w-5 shrink-0 text-emerald-300" strokeWidth={2.5} />
               </h2>
               <p className="mt-1 text-sm text-emerald-200 leading-relaxed">
                 作ったツールをそのままジサップに出品しよう。
@@ -838,9 +847,9 @@ export default function ProjectsPage() {
         {/* ══════════ タブ ══════════ */}
         <div className="flex gap-1 rounded-2xl bg-gray-100 p-1">
           {([
-            { id: "mine",     label: "🛠️ 自分が作ったツール",     count: myProjects.length    },
-            { id: "acquired", label: "📦 ジサップでGETしたツール", count: acquiredApps.length  },
-          ] as { id: "mine" | "acquired"; label: string; count: number }[]).map((t) => (
+            { id: "mine",     label: "自分が作ったツール",     icon: Wrench,  count: myProjects.length    },
+            { id: "acquired", label: "ジサップでGETしたツール", icon: Package, count: acquiredApps.length  },
+          ] as { id: "mine" | "acquired"; label: string; icon: LucideIcon; count: number }[]).map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -851,6 +860,7 @@ export default function ProjectsPage() {
                   : "text-gray-500 hover:text-emerald-600"
               )}
             >
+              <t.icon className="h-4 w-4 shrink-0" strokeWidth={2} />
               {t.label}
               {mounted && (
                 <span className={cn(
@@ -877,9 +887,9 @@ export default function ProjectsPage() {
               <>
                 {/* ヒント */}
                 <div className="flex items-start gap-3 rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                  <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" strokeWidth={2} />
                   <p className="text-xs leading-relaxed text-blue-700">
-                    💡 開発スタジオで保存したコードはここに表示されます。「🚀 出品する」を押すとジサップのマーケットに無料で公開できます。
+                    開発スタジオで保存したコードはここに表示されます。「出品する」を押すとジサップのマーケットに無料で公開できます。
                   </p>
                 </div>
 
@@ -915,9 +925,9 @@ export default function ProjectsPage() {
             {filteredAcquired.length > 0 ? (
               <>
                 <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-100">
-                  <Package className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  <Package className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2} />
                   <p className="text-xs leading-relaxed text-emerald-700">
-                    📦 ジサップでGETしたアプリの一覧です。カードをタップすると詳細ページでソースコードを確認できます。
+                    ジサップでGETしたアプリの一覧です。カードをタップすると詳細ページでソースコードを確認できます。
                   </p>
                 </div>
 
@@ -994,7 +1004,10 @@ export default function ProjectsPage() {
               /* ─ URL確認画面（出品済み） ─ */
               <>
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                  <h3 className="text-base font-black text-gray-900">📋 出品情報</h3>
+                  <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
+                    <ClipboardList className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    出品情報
+                  </h3>
                   <button onClick={() => setPublishTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
@@ -1013,8 +1026,9 @@ export default function ProjectsPage() {
                   {publishCategory && CATEGORY_MAP[publishCategory] && (
                     <div>
                       <p className="mb-1 text-[10px] font-bold text-gray-500">カテゴリ</p>
-                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", CATEGORY_MAP[publishCategory].tagColor)}>
-                        {CATEGORY_MAP[publishCategory].emoji} {CATEGORY_MAP[publishCategory].name}
+                      <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", CATEGORY_MAP[publishCategory].tagColor)}>
+                        <CategoryIcon categoryId={publishCategory} className="h-4 w-4 shrink-0" />
+                        {CATEGORY_MAP[publishCategory].name}
                       </span>
                     </div>
                   )}
@@ -1057,14 +1071,16 @@ export default function ProjectsPage() {
                         onClick={() => router.push(publishedUrl.replace(window.location.origin, ""))}
                         className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-200 transition-all"
                       >
-                        アプリを開く →
+                        アプリを開く
+                        <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                       </button>
                     </div>
                     <button
                       onClick={() => { setEditMode(true); setSaveSuccess(false); }}
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all"
                     >
-                      ✏️ 出品情報を編集する
+                      <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                      出品情報を編集する
                     </button>
                     {publishTarget?.status === "listed" && (
                       <button
@@ -1072,7 +1088,7 @@ export default function ProjectsPage() {
                         disabled={unlisting}
                         className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
                       >
-                        {unlisting ? "取り下げ中…" : "📤 出品を取り下げる"}
+                        {unlisting ? "取り下げ中…" : <><EyeOff className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />出品を取り下げる</>}
                       </button>
                     )}
                   </div>
@@ -1084,7 +1100,10 @@ export default function ProjectsPage() {
               /* ─ 編集画面 ─ */
               <>
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                  <h3 className="text-base font-black text-gray-900">✏️ 出品情報を編集</h3>
+                  <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
+                    <PenLine className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    出品情報を編集
+                  </h3>
                   <button onClick={() => setEditMode(false)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
@@ -1104,10 +1123,11 @@ export default function ProjectsPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {CATEGORIES.map((cat) => (
                         <button key={cat.id} type="button" onClick={() => setPublishCategory(cat.id)}
-                          className={cn("rounded-full px-3 py-1.5 text-xs font-bold transition-all",
+                          className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all",
                             publishCategory === cat.id ? "bg-emerald-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
                           )}>
-                          {cat.emoji} {cat.name}
+                          <CategoryIcon categoryId={cat.id} className="h-4 w-4 shrink-0" />
+                          {cat.name}
                         </button>
                       ))}
                     </div>
@@ -1158,7 +1178,11 @@ export default function ProjectsPage() {
               /* ─ 新規出品フォーム ─ */
               <>
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                  <h3 className="text-base font-black text-gray-900">{isRepublish ? "🔄 アプリを上書きする" : "🚀 アプリを出品する"}</h3>
+                  <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
+                    {isRepublish
+                      ? <><RefreshCw className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを上書きする</>
+                      : <><Rocket className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを出品する</>}
+                  </h3>
                   <button onClick={() => setPublishTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
@@ -1166,7 +1190,10 @@ export default function ProjectsPage() {
                 <div className="flex flex-col gap-4 p-6">
                   {publishTarget.isDemo && (
                     <div className="rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
-                      <p className="text-xs text-amber-700">⚠️ このプロジェクトはデモデータです。開発スタジオで実際にコードを作成・保存してから出品してください。</p>
+                      <p className="flex items-start gap-2 text-xs text-amber-700">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
+                        <span>このプロジェクトはデモデータです。開発スタジオで実際にコードを作成・保存してから出品してください。</span>
+                      </p>
                     </div>
                   )}
                   <div className="flex flex-col gap-1.5">
@@ -1179,10 +1206,11 @@ export default function ProjectsPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {CATEGORIES.map((cat) => (
                         <button key={cat.id} type="button" onClick={() => setPublishCategory(cat.id)}
-                          className={cn("rounded-full px-3 py-1.5 text-xs font-bold transition-all",
+                          className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all",
                             publishCategory === cat.id ? "bg-emerald-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
                           )}>
-                          {cat.emoji} {cat.name}
+                          <CategoryIcon categoryId={cat.id} className="h-4 w-4 shrink-0" />
+                          {cat.name}
                         </button>
                       ))}
                     </div>

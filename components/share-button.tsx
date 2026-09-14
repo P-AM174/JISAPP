@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Share2, Link2, Mail, X, Copy, CheckCircle2 } from "lucide-react";
+import { Share2, Link2, Mail, X, Copy, CheckCircle2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   copyShareUrl,
@@ -14,6 +14,23 @@ import {
   openShareWindow,
   prefersNativeShare,
 } from "@/lib/share";
+
+/** ブランドマークは公式の形をインラインSVGで表示（文字での代用はしない） */
+function XBrandIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644Z" />
+    </svg>
+  );
+}
+
+function FacebookBrandIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.91h-2.33V22c4.78-.76 8.45-4.92 8.45-9.94Z" />
+    </svg>
+  );
+}
 
 type ShareButtonProps = {
   url: string;
@@ -65,7 +82,7 @@ function ShareSheet({
       id: "x",
       label: "X（Twitter）",
       sub: "ポストする",
-      icon: "𝕏",
+      icon: <XBrandIcon className="h-4 w-4" />,
       bg: "bg-gray-900 text-white",
       action: () => openShareWindow(getTwitterShareUrl(url, shareText)),
     },
@@ -73,7 +90,7 @@ function ShareSheet({
       id: "line",
       label: "LINE",
       sub: "トーク・タイムライン",
-      icon: "💬",
+      icon: <MessageCircle className="h-4 w-4" strokeWidth={2.5} />,
       bg: "bg-[#06C755] text-white",
       action: () => openShareWindow(getLineShareUrl(url, shareText)),
     },
@@ -81,7 +98,7 @@ function ShareSheet({
       id: "facebook",
       label: "Facebook",
       sub: "シェアする",
-      icon: "f",
+      icon: <FacebookBrandIcon className="h-5 w-5" />,
       bg: "bg-[#1877F2] text-white",
       action: () => openShareWindow(getFacebookShareUrl(url)),
     },

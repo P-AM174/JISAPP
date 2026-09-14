@@ -37,10 +37,13 @@ import {
   X,
   Package,
   FolderOpen,
+  Rocket,
+  ThumbsUp,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
+import { CategoryIcon } from "@/lib/category-icon";
 import type { HomeCatalogData } from "@/lib/home/catalog";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
 import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
@@ -516,7 +519,7 @@ function SiteHeader({
               { label: "生産性ツール",           href: "/search?category=生産性"     },
               { label: "業務効率化",             href: "/search?category=業務効率化" },
               { label: "SNS運用",                href: "/search?category=SNS運用"    },
-              { label: "🎮 個人開発のゲーム",    href: "/search?category=ゲーム"     },
+              { label: "個人開発のゲーム",       href: "/search?category=ゲーム"     },
               { label: "無料アプリ",             href: "/search?filter=free"         },
               { label: "みんなのリクエスト",     href: "/requests"                   },
             ].map((item) => (
@@ -835,9 +838,7 @@ function HomeLibrarySection() {
         />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {library.map((entry) => {
-            const cat = entry.category ? CATEGORY_MAP[entry.category] : null;
             const gradient = getGradient(entry);
-            const emoji = cat?.emoji ?? "✨";
             return (
               <Link
                 key={entry.appId}
@@ -847,7 +848,7 @@ function HomeLibrarySection() {
                 <MiniPreview
                   id={entry.appId}
                   fallbackGradient={gradient}
-                  fallbackEmoji={emoji}
+                  fallbackCategoryId={entry.category}
                   height={96}
                 />
                 <div className="flex flex-1 flex-col gap-1 p-3">
@@ -997,8 +998,8 @@ export function HomePageClient({
         {popularMonth.length > 0 && (
           <section>
             <SectionHeader
-              icon={<Crown className="h-5 w-5 text-amber-500" />}
-              title="👑 今月の人気アプリ TOP5"
+              icon={<Crown className="h-5 w-5 text-amber-500" strokeWidth={2.5} />}
+              title="今月の人気アプリ TOP5"
               sub="今月最も応援バッジをもらったアプリ"
             />
             <div className="relative">
@@ -1006,7 +1007,6 @@ export function HomePageClient({
                 {popularMonth.map((app, i) => {
                   const cat = app.category ? CATEGORY_MAP[app.category] : null;
                   const gradient = cat?.gradient ?? "from-emerald-500 to-teal-600";
-                  const emoji    = cat?.emoji    ?? "✨";
                   const modalApp: ModalApp = {
                     id: app.id,
                     name: app.title,
@@ -1016,7 +1016,7 @@ export function HomePageClient({
                     reviews: app.stamp_count ?? 0,
                     category: cat?.name ?? app.category ?? "",
                     gradient,
-                    emoji,
+                    categoryId: app.category ?? null,
                   };
                   const rankColors = [
                     "bg-amber-400 text-amber-900",
@@ -1035,14 +1035,15 @@ export function HomePageClient({
                       <div className={`absolute top-2 left-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black shadow-sm ${rankColors[i] ?? rankColors[4]}`}>
                         {i + 1}
                       </div>
-                      <MiniPreview id={app.id} fallbackGradient={gradient} fallbackEmoji={emoji} height={96} />
+                      <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} height={96} />
                       <div className="p-2.5">
                         <p className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
                           {app.title}
                         </p>
                         {(app.stamp_count ?? 0) > 0 && (
-                          <p className="mt-1 text-[10px] text-emerald-600 font-semibold">
-                            👍 {app.stamp_count}
+                          <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
+                            <ThumbsUp className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                            {app.stamp_count}
                           </p>
                         )}
                       </div>
@@ -1058,8 +1059,8 @@ export function HomePageClient({
         {popularCreators.length > 0 && (
           <section>
             <SectionHeader
-              icon={<Users className="h-5 w-5 text-blue-500" />}
-              title="🌟 人気クリエイター"
+              icon={<Users className="h-5 w-5 text-blue-500" strokeWidth={2.5} />}
+              title="人気クリエイター"
               sub="たくさんのアプリを作った注目のユーザー"
             />
             <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -1109,7 +1110,7 @@ export function HomePageClient({
                             reviews: 0,
                             category: cat?.name ?? creator.topApp!.category ?? "",
                             gradient: cat?.gradient ?? "from-emerald-500 to-teal-600",
-                            emoji: cat?.emoji,
+                            categoryId: creator.topApp!.category ?? null,
                           });
                         }}
                         className="mt-2 w-full rounded-lg bg-gray-50 px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors line-clamp-1"
@@ -1127,8 +1128,8 @@ export function HomePageClient({
         {/* ─── プレイグラウンドアプリ（人気順） ─── */}
         <section>
           <SectionHeader
-            icon={<Terminal className="h-5 w-5 text-violet-500" />}
-            title="🛠️ みんなが作ったアプリ"
+            icon={<Terminal className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
+            title="みんなが作ったアプリ"
             sub="応援バッジが多い順 · 開発スタジオで作成・公開"
             href="/search?source=playground"
           />
@@ -1151,13 +1152,14 @@ export function HomePageClient({
                   key={cat.id}
                   onClick={() => setPgCategoryFilter(pgCategoryFilter === cat.id ? "all" : cat.id)}
                   className={cn(
-                    "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
                     pgCategoryFilter === cat.id
                       ? "bg-violet-600 text-white shadow-sm"
                       : "bg-gray-100 text-gray-600 hover:bg-violet-50 hover:text-violet-700"
                   )}
                 >
-                  {cat.emoji} {cat.name}
+                  <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
+                  {cat.name}
                 </button>
               ))}
             </div>
@@ -1191,7 +1193,7 @@ export function HomePageClient({
         <section>
           <SectionHeader
             icon={<JisappLogoIcon className="h-5 w-5" />}
-            title="✨ 新着アプリ"
+            title="新着アプリ"
             sub="最近開発スタジオで公開された新しいアプリ"
             href="/search?sort=new"
           />
@@ -1222,8 +1224,8 @@ export function HomePageClient({
         {gameApps.length > 0 && (
           <section>
             <SectionHeader
-              icon={<Gamepad2 className="h-5 w-5 text-violet-500" />}
-              title="🎮 ゲームアプリ"
+              icon={<Gamepad2 className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
+              title="ゲームアプリ"
               sub="ジサップで作られた遊べるゲーム集。ブラウザひとつで今すぐプレイ！"
               href="/search?category=ゲーム"
             />
@@ -1332,7 +1334,10 @@ export function HomePageClient({
                   <Terminal className="h-4 w-4" />
                   初心者大歓迎
                 </div>
-                <h2 className="text-2xl font-black">今すぐ、あなたの最初のアプリを作ろう 🚀</h2>
+                <h2 className="flex items-center gap-2 text-2xl font-black">
+                  今すぐ、あなたの最初のアプリを作ろう
+                  <Rocket className="h-6 w-6 shrink-0" strokeWidth={2.5} />
+                </h2>
                 <p className="mt-1.5 text-sm text-white/70 max-w-md">
                   AIにアイデアを伝えてコードを生成 → 開発スタジオに貼るだけ。サーバーもDBも設定不要です。
                 </p>
@@ -1375,9 +1380,10 @@ export function HomePageClient({
               <Link
                 key={cat.id}
                 href={`/category/${cat.id}`}
-                className="rounded-full bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-500 ring-1 ring-gray-100 hover:text-emerald-600 hover:ring-emerald-200"
+                className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-500 ring-1 ring-gray-100 hover:text-emerald-600 hover:ring-emerald-200"
               >
-                {cat.emoji} {cat.name}
+                <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
+                {cat.name}
               </Link>
             ))}
           </nav>

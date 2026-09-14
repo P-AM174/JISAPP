@@ -8,6 +8,7 @@ import {
   Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
   Flag, Hash, Search, UserX, MessageSquare, Star, Code2, Mail, Bell, Send,
+  Smartphone, type LucideIcon,
 } from "lucide-react";
 import { ADMIN_FLAG_OPTIONS, adminFlagLabel } from "@/lib/support/admin-flags";
 
@@ -451,22 +452,23 @@ export default function AdminDashboard() {
         {/* タブ */}
         <div className="mx-auto max-w-7xl px-4 flex gap-1 overflow-x-auto">
           {([
-            { id: "dashboard", label: "📊 ダッシュボード" },
-            { id: "apps",      label: "📱 アプリ管理",    count: products.length,       countCls: "bg-gray-400"    },
-            { id: "inquiries", label: "💬 問い合わせ",    count: openInquiryCount,    countCls: "bg-blue-500"    },
-            { id: "reports",   label: "🚨 報告",          count: pendingReports.length, countCls: "bg-rose-500"    },
-            { id: "users",     label: "👤 ユーザー管理",   count: users.length,          countCls: "bg-emerald-500" },
-          ] as { id: Tab; label: string; count?: number; countCls?: string }[]).map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
+            { id: "dashboard", label: "ダッシュボード", icon: BarChart3 },
+            { id: "apps",      label: "アプリ管理",    icon: Smartphone,    count: products.length,       countCls: "bg-gray-400"    },
+            { id: "inquiries", label: "問い合わせ",    icon: MessageSquare, count: openInquiryCount,    countCls: "bg-blue-500"    },
+            { id: "reports",   label: "報告",          icon: Flag,          count: pendingReports.length, countCls: "bg-rose-500"    },
+            { id: "users",     label: "ユーザー管理",   icon: Users,         count: users.length,          countCls: "bg-emerald-500" },
+          ] as { id: Tab; label: string; icon: LucideIcon; count?: number; countCls?: string }[]).map(({ id, label, icon: Icon, count, countCls }) => (
+            <button key={id} onClick={() => setTab(id)}
               className={`relative flex shrink-0 items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-t-xl transition-colors border-b-2 ${
-                tab === t.id
+                tab === id
                   ? "border-emerald-500 text-emerald-700 bg-emerald-50/60"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}>
-              {t.label}
-              {t.count !== undefined && t.count > 0 && (
-                <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black text-white ${t.countCls}`}>
-                  {t.count}
+              <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+              {label}
+              {count !== undefined && count > 0 && (
+                <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black text-white ${countCls}`}>
+                  {count}
                 </span>
               )}
             </button>

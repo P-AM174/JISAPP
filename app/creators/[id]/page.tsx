@@ -23,10 +23,14 @@ import {
   Globe,
   Package,
   MessageSquare,
+  MessageCircle,
   Send,
   X,
   CheckCircle2,
   Lock,
+  Trophy,
+  Flame,
+  Sparkles,
 } from "lucide-react";
 import { CreatorProfileClient } from "@/components/creator/creator-profile-client";
 
@@ -37,7 +41,8 @@ const CREATORS = [
     name: "田中 拓也",
     handle: "@takuya_dev",
     avatar: "TT",
-    badge: "🏆 トップクリエイター",
+    badge: "トップクリエイター",
+    badgeIcon: Trophy,
     specialty: "生産性・AI",
     color: "from-emerald-500 to-teal-600",
     apps: 24,
@@ -53,7 +58,8 @@ const CREATORS = [
     name: "山田 彩花",
     handle: "@ayaka_design",
     avatar: "YA",
-    badge: "⭐ 殿堂入り",
+    badge: "殿堂入り",
+    badgeIcon: Star,
     specialty: "デザイン・UI",
     color: "from-green-500 to-emerald-600",
     apps: 18,
@@ -69,7 +75,8 @@ const CREATORS = [
     name: "佐々木 健",
     handle: "@ken_techlab",
     avatar: "SK",
-    badge: "🔥 急上昇中",
+    badge: "急上昇中",
+    badgeIcon: Flame,
     specialty: "データ分析",
     color: "from-teal-500 to-cyan-600",
     apps: 31,
@@ -85,7 +92,8 @@ const CREATORS = [
     name: "中村 美咲",
     handle: "@misaki_apps",
     avatar: "NM",
-    badge: "✨ 新鋭",
+    badge: "新鋭",
+    badgeIcon: Sparkles,
     specialty: "マーケ・SNS",
     color: "from-emerald-400 to-green-600",
     apps: 15,
@@ -250,9 +258,12 @@ function EstimateModal({ creatorName, creatorId, onClose }: { creatorName: strin
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
-            <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-700">
-              💬 <span className="font-semibold">{creatorName}</span> さんへの見積もり相談フォームです。
-              要件と予算感を共有してください。
+            <div className="flex items-start gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-700">
+              <MessageCircle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
+              <span>
+                <span className="font-semibold">{creatorName}</span> さんへの見積もり相談フォームです。
+                要件と予算感を共有してください。
+              </span>
             </div>
             {error && <p className="rounded-xl bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600">{error}</p>}
 
@@ -416,6 +427,8 @@ function LegacyCreatorDetailPage({ creatorId }: { creatorId: number }) {
     );
   }
 
+  const BadgeIcon = creator.badgeIcon;
+
   return (
     <div className="min-h-screen bg-[#f3f6f4]">
       {showEstimate && creator && (
@@ -435,7 +448,7 @@ function LegacyCreatorDetailPage({ creatorId }: { creatorId: number }) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
               <Lock className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="text-lg font-black text-gray-900 mb-1">🔒 ログインが必要です</h2>
+            <h2 className="text-lg font-black text-gray-900 mb-1">ログインが必要です</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">
               クリエイターへの依頼・相談には<br />ログインが必要です。
             </p>
@@ -479,7 +492,7 @@ function LegacyCreatorDetailPage({ creatorId }: { creatorId: number }) {
               </div>
               <div className="text-center sm:text-left">
                 <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white/25 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
-                  <BadgeCheck className="h-3.5 w-3.5" />
+                  <BadgeIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                   {creator.badge}
                 </div>
                 <h1 className="text-xl font-black text-white sm:text-2xl">{creator.name}</h1>
@@ -633,7 +646,8 @@ function LegacyCreatorDetailPage({ creatorId }: { creatorId: number }) {
                             href={`/apps/${app.id}`}
                             className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
                           >
-                            📦 {app.name}
+                            <Package className="h-3 w-3 shrink-0" strokeWidth={2} />
+                            {app.name}
                           </Link>
                         )}
                         <span className="text-[11px] text-gray-400">{review.date}</span>

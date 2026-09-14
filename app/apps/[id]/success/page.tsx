@@ -13,7 +13,8 @@ import {
   Copy,
   Check,
   Star,
-  Sparkles,
+  Rocket,
+  PartyPopper,
   ExternalLink,
   ArrowRight,
   MessageSquare,
@@ -54,7 +55,7 @@ function main() {
   const config = getConfig();
   const data   = fetchData(config);
   const result = processAndWrite(data);
-  Logger.log("✅ 完了: %s 件処理", result.count);
+  Logger.log("完了: %s 件処理", result.count);
   if (config.slackWebhook) notifySlack(config, result);
 }
 
@@ -83,7 +84,7 @@ function processAndWrite(rows) {
 
   const processed = rows.slice(1).map((row, i) => [
     i + 1, row[0], row[1], row[2],
-    "✅ 済", new Date().toLocaleString("ja-JP"),
+    "処理済み", new Date().toLocaleString("ja-JP"),
   ]);
   processed.forEach(r => out.appendRow(r));
   out.getRange(1, 1, 1, header.length)
@@ -93,7 +94,7 @@ function processAndWrite(rows) {
 
 function notifySlack(config, result) {
   const body = {
-    text: "📊 *${name}* 処理完了\\n件数: " + result.count + " 件",
+    text: "*${name}* 処理完了\\n件数: " + result.count + " 件",
   };
   UrlFetchApp.fetch(config.slackWebhook, {
     method: "post",
@@ -137,7 +138,10 @@ function setDailyTrigger() {
       max-width: 480px;
       box-shadow: 0 4px 24px rgba(0,0,0,.08);
     }
-    h1 { font-size: 1.2rem; color: #065f46; margin-bottom: 1rem; }
+    h1 {
+      font-size: 1.2rem; color: #065f46; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
     .btn {
       width: 100%; padding: .875rem;
       background: #10b981; color: white;
@@ -151,19 +155,26 @@ function setDailyTrigger() {
       margin-top: 1rem; padding: .75rem;
       background: #d1fae5; border-radius: 8px;
       color: #065f46; font-size: .85rem;
+      align-items: center; gap: .5rem;
       display: none;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>🚀 ${name}</h1>
+    <h1>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+      <span>${name}</span>
+    </h1>
     <p style="font-size:.85rem;color:#6b7280;line-height:1.6">
       このアプリは ${creator} が開発しました。<br>
       カテゴリ: ${category}
     </p>
     <button class="btn" onclick="runApp()">実行する</button>
-    <div class="status" id="status">✅ 処理が完了しました！</div>
+    <div class="status" id="status">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span id="statusText">処理が完了しました！</span>
+    </div>
   </div>
   <script>
     function runApp() {
@@ -174,8 +185,8 @@ function setDailyTrigger() {
     }
     function onSuccess(result) {
       const el = document.getElementById("status");
-      el.style.display = "block";
-      el.textContent = "✅ 完了しました！結果シートをご確認ください。";
+      el.style.display = "flex";
+      document.getElementById("statusText").textContent = "完了しました！結果シートをご確認ください。";
     }
     function onError(err) {
       alert("エラー: " + err.message);
@@ -360,8 +371,8 @@ export default function PurchaseSuccessPage() {
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
           <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10" />
           <div className="relative">
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-3xl shadow-lg">
-              🎉
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
+              <PartyPopper className="h-10 w-10 text-white" strokeWidth={2.5} />
             </div>
             <h1 className="text-xl font-black text-white">ご購入ありがとうございました！</h1>
             <p className="mt-1 text-sm text-white/80">「{meta.name}」の取引が完了しました</p>
@@ -398,8 +409,8 @@ export default function PurchaseSuccessPage() {
         ) : (
           <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
             <div className="mb-1 flex items-center gap-2 text-xs font-bold text-emerald-600">
-              <Sparkles className="h-3.5 w-3.5" />
-              🚀 クイック導入
+              <Rocket className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              クイック導入
             </div>
             <p className="text-sm text-gray-600">
               下のソースコードをコピーして、Google Apps Script や HTML エディタに貼り付けてご利用ください。
@@ -509,7 +520,7 @@ export default function PurchaseSuccessPage() {
                 <StarPicker value={starRating} onChange={setStarRating} />
                 {starRating > 0 && (
                   <p className="mt-1 text-xs text-amber-600 font-medium">
-                    {["", "残念でした", "もう少しかな", "良かったです", "とても良かった！", "最高でした！🎉"][starRating]}
+                    {["", "残念でした", "もう少しかな", "良かったです", "とても良かった！", "最高でした！"][starRating]}
                   </p>
                 )}
               </div>
@@ -539,8 +550,8 @@ export default function PurchaseSuccessPage() {
             </form>
           ) : (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl">
-                ⭐
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+                <Star className="h-7 w-7 fill-amber-400 text-amber-400" strokeWidth={2} />
               </div>
               <p className="font-bold text-emerald-700">レビューを投稿しました！</p>
               <div className="flex gap-0.5">

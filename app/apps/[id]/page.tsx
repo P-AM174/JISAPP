@@ -29,6 +29,11 @@ import {
   Share2,
   Flag,
   AlertCircle,
+  Check,
+  SearchX,
+  Link2,
+  Lightbulb,
+  FileSpreadsheet,
 } from "lucide-react";
 import { type AppRow } from "@/lib/supabase";
 import { AppUpdateModal, type PendingUpdateInfo } from "@/components/library/app-update-modal";
@@ -177,7 +182,7 @@ function SupabaseAppPage({ id }: { id: string }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 text-center px-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
-          <span className="text-3xl">🔍</span>
+          <SearchX className="h-8 w-8 text-gray-400" strokeWidth={2} />
         </div>
         <p className="text-lg font-bold text-gray-700">
           {adminRemoved ? "このアプリは運営により削除されました" : "アプリが見つかりませんでした"}
@@ -598,7 +603,9 @@ function MarketplaceAppPage({ id }: { id: string }) {
         {/* ④ アプリの説明 */}
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-700">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">✓</span>
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <Check className="h-3 w-3" strokeWidth={2.5} />
+            </span>
             このアプリで解決できること
           </h2>
           <p className="text-sm leading-relaxed text-gray-600">{app.description}</p>
@@ -607,8 +614,9 @@ function MarketplaceAppPage({ id }: { id: string }) {
         {/* ⑤ 仮体験エリア（目玉機能） */}
         <section>
           <div className="mb-3 flex items-center gap-2">
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-              🎮 購入前に無料で仮体験できます
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+              <Gamepad2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              購入前に無料で仮体験できます
             </span>
           </div>
           <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/60">
@@ -773,8 +781,8 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 onClick={() => router.push(`/apps/${id}/success`)}
                 className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-100 px-5 py-3.5 text-sm font-bold text-emerald-700 shadow-sm transition-all hover:bg-emerald-200 active:scale-[0.97]"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                取得済み ✓ ライブラリへ
+                <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+                取得済み · ライブラリへ
               </button>
             ) : (
               <button
@@ -805,7 +813,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
               <Lock className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="text-lg font-black text-gray-900 mb-1">🔒 ログインが必要です</h2>
+            <h2 className="text-lg font-black text-gray-900 mb-1">ログインが必要です</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">
               安全な取引のためにログインが必要です。<br />
               ログイン画面へ移動しますか？
@@ -841,7 +849,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             {/* ヘッダー */}
             <div className="bg-amber-50 border-b border-amber-100 px-6 py-5 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100">
-                <span className="text-xl">🔗</span>
+                <Link2 className="h-5 w-5 text-amber-600" strokeWidth={2.5} />
               </div>
               <div>
                 <h2 className="text-base font-black text-amber-900">外部サイトへ移動します</h2>
@@ -856,15 +864,16 @@ function MarketplaceAppPage({ id }: { id: string }) {
               </p>
               <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 space-y-2.5">
                 <p className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
-                  💡 安全にコピーする方法
+                  <Lightbulb className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                  安全にコピーする方法
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
-                    <span className="shrink-0 mt-0.5">📊</span>
+                    <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
                     <span><span className="font-semibold">Googleスプレッドシートの場合</span>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。</span>
                   </li>
                   <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
-                    <span className="shrink-0 mt-0.5">📓</span>
+                    <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
                     <span><span className="font-semibold">Notionの場合</span>：ページ右上の「・・・」→「複製」を押して、ご自身のワークスペースにコピーしてください。</span>
                   </li>
                 </ul>
@@ -935,7 +944,10 @@ function MarketplaceAppPage({ id }: { id: string }) {
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-black text-emerald-700">FREE</span>
                     {(app as { type?: string }).type === "url" && (
-                      <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-bold text-blue-700">🔗 URLリンク</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-0.5 text-xs font-bold text-blue-700">
+                        <Link2 className="h-3 w-3 shrink-0" strokeWidth={2} />
+                        URLリンク
+                      </span>
                     )}
                   </div>
                 </div>
@@ -944,7 +956,10 @@ function MarketplaceAppPage({ id }: { id: string }) {
               {/* 確認メッセージ */}
               <div className="rounded-2xl bg-emerald-50 p-5 ring-1 ring-emerald-100 text-center space-y-1">
                 <p className="text-base font-black text-gray-800">このアプリをマイページに追加しますか？</p>
-                <p className="text-sm text-emerald-700">取得後すぐにソースコードを確認できます ✅</p>
+                <p className="flex items-center justify-center gap-1.5 text-sm text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  取得後すぐにソースコードを確認できます
+                </p>
               </div>
 
               {/* ボタン */}

@@ -190,7 +190,7 @@ export default function ChatPage() {
             id: `sys_auto_${Date.now()}`,
             sender: "system",
             senderName: "ジサップシステム",
-            text: "⏳ 納品から48時間が経過したため、タイマーシステムにより取引を自動的に完了しました。売上金が出品者に反映されます。",
+            text: "納品から48時間が経過したため、タイマーシステムにより取引を自動的に完了しました。売上金が出品者に反映されます。",
             timestamp: nowTime(),
           },
         ]);
@@ -216,7 +216,7 @@ export default function ChatPage() {
           id: `sys_warn_${Date.now()}`,
           sender: "system",
           senderName: "ジサップシステム",
-          text: "⚠️ トラブル検知：購入者から動作不良の報告があったため、Gemini AIがソースコードの緊急動作検証を開始します...",
+          text: "トラブル検知：購入者から動作不良の報告があったため、Gemini AIがソースコードの緊急動作検証を開始します...",
           timestamp: nowTime(),
           isLoading: true,
         },
@@ -231,7 +231,7 @@ export default function ChatPage() {
               ? {
                   ...m,
                   isLoading: false,
-                  text: "⚠️ トラブル検知：購入者から動作不良の報告があったため、Gemini AIがソースコードの緊急動作検証を完了しました。",
+                  text: "トラブル検知：購入者から動作不良の報告があったため、Gemini AIがソースコードの緊急動作検証を完了しました。",
                 }
               : m
           );
@@ -287,7 +287,7 @@ export default function ChatPage() {
         id: `sys_deliver_${Date.now()}`,
         sender: "system",
         senderName: "ジサップシステム",
-        text: `📦 ${room.creatorName} が納品しました。購入者は動作確認のうえ【受取完了】または不具合報告を行ってください。`,
+        text: `${room.creatorName} が納品しました。購入者は動作確認のうえ【受取完了】または不具合報告を行ってください。`,
         timestamp: nowTime(),
       },
     ]);
@@ -462,7 +462,7 @@ export default function ChatPage() {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
               <div>
                 <p className="text-xs font-bold text-orange-800">
-                  ⚠️ 購入者が48時間以内に承認または不具合報告を行わない場合、取引は自動的に完了します
+                  購入者が48時間以内に承認または不具合報告を行わない場合、取引は自動的に完了します
                 </p>
                 <p className="mt-1 font-mono text-lg font-black text-orange-700">
                   残り {formatCountdown(displayTimerSec)}
@@ -701,7 +701,7 @@ export default function ChatPage() {
                               <Bot className="h-4 w-4 text-white" />
                             </div>
                             <span className="text-[11px] font-black text-blue-700">
-                              🤖 Gemini AIからの裁定
+                              Gemini AIからの裁定
                             </span>
                           </div>
                         )}

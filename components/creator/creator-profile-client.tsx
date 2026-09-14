@@ -12,6 +12,9 @@ import {
   Zap,
   ChevronRight,
   Sparkles,
+  ThumbsUp,
+  Brain,
+  Palette,
 } from "lucide-react";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
 import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
@@ -228,7 +231,27 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
             <h2 className="text-base font-black text-gray-900">クリエイター評価について</h2>
           </div>
           <p className="text-sm leading-relaxed text-gray-600">
-            評価は出品アプリへの応援バッジ（👍いいね・🧠天才・⚡便利・🎨デザイン）の合計から算出しています。
+            評価は出品アプリへの応援バッジ（
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <ThumbsUp className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              いいね
+            </span>
+            ・
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Brain className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              天才
+            </span>
+            ・
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Zap className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              便利
+            </span>
+            ・
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Palette className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              デザイン
+            </span>
+            ）の合計から算出しています。
             フォロワー数はフォロー操作と応援数をもとに表示されます。
           </p>
         </section>

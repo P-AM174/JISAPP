@@ -28,10 +28,7 @@ function buildEmailHtml(name: string, code: string): string {
           <!-- ヘッダー -->
           <tr>
             <td style="background:linear-gradient(135deg,#059669,#10b981);padding:32px 40px;text-align:center;">
-              <div style="display:inline-flex;align-items:center;gap:10px;">
-                <div style="width:36px;height:36px;background:rgba(255,255,255,.25);border-radius:10px;display:flex;align-items:center;justify-content:center;">
-                  <span style="font-size:18px;">✦</span>
-                </div>
+              <div>
                 <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-.5px;">ジサップ</span>
               </div>
               <p style="color:rgba(255,255,255,.8);font-size:13px;margin:8px 0 0;">個人間アプリ売買プラットフォーム</p>

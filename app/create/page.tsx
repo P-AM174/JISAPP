@@ -9,6 +9,7 @@ import {
   Upload,
   ImagePlus,
   Zap,
+  Check,
   CheckCircle2,
   X,
   Code2,
@@ -17,8 +18,16 @@ import {
   Plus,
   Trash2,
   FileCode,
+  FolderOpen,
   Globe,
   Lock,
+  Link2,
+  Lightbulb,
+  BarChart3,
+  NotebookText,
+  Laptop,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/back-button";
@@ -98,7 +107,7 @@ function findDuplicateListing(
     const suffix = matchedAppName ? `（既存出品：「${matchedAppName}」）` : "";
     return {
       isDuplicate: true,
-      message: `⚠️ このソースコードは既にジサップに出品されているため、二重出品はできません。${suffix}`,
+      message: `このソースコードは既にジサップに出品されているため、二重出品はできません。${suffix}`,
       matchedAppName,
     };
   }
@@ -271,9 +280,10 @@ const PLACEHOLDER_HTML = `<!DOCTYPE html>
 <style>
   body{margin:0;font-family:sans-serif;background:#f9fafb;display:flex;align-items:center;justify-content:center;height:100vh;}
   .box{text-align:center;color:#9ca3af;padding:1rem;}
-  .icon{font-size:2rem;margin-bottom:.5rem;}
+  .icon{margin-bottom:.5rem;line-height:0;color:#9ca3af;}
+  .icon svg{display:inline-block;}
 </style></head>
-<body><div class="box"><div class="icon">📱</div><p style="font-size:.8rem">HTMLを貼り付けると<br>ここに表示されます</p></div></body></html>`;
+<body><div class="box"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></div><p style="font-size:.8rem">HTMLを貼り付けると<br>ここに表示されます</p></div></body></html>`;
 
 // ─── メインページ ───
 function CreatePageInner() {
@@ -523,7 +533,10 @@ function CreatePageInner() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
               <Lock className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="text-lg font-black text-gray-900 mb-2">🔒 ログインが必要です</h2>
+            <h2 className="mb-2 flex items-center justify-center gap-2 text-lg font-black text-gray-900">
+              <Lock className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+              ログインが必要です
+            </h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">
               安全な取引のためにログインが必要です。<br />
               アカウントを作成するかログインしてください。
@@ -585,7 +598,19 @@ function CreatePageInner() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">出品タイプ</p>
-                  <p className="mt-1 text-sm text-gray-800">{listingType === "url" ? "🔗 URLリンク" : "📂 ファイル"}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-800">
+                    {listingType === "url" ? (
+                      <>
+                        <Link2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+                        URLリンク
+                      </>
+                    ) : (
+                      <>
+                        <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
+                        ファイル
+                      </>
+                    )}
+                  </p>
                 </div>
               </div>
               {/* URL出品の場合はURLを表示 */}
@@ -603,7 +628,10 @@ function CreatePageInner() {
                       {processedUrl || processSourceUrl(productUrl).source_url}
                     </p>
                     {(detectedType === "google" || processSourceUrl(productUrl).product_type === "google") && (
-                      <p className="mt-1 text-[10px] text-emerald-600">✓ Google 用に /copy リンクへ自動変換されます</p>
+                      <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600">
+                        <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                        Google 用に /copy リンクへ自動変換されます
+                      </p>
                     )}
                   </div>
                 </div>
@@ -616,8 +644,9 @@ function CreatePageInner() {
               {/* プレビューコード (ファイル出品のみ) */}
               {listingType === "file" && previewFiles.some(f => f.content.trim()) && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-                    🌐 プレビュー用コード（{previewFiles.length}ファイル）
+                  <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    プレビュー用コード（{previewFiles.length}ファイル）
                   </p>
                   {previewFiles.map((f, i) => (
                     <div key={i} className="mb-2 overflow-hidden rounded-xl border border-teal-100">
@@ -635,8 +664,9 @@ function CreatePageInner() {
               {/* 製品版コード (ファイル出品のみ) */}
               {listingType === "file" && productFiles.some(f => f.content.trim()) && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-                    🔒 製品版コード（{productFiles.length}ファイル）
+                  <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <Lock className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    製品版コード（{productFiles.length}ファイル）
                   </p>
                   {productFiles.map((f, i) => (
                     <div key={i} className="mb-2 overflow-hidden rounded-xl border border-slate-200">
@@ -727,7 +757,10 @@ function CreatePageInner() {
                   <Code2 className="h-5 w-5 text-violet-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-violet-800">開発スタジオのコードを自動反映しました ✓</p>
+                  <p className="flex items-center gap-1.5 text-sm font-black text-violet-800">
+                    開発スタジオのコードを自動反映しました
+                    <Check className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                  </p>
                   <p className="text-xs text-violet-500 mt-0.5">アプリ名・説明文を入力して出品を完成させよう</p>
                 </div>
               </div>
@@ -847,8 +880,9 @@ function CreatePageInner() {
                     )}
                   </div>
                   <div>
-                    <p className={cn("text-sm font-bold", listingType === "file" ? "text-emerald-800" : "text-gray-700")}>
-                      📂 ファイル・コードで出品
+                    <p className={cn("flex items-center gap-1.5 text-sm font-bold", listingType === "file" ? "text-emerald-800" : "text-gray-700")}>
+                      <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                      ファイル・コードで出品
                     </p>
                     <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
                       HTMLアプリ、GASスクリプト、Webツールなどのソースコードをそのまま出品
@@ -876,8 +910,9 @@ function CreatePageInner() {
                     )}
                   </div>
                   <div>
-                    <p className={cn("text-sm font-bold", listingType === "url" ? "text-blue-800" : "text-gray-700")}>
-                      🔗 URLリンクで出品
+                    <p className={cn("flex items-center gap-1.5 text-sm font-bold", listingType === "url" ? "text-blue-800" : "text-gray-700")}>
+                      <Link2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                      URLリンクで出品
                     </p>
                     <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
                       Googleスプレッドシート、Notionテンプレート、Webサイトなど外部リンクで共有
@@ -895,8 +930,9 @@ function CreatePageInner() {
                     <Globe className="h-4.5 w-4.5 text-blue-600" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-blue-800">
-                      🔗 外部リンクの設定 <span className="text-rose-500">*</span>
+                    <h2 className="flex items-center gap-1.5 text-sm font-bold text-blue-800">
+                      <Link2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                      外部リンクの設定 <span className="text-rose-500">*</span>
                     </h2>
                     <p className="mt-0.5 text-xs leading-relaxed text-blue-600">
                       ユーザーが「GETする」を押したときに案内する、共有可能なURLを入力してください。
@@ -923,7 +959,8 @@ function CreatePageInner() {
                     />
                     {urlError && (
                       <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-600">
-                        <span>⚠</span> {urlError}
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                        {urlError}
                       </p>
                     )}
                     {detectedType && !urlError && (
@@ -943,23 +980,24 @@ function CreatePageInner() {
                   {/* 注意書きガイド */}
                   <div className="rounded-xl bg-amber-50 px-4 py-3.5 ring-1 ring-amber-200 space-y-2">
                     <p className="flex items-center gap-1.5 text-xs font-bold text-amber-800">
-                      💡 共有設定のヒント
+                      <Lightbulb className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                      共有設定のヒント
                     </p>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
-                        <span className="mt-0.5 shrink-0">📊</span>
+                        <BarChart3 className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                         <span>
                           <span className="font-semibold">Googleスプレッドシート / ドキュメント</span> の場合は、「共有」→「リンクを知っている全員」に変更してからURLを貼ってください。
                         </span>
                       </li>
                       <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
-                        <span className="mt-0.5 shrink-0">📓</span>
+                        <NotebookText className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                         <span>
                           <span className="font-semibold">Notion</span> の場合は、右上の「共有」→「ウェブで公開」をオンにするか、「リンクをコピー」して貼り付けてください。
                         </span>
                       </li>
                       <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
-                        <span className="mt-0.5 shrink-0">💻</span>
+                        <Laptop className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                         <span>
                           <span className="font-semibold">Replit</span> の場合は、プロジェクトの共有 URL を貼り付けてください。購入者は Fork で複製できます。
                         </span>
@@ -983,8 +1021,9 @@ function CreatePageInner() {
                   <Globe className="h-4.5 w-4.5 text-teal-600" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-teal-800">
-                    🌐 購入前の「仮体験エリア」で動作させるコード
+                  <h2 className="flex items-start gap-1.5 text-sm font-bold text-teal-800">
+                    <Globe className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    購入前の「仮体験エリア」で動作させるコード
                   </h2>
                   <p className="mt-0.5 text-xs leading-relaxed text-teal-600">
                     購入検討者が詳細画面でポチポチ試せるプレビュー用コードです。製品版のロジックを隠した簡易UIなどを入力してください。
@@ -1073,9 +1112,12 @@ function CreatePageInner() {
                   <Lock className="h-4.5 w-4.5 text-slate-600" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-800">
-                    🔒 購入者だけが閲覧・コピーできる製品版コード
-                    <span className="ml-1 text-rose-500">*</span>
+                  <h2 className="flex items-start gap-1.5 text-sm font-bold text-slate-800">
+                    <Lock className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    <span>
+                      購入者だけが閲覧・コピーできる製品版コード
+                      <span className="ml-1 text-rose-500">*</span>
+                    </span>
                   </h2>
                   <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
                     決済完了後、取引画面で初めて開示される本物のソースコードです。<span className="font-semibold text-slate-700">ここに入力したコードは購入前には絶対に表示されません。</span>
@@ -1123,7 +1165,7 @@ function CreatePageInner() {
                   </button>
 
                   <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
-                    <span className="mt-0.5 text-sm">🔐</span>
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" strokeWidth={2} />
                     <p className="text-xs leading-relaxed text-amber-800">
                       このエリアのコードは暗号化されて保管され、<span className="font-bold">決済完了後の取引ページのみ</span>で閲覧できます。購入前の詳細画面には一切表示されません。
                     </p>
@@ -1131,8 +1173,9 @@ function CreatePageInner() {
 
                   {productCodeError && (
                     <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 ring-1 ring-rose-100">
-                      <p className="text-xs font-semibold leading-relaxed text-rose-600">
-                        ⚠️ {productCodeError}
+                      <p className="flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-rose-600">
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                        <span>{productCodeError}</span>
                       </p>
                     </div>
                   )}

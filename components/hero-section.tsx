@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -42,9 +43,18 @@ export function HeroSection() {
 
           {/* 安心バッジ */}
           <div className="mt-8 flex flex-wrap gap-4 text-xs text-white/70">
-            <span className="flex items-center gap-1">✓ プログラミング知識不要</span>
-            <span className="flex items-center gap-1">✓ サーバー・DB設定ゼロ</span>
-            <span className="flex items-center gap-1">✓ AIが生成したコードをそのまま貼るだけ</span>
+            <span className="flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+              プログラミング知識不要
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+              サーバー・DB設定ゼロ
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+              AIが生成したコードをそのまま貼るだけ
+            </span>
           </div>
         </div>
       </div>

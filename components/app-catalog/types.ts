@@ -7,7 +7,8 @@ export type ModalApp = {
   reviews: number;
   category: string;
   gradient: string;
-  emoji?: string;
+  /** カテゴリアイコン（SVG）表示用のカテゴリID */
+  categoryId?: string | null;
 };
 
 export type CatalogCardApp = {

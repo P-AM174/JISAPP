@@ -73,7 +73,7 @@ export function HeroVisual({ type }: { type: HeroVisual | null }) {
       <div className="relative mx-auto w-full max-w-sm space-y-3">
         {[
           { who: "ユーザーA", text: "家計簿アプリ欲しい！" },
-          { who: "ユーザーB", text: "作ってみました 🎉" },
+          { who: "ユーザーB", text: "作ってみました！" },
         ].map((msg, i) => (
           <div
             key={msg.who}

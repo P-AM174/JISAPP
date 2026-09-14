@@ -12,7 +12,7 @@ export function catalogToModalApp(app: CatalogCardApp): ModalApp {
     reviews: app.stamp_count ?? 0,
     category: cat?.name ?? app.category ?? "",
     gradient: cat?.gradient ?? "from-emerald-500 to-teal-600",
-    emoji: cat?.emoji ?? "✨",
+    categoryId: app.category ?? null,
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Copy, Check, X } from "lucide-react";
+import { ArrowRight, Copy, Check, X, PartyPopper, Package } from "lucide-react";
 
 interface PurchaseBarProps {
   appName: string;
@@ -67,7 +67,9 @@ export function PurchaseBar({ appName, priceLabel, isFree, dummyCode }: Purchase
               <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
               <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/10" />
               <div className="relative">
-                <div className="mb-3 text-5xl">🎉</div>
+                <div className="mb-3 flex justify-center">
+                  <PartyPopper className="h-12 w-12 text-white" strokeWidth={2.5} />
+                </div>
                 <h2 className="text-xl font-black text-white">ご購入ありがとうございました！</h2>
                 <p className="mt-1.5 text-sm text-emerald-100">
                   「{appName}」のソースコードを取得しました
@@ -79,7 +81,10 @@ export function PurchaseBar({ appName, priceLabel, isFree, dummyCode }: Purchase
             <div className="p-5">
               {/* コードブロックヘッダー */}
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-bold text-gray-700">📦 ソースコード</p>
+                <p className="flex items-center gap-1.5 text-sm font-bold text-gray-700">
+                  <Package className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  ソースコード
+                </p>
                 <button
                   onClick={handleCopy}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-200 ${

@@ -5,6 +5,7 @@ import { JisappLogo } from "@/components/jisapp-logo";
 import { BackButton } from "@/components/back-button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
+import { CategoryIcon } from "@/lib/category-icon";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { absoluteUrl } from "@/lib/seo/site";
 import { getAppsByCategory } from "@/lib/home/catalog";
@@ -77,8 +78,9 @@ export default async function CategoryPage({ params }: PageProps) {
       <main className="mx-auto max-w-4xl px-4 py-10">
         <div className="mb-8">
           <p className="text-sm font-semibold text-emerald-600">カテゴリ</p>
-          <h1 className="mt-1 text-3xl font-black text-gray-900">
-            {category.emoji} {category.name}のアプリ
+          <h1 className="mt-1 flex items-center gap-2 text-3xl font-black text-gray-900">
+            <CategoryIcon categoryId={category.id} className="h-7 w-7 text-emerald-600" strokeWidth={2.5} />
+            {category.name}のアプリ
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-gray-600">
             ジサップで公開されている{category.name}カテゴリのWebアプリ一覧です。
@@ -123,9 +125,10 @@ export default async function CategoryPage({ params }: PageProps) {
               <Link
                 key={cat.id}
                 href={`/category/${cat.id}`}
-                className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 hover:text-emerald-600 hover:ring-emerald-200"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 hover:text-emerald-600 hover:ring-emerald-200"
               >
-                {cat.emoji} {cat.name}
+                <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5" />
+                {cat.name}
               </Link>
             ))}
           </div>

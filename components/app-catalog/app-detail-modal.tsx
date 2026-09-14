@@ -16,6 +16,11 @@ import {
   ChevronRight,
   Star,
   Flag,
+  Brain,
+  Zap,
+  Palette,
+  AlertTriangle,
+  Smartphone,
 } from "lucide-react";
 import { AppReportModal } from "./app-report-modal";
 import { cn } from "@/lib/utils";
@@ -27,10 +32,10 @@ import { getCreatorProfilePath } from "./utils";
 import type { ModalApp } from "./types";
 
 const STAMPS = [
-  { id: "like", emoji: "👍", label: "いいね！" },
-  { id: "genius", emoji: "🧠", label: "天才！" },
-  { id: "useful", emoji: "⚡", label: "便利！" },
-  { id: "design", emoji: "🎨", label: "デザインが好き！" },
+  { id: "like", Icon: ThumbsUp, label: "いいね！" },
+  { id: "genius", Icon: Brain, label: "天才！" },
+  { id: "useful", Icon: Zap, label: "便利！" },
+  { id: "design", Icon: Palette, label: "デザインが好き！" },
 ] as const;
 type StampId = (typeof STAMPS)[number]["id"];
 
@@ -164,7 +169,7 @@ export function AppDetailModal({
           <MiniPreview
             id={app.id}
             fallbackGradient={app.gradient}
-            fallbackEmoji={app.emoji}
+            fallbackCategoryId={app.categoryId}
             height={180}
           />
           <button
@@ -228,7 +233,7 @@ export function AppDetailModal({
               <p className="text-xs font-bold text-emerald-800">応援バッジを送る</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {STAMPS.map(({ id, emoji, label }) => {
+              {STAMPS.map(({ id, Icon, label }) => {
                 const active = myStamps.includes(id);
                 const count = stampCounts[id] ?? 0;
                 return (
@@ -242,7 +247,7 @@ export function AppDetailModal({
                         : "border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50"
                     )}
                   >
-                    <span className="text-base">{emoji}</span>
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} />
                     <span className="flex-1 text-left text-xs">{label}</span>
                     {count > 0 && (
                       <span
@@ -271,7 +276,7 @@ export function AppDetailModal({
             {requestState === "done" ? (
               <div className="flex items-center gap-2 rounded-xl bg-violet-100 px-3 py-2.5 text-xs font-bold text-violet-700">
                 <CheckCircle2 className="h-4 w-4" />
-                リクエストを送りました！ありがとうございます🙌
+                リクエストを送りました！ありがとうございます！
               </div>
             ) : (
               <div className="flex gap-2">
@@ -302,7 +307,10 @@ export function AppDetailModal({
 
           {!isLoggedIn && status !== "loading" && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 leading-relaxed">
-              <p className="font-bold mb-0.5">⚠️ ログインせずにご利用の場合</p>
+              <p className="mb-0.5 flex items-center gap-1.5 font-bold">
+                <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                ログインせずにご利用の場合
+              </p>
               <p>
                 アプリは使えますが、データの保存はお使いのブラウザにのみ保存されます。
                 ブラウザデータを削除すると消えることがあります。
@@ -316,7 +324,10 @@ export function AppDetailModal({
 
           {libState === "done" && (
             <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-xs text-teal-800 leading-relaxed">
-              <p className="font-bold mb-1">📱 ホーム画面に追加しよう！</p>
+              <p className="mb-1 flex items-center gap-1.5 font-bold">
+                <Smartphone className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                ホーム画面に追加しよう！
+              </p>
               <p>ブラウザの「共有」→「ホーム画面に追加」でアプリのように起動できます。</p>
             </div>
           )}
@@ -352,7 +363,7 @@ export function AppDetailModal({
             {libState === "done" ? (
               <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-50 border border-teal-200 py-3 text-sm font-bold text-teal-700">
                 <CheckCircle2 className="h-4 w-4" />
-                マイライブラリに追加済み ✓
+                マイライブラリに追加済み
               </div>
             ) : (
               <button

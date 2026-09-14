@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Wifi,
+  PartyPopper,
+  Lock,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────
@@ -357,8 +359,9 @@ export default function CreateSuccessPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
               出品リクエスト受付完了
             </p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
-              マーケットに追加されました！🎉
+            <h1 className="mt-1 flex items-center justify-center gap-2 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
+              <PartyPopper className="h-6 w-6 shrink-0 text-emerald-500" strokeWidth={2.5} />
+              マーケットに追加されました！
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-gray-500">
               あなたのツールが必要な人のもとへ届きます。<br />
@@ -388,8 +391,8 @@ export default function CreateSuccessPage() {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {secResult?.safetyStatus === "clear" && (
               <div className="mb-3 flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-200">
-                <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
-                外部通信なし・完全クリーン ✅
+                <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2} />
+                外部通信なし・完全クリーン
               </div>
             )}
             {secResult?.safetyStatus === "verified" && (
@@ -455,8 +458,9 @@ export default function CreateSuccessPage() {
                   <p className="text-[11px] font-bold uppercase tracking-widest text-yellow-600 mb-0.5">
                     セキュリティ確認
                   </p>
-                  <h2 className="text-base font-black text-gray-800 leading-snug">
-                    🔒 ホワイトリスト外の外部通信が検知されました
+                  <h2 className="flex items-start gap-1.5 text-base font-black text-gray-800 leading-snug">
+                    <Lock className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" strokeWidth={2.5} />
+                    ホワイトリスト外の外部通信が検知されました
                   </h2>
                 </div>
               </div>

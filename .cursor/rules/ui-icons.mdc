@@ -1,0 +1,28 @@
+---
+description: ジサップのアイコン規約（絵文字禁止・インラインSVGで統一）
+alwaysApply: true
+---
+
+# アイコン規約
+
+- **絵文字（📱 ✨ 🎉 など）はUIに一切使わない。** コード・コピー・トースト文言・生成HTML・メール文面すべて対象。
+- アイコンは `lucide-react` のインラインSVGを使い、`strokeWidth` は **2（通常）〜2.5（見出し・強調）** で統一する。1.5以下や3以上は使わない。
+- サイズは隣接するテキストに合わせる（`h-3.5 w-3.5` / `h-4 w-4` / `h-5 w-5`）。flex行の中では `shrink-0` を付ける。
+- アイコン＋テキストは `inline-flex items-center gap-1.5`（複数行なら `items-start`）で並べる。
+- カテゴリのアイコンは `@/lib/category-icon` の `CategoryIcon` / `getCategoryIcon` を使う。`lib/categories.ts` に絵文字フィールドは持たせない。
+- トーストや `alert()` など文字列しか置けない場所では、絵文字を足すのではなく文言だけで伝える（トースト側が既にアイコンを描画している）。
+- iframe用の生成HTMLなど文字列でマークアップを作る場合は手書きのインラインSVG（`stroke-width="2"`, `stroke-linecap="round"`, `stroke-linejoin="round"`）を使う。メール文面はSVGが落ちるクライアントがあるため、装飾アイコンは置かず文言で表現する。
+- X・Facebook・Googleなどのブランドマークは `fill` ベースの公式形状をインラインSVGで描く（`𝕏` や `f` のような文字での代用はしない）。
+
+```tsx
+// ❌ BAD
+<h2 className="font-bold">💡 使い方のヒント</h2>
+showToast("保存しました ✓");
+
+// ✅ GOOD
+<h2 className="flex items-center gap-2 font-bold">
+  <Lightbulb className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+  使い方のヒント
+</h2>
+showToast("保存しました");
+```

@@ -28,11 +28,21 @@ import {
   HelpCircle,
   ArrowRight,
   ArrowLeft,
+  ArrowDown,
   Sparkles,
+  Lightbulb,
+  Wrench,
+  KeyRound,
+  MessageCircle,
+  FolderOpen,
+  PartyPopper,
+  Globe,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { CATEGORIES } from "@/lib/categories";
+import { CategoryIcon } from "@/lib/category-icon";
 import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
@@ -255,10 +265,30 @@ function GuideModal({ onClose }: { onClose: () => void }) {
 
           {/* タイトル */}
           <h2 className="mt-3 text-lg font-black leading-snug">
-            {step === 0 && "💡 生成AI（ChatGPT・Gemini・Claude）でコードを出力しよう！"}
-            {step === 1 && "🛠️ ジサップで動かして、AIと調整しよう！"}
-            {step === 2 && "💾 完成したら、名前をつけて保存しよう！"}
-            {step === 3 && "🚀 世界にひとつだけのアプリを出品しよう！"}
+            {step === 0 && (
+              <span className="flex items-start gap-2">
+                <Lightbulb className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
+                生成AI（ChatGPT・Gemini・Claude）でコードを出力しよう！
+              </span>
+            )}
+            {step === 1 && (
+              <span className="flex items-start gap-2">
+                <Wrench className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
+                ジサップで動かして、AIと調整しよう！
+              </span>
+            )}
+            {step === 2 && (
+              <span className="flex items-start gap-2">
+                <Save className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
+                完成したら、名前をつけて保存しよう！
+              </span>
+            )}
+            {step === 3 && (
+              <span className="flex items-start gap-2">
+                <Rocket className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
+                世界にひとつだけのアプリを出品しよう！
+              </span>
+            )}
           </h2>
 
           {/* ステップドット */}
@@ -299,7 +329,10 @@ function GuideModal({ onClose }: { onClose: () => void }) {
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
                 <div className="border-b border-sky-200 bg-sky-600 px-4 py-2.5">
-                  <span className="text-xs font-black text-white">✦ ジサップ専用プロンプト</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-black text-white">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    ジサップ専用プロンプト
+                  </span>
                 </div>
                 <div className="space-y-3 px-4 py-4">
                   <p className="text-sm leading-relaxed text-slate-700">
@@ -324,8 +357,9 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="rounded-2xl bg-amber-100 border border-amber-300 px-4 py-3">
-                <p className="text-sm font-black text-amber-800">
-                  💡 自分でプロンプトを書く場合
+                <p className="flex items-center gap-1.5 text-sm font-black text-amber-800">
+                  <Lightbulb className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                  自分でプロンプトを書く場合
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-amber-700">
                   要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。テンプレートならアプリ名だけでOKです。
@@ -333,7 +367,10 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
-                <p className="text-sm font-black text-violet-900">🔑 AI・天気APIなどを使う場合</p>
+                <p className="flex items-center gap-1.5 text-sm font-black text-violet-900">
+                  <KeyRound className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                  AI・天気APIなどを使う場合
+                </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-violet-800">
                   {SECRETS_STUDIO_GUIDE}
                 </p>
@@ -347,21 +384,31 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {/* ══ STEP 2 ══ */}
           {step === 1 && (
             <div className="space-y-4">
-              <p className="text-base font-bold leading-relaxed text-[#334155]">
-                🛠️ エラーもデザインも、AIに丸投げでOK！
+              <p className="flex items-center gap-2 text-base font-bold leading-relaxed text-[#334155]">
+                <Wrench className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                エラーもデザインも、AIに丸投げでOK！
               </p>
 
               <div className="space-y-2.5">
                 <div className="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3.5">
-                  <p className="text-sm font-black text-amber-800 mb-2">困ったらこのまま貼るだけ👇</p>
+                  <p className="mb-2 flex items-center gap-1.5 text-sm font-black text-amber-800">
+                    困ったらこのまま貼るだけ
+                    <ArrowDown className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                  </p>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <span className="shrink-0 text-sm">・動かない時</span>
-                      <span className="rounded-lg bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-900">👉「このエラーを直して」</span>
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-900">
+                        <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                        「このエラーを直して」
+                      </span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="shrink-0 text-sm">・変えたい時</span>
-                      <span className="rounded-lg bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-900">👉「もっと明るい色にして」</span>
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-900">
+                        <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                        「もっと明るい色にして」
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -370,14 +417,20 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                   <p className="text-sm font-black text-sky-800 mb-1.5">慣れてきたら…</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["機能を追加して", "もっとおしゃれにして"].map((t) => (
-                      <span key={t} className="rounded-full bg-sky-200 px-3 py-1 text-xs font-bold text-sky-800">💬 「{t}」</span>
+                      <span key={t} className="inline-flex items-center gap-1.5 rounded-full bg-sky-200 px-3 py-1 text-xs font-bold text-sky-800">
+                        <MessageCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                        「{t}」
+                      </span>
                     ))}
                   </div>
                   <p className="mt-2 text-xs text-sky-700 leading-relaxed">AIと会話しながら自分だけのアプリを完成させよう！</p>
                 </div>
 
                 <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
-                  <p className="text-sm font-black text-violet-900 mb-1">🔑 APIキーが必要なアプリ</p>
+                  <p className="mb-1 flex items-center gap-1.5 text-sm font-black text-violet-900">
+                    <KeyRound className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    APIキーが必要なアプリ
+                  </p>
                   <p className="text-xs leading-relaxed text-violet-800">
                     コードにキーを書かず、「プレビュー更新」の横「APIキー」から登録。AIがコード内で指定した secret 名（例: secret: &apos;WEATHER&apos;）と同じ名前で登録してください。
                   </p>
@@ -395,7 +448,10 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               </p>
 
               <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-4">
-                <p className="text-sm font-black text-emerald-700 mb-1">📂 マイプロジェクトに保存されるよ</p>
+                <p className="mb-1 flex items-center gap-1.5 text-sm font-black text-emerald-700">
+                  <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                  マイプロジェクトに保存されるよ
+                </p>
                 <p className="text-sm leading-relaxed text-emerald-700">
                   ブラウザを閉じても消えない。<br />いつでも続きから再開できる！
                 </p>
@@ -408,14 +464,17 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
                 いよいよクリエイターデビュー！<br />
-                マーケットに出品しよう🎉
+                <span className="inline-flex items-center gap-1.5">
+                  マーケットに出品しよう
+                  <PartyPopper className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                </span>
               </p>
 
               <div className="space-y-2">
                 {[
                   { num: "①", text: "「マイプロジェクト」ページへ移動" },
-                  { num: "②", text: "カードの「🚀 出品する」を押す" },
-                  { num: "③", text: "紹介文とアイコン絵文字を決めて完了！" },
+                  { num: "②", text: "カードの「出品する」を押す" },
+                  { num: "③", text: "紹介文とアイコンを決めて完了！" },
                 ].map(item => (
                   <div key={item.num} className="flex items-center gap-3 rounded-2xl bg-violet-50 px-4 py-3">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500 text-sm font-black text-white">
@@ -426,8 +485,9 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 ))}
               </div>
 
-              <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 px-4 py-3 text-sm font-bold text-violet-800 text-center">
-                🌎 世界中の人があなたのアプリを使える！
+              <div className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 px-4 py-3 text-sm font-bold text-violet-800 text-center">
+                <Globe className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                世界中の人があなたのアプリを使える！
               </div>
             </div>
           )}
@@ -1067,7 +1127,7 @@ export default function PlaygroundPage() {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      showToast("コードを全部コピーしました ✓");
+      showToast("コードを全部コピーしました");
     } catch {
       showToast("コピーできませんでした。ブラウザの設定を確認してください");
     }
@@ -1120,7 +1180,7 @@ export default function PlaygroundPage() {
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast(`${fileName} を保存しました ✓`);
+      showToast(`${fileName} を保存しました`);
       return;
     }
 
@@ -1168,7 +1228,7 @@ export default function PlaygroundPage() {
       if (!res.ok) {
         showToast("ローカルに保存しました（サーバー保存は失敗）");
       } else {
-        showToast(`「${title}」を保存しました ✓`);
+        showToast(`「${title}」を保存しました`);
         // ログイン済みならマイプロジェクトにも登録
         if (session?.user) {
           await fetch("/api/my-projects", {
@@ -1978,7 +2038,10 @@ export default function PlaygroundPage() {
                         !publishListed ? "bg-emerald-600 text-white" : "text-gray-500 hover:bg-gray-50"
                       )}
                     >
-                      🔗 URLのみ発行
+                      <span className="inline-flex items-center justify-center gap-1.5">
+                        <Link2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                        URLのみ発行
+                      </span>
                     </button>
                     <button
                       type="button"
@@ -1988,7 +2051,10 @@ export default function PlaygroundPage() {
                         publishListed ? "bg-emerald-600 text-white" : "text-gray-500 hover:bg-gray-50"
                       )}
                     >
-                      🚀 マーケットに出品
+                      <span className="inline-flex items-center justify-center gap-1.5">
+                        <Rocket className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                        マーケットに出品
+                      </span>
                     </button>
                   </div>
                   <div>
@@ -2035,13 +2101,14 @@ export default function PlaygroundPage() {
                               type="button"
                               onClick={() => setPublishCategory(selected ? "" : cat.id)}
                               className={cn(
-                                "rounded-full px-3 py-1.5 text-xs font-bold transition-all",
+                                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all",
                                 selected
                                   ? "bg-emerald-600 text-white shadow-sm"
                                   : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
                               )}
                             >
-                              {cat.emoji} {cat.name}
+                              <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
+                              {cat.name}
                             </button>
                           );
                         })}

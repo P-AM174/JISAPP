@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { CATEGORY_MAP } from "@/lib/categories";
+import { CategoryIcon } from "@/lib/category-icon";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -152,10 +153,10 @@ export default function LibraryPage() {
                 className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md"
               >
                 <div className={cn(
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-2xl",
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br",
                   getGradient(entry)
                 )}>
-                  {entry.category ? CATEGORY_MAP[entry.category]?.emoji ?? "✨" : "✨"}
+                  <CategoryIcon categoryId={entry.category} className="h-5 w-5 text-white" strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-gray-900 truncate">{entry.name ?? "アプリ"}</p>

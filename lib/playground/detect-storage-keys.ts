@@ -1,5 +1,5 @@
 export type StorageUsage = {
-  /** window.Zisup.saveData / loadData で使っている識別名 */
+  /** window.Zisup.saveData / loadData で使っている名前 */
   zisupKeys: string[];
   /** localStorage.getItem / setItem / removeItem で使っているキー */
   localStorageKeys: string[];
@@ -7,12 +7,21 @@ export type StorageUsage = {
   usesLocalStorage: boolean;
 };
 
+export type StorageChangeKind =
+  | "save_removed"
+  | "mode_zisup_to_local"
+  | "mode_local_to_zisup"
+  | "key_renamed"
+  | "key_removed"
+  | "key_added";
+
 export type StorageChangeFinding = {
-  /** 短い見出し */
+  kind: StorageChangeKind;
   title: string;
-  /** 詳細説明 */
   detail: string;
   severity: "warn" | "info";
+  removedKeys?: string[];
+  addedKeys?: string[];
 };
 
 const STRING_LIT = String.raw`['"\`]([^'"\`]{1,80})['"\`]`;
@@ -50,7 +59,7 @@ export function extractStorageUsage(source: string): StorageUsage {
     if (m[1]) localStorageKeys.add(m[1]);
   }
 
-  // キーがリテラルでない場合も「使っている」ことだけ検知
+  // 名前が変数の場合も「使っている」ことだけ検知する
   const usesZisup =
     zisupKeys.size > 0 ||
     /(?:window\.)?Zisup\.(?:saveData|loadData)\s*\(/i.test(source);
@@ -67,13 +76,13 @@ export function extractStorageUsage(source: string): StorageUsage {
 }
 
 function formatKeys(keys: string[]): string {
-  if (keys.length === 0) return "（識別名を特定できませんでした）";
+  if (keys.length === 0) return "（名前を読み取れませんでした）";
   return keys.map((k) => `「${k}」`).join("、");
 }
 
 /**
- * 公開済みコードと新しいコードの保存先の違いを指摘する。
- * ユーザーのデータが消える可能性がある変化だけを返す。
+ * 公開済みコードと新しいコードで、保存データの読み書き方法が変わっていないか調べる。
+ * 開発未経験の人が読んで意味が分かる言葉で返す。
  */
 export function compareStorageUsage(
   previous: string,
@@ -86,33 +95,41 @@ export function compareStorageUsage(
   // 保存機能そのものが消えた
   if ((prev.usesZisup || prev.usesLocalStorage) && !curr.usesZisup && !curr.usesLocalStorage) {
     findings.push({
-      title: "データの保存処理がなくなっています",
+      kind: "save_removed",
+      title: "データを保存する部分がなくなっています",
       detail:
-        "以前のコードには保存・読込がありましたが、新しいコードには見つかりません。既存の保存データは読み込まれなくなります。",
+        "新しいコードには、データを保存したり読み込んだりする部分が見つかりません。このまま公開すると、今まで使ってくれた人が入力した内容は、アプリを開いても表示されなくなります。",
       severity: "warn",
+      removedKeys: prev.zisupKeys.length ? prev.zisupKeys : prev.localStorageKeys,
     });
     return findings;
   }
 
-  // Zisup → localStorage（またはその逆）
+  // ジサップの保存 → その端末の中だけ（またはその逆）
   if (prev.usesZisup && !curr.usesZisup && curr.usesLocalStorage) {
     findings.push({
-      title: "保存先が Zisup API から localStorage に変わっています",
+      kind: "mode_zisup_to_local",
+      title: "データの保存場所が「ジサップ」から「その端末の中だけ」に変わっています",
       detail:
-        "ジサップのクラウド／同期保存から、ブラウザの localStorage に切り替わっています。以前保存したデータは読めなくなります。",
+        "今まではジサップ側にデータを預けていましたが、新しいコードはスマホやパソコンの中だけに保存しようとしています。今までのデータは表示されなくなり、別の端末で開いたときにも引き継がれなくなります。",
       severity: "warn",
+      removedKeys: prev.zisupKeys,
+      addedKeys: curr.localStorageKeys,
     });
   }
   if (prev.usesLocalStorage && !curr.usesLocalStorage && curr.usesZisup) {
     findings.push({
-      title: "保存先が localStorage から Zisup API に変わっています",
+      kind: "mode_local_to_zisup",
+      title: "データの保存場所が「端末の中」から「ジサップ」に変わっています",
       detail:
-        "ブラウザ保存からジサップの保存 API に切り替わっています。以前 localStorage に入っていたデータは自動では引き継がれません。",
+        "保存の仕組みとしては良い変更ですが、今まで端末の中にあったデータは自動では移りません。使ってくれていた人は、中身が空の状態からのスタートになります。",
       severity: "warn",
+      removedKeys: prev.localStorageKeys,
+      addedKeys: curr.zisupKeys,
     });
   }
 
-  // Zisup キーの削除・リネーム
+  // 名前（キー）の変更・削除
   if (prev.usesZisup && curr.usesZisup) {
     const prevSet = new Set(prev.zisupKeys);
     const currSet = new Set(curr.zisupKeys);
@@ -121,26 +138,33 @@ export function compareStorageUsage(
 
     if (removed.length > 0 && added.length > 0) {
       findings.push({
-        title: "データの識別名（キー）が変わっています",
-        detail: `以前: ${formatKeys(removed)} → 今回: ${formatKeys(added)}。識別名が変わると、以前保存したデータは新しいコードから見えません。`,
+        kind: "key_renamed",
+        title: "データにつけた名前が変わっています",
+        detail: `アプリは、データに名前をつけて保存しています。前は${formatKeys(removed)}でしたが、今回は${formatKeys(added)}になっています。名前が変わると、前のデータは残っていてもアプリが見つけられず、使ってくれた人には「入力した内容が全部消えた」ように見えます。`,
         severity: "warn",
+        removedKeys: removed,
+        addedKeys: added,
       });
     } else if (removed.length > 0) {
       findings.push({
-        title: "使われなくなったデータの識別名があります",
-        detail: `以前使っていた ${formatKeys(removed)} が新しいコードにありません。そのキーで保存されていたデータは読み込まれなくなります。`,
+        kind: "key_removed",
+        title: "前まで使っていたデータの名前が、新しいコードにありません",
+        detail: `前は${formatKeys(removed)}という名前でデータを保存していましたが、新しいコードではその名前が使われていません。その名前で保存されていた内容は、アプリを開いても表示されなくなります。`,
         severity: "warn",
+        removedKeys: removed,
       });
     } else if (added.length > 0 && prev.zisupKeys.length > 0) {
       findings.push({
-        title: "新しいデータの識別名が追加されています",
-        detail: `追加: ${formatKeys(added)}。既存データはそのまま使えますが、意図どおりか確認してください。`,
+        kind: "key_added",
+        title: "新しく保存する項目が増えています",
+        detail: `${formatKeys(added)} が増えました。今までのデータはそのまま使えます。意図した追加なら、そのまま公開して問題ありません。`,
         severity: "info",
+        addedKeys: added,
       });
     }
   }
 
-  // localStorage キーの削除・リネーム（Zisupを使っていないアプリ向け）
+  // 端末保存だけで作られているアプリの名前変更
   if (prev.usesLocalStorage && curr.usesLocalStorage && !curr.usesZisup) {
     const prevSet = new Set(prev.localStorageKeys);
     const currSet = new Set(curr.localStorageKeys);
@@ -149,15 +173,20 @@ export function compareStorageUsage(
 
     if (removed.length > 0 && added.length > 0) {
       findings.push({
-        title: "localStorage のキー名が変わっています",
-        detail: `以前: ${formatKeys(removed)} → 今回: ${formatKeys(added)}。キー名が変わると以前のデータは見えません。`,
+        kind: "key_renamed",
+        title: "データにつけた名前が変わっています",
+        detail: `前は${formatKeys(removed)}でしたが、今回は${formatKeys(added)}になっています。名前が変わると、前のデータはアプリから見つけられなくなります。`,
         severity: "warn",
+        removedKeys: removed,
+        addedKeys: added,
       });
     } else if (removed.length > 0) {
       findings.push({
-        title: "使われなくなった localStorage キーがあります",
-        detail: `以前使っていた ${formatKeys(removed)} が新しいコードにありません。`,
+        kind: "key_removed",
+        title: "前まで使っていたデータの名前が、新しいコードにありません",
+        detail: `前は${formatKeys(removed)}という名前で保存していましたが、新しいコードではその名前が使われていません。`,
         severity: "warn",
+        removedKeys: removed,
       });
     }
   }
@@ -167,4 +196,89 @@ export function compareStorageUsage(
 
 export function hasStorageWarnings(findings: StorageChangeFinding[]): boolean {
   return findings.some((f) => f.severity === "warn");
+}
+
+function uniq(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+/**
+ * 「AIに貼り付けて直してもらう」ための指示文を作る。
+ * 検知した内容（前の名前・今の名前）を埋め込むので、そのままコピーして送れる。
+ */
+export function buildStorageFixPrompt(findings: StorageChangeFinding[]): string {
+  const oldKeys = uniq(findings.flatMap((f) => f.removedKeys ?? []));
+  const newKeys = uniq(findings.flatMap((f) => f.addedKeys ?? []));
+  const switchedToLocal = findings.some((f) => f.kind === "mode_zisup_to_local");
+  const saveRemoved = findings.some((f) => f.kind === "save_removed");
+
+  const lines: string[] = [];
+
+  lines.push(
+    "今あなたが作ってくれたアプリのコードを、保存機能だけ修正してください。"
+  );
+  lines.push("");
+  lines.push("【何が問題か】");
+  lines.push(
+    "このアプリはすでに公開していて、使ってくれている人の保存データがあります。"
+  );
+  if (saveRemoved) {
+    lines.push(
+      "新しいコードにはデータを保存・読み込みする処理がなくなっているため、今までのデータが表示されなくなります。"
+    );
+  } else if (switchedToLocal) {
+    lines.push(
+      "新しいコードは localStorage に保存しようとしていますが、今までのデータはジサップの保存機能（window.Zisup）に入っています。このままでは今までのデータが読み込めません。"
+    );
+  } else {
+    lines.push(
+      "新しいコードは、データを保存するときの名前が前のバージョンと違っています。このままでは今までのデータが読み込めません。"
+    );
+  }
+  lines.push("");
+
+  lines.push("【必ず守るルール】");
+  lines.push(
+    "1. データの保存と読み込みは window.Zisup.saveData / window.Zisup.loadData だけを使う（localStorage は使わない）"
+  );
+  lines.push("   ・保存: await window.Zisup.saveData('名前', データ)");
+  lines.push("   ・読込: await window.Zisup.loadData('名前')");
+
+  if (oldKeys.length > 0) {
+    lines.push(
+      `2. 保存に使う名前は、前のバージョンと同じ ${oldKeys.map((k) => `'${k}'`).join(" / ")} に戻す`
+    );
+    if (newKeys.length > 0) {
+      lines.push(
+        `   ・今のコードの ${newKeys.map((k) => `'${k}'`).join(" / ")} は使わないでください`
+      );
+    }
+    lines.push(
+      "3. データの形（項目）を増やしたい場合は、名前は変えずに、古いデータを読み込んでから足りない項目を初期値で補ってください"
+    );
+  } else {
+    lines.push(
+      "2. 保存に使う名前は、前のバージョンで使っていたものから変えないでください"
+    );
+    lines.push(
+      "3. データの形を変えたい場合は、古いデータを読み込んでから新しい形に変換して保存し直してください"
+    );
+  }
+  lines.push("4. 見た目や機能は変えず、保存に関わる部分だけ直してください");
+  lines.push(
+    "5. 修正後の index.html を、省略せずに1ファイルまるごと出力してください（「変更部分のみ」は不可）"
+  );
+
+  if (oldKeys.length > 0 || newKeys.length > 0) {
+    lines.push("");
+    lines.push("【参考：ジサップが検出した違い】");
+    if (oldKeys.length > 0) {
+      lines.push(`・前のバージョンで使っていた名前: ${oldKeys.join("、")}`);
+    }
+    if (newKeys.length > 0) {
+      lines.push(`・今のコードで使っている名前: ${newKeys.join("、")}`);
+    }
+  }
+
+  return lines.join("\n");
 }

@@ -5,7 +5,7 @@ import {
   createSoftwareApplicationJsonLd,
 } from "@/lib/seo/metadata";
 import { getShareableAppSeo } from "@/lib/seo/public-apps";
-import { SITE_DESCRIPTION, SITE_OG_IMAGE, SITE_TITLE } from "@/lib/seo/site";
+import { SITE_NAME } from "@/lib/seo/site";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -32,9 +32,10 @@ export async function generateMetadata({
     title: app.title,
     description: app.description,
     path: `/apps/${app.id}`,
-    ogImage: SITE_OG_IMAGE,
-    ogTitle: SITE_TITLE,
-    ogDescription: SITE_DESCRIPTION,
+    // アプリ名を描き込んだ専用OGP画像（取得に失敗したときは共通画像へリダイレクト）
+    ogImage: `/og/apps/${encodeURIComponent(app.id)}.png`,
+    ogTitle: `${app.title}｜${SITE_NAME}`,
+    ogDescription: app.description,
     noIndex: app.isListed === false,
   });
 }

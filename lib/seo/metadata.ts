@@ -16,6 +16,8 @@ type PageMetadataOptions = {
   path?: string;
   noIndex?: boolean;
   ogImage?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   /** SNSプレビュー用（未指定時は title / description と同じ） */
   ogTitle?: string;
   ogDescription?: string;
@@ -39,6 +41,8 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
     path,
     noIndex = false,
     ogImage = SITE_OG_IMAGE,
+    ogImageWidth = SITE_OG_IMAGE_WIDTH,
+    ogImageHeight = SITE_OG_IMAGE_HEIGHT,
     ogTitle,
     ogDescription,
   } = options;
@@ -48,16 +52,11 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
   const shareDescription = ogDescription ?? description;
   const canonical = path ? absoluteUrl(path) : getSiteUrl();
   const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
-  const isSiteOg =
-    ogImage === SITE_OG_IMAGE ||
-    ogImage.endsWith("/og.png") ||
-    ogImage.includes("opengraph") ||
-    ogImage.includes("site-opengraph");
   const imageMeta = {
     url: imageUrl,
     secureUrl: imageUrl,
-    width: isSiteOg ? SITE_OG_IMAGE_WIDTH : 512,
-    height: isSiteOg ? SITE_OG_IMAGE_HEIGHT : 512,
+    width: ogImageWidth,
+    height: ogImageHeight,
     alt: shareTitle,
     type: "image/png" as const,
   };

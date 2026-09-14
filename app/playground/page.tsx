@@ -1100,7 +1100,8 @@ export default function PlaygroundPage() {
       const file = new File([code], fileName, { type: "text/plain" });
       if (navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], title: fileName });
+          // title を渡すと iPhone の「ファイルに保存」で題名だけのファイルが余分に作られる
+          await navigator.share({ files: [file] });
           return;
         } catch (e) {
           if (e instanceof DOMException && e.name === "AbortError") return;

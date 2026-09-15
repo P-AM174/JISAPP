@@ -4,6 +4,10 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { JsonLd } from "@/components/seo/json-ld";
 import { createRootMetadata, createWebsiteJsonLd } from "@/lib/seo/metadata";
+import {
+  createOrganizationJsonLd,
+  createPlatformSoftwareJsonLd,
+} from "@/lib/seo/llmo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +58,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} min-h-screen antialiased`}
       >
         <JsonLd data={createWebsiteJsonLd()} />
+        <JsonLd data={createOrganizationJsonLd()} />
+        <JsonLd data={createPlatformSoftwareJsonLd()} />
         <Providers>{children}</Providers>
       </body>
     </html>

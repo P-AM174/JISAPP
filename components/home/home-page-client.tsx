@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
+import { OfficialSocialLinks } from "@/components/seo/official-social-links";
 import {
   Search,
   Bell,
@@ -28,6 +29,7 @@ import {
   ExternalLink,
   BookOpen,
   HelpCircle,
+  CircleHelp,
   Gamepad2,
   LibraryBig,
   ChevronRight,
@@ -550,6 +552,16 @@ function SiteHeader({
               <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300" />
             </button>
             <Link
+              href="/faq"
+              onClick={closeMenu}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400">
+                <CircleHelp className="h-4 w-4" />
+              </span>
+              よくある質問
+            </Link>
+            <Link
               href="/playground"
               onClick={closeMenu}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
@@ -874,9 +886,11 @@ function HomeLibrarySection() {
 export function HomePageClient({
   initialData,
   heroSlides,
+  aboutIntro,
 }: {
   initialData: HomeCatalogData;
   heroSlides: HeroSlidePublic[];
+  aboutIntro?: React.ReactNode;
 }) {
   const [query,           setQuery]           = useState("");
   const [showContact,     setShowContact]     = useState(false);
@@ -912,6 +926,7 @@ export function HomePageClient({
 
       <HeroCarousel slides={heroSlides} />
       <HomeQuickActions />
+      {aboutIntro}
 
       {/* ─── 3ステップ ─── */}
       <div className="bg-white px-4 py-12 shadow-sm">
@@ -1367,10 +1382,12 @@ export function HomePageClient({
       <footer className="mt-4 border-t border-gray-200 bg-white px-4 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <JisappLogo href="/" />
+          <OfficialSocialLinks />
           <p className="text-xs text-gray-400">© 2026 ジサップ — AIコードを貼るだけの開発スタジオ</p>
           <div className="flex flex-wrap justify-center gap-4 text-xs text-gray-400">
             <button type="button" onClick={() => setShowContact(true)} className="hover:text-emerald-600">運営への問い合わせ</button>
             <Link href="/mypage" className="hover:text-emerald-600">マイページ</Link>
+            <Link href="/faq" className="hover:text-emerald-600">よくある質問</Link>
             <Link href="/playground" className="hover:text-emerald-600">アプリ開発スタジオへ</Link>
             <Link href="/terms" className="hover:text-emerald-600">利用規約</Link>
           </div>

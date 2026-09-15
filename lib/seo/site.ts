@@ -31,3 +31,25 @@ export function absoluteUrl(path: string): string {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${getSiteUrl()}${normalized}`;
 }
+
+/** 公式SNS。Organization.sameAs とフッターで共用する */
+export const SITE_SOCIAL_PROFILES = [
+  { name: "X", handle: "@jisapp_app", url: "https://x.com/jisapp_app" },
+  {
+    name: "YouTube",
+    handle: "@jisapp.official",
+    url: "https://www.youtube.com/@jisapp.official",
+  },
+  {
+    name: "TikTok",
+    handle: "@jisapp.official",
+    url: "https://www.tiktok.com/@jisapp.official",
+  },
+  {
+    name: "Instagram",
+    handle: "@jisapp_app",
+    url: "https://www.instagram.com/jisapp_app/",
+  },
+] as const;
+
+export const SITE_SAME_AS: string[] = SITE_SOCIAL_PROFILES.map((p) => p.url);

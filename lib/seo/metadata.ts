@@ -6,6 +6,7 @@ import {
   SITE_OG_IMAGE,
   SITE_OG_IMAGE_WIDTH,
   SITE_OG_IMAGE_HEIGHT,
+  SITE_SAME_AS,
   absoluteUrl,
   getSiteUrl,
 } from "@/lib/seo/site";
@@ -104,9 +105,17 @@ export function createWebsiteJsonLd() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
+    alternateName: ["Jisapp", "ジサップ（Jisapp）"],
     url: getSiteUrl(),
     description: SITE_DESCRIPTION,
     inLanguage: "ja-JP",
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: getSiteUrl(),
+      logo: absoluteUrl("/logo-header.png"),
+      sameAs: SITE_SAME_AS,
+    },
     potentialAction: {
       "@type": "SearchAction",
       target: {

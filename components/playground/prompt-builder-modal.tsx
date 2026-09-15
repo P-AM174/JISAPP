@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Copy, FileText, Sparkles, X } from "lucide-react";
+import { CheckCircle2, Copy, FileText, Wand2, X } from "lucide-react";
 import {
   buildPromptFromTemplate,
   PROMPT_RULES_SHORT,
@@ -121,7 +121,7 @@ export function PromptBuilderModal({
       >
         <div className="flex shrink-0 items-start gap-3 border-b border-emerald-100 bg-gradient-to-br from-emerald-500 to-teal-600 px-4 py-4 text-white sm:px-5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/20">
-            <Sparkles className="h-5 w-5" />
+            <Wand2 className="h-5 w-5 shrink-0" strokeWidth={2.5} />
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 className="text-base font-black">AIに送るプロンプト</h2>
@@ -155,7 +155,7 @@ export function PromptBuilderModal({
                   : "text-gray-500 hover:text-gray-700"
               )}
             >
-              <Sparkles className="h-3.5 w-3.5" />
+              <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               テンプレートから作成
             </button>
             <button

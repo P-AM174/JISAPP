@@ -6,15 +6,11 @@ import { JisappLogo } from "@/components/jisapp-logo";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
-  Sparkles,
   ChevronRight,
   ShieldCheck,
-  Zap,
-  Star,
   AlertTriangle,
   CheckCircle,
   Wifi,
-  PartyPopper,
   Lock,
 } from "lucide-react";
 
@@ -351,8 +347,6 @@ export default function CreateSuccessPage() {
         <div className="mb-6 flex flex-col items-center gap-4 text-center">
           <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100">
             <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-            <Star className="absolute -top-1 -right-1 h-5 w-5 animate-bounce text-yellow-400" />
-            <Zap  className="absolute -bottom-1 -left-1 h-4 w-4 animate-pulse text-emerald-400" />
           </div>
 
           <div>
@@ -360,7 +354,7 @@ export default function CreateSuccessPage() {
               出品リクエスト受付完了
             </p>
             <h1 className="mt-1 flex items-center justify-center gap-2 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
-              <PartyPopper className="h-6 w-6 shrink-0 text-emerald-500" strokeWidth={2.5} />
+              <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" strokeWidth={2.5} />
               マーケットに追加されました！
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-gray-500">
@@ -374,7 +368,7 @@ export default function CreateSuccessPage() {
         <div className="mb-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-600">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2} />
             </div>
             <span className="text-sm font-bold text-gray-700">
               Gemini AI セキュリティ審査

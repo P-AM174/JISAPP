@@ -5,11 +5,9 @@ import Link from "next/link";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
-  Sparkles,
   ShoppingBag,
   Search,
   ArrowUpRight,
-  Star,
 } from "lucide-react";
 
 type PurchasedApp = {
@@ -159,9 +157,8 @@ export default function PurchasesPage() {
                         </span>
                       )}
                       {app.rating && (
-                        <span className="flex items-center gap-0.5 text-[10px] text-amber-500 font-semibold">
-                          <Star className="h-3 w-3 fill-amber-400" />
-                          {app.rating.toFixed(1)}
+                        <span className="text-[10px] text-gray-500 font-semibold">
+                          評価 {app.rating.toFixed(1)}
                         </span>
                       )}
                     </div>

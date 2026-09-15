@@ -28,9 +28,8 @@ import {
   X,
   CheckCircle2,
   Lock,
-  Trophy,
-  Flame,
-  Sparkles,
+  TrendingUp,
+  Sprout,
 } from "lucide-react";
 import { CreatorProfileClient } from "@/components/creator/creator-profile-client";
 
@@ -42,7 +41,7 @@ const CREATORS = [
     handle: "@takuya_dev",
     avatar: "TT",
     badge: "トップクリエイター",
-    badgeIcon: Trophy,
+    badgeIcon: TrendingUp,
     specialty: "生産性・AI",
     color: "from-emerald-500 to-teal-600",
     apps: 24,
@@ -59,7 +58,7 @@ const CREATORS = [
     handle: "@ayaka_design",
     avatar: "YA",
     badge: "殿堂入り",
-    badgeIcon: Star,
+    badgeIcon: BadgeCheck,
     specialty: "デザイン・UI",
     color: "from-green-500 to-emerald-600",
     apps: 18,
@@ -76,7 +75,7 @@ const CREATORS = [
     handle: "@ken_techlab",
     avatar: "SK",
     badge: "急上昇中",
-    badgeIcon: Flame,
+    badgeIcon: TrendingUp,
     specialty: "データ分析",
     color: "from-teal-500 to-cyan-600",
     apps: 31,
@@ -93,7 +92,7 @@ const CREATORS = [
     handle: "@misaki_apps",
     avatar: "NM",
     badge: "新鋭",
-    badgeIcon: Sparkles,
+    badgeIcon: Sprout,
     specialty: "マーケ・SNS",
     color: "from-emerald-400 to-green-600",
     apps: 15,
@@ -343,9 +342,8 @@ function AppCard({ app }: { app: typeof STATIC_APPS[number] }) {
         <div className="flex flex-1 flex-col gap-1.5 p-4">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">{app.category}</span>
-            <div className="flex items-center gap-0.5">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-semibold text-gray-700">{app.rating}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-semibold text-gray-700">評価 {app.rating}</span>
               <span className="text-[10px] text-gray-400">({app.reviews})</span>
             </div>
           </div>
@@ -517,7 +515,6 @@ function LegacyCreatorDetailPage({ creatorId }: { creatorId: number }) {
 
           {/* 評価バー */}
           <div className="flex items-center justify-center gap-2 border-b border-gray-100 py-3">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             <span className="text-sm font-black text-gray-900">{creator.rating}</span>
             <span className="text-xs text-gray-400">/ クリエイター評価</span>
             <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">

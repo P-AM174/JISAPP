@@ -13,8 +13,7 @@ import {
   Copy,
   Check,
   Star,
-  Rocket,
-  PartyPopper,
+  Send,
   ExternalLink,
   ArrowRight,
   MessageSquare,
@@ -372,7 +371,7 @@ export default function PurchaseSuccessPage() {
           <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10" />
           <div className="relative">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
-              <PartyPopper className="h-10 w-10 text-white" strokeWidth={2.5} />
+              <CheckCircle2 className="h-10 w-10 text-white" strokeWidth={2.5} />
             </div>
             <h1 className="text-xl font-black text-white">ご購入ありがとうございました！</h1>
             <p className="mt-1 text-sm text-white/80">「{meta.name}」の取引が完了しました</p>
@@ -408,8 +407,7 @@ export default function PurchaseSuccessPage() {
           />
         ) : (
           <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-            <div className="mb-1 flex items-center gap-2 text-xs font-bold text-emerald-600">
-              <Rocket className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+            <div className="mb-1 text-xs font-bold text-emerald-600">
               クイック導入
             </div>
             <p className="text-sm text-gray-600">
@@ -544,14 +542,14 @@ export default function PurchaseSuccessPage() {
                 disabled={!starRating}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Star className="h-4 w-4" />
+                <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
                 レビューを投稿する
               </button>
             </form>
           ) : (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
-                <Star className="h-7 w-7 fill-amber-400 text-amber-400" strokeWidth={2} />
+                <CheckCircle2 className="h-7 w-7 text-emerald-600" strokeWidth={2} />
               </div>
               <p className="font-bold text-emerald-700">レビューを投稿しました！</p>
               <div className="flex gap-0.5">

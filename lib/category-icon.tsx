@@ -1,36 +1,36 @@
 import {
+  Activity,
   BarChart3,
   BookOpen,
   Bot,
   Briefcase,
+  Clapperboard,
   Gamepad2,
   House,
+  LayoutGrid,
+  ListChecks,
   Palette,
-  PartyPopper,
-  Sparkles,
-  Trophy,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 
 /** カテゴリID → アイコン（絵文字は使わず、線の太さを揃えたSVGで統一する） */
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   business: Briefcase,
-  productivity: Zap,
+  productivity: ListChecks,
   lifestyle: House,
   education: BookOpen,
   stats: BarChart3,
   ai_tools: Bot,
-  entertainment: PartyPopper,
+  entertainment: Clapperboard,
   hobbies: Palette,
-  sports: Trophy,
+  sports: Activity,
   games: Gamepad2,
-  other: Sparkles,
+  other: LayoutGrid,
 };
 
 export function getCategoryIcon(categoryId?: string | null): LucideIcon {
   if (categoryId && CATEGORY_ICONS[categoryId]) return CATEGORY_ICONS[categoryId];
-  return Sparkles;
+  return LayoutGrid;
 }
 
 export function CategoryIcon({

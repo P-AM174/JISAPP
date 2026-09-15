@@ -9,7 +9,6 @@ import {
   Copy,
   HelpCircle,
   Lightbulb,
-  Rocket,
   Terminal,
 } from "lucide-react";
 import { JisappLogo } from "@/components/jisapp-logo";
@@ -430,8 +429,7 @@ export function SummerResearchGuide() {
         </section>
 
         <section className="rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-6 text-center text-white sm:p-8">
-          <Rocket className="mx-auto h-8 w-8 text-white/90" />
-          <h2 className="mt-3 text-lg font-black">準備ができたら、作り始めよう</h2>
+          <h2 className="text-lg font-black">準備ができたら、作り始めよう</h2>
           <p className="mt-2 text-sm text-white/85">Step 3 から順番に進めれば、今日中に提出できる形まで持っていけます。</p>
           <div className="mt-5 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
             <Link

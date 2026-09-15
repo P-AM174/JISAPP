@@ -7,7 +7,6 @@ import { BackButton } from "@/components/back-button";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   Search,
-  Sparkles,
   User,
   SlidersHorizontal,
   X,
@@ -313,7 +312,7 @@ export default function SearchPageClientRoot({
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-[#f3f6f4]">
         <div className="flex items-center gap-3 text-emerald-600">
-          <Sparkles className="h-5 w-5 animate-spin" />
+          <span className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
           <span className="text-sm font-semibold">読み込み中...</span>
         </div>
       </div>

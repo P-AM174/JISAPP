@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
-  Sparkles,
+  LayoutGrid,
   ShieldCheck,
   CheckCircle2,
   Star,
@@ -408,7 +408,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
               tag: p.status === "active" ? "公開中" : "審査中",
               gradient: p.gradient ?? "from-emerald-600 via-green-600 to-teal-700",
               category: p.category ?? "その他",
-              icon: Sparkles,
+              icon: LayoutGrid,
               demoHtml,
               type: p.listingType ?? "file",
               url: p.sourceUrl ?? null,
@@ -655,7 +655,6 @@ function MarketplaceAppPage({ id }: { id: string }) {
               <p className="font-bold text-gray-900 text-base">{app.creator}</p>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                 <span className="flex items-center gap-1">
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                   <span className="font-semibold text-gray-700">{app.creatorScore}</span>
                   <span>/ 信頼スコア</span>
                 </span>

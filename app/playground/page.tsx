@@ -14,7 +14,7 @@ import {
   RefreshCw,
   Code2,
   Eye,
-  Zap,
+  Settings2,
   Copy,
   CheckCircle2,
   Download,
@@ -24,18 +24,17 @@ import {
   Undo2,
   Redo2,
   Key,
-  Rocket,
+  Upload,
   HelpCircle,
   ArrowRight,
   ArrowLeft,
   ArrowDown,
-  Sparkles,
+  Wand2,
   Lightbulb,
   Wrench,
   KeyRound,
   MessageCircle,
   FolderOpen,
-  PartyPopper,
   Globe,
   Link2,
 } from "lucide-react";
@@ -163,7 +162,7 @@ function SimpleCodeGuide({
                   onClick={() => openPromptBuilder("template")}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-sky-600 py-2 text-xs font-bold text-white transition-all hover:bg-sky-500 active:scale-[0.98] touch-manipulation"
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                   テンプレートから作成
                 </button>
                 <button
@@ -292,7 +291,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             )}
             {step === 3 && (
               <span className="flex items-start gap-2">
-                <Rocket className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
+                <Upload className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
                 世界にひとつだけのアプリを出品しよう！
               </span>
             )}
@@ -337,7 +336,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
                 <div className="border-b border-sky-200 bg-sky-600 px-4 py-2.5">
                   <span className="inline-flex items-center gap-1.5 text-xs font-black text-white">
-                    <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                     ジサップ専用プロンプト
                   </span>
                 </div>
@@ -350,7 +349,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                     onClick={() => openPromptBuilder("template")}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-black text-sky-700 shadow-sm ring-1 ring-sky-200 transition-all hover:bg-sky-50 active:scale-[0.99]"
                   >
-                    <Sparkles className="h-4 w-4" />
+                    <Wand2 className="h-4 w-4 shrink-0" strokeWidth={2} />
                     テンプレートから作成
                   </button>
                   <button
@@ -473,7 +472,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 いよいよクリエイターデビュー！<br />
                 <span className="inline-flex items-center gap-1.5">
                   マーケットに出品しよう
-                  <PartyPopper className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                  <CheckCircle2 className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                 </span>
               </p>
 
@@ -521,7 +520,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               onClick={onClose}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-[0.97]"
             >
-              <Rocket className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
               閉じる（さっそく作ってみる！）
             </button>
           ) : (
@@ -1479,7 +1478,7 @@ export default function PlaygroundPage() {
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             )}
           >
-            <Zap className="h-3 w-3" />
+            <Settings2 className="h-3 w-3 shrink-0" strokeWidth={2} />
             {autoRun ? "自動実行 ON" : "自動実行 OFF"}
           </button>
 
@@ -1558,7 +1557,7 @@ export default function PlaygroundPage() {
             )}
           >
             <span className="flex items-center gap-1 text-[10px] font-black sm:text-xs">
-              <Rocket className="h-3.5 w-3.5 shrink-0" />
+              <Upload className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               公開/URL発行
             </span>
             <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-100 lg:block">
@@ -2067,7 +2066,7 @@ export default function PlaygroundPage() {
                 <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600">
-                      <Rocket className="h-4 w-4 text-white" />
+                      <Upload className="h-4 w-4 shrink-0 text-white" strokeWidth={2} />
                     </div>
                     <span className="text-base font-black text-gray-900">{isRepublish ? "アプリを上書き公開" : "アプリを公開する"}</span>
                   </div>
@@ -2104,7 +2103,7 @@ export default function PlaygroundPage() {
                       )}
                     >
                       <span className="inline-flex items-center justify-center gap-1.5">
-                        <Rocket className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                        <Upload className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                         マーケットに出品
                       </span>
                     </button>
@@ -2265,7 +2264,7 @@ export default function PlaygroundPage() {
                         </>
                       ) : (
                         <>
-                          <Rocket className="h-4 w-4" />
+                          <Upload className="h-4 w-4 shrink-0" strokeWidth={2} />
                           {isRepublish ? "上書きする" : publishListed ? "出品する" : "URLを発行する"}
                         </>
                       )}

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
-  Sparkles,
   Package,
   Plus,
   Clock,

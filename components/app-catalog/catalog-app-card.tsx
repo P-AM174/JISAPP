@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap } from "lucide-react";
+import { Heart } from "lucide-react";
 import { CATEGORY_MAP } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
 import { MiniPreview } from "./mini-preview";
@@ -73,7 +73,7 @@ export function CatalogAppCard({
           <span className="text-xs text-gray-400 truncate">by {app.creator_name ?? "匿名"}</span>
           {(app.stamp_count ?? 0) > 0 && (
             <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-emerald-600">
-              <Zap className="h-3.5 w-3.5" strokeWidth={2.5} />
+              <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
               {app.stamp_count}
             </span>
           )}

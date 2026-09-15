@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
-  Sparkles,
   Send,
   Clock,
   Banknote,

@@ -15,7 +15,7 @@ import {
   Tag,
   FileText,
   Terminal,
-  Rocket,
+  ArrowRight,
 } from "lucide-react";
 
 type AppRequest = {
@@ -416,7 +416,7 @@ export default function RequestsPage() {
             href="/playground"
             className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-3 text-sm font-black text-emerald-700 shadow-md hover:bg-emerald-50 transition-colors"
           >
-            <Rocket className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
             開発スタジオで試してみる
           </Link>
         </div>

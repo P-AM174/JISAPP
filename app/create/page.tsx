@@ -8,7 +8,7 @@ import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import {
   Upload,
   ImagePlus,
-  Zap,
+  Settings2,
   Check,
   CheckCircle2,
   X,
@@ -136,7 +136,7 @@ const CATEGORY_META: Record<string, { gradient: string; iconName: string; tagCol
   "店舗・シフト管理":       { gradient: "from-blue-500 via-indigo-600 to-violet-600",   iconName: "Calendar",  tagColor: "bg-blue-500"    },
   "データ分析":             { gradient: "from-rose-500 via-pink-600 to-red-600",        iconName: "BarChart3", tagColor: "bg-rose-500"    },
   "ゲーム":                 { gradient: "from-violet-600 via-purple-700 to-indigo-800", iconName: "Gamepad2",  tagColor: "bg-violet-500"  },
-  "その他":                 { gradient: "from-emerald-600 via-green-600 to-teal-700",   iconName: "Sparkles",  tagColor: "bg-emerald-500" },
+  "その他":                 { gradient: "from-emerald-600 via-green-600 to-teal-700",   iconName: "LayoutGrid", tagColor: "bg-emerald-500" },
 };
 
 // ─── ドラッグ&ドロップ対応アップロードエリア ───
@@ -771,7 +771,7 @@ function CreatePageInner() {
               {/* 左: 基本情報 */}
               <div className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-gray-700">
-                  <Zap className="h-4 w-4 text-emerald-500" />
+                  <NotebookText className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2} />
                   基本情報
                 </h2>
 
@@ -856,7 +856,7 @@ function CreatePageInner() {
             {/* ─── 出品タイプセレクター ─── */}
             <div className="overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
               <h2 className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-4">
-                <Zap className="h-4 w-4 text-emerald-500" />
+                <Settings2 className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2} />
                 出品タイプを選択
               </h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

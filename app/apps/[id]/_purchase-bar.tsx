@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Copy, Check, X, PartyPopper, Package } from "lucide-react";
+import { ArrowRight, Copy, Check, X, CheckCircle2, Package } from "lucide-react";
 
 interface PurchaseBarProps {
   appName: string;
@@ -68,7 +68,7 @@ export function PurchaseBar({ appName, priceLabel, isFree, dummyCode }: Purchase
               <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/10" />
               <div className="relative">
                 <div className="mb-3 flex justify-center">
-                  <PartyPopper className="h-12 w-12 text-white" strokeWidth={2.5} />
+                  <CheckCircle2 className="h-12 w-12 text-white" strokeWidth={2.5} />
                 </div>
                 <h2 className="text-xl font-black text-white">ご購入ありがとうございました！</h2>
                 <p className="mt-1.5 text-sm text-emerald-100">

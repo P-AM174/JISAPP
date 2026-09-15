@@ -8,7 +8,6 @@ import Image from "next/image";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
-  Sparkles,
   Package,
   ShieldCheck,
   Heart,
@@ -23,7 +22,7 @@ import {
   LogOut,
   Code2,
   FolderOpen,
-  Rocket,
+  Upload,
   Clock,
 } from "lucide-react";
 
@@ -347,7 +346,7 @@ export default function MyPage() {
                         href="/create"
                         className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
                       >
-                        <Rocket className="h-3 w-3" />
+                        <Upload className="h-3 w-3 shrink-0" strokeWidth={2} />
                         出品
                       </Link>
                     </div>

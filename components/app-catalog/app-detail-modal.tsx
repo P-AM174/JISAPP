@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   X,
-  ThumbsUp,
+  Heart,
   MessageCirclePlus,
   CheckCircle2,
   Send,
@@ -14,10 +14,9 @@ import {
   ExternalLink,
   LibraryBig,
   ChevronRight,
-  Star,
   Flag,
   Brain,
-  Zap,
+  Wrench,
   Palette,
   AlertTriangle,
   Smartphone,
@@ -32,9 +31,9 @@ import { getCreatorProfilePath } from "./utils";
 import type { ModalApp } from "./types";
 
 const STAMPS = [
-  { id: "like", Icon: ThumbsUp, label: "いいね！" },
+  { id: "like", Icon: Heart, label: "いいね！" },
   { id: "genius", Icon: Brain, label: "天才！" },
-  { id: "useful", Icon: Zap, label: "便利！" },
+  { id: "useful", Icon: Wrench, label: "便利！" },
   { id: "design", Icon: Palette, label: "デザインが好き！" },
 ] as const;
 type StampId = (typeof STAMPS)[number]["id"];
@@ -217,8 +216,7 @@ export function AppDetailModal({
                     <span className="truncate">{app.creator}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-emerald-600" />
                   </Link>
-                  <div className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-700">
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  <div className="mt-1 text-xs font-semibold text-emerald-700">
                     プロフィール・出品一覧を見る
                   </div>
                 </div>
@@ -229,7 +227,7 @@ export function AppDetailModal({
 
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
             <div className="flex items-center gap-2 mb-3">
-              <ThumbsUp className="h-4 w-4 text-emerald-600" />
+              <Heart className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2} />
               <p className="text-xs font-bold text-emerald-800">応援バッジを送る</p>
             </div>
             <div className="grid grid-cols-2 gap-2">

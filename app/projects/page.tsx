@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -6,15 +6,13 @@ import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
-  Sparkles,
   Terminal,
   Plus,
   Wrench,
-  Rocket,
+  Upload,
   Clock,
   Code2,
   FileText,
-  Star,
   Search,
   Package,
   FolderOpen,
@@ -189,7 +187,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                   onClick={() => { setMenuOpen(false); onPublish?.(proj); }}
                   className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 >
-                  <Rocket className="h-3.5 w-3.5" />
+                  <Upload className="h-3.5 w-3.5" />
                   {getPublishActionLabel(proj)}
                 </button>
                 {proj.status === "listed" && onUnlist && (
@@ -260,7 +258,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
               onClick={() => onPublish?.(proj)}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
             >
-              <Rocket className="h-3.5 w-3.5" />
+              <Upload className="h-3.5 w-3.5" />
               {getPublishActionLabel(proj)}
             </button>
           </div>
@@ -305,12 +303,7 @@ function AcquiredCard({ app }: { app: AcquiredApp }) {
         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
           {app.category && <span>{app.category}</span>}
           {app.creator && <span>by {app.creator}</span>}
-          {app.rating && (
-            <span className="flex items-center gap-0.5">
-              <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
-              {app.rating}
-            </span>
-          )}
+          {app.rating && <span>評価 {app.rating}</span>}
         </div>
         {app.acquiredAt && (
           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-400">
@@ -327,11 +320,11 @@ function AcquiredCard({ app }: { app: AcquiredApp }) {
 // ─── 空状態 ───
 function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-3xl bg-white py-16 text-center shadow-sm ring-1 ring-black/5">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50">
+    <div className="flex flex-col items-center gap-4 rounded-2xl bg-white py-16 text-center shadow-sm ring-1 ring-black/5">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50">
         {tab === "mine"
-          ? <Code2 className="h-8 w-8 text-emerald-300" />
-          : <Package className="h-8 w-8 text-emerald-300" />}
+          ? <Code2 className="h-7 w-7 text-gray-300" strokeWidth={2} />
+          : <Package className="h-7 w-7 text-gray-300" strokeWidth={2} />}
       </div>
       <div>
         <p className="font-bold text-gray-700">
@@ -789,84 +782,72 @@ export default function ProjectsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-emerald-50/40">
+    <div className="min-h-screen bg-[#f3f6f4]">
 
       {/* ══════════ ヘッダー ══════════ */}
-      <header className="sticky top-0 z-40 border-b border-emerald-200 bg-white/95 backdrop-blur-md shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
 
           <BackButton label="戻る" hideLabelOnMobile />
 
           <JisappLogo href="/" />
-          <span className="text-sm text-gray-400">/</span>
-
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 shadow-sm">
-              <FolderOpen className="h-4 w-4 text-white" />
-            </div>
-            <h1 className="text-base font-black text-gray-900">マイプロジェクト</h1>
-          </div>
+          <span className="ml-1 text-sm text-gray-400">/</span>
+          <span className="text-sm font-semibold text-gray-700">マイプロジェクト</span>
 
           <div className="ml-auto flex items-center gap-2">
             <Link
               href="/playground"
-              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.97]"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
             >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">新規プロジェクト作成</span>
+              <Plus className="h-4 w-4 shrink-0" strokeWidth={2} />
+              <span className="hidden sm:inline">新規プロジェクト</span>
               <span className="sm:hidden">新規</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+      <main className="mx-auto max-w-5xl space-y-4 px-4 py-6 pb-16">
 
-        {/* ══════════ ヒーローバナー ══════════ */}
-        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-6 text-white shadow-lg shadow-emerald-700/30">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
+        {/* ══════════ 概要 ══════════ */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                 アプリ開発スタジオ
               </p>
-              <h2 className="mt-1 flex items-center gap-1.5 text-xl font-black">
-                あなたのコードが集まる場所
-                <Sparkles className="h-5 w-5 shrink-0 text-emerald-300" strokeWidth={2.5} />
-              </h2>
-              <p className="mt-1 text-sm text-emerald-200 leading-relaxed">
-                作ったツールをそのままジサップに出品しよう。
+              <p className="mt-1.5 text-sm leading-relaxed text-gray-500">
+                保存したコードの一覧です。出品するとジサップで公開できます。
               </p>
             </div>
-            <div className="flex shrink-0 flex-col gap-2">
-              <Link
-                href="/playground"
-                className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-[0.97]"
-              >
-                <Terminal className="h-4 w-4" />
-                エディタを開く
-              </Link>
-            </div>
+            <Link
+              href="/playground"
+              className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-emerald-300 hover:text-emerald-700"
+            >
+              <Terminal className="h-4 w-4 shrink-0" strokeWidth={2} />
+              <span className="hidden sm:inline">エディタを開く</span>
+              <span className="sm:hidden">エディタ</span>
+            </Link>
           </div>
 
           {/* 統計 */}
-          {mounted && (
-            <div className="mt-5 flex flex-wrap gap-5 border-t border-white/20 pt-4">
-              <div>
-                <p className="text-2xl font-black">{myProjects.length}</p>
-                <p className="text-xs text-emerald-300">マイプロジェクト</p>
+          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-4 text-center">
+            {[
+              { label: "プロジェクト", value: mounted ? myProjects.length : "—" },
+              { label: "GETしたアプリ", value: mounted ? acquiredApps.length : "—" },
+              {
+                label: "総コード行数",
+                value: mounted
+                  ? myProjects.reduce((s, p) => s + p.lines, 0).toLocaleString()
+                  : "—",
+              },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl bg-gray-50 py-2.5">
+                <p className="text-lg font-bold tracking-tight text-gray-900">{s.value}</p>
+                <p className="mt-0.5 text-[10px] text-gray-400">{s.label}</p>
               </div>
-              <div>
-                <p className="text-2xl font-black">{acquiredApps.length}</p>
-                <p className="text-xs text-emerald-300">GETしたアプリ</p>
-              </div>
-              <div>
-                <p className="text-2xl font-black">
-                  {myProjects.reduce((s, p) => s + p.lines, 0).toLocaleString()}
-                </p>
-                <p className="text-xs text-emerald-300">総コード行数</p>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         {/* ══════════ 検索バー ══════════ */}
@@ -923,9 +904,9 @@ export default function ProjectsPage() {
             {filteredProjects.length > 0 ? (
               <>
                 {/* ヒント */}
-                <div className="flex items-start gap-3 rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
-                  <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" strokeWidth={2} />
-                  <p className="text-xs leading-relaxed text-blue-700">
+                <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                  <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" strokeWidth={2} />
+                  <p className="text-xs leading-relaxed text-gray-500">
                     開発スタジオで保存したコードはここに表示されます。「出品する」を押すとジサップのマーケットに無料で公開できます。
                   </p>
                 </div>
@@ -938,13 +919,13 @@ export default function ProjectsPage() {
                   {/* 新規作成カード */}
                   <Link
                     href="/playground"
-                    className="group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-white py-10 text-center transition-all hover:border-emerald-400 hover:bg-emerald-50/50 hover:-translate-y-0.5"
+                    className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-300 bg-white py-10 text-center transition-colors hover:border-emerald-300 hover:bg-emerald-50/40"
                   >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 transition-colors group-hover:bg-emerald-200">
-                      <Plus className="h-7 w-7 text-emerald-600" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 transition-colors group-hover:bg-emerald-100">
+                      <Plus className="h-6 w-6 text-gray-400 transition-colors group-hover:text-emerald-600" strokeWidth={2} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-emerald-700">新規プロジェクトを作成</p>
+                      <p className="text-sm font-bold text-gray-700">新規プロジェクトを作成</p>
                       <p className="mt-0.5 text-xs text-gray-400">開発スタジオが開きます</p>
                     </div>
                   </Link>
@@ -961,9 +942,9 @@ export default function ProjectsPage() {
           <>
             {filteredAcquired.length > 0 ? (
               <>
-                <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-100">
-                  <Package className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2} />
-                  <p className="text-xs leading-relaxed text-emerald-700">
+                <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                  <Package className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" strokeWidth={2} />
+                  <p className="text-xs leading-relaxed text-gray-500">
                     ジサップでGETしたアプリの一覧です。カードをタップすると詳細ページでソースコードを確認できます。
                   </p>
                 </div>
@@ -1241,7 +1222,7 @@ export default function ProjectsPage() {
                   <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
                     {isRepublish
                       ? <><RefreshCw className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを上書きする</>
-                      : <><Rocket className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを出品する</>}
+                      : <><Upload className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを出品する</>}
                   </h3>
                   <button onClick={() => setPublishTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
@@ -1368,7 +1349,7 @@ export default function ProjectsPage() {
                   </button>
                   <button onClick={() => handlePublish(true)} disabled={publishing || publishTarget.isDemo || !publishTitle.trim() || !publishCategory}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />上書き中…</> : <><Rocket className="h-4 w-4" />{isRepublish ? "上書きする" : "出品する（トップに掲載）"}</>}
+                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />上書き中…</> : <><Upload className="h-4 w-4" />{isRepublish ? "上書きする" : "出品する（トップに掲載）"}</>}
                   </button>
                   <p className="text-center text-[10px] text-gray-400">「URLだけ発行」はカテゴリ未選択でも利用できます</p>
                 </div>

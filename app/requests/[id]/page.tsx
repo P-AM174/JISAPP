@@ -14,7 +14,7 @@ import {
   X,
   ExternalLink,
   Terminal,
-  Rocket,
+  Package,
 } from "lucide-react";
 
 type AppRequest = {
@@ -179,7 +179,7 @@ export default function RequestDetailPage() {
             {responses.length > 0 && (
               <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-black text-gray-900">
-                  <Rocket className="h-4 w-4 text-emerald-500" />
+                  <Package className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2} />
                   作ってみました（{responses.length}件）
                 </h2>
                 <div className="space-y-4">

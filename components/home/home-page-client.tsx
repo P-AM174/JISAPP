@@ -12,7 +12,8 @@ import {
   Heart,
   TrendingUp,
   Users,
-  Zap,
+  Settings2,
+  BadgeCheck,
   ArrowRight,
   Code2,
   Globe,
@@ -32,13 +33,10 @@ import {
   ChevronRight,
   ChevronLeft,
   Terminal,
-  Crown,
   Menu,
   X,
   Package,
   FolderOpen,
-  Rocket,
-  ThumbsUp,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -981,7 +979,7 @@ export function HomePageClient({
         {featuredApps.length > 0 && (
           <section>
             <SectionHeader
-              icon={<Zap className="h-5 w-5 text-violet-500" />}
+              icon={<BadgeCheck className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
               title="注目のアプリ"
               sub="運営がピックアップしたおすすめアプリ"
               href="/search?sort=featured"
@@ -998,7 +996,7 @@ export function HomePageClient({
         {popularMonth.length > 0 && (
           <section>
             <SectionHeader
-              icon={<Crown className="h-5 w-5 text-amber-500" strokeWidth={2.5} />}
+              icon={<TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={2.5} />}
               title="今月の人気アプリ TOP5"
               sub="今月最も応援バッジをもらったアプリ"
             />
@@ -1042,7 +1040,7 @@ export function HomePageClient({
                         </p>
                         {(app.stamp_count ?? 0) > 0 && (
                           <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
-                            <ThumbsUp className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                            <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                             {app.stamp_count}
                           </p>
                         )}
@@ -1272,7 +1270,7 @@ export function HomePageClient({
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" style={{ maxWidth: "72rem", margin: "0 auto" }}>
             {([
               {
-                Icon: Zap,
+                Icon: Settings2,
                 title: "サーバー設定ゼロ",
                 desc: "VPS・クラウド・ドメイン取得など、一切不要。コードを貼った瞬間から動くアプリが手に入ります。Vercel や Heroku すら使いません。",
                 bg: "bg-emerald-50",
@@ -1334,9 +1332,8 @@ export function HomePageClient({
                   <Terminal className="h-4 w-4" />
                   初心者大歓迎
                 </div>
-                <h2 className="flex items-center gap-2 text-2xl font-black">
+                <h2 className="text-2xl font-black">
                   今すぐ、あなたの最初のアプリを作ろう
-                  <Rocket className="h-6 w-6 shrink-0" strokeWidth={2.5} />
                 </h2>
                 <p className="mt-1.5 text-sm text-white/70 max-w-md">
                   AIにアイデアを伝えてコードを生成 → 開発スタジオに貼るだけ。サーバーもDBも設定不要です。

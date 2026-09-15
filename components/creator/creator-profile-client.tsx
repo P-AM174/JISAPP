@@ -7,12 +7,10 @@ import { JisappLogo } from "@/components/jisapp-logo";
 import {
   Package,
   Users,
-  Star,
   UserPlus,
-  Zap,
   ChevronRight,
-  Sparkles,
-  ThumbsUp,
+  Heart,
+  Wrench,
   Brain,
   Palette,
 } from "lucide-react";
@@ -66,7 +64,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f3f6f4]">
         <div className="flex items-center gap-3 text-emerald-600">
-          <Sparkles className="h-5 w-5 animate-spin" />
+          <span className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
           <span className="text-sm font-semibold">読み込み中...</span>
         </div>
       </div>
@@ -153,7 +151,6 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
           </div>
 
           <div className="flex items-center justify-center gap-2 border-b border-gray-100 py-3">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             <span className="text-sm font-black text-gray-900">
               {profile.rating > 0 ? profile.rating : "—"}
             </span>
@@ -208,7 +205,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
-              <Zap className="h-3.5 w-3.5" />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               タップで詳細
             </div>
           </div>
@@ -233,7 +230,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
           <p className="text-sm leading-relaxed text-gray-600">
             評価は出品アプリへの応援バッジ（
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
-              <ThumbsUp className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               いいね
             </span>
             ・
@@ -243,7 +240,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
             </span>
             ・
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
-              <Zap className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              <Wrench className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               便利
             </span>
             ・

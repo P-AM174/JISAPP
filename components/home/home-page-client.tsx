@@ -762,7 +762,14 @@ function HomeQuickActions() {
             <ArrowRight className="h-5 w-5" />
           </span>
         </Link>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:mx-auto sm:max-w-3xl">
+        <Link
+          href="/projects"
+          className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-800 transition-all hover:bg-emerald-100 active:scale-[0.98]"
+        >
+          <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
+          マイプロジェクトへ
+        </Link>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:mx-auto sm:max-w-3xl">
           <Link
             href="/requests"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
@@ -776,13 +783,6 @@ function HomeQuickActions() {
           >
             <SearchIcon className="h-4 w-4" />
             みんなが作ったアプリをさがす
-          </Link>
-          <Link
-            href="/projects"
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-5 py-2.5 text-sm font-bold text-emerald-800 transition-all hover:bg-emerald-100 active:scale-[0.98]"
-          >
-            <FolderOpen className="h-4 w-4" />
-            マイプロジェクトへ
           </Link>
         </div>
       </div>

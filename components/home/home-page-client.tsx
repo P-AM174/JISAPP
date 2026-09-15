@@ -740,10 +740,7 @@ function HomeQuickActions() {
   return (
     <div className="border-b border-gray-100 bg-gradient-to-b from-violet-50/70 to-white px-4 py-6 shadow-sm">
       <div className="mx-auto max-w-4xl">
-        <Link
-          href="/playground"
-          className="group relative flex w-full flex-col items-stretch gap-4 overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-emerald-600 to-teal-600 px-5 py-5 text-white shadow-xl shadow-emerald-300/40 transition-all hover:shadow-2xl hover:shadow-emerald-400/40 active:scale-[0.99] sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6"
-        >
+        <div className="relative flex w-full flex-col items-stretch gap-4 overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-emerald-600 to-teal-600 px-5 py-5 text-white shadow-xl shadow-emerald-300/40 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6">
           <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
           <div className="relative flex items-center gap-4">
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
@@ -755,19 +752,24 @@ function HomeQuickActions() {
               <p className="mt-0.5 text-sm text-white/85">AIのコードを貼るだけで、すぐにアプリが完成</p>
             </div>
           </div>
-          <span className="relative flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-emerald-700 shadow-lg transition group-hover:bg-emerald-50">
-            今すぐ作る
-            <ArrowRight className="h-5 w-5" />
-          </span>
-        </Link>
-        <Link
-          href="/projects"
-          className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-bold text-emerald-800 transition-all hover:bg-emerald-100 active:scale-[0.98]"
-        >
-          <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
-          マイプロジェクトへ
-        </Link>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:mx-auto sm:max-w-3xl">
+          <div className="relative flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[220px]">
+            <Link
+              href="/playground"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-emerald-700 shadow-lg transition-colors hover:bg-emerald-50 active:scale-[0.98]"
+            >
+              今すぐ作る
+              <ArrowRight className="h-5 w-5 shrink-0" strokeWidth={2} />
+            </Link>
+            <Link
+              href="/projects"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20 active:scale-[0.98]"
+            >
+              <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
+              マイプロジェクトへ
+            </Link>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:mx-auto sm:max-w-3xl">
           <Link
             href="/requests"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"

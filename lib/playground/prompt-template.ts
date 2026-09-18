@@ -1,18 +1,36 @@
 /** テンプレート内のアプリ名プレースホルダー */
 export const PROMPT_APP_NAME_PLACEHOLDER = "【ここに作りたいアプリ名を入れる】";
 
-/** 開発スタジオ・自由研究ガイド共通の AI 指示文（1プロンプト・逆質問型） */
+export const PROMPT_STORAGE_MARKER = "【データ保存】";
+
+/** 端末をまたいで残す（ジサップの保存機能） */
+export const PROMPT_STORAGE_ZISUP = `【データ保存（ジサップの保存機能を使う）】
+・入力した内容・記録は、次回開いても残るようにする。
+・保存と読み込みは window.Zisup.saveData / window.Zisup.loadData だけを使う。localStorage は使わない。
+  ・保存: await window.Zisup.saveData('識別名', データ)
+  ・読込: await window.Zisup.loadData('識別名')
+・識別名は英数字で、アプリ内で一度決めたら変えない。
+・画面を出す前に、必ず await で読み込みを完了させる。
+・ログインしていると別の端末でも同じデータが読める。`;
+
+/** 同じ端末のブラウザ内だけ残す */
+export const PROMPT_STORAGE_LOCAL = `【データ保存（この端末のブラウザ内だけ）】
+・window.Zisup.saveData / loadData は使わない。
+・残したいデータは localStorage を使う。
+  ・保存: localStorage.setItem('識別名', JSON.stringify(データ))
+  ・読込: JSON.parse(localStorage.getItem('識別名') || 'null')
+・識別名は英数字で、アプリ内で一度決めたら変えない。
+・同じスマホ・パソコンの同じブラウザでだけ残る。別の端末やブラウザでは引き継がれない。`;
+
+/** 開発スタジオ・自由研究ガイド共通の AI 指示文 */
 export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優秀なフロントエンドエンジニアです。
 「${PROMPT_APP_NAME_PLACEHOLDER}」を作りたいです。
 
-【最初の返答のルール（重要）】
-・この最初の返答では、HTMLコードは絶対に出力しないでください。
-・「データの保存機能は必要ですか？（次回開いても残したいデータがあるか）」について、はい/いいえで答えやすい形で質問してください。
-・ユーザーが答えるまで、コードは書かないでください。
+次のルールを守って、最初の返答で完成した index.html を1ファイルまるごと出力してください（「変更部分のみ」や途中省略は不可）。保存の要否はすでに決まっているので、保存について質問しないでください。
 
 【外部API・AI連携が話題に出たとき（重要）】
-・ユーザーが「AIを使って」「ChatGPT」「Gemini」「天気API」「地図」「外部サービスと連携」など、APIキーが必要になりそうな要望を出したときだけ、コードを書く前（または書いた直後）に次を短く案内してください。
-・最初の返答の段階では、外部APIについて能動的に質問しないでください。
+・ユーザーが「AIを使って」「ChatGPT」「Gemini」「天気API」「地図」「外部サービスと連携」など、APIキーが必要になりそうな要望を出したときだけ、コードのあとに次を短く案内してください。
+・必要がなければ、外部APIについて能動的に質問しないでください。
 
 ■ ユーザーへの案内文（この内容をベースに、サービスに合わせて書き換えてください）
 ---
@@ -32,8 +50,8 @@ export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優
 コード側では、キーの値は書かず secret: 'API_NAME' のように名前だけ指定します（API_NAME は登録名と同じ大文字）。
 ---
 
-【コードを書くときのルール（ユーザーが答えた後に適用）】
-ユーザーが質問に答えたあと、以下のジサップ専用ルールを厳守して、1つの index.html にすべてを含めたコードを出力してください。
+【コードを書くときのルール】
+以下のジサップ専用ルールを厳守して、1つの index.html にすべてを含めたコードを出力してください。
 
 【完全なHTML1枚（シングルファイル）で完結】
 CSSもJavaScriptもファイル分割せず、すべて1つの「index.html」ファイルの中に丸ごと埋め込んでください。
@@ -42,12 +60,7 @@ CSSもJavaScriptもファイル分割せず、すべて1つの「index.html」�
 Tailwind CSSやBootstrapなどのCDN（外部読み込み）は、環境制限によりデザインが反映されない・エラーになるため絶対に使用しないでください。
 デザインはすべて「生のCSS（Vanilla CSS）」で記述し、CSS変数（:root）などを活用して、初心者向けに明るく爽やかで洗練されたモダンなUI（ライトモード）を実装してください。
 
-【データ保存（必要な場合のみ）】
-・ユーザーが「保存機能が必要」と答えた場合のみ、window.Zisup.saveData / loadData を使用してください。
-  ・保存: await window.Zisup.saveData('識別名', データ)
-  ・読込: await window.Zisup.loadData('識別名')
-  ※ async/await で読み込み完了を待ってから画面を表示してください。
-・保存が不要と答えた場合は、localStorage も Zisup API も使わないでください。
+${PROMPT_STORAGE_MARKER}
 
 【APIキーの扱い（外部API・AIを使う場合は必須・最重要）】
 ・APIキー・トークン・秘密鍵を HTML / JavaScript / CSS に絶対に書かないでください。
@@ -166,13 +179,12 @@ body {
 type BuildPromptOptions = {
   /** ジサップオリジナルデザインの指定を差し込むか */
   useJisappDesign?: boolean;
+  /** 保存方法。zisup = 端末をまたぐ保存、local = 同じ端末の localStorage */
+  storage?: "zisup" | "local";
 };
 
 /**
- * ユーザー入力をテンプレートに組み込んだ完成プロンプトを生成する。
- * @param appName 作りたいアプリ名（必須）
- * @param details 仕様・デザイン・機能など（任意）
- * @param options ジサップオリジナルデザインを使うかなど
+ * チャットの回答から、AIに送る完成プロンプトを作る。
  */
 export function buildPromptFromTemplate(
   appName: string,
@@ -182,25 +194,29 @@ export function buildPromptFromTemplate(
   const name = appName.trim() || PROMPT_APP_NAME_PLACEHOLDER;
   let prompt = PROMPT_TEMPLATE.split(PROMPT_APP_NAME_PLACEHOLDER).join(name);
 
+  const storageBlock =
+    options?.storage === "local" ? PROMPT_STORAGE_LOCAL : PROMPT_STORAGE_ZISUP;
+  prompt = prompt.includes(PROMPT_STORAGE_MARKER)
+    ? prompt.replace(PROMPT_STORAGE_MARKER, storageBlock)
+    : `${prompt}\n\n${storageBlock}`;
+
   if (options?.useJisappDesign) {
-    const designMarker = "【データ保存（必要な場合のみ）】";
     const designBlock = `${PROMPT_JISAPP_DESIGN}\n\n`;
-    prompt = prompt.includes(designMarker)
-      ? prompt.replace(designMarker, `${designBlock}${designMarker}`)
+    prompt = prompt.includes(storageBlock)
+      ? prompt.replace(storageBlock, `${designBlock}${storageBlock}`)
       : `${prompt}\n\n${PROMPT_JISAPP_DESIGN}`;
   }
 
   const extra = details?.trim();
-  if (extra) {
+  if (extra && extra !== "なし") {
     const insert = `
 
 【追加の要望・仕様（ユーザー入力）】
 ${extra}
 ・上記の要望をできるだけ反映してください。矛盾する場合はジサップのルール（シングルHTML・CDN禁止・APIキーは secret のみ）を優先してください。`;
-    // 「最初の返答のルール」の直前に挿入して、AIが要望を見落とさないようにする
-    const marker = "【最初の返答のルール（重要）】";
+    const marker = "次のルールを守って、最初の返答で完成した index.html";
     if (prompt.includes(marker)) {
-      prompt = prompt.replace(marker, `${insert}\n\n${marker}`);
+      prompt = prompt.replace(marker, `${insert.trim()}\n\n${marker}`);
     } else {
       prompt = `${prompt}${insert}`;
     }
@@ -216,11 +232,11 @@ ${extra}
 export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守ってください）】
 ・完成コードは必ず1つの index.html にまとめる（HTML/CSS/JSのファイル分割禁止）
 ・Tailwind・Bootstrapなど外部CDNは一切使わない。デザインは生のCSS（Vanilla CSS）で書く
-・最初の返答ではコードを出さず、「データの保存機能は必要ですか？」と質問する。ユーザーが答えるまでコードは書かない
-・保存が必要と答えた場合のみ window.Zisup.saveData / loadData を使う（localStorageは使わない）
+・最初の返答で完成した index.html を省略せず出力する（保存について質問しない）
+・別の端末でも残したいデータがある場合は window.Zisup.saveData / loadData を使う（localStorageは使わない）
   保存: await window.Zisup.saveData('識別名', データ)
   読込: await window.Zisup.loadData('識別名')
-・保存不要なら localStorage も Zisup の保存APIも使わない
+・同じ端末だけでよければ localStorage を使う（Zisup の保存APIは使わない）
 ・APIキー・トークンをコードに絶対に書かない。外部APIは window.Zisup.fetch(url, { secret: 'NAME' }) を使う
 ・secret 名は大文字英字（例: GEMINI, OPENAI, WEATHER）。キーの値はユーザーがジサップの「APIキー」画面で登録する
 ・コード出力後、APIキーが必要な場合は登録手順を短く案内する`;

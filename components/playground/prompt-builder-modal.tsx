@@ -2,23 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Copy, FileText, Wand2, X } from "lucide-react";
-import {
-  buildPromptFromTemplate,
-  PROMPT_RULES_SHORT,
-} from "@/lib/playground/prompt-template";
+import { ArrowLeft, CheckCircle2, Copy, FileText, Send, Wand2, X } from "lucide-react";
+import { buildPromptFromTemplate, PROMPT_RULES_SHORT } from "@/lib/playground/prompt-template";
 import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** コピー成功後に呼ぶ（未指定時は onClose）。ガイド経由なら両方閉じる想定 */
   onReturnToEditor?: () => void;
-  /** 開いたときの初期タブ */
   initialTab?: "template" | "rules";
 };
 
+type ChatStep = 0 | 1 | 2 | 3 | "result";
+
 const APP_EXAMPLES = ["日記アプリ", "家計簿", "TODOリスト", "タイマー", "おこづかい帳"];
+
+const QUESTIONS = [
+  "作りたいアプリは何ですか。",
+  "そのアプリの詳細や仕様、デザイン、機能、こだわりについて教えてください。ない場合は「なし」と送ってください。",
+  "ジサップのオリジナルデザインで作りますか？\n透明感のあるグラデーションとすりガラス風の見た目を指定します。自分でデザインを決めたいときは「いいえ」です。",
+  "データの保存機能は必要ですか？\n「はい」は、ログインすると別の端末でも記録が残ります。「いいえ」は、同じスマホ・パソコンのブラウザの中だけ残します。",
+] as const;
 
 export function PromptBuilderModal({
   open,
@@ -27,75 +31,97 @@ export function PromptBuilderModal({
   initialTab = "template",
 }: Props) {
   const [tab, setTab] = useState<"template" | "rules">(initialTab);
+  const [step, setStep] = useState<ChatStep>(0);
   const [appName, setAppName] = useState("");
   const [details, setDetails] = useState("");
   const [useJisappDesign, setUseJisappDesign] = useState(true);
+  const [needSave, setNeedSave] = useState(true);
+  const [draft, setDraft] = useState("");
   const [copied, setCopied] = useState<"template" | "rules" | null>(null);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
-  /** 開くたびに input を作り直し、ブラウザ自動入力や前回値の残存を防ぐ */
-  const [formKey, setFormKey] = useState(0);
-  const closeTimerRef = useRef<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (closeTimerRef.current != null) {
-      window.clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    if (!open) {
-      setAppName("");
-      setDetails("");
-      setUseJisappDesign(true);
-      setCopied(null);
-      setError("");
-      return;
-    }
-    setFormKey((k) => k + 1);
+    if (!open) return;
     setTab(initialTab);
+    setStep(0);
     setAppName("");
     setDetails("");
     setUseJisappDesign(true);
+    setNeedSave(true);
+    setDraft("");
     setCopied(null);
     setError("");
   }, [open, initialTab]);
 
+  useEffect(() => {
+    if (!open || tab !== "template" || step === "result") return;
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    window.setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open, tab, step, appName, details, useJisappDesign, needSave]);
+
   if (!open || !mounted) return null;
 
-  const preview = buildPromptFromTemplate(
-    appName.trim() || "（アプリ名）",
+  const answers: [string, string, string, string] = [
+    appName,
     details,
-    { useJisappDesign }
-  );
+    useJisappDesign ? "はい" : "いいえ",
+    needSave ? "はい" : "いいえ",
+  ];
 
-  const scheduleReturnAfterCopy = () => {
-    if (closeTimerRef.current != null) {
-      window.clearTimeout(closeTimerRef.current);
+  const visibleCount = step === "result" ? 4 : step;
+
+  const finishedPrompt = buildPromptFromTemplate(appName.trim(), details, {
+    useJisappDesign,
+    storage: needSave ? "zisup" : "local",
+  });
+
+  const goBack = () => {
+    setError("");
+    setCopied(null);
+    if (step === "result") {
+      setStep(3);
+      return;
     }
-    closeTimerRef.current = window.setTimeout(() => {
-      closeTimerRef.current = null;
-      (onReturnToEditor ?? onClose)();
-    }, 700);
+    if (step === 0) return;
+    const prev = (step - 1) as 0 | 1 | 2 | 3;
+    if (prev === 0) setDraft(appName);
+    if (prev === 1) setDraft(details === "なし" ? "" : details);
+    setStep(prev);
   };
 
-  const handleCopyTemplate = async () => {
-    const name = appName.trim();
+  const submitAppName = (value: string) => {
+    const name = value.trim();
     if (!name) {
-      setError("作りたいアプリ名を入力してください");
+      setError("作りたいアプリを入力してください");
       return;
     }
     setError("");
+    setAppName(name);
+    setDraft("");
+    setStep(1);
+  };
+
+  const submitDetails = (value: string) => {
+    const text = value.trim() || "なし";
+    setError("");
+    setDetails(text);
+    setDraft("");
+    setStep(2);
+  };
+
+  const handleCopyTemplate = async () => {
     try {
-      await navigator.clipboard.writeText(
-        buildPromptFromTemplate(name, details, { useJisappDesign })
-      );
+      await navigator.clipboard.writeText(finishedPrompt);
       setCopied("template");
-      scheduleReturnAfterCopy();
     } catch {
-      setError("コピーに失敗しました。もう一度お試しください");
+      setError("コピーできませんでした。下の文を長押ししてコピーしてください");
     }
   };
 
@@ -104,7 +130,6 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(PROMPT_RULES_SHORT);
       setCopied("rules");
-      scheduleReturnAfterCopy();
     } catch {
       setError("コピーに失敗しました。もう一度お試しください");
     }
@@ -126,7 +151,7 @@ export function PromptBuilderModal({
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 className="text-base font-black">AIに送るプロンプト</h2>
             <p className="mt-0.5 text-xs text-emerald-50">
-              テンプレート作成、または必須ルールだけコピー
+              チャットで作成、または必須ルールだけコピー
             </p>
           </div>
           <button
@@ -150,13 +175,11 @@ export function PromptBuilderModal({
               }}
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[11px] font-bold transition-colors",
-                tab === "template"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                tab === "template" ? "bg-emerald-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
               )}
             >
               <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              テンプレートから作成
+              チャットからプロンプトを作成
             </button>
             <button
               type="button"
@@ -167,188 +190,301 @@ export function PromptBuilderModal({
               }}
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[11px] font-bold transition-colors",
-                tab === "rules"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                tab === "rules" ? "bg-emerald-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
               )}
             >
-              <FileText className="h-3.5 w-3.5" />
+              <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               必須ルールだけ
             </button>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          {tab === "template" ? (
-            <>
-              <div>
-                <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                  作りたいアプリ <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  key={`app-name-${formKey}`}
-                  type="text"
-                  value={appName}
-                  onChange={(e) => {
-                    setAppName(e.target.value);
-                    if (error) setError("");
-                  }}
-                  placeholder="例：日記アプリ、家計簿、TODOリスト"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  name={`jisapp_prompt_app_${formKey}`}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {APP_EXAMPLES.map((ex) => (
-                    <button
-                      key={ex}
-                      type="button"
-                      onClick={() => {
-                        setAppName(ex);
+        {tab === "template" && step !== "result" ? (
+          <>
+            <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
+              {QUESTIONS.map((question, index) => {
+                if (index > visibleCount) return null;
+                const answered = index < visibleCount;
+                return (
+                  <div key={question} className="space-y-2">
+                    <div className="flex justify-start">
+                      <p className="max-w-[90%] whitespace-pre-line rounded-2xl rounded-tl-md bg-emerald-50 px-3 py-2.5 text-sm leading-relaxed text-gray-800">
+                        {question}
+                      </p>
+                    </div>
+                    {answered && (
+                      <div className="flex justify-end">
+                        <p className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-tr-md bg-emerald-600 px-3 py-2.5 text-sm leading-relaxed text-white">
+                          {answers[index]}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="shrink-0 border-t border-gray-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              {error && <p className="mb-2 text-xs font-semibold text-rose-600">{error}</p>}
+
+              {typeof step === "number" && step > 0 && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                  ひとつ前に戻る
+                </button>
+              )}
+
+              {step === 0 && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {APP_EXAMPLES.map((ex) => (
+                      <button
+                        key={ex}
+                        type="button"
+                        onClick={() => submitAppName(ex)}
+                        className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
+                      >
+                        {ex}
+                      </button>
+                    ))}
+                  </div>
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      submitAppName(draft);
+                    }}
+                  >
+                    <input
+                      ref={(el) => {
+                        inputRef.current = el;
+                      }}
+                      value={draft}
+                      onChange={(e) => {
+                        setDraft(e.target.value);
                         if (error) setError("");
                       }}
-                      className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
+                      placeholder="例：日記アプリ"
+                      autoComplete="off"
+                      className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
+                    />
+                    <button
+                      type="submit"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white"
+                      aria-label="送信"
                     >
-                      {ex}
+                      <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
                     </button>
-                  ))}
+                  </form>
                 </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                  仕様・デザイン・つけたい機能{" "}
-                  <span className="font-medium text-gray-400">（任意）</span>
-                </label>
-                <textarea
-                  key={`app-details-${formKey}`}
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  rows={4}
-                  placeholder={
-                    "例：\n・パステルカラーでかわいい見た目\n・日付ごとにメモを残せる\n・写真は不要\n・スマホで使いやすく"
-                  }
-                  autoComplete="off"
-                  name={`jisapp_prompt_details_${formKey}`}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
-                <p className="mt-1 text-[10px] text-gray-400">
-                  空欄でもOK。あとからAIに追加で頼めます。
-                </p>
-              </div>
-
-              <label
-                className={cn(
-                  "flex cursor-pointer gap-3 rounded-2xl border px-4 py-3 transition-colors",
-                  useJisappDesign
-                    ? "border-emerald-300 bg-emerald-50"
-                    : "border-gray-200 bg-white hover:bg-gray-50"
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={useJisappDesign}
-                  onChange={(e) => setUseJisappDesign(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
-                />
-                <span className="min-w-0">
-                  <span className="block text-xs font-black text-gray-900">
-                    ジサップオリジナルデザインを使う
-                  </span>
-                  <span className="mt-1 block text-[11px] leading-relaxed text-gray-500">
-                    透明感のあるグラデーション＆すりガラス風の見た目を指定します。デザインを自分で決めたいときは外してください。
-                  </span>
-                </span>
-              </label>
-
-              {error && (
-                <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
               )}
 
-              <button
-                type="button"
-                onClick={() => void handleCopyTemplate()}
-                disabled={copied === "template"}
-                className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
-                  copied === "template" ? "bg-teal-600" : "bg-emerald-600 hover:bg-emerald-500"
-                )}
-              >
-                {copied === "template" ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    コピーしました！
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    完成したプロンプトをコピー
-                  </>
-                )}
-              </button>
-
-              <div>
-                <p className="mb-1.5 text-xs font-bold text-gray-700">プレビュー（AIに送る文）</p>
-                <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 font-mono text-[10px] leading-relaxed text-slate-600">
-                  {preview}
-                </pre>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-sm font-black text-amber-900">自分でプロンプトを書く人向け</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-amber-800">
-                  作りたいアプリの説明は自分で書いてOKです。その文の
-                  <span className="font-bold">末尾</span>
-                  に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。
-                </p>
-              </div>
-
-              <div>
-                <p className="mb-1.5 text-xs font-bold text-gray-700">必須ルール（短縮版）</p>
-                <pre className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 font-mono text-[11px] leading-relaxed text-slate-700">
-                  {PROMPT_RULES_SHORT}
-                </pre>
-              </div>
-
-              <ol className="space-y-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-900">
-                <li>1. 自分の要望文をAIに書く（または貼る）</li>
-                <li>2. 「必須ルールだけコピー」を押す</li>
-                <li>3. 要望文のあとに貼り付けて送信</li>
-              </ol>
-
-              {error && (
-                <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
+              {step === 1 && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => submitDetails("なし")}
+                    className="rounded-full bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-200"
+                  >
+                    なし
+                  </button>
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      submitDetails(draft);
+                    }}
+                  >
+                    <textarea
+                      ref={(el) => {
+                        inputRef.current = el;
+                      }}
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      rows={2}
+                      placeholder="仕様・デザイン・こだわり"
+                      className="min-w-0 flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
+                    />
+                    <button
+                      type="submit"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-xl bg-emerald-600 text-white"
+                      aria-label="送信"
+                    >
+                      <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    </button>
+                  </form>
+                </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => void handleCopyRules()}
-                disabled={copied === "rules"}
-                className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
-                  copied === "rules" ? "bg-emerald-600" : "bg-amber-600 hover:bg-amber-500"
-                )}
-              >
-                {copied === "rules" ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    コピーしました！
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    必須ルールだけコピー
-                  </>
-                )}
-              </button>
-            </>
-          )}
-        </div>
+              {step === 2 && (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUseJisappDesign(true);
+                      setStep(3);
+                    }}
+                    className="rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white"
+                  >
+                    はい
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUseJisappDesign(false);
+                      setStep(3);
+                    }}
+                    className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-700"
+                  >
+                    いいえ
+                  </button>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNeedSave(true);
+                      setStep("result");
+                    }}
+                    className="rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white"
+                  >
+                    はい
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNeedSave(false);
+                      setStep("result");
+                    }}
+                    className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-700"
+                  >
+                    いいえ
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        ) : tab === "template" ? (
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <button
+              type="button"
+              onClick={goBack}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              質問に戻る
+            </button>
+
+            <div className="rounded-2xl bg-emerald-50 px-4 py-3">
+              <p className="text-sm font-black text-emerald-950">以下のプロンプトをコピーしてAIに送ってください</p>
+              <p className="mt-1 text-xs leading-relaxed text-emerald-800">
+                ChatGPT・Claude・Gemini などに貼り付けて送信します。返ってきたコードを、開発スタジオに貼り付けてください。
+              </p>
+            </div>
+
+            <ul className="space-y-1 text-xs text-gray-500">
+              <li>アプリ: {appName}</li>
+              <li>詳細: {details || "なし"}</li>
+              <li>オリジナルデザイン: {useJisappDesign ? "使う" : "使わない"}</li>
+              <li>保存: {needSave ? "ジサップの保存機能" : "この端末の localStorage"}</li>
+            </ul>
+
+            <button
+              type="button"
+              onClick={() => void handleCopyTemplate()}
+              className={cn(
+                "flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-black text-white shadow-sm active:scale-[0.99]",
+                copied === "template" ? "bg-teal-600" : "bg-emerald-600 hover:bg-emerald-500"
+              )}
+            >
+              {copied === "template" ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                  コピーしました
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  プロンプトをコピー
+                </>
+              )}
+            </button>
+
+            {error && <p className="text-xs font-semibold text-rose-600">{error}</p>}
+
+            <textarea
+              readOnly
+              value={finishedPrompt}
+              rows={12}
+              className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 font-mono text-[11px] leading-relaxed text-gray-700 outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={() => (onReturnToEditor ?? onClose)()}
+              className="w-full rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50"
+            >
+              エディタに戻る
+            </button>
+          </div>
+        ) : (
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-black text-amber-900">自分でプロンプトを書く人向け</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-amber-800">
+                作りたいアプリの説明は自分で書いてOKです。その文の
+                <span className="font-bold">末尾</span>
+                に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-xs font-bold text-gray-700">必須ルール（短縮版）</p>
+              <pre className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 font-mono text-[11px] leading-relaxed text-slate-700">
+                {PROMPT_RULES_SHORT}
+              </pre>
+            </div>
+
+            <ol className="space-y-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-900">
+              <li>1. 自分の要望文をAIに書く（または貼る）</li>
+              <li>2. 「必須ルールだけコピー」を押す</li>
+              <li>3. 要望文のあとに貼り付けて送信</li>
+            </ol>
+
+            {error && (
+              <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => void handleCopyRules()}
+              disabled={copied === "rules"}
+              className={cn(
+                "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99]",
+                copied === "rules" ? "bg-emerald-600" : "bg-amber-600 hover:bg-amber-500"
+              )}
+            >
+              {copied === "rules" ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  コピーしました
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  必須ルールだけコピー
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>,
     document.body

@@ -92,8 +92,8 @@ const STEPS = [
     num: "3",
     title: "AIへの指示文を作ってコピーする",
     body: [
-      "下のボタンを押して、作りたいアプリ名を入力します。",
-      "仕様やデザインの希望があれば任意で書けます（空欄でもOK）。",
+      "下のボタンを押して、チャットの質問に答えます（作りたいアプリ・詳細・デザイン・保存）。",
+      "詳細がないときは「なし」で大丈夫です。ひとつ前に戻ることもできます。",
       "完成した指示文をコピーします。",
     ],
     tip: "指示文にはジサップ専用のルールが自動で入るので、そのままAIに送るのがおすすめです。",
@@ -102,14 +102,14 @@ const STEPS = [
   {
     id: "ai",
     num: "4",
-    title: "AIに送って、質問に答える",
+    title: "AIに送ってコードをもらう",
     body: [
       "ChatGPT、Gemini、Claude など、使えるAIを開きます。",
       "コピーした指示文をそのまま貼り付けて送信します。",
-      "AIが「保存機能は必要ですか？」と質問してきたら、はい/いいえで答えます（このときコードはまだ出ません）。",
-      "答えると、ジサップ用のHTMLコードが返ってきます（1〜2分かかることもあります）。",
+      "保存の要否はチャットですでに答えているので、AIは最初から完成したHTMLを返します。",
+      "ジサップ用のHTMLコードが返ってきます（1〜2分かかることもあります）。",
     ],
-    tip: "保存機能が不要なアプリ（電卓など）なら「いいえ」と答えると、シンプルなコードになります。",
+    tip: "返ってきたコードは、省略せず全部コピーしてください。",
   },
   {
     id: "paste",
@@ -356,15 +356,15 @@ export function SummerResearchGuide() {
                   <div className="space-y-3 rounded-xl border border-sky-200 bg-sky-50 p-4">
                     <p className="text-xs font-bold text-sky-800">AIへの指示文（ジサップ専用）</p>
                     <p className="text-xs leading-relaxed text-sky-800">
-                      アプリ名を入力すると、ジサップ用ルールが入った指示文ができます。自分で書く場合は「必須ルールだけ」を要望の末尾に貼ってください。
+                      チャットの質問に答えると、ジサップ用ルールが入った指示文ができます。自分で書く場合は「必須ルールだけ」を要望の末尾に貼ってください。
                     </p>
                     <button
                       type="button"
                       onClick={() => openPromptBuilder("template")}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-bold text-white hover:bg-sky-500"
                     >
-                      <Terminal className="h-4 w-4" />
-                      テンプレートから作成
+                      <Terminal className="h-4 w-4 shrink-0" strokeWidth={2} />
+                      チャットからプロンプトを作成
                     </button>
                     <button
                       type="button"

@@ -163,7 +163,7 @@ function SimpleCodeGuide({
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-sky-600 py-2 text-xs font-bold text-white transition-all hover:bg-sky-500 active:scale-[0.98] touch-manipulation"
                 >
                   <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                  テンプレートから作成
+                  チャットからプロンプトを作成
                 </button>
                 <button
                   type="button"
@@ -342,7 +342,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div className="space-y-3 px-4 py-4">
                   <p className="text-sm leading-relaxed text-slate-700">
-                    アプリ名や希望の機能を入力すると、ジサップ用のルールが入った指示文が自動でできます。コピーして ChatGPT・Claude・Gemini などに貼り付けて送ってください。
+                    チャットの質問に答えると、ジサップ用のルールが入った指示文ができます。コピーして ChatGPT・Claude・Gemini などに貼り付けて送ってください。
                   </p>
                   <button
                     type="button"
@@ -350,7 +350,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-black text-sky-700 shadow-sm ring-1 ring-sky-200 transition-all hover:bg-sky-50 active:scale-[0.99]"
                   >
                     <Wand2 className="h-4 w-4 shrink-0" strokeWidth={2} />
-                    テンプレートから作成
+                    チャットからプロンプトを作成
                   </button>
                   <button
                     type="button"
@@ -368,7 +368,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                   自分でプロンプトを書く場合
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-amber-700">
-                  要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。テンプレートならアプリ名だけでOKです。
+                  要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。チャットなら質問に答えるだけで指示文ができます。
                 </p>
               </div>
 

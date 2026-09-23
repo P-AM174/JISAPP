@@ -70,7 +70,14 @@ export function CatalogAppCard({
           <p className="line-clamp-2 flex-1 text-xs leading-relaxed text-gray-500">{app.description}</p>
         )}
         <div className="mt-1 flex items-center justify-between border-t border-gray-100 pt-2.5">
-          <span className="text-xs text-gray-400 truncate">by {app.creator_name ?? "匿名"}</span>
+          <span className="flex min-w-0 items-center gap-1.5 text-xs text-gray-400">
+            <span className="truncate">by {app.creator_name ?? "匿名"}</span>
+            {app.creator_name === "ジサップ公式" && (
+              <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                公式
+              </span>
+            )}
+          </span>
           {(app.stamp_count ?? 0) > 0 && (
             <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-emerald-600">
               <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />

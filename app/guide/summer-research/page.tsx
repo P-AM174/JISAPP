@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { SummerResearchGuide } from "@/components/guide/summer-research-guide";
 
@@ -8,6 +9,10 @@ export const metadata = createPageMetadata({
   path: "/guide/summer-research",
 });
 
+/** 季節外れのため非公開（404）。来夏に true へ戻す */
+const GUIDE_OPEN = false;
+
 export default function SummerResearchGuidePage() {
+  if (!GUIDE_OPEN) notFound();
   return <SummerResearchGuide />;
 }

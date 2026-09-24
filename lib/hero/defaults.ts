@@ -21,7 +21,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   {
     id: "default-summer",
     sortOrder: 1,
-    enabled: true,
+    // 季節外れのため非表示。来夏に true へ戻す
+    enabled: false,
     badge: "新企画：夏休みの自由研究・宿題に",
     title: "夏休みの自由研究・工作は、自分だけのアプリを作って提出しよう！",
     subtitle:

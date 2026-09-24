@@ -216,7 +216,6 @@ export function buildLlmsTxt(): string {
     `- [トップ](${site}/): 公開アプリの一覧と開発スタジオへの入口`,
     `- [よくある質問](${site}/faq): ジサップの説明とFAQ`,
     `- [開発スタジオ](${site}/playground): コードを貼り付けて実行・公開する画面`,
-    `- [夏休み自由研究ガイド](${site}/guide/summer-research): 学生向けの作り方`,
     `- [アプリを探す](${site}/search): 公開アプリの検索`,
     `- [利用規約](${site}/terms)`,
     ...SITE_SOCIAL_PROFILES.map((p) => `- [公式${p.name}](${p.url})`),

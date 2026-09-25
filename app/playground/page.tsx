@@ -1,42 +1,41 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Search,
-  Trash2,
-  ClipboardPaste,
-  Play,
-  RefreshCw,
-  Code2,
-  Eye,
-  Settings2,
-  Copy,
-  CheckCircle2,
-  Download,
-  X,
-  Settings,
-  Save,
-  Undo2,
-  Redo2,
-  Key,
-  Upload,
-  HelpCircle,
-  ArrowRight,
   ArrowLeft,
+  ArrowRight,
   ArrowDown,
-  Wand2,
-  Lightbulb,
-  Wrench,
-  KeyRound,
-  MessageCircle,
+  CheckCircle2,
+  ClipboardPaste,
+  Code2,
+  Copy,
+  Database,
+  Download,
   FolderOpen,
   Globe,
+  HelpCircle,
+  Key,
+  KeyRound,
+  Lightbulb,
   Link2,
+  MessageCircle,
+  Monitor,
+  MoreHorizontal,
+  Play,
+  Redo2,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Smartphone,
+  Trash2,
+  TriangleAlert,
+  Undo2,
+  Upload,
+  Wrench,
+  X,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -45,177 +44,144 @@ import { CategoryIcon } from "@/lib/category-icon";
 import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
-import { SECRETS_STUDIO_GUIDE } from "@/lib/playground/prompt-template";
+import { SECRETS_STUDIO_GUIDE, buildPromptFromTemplate } from "@/lib/playground/prompt-template";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
 import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
 import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal";
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
+import {
+  LaunchAiLink,
+  PastePanel,
+  launchCaption,
+  PreviewEmpty,
+  StageIndicator,
+  StartPanel,
+  ChoosePanel,
+  type IdeaOptions,
+  type StudioStage,
+} from "@/components/playground/studio-flow";
 import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
 import {
   compareStorageUsage,
   hasStorageWarnings,
   type StorageChangeFinding,
 } from "@/lib/playground/detect-storage-keys";
+import {
+  TRUNCATED_RETRY_MESSAGE,
+  detectCodeIssue,
+  normalizePastedCode,
+  usesStudioSecrets,
+  usesLocalStorageOnly,
+  STORAGE_FIX_MESSAGE,
+} from "@/lib/playground/code-cleanup";
+import { copyText, copyTextNow, findStudioAi, type StudioAi } from "@/lib/playground/ai-launch";
+import { SAMPLE_APP_HTML } from "@/lib/playground/sample-app";
 import { supabase } from "@/lib/supabase";
 import {
   markStudioLoginPromptShown,
   wasStudioLoginPromptShown,
 } from "@/lib/studio/login-prompt";
-// ─── ショートカット一覧 ───
-const SHORTCUTS = [
-  { key: "Ctrl + Enter", desc: "プレビューを更新" },
-  { key: "Ctrl + Z",     desc: "元に戻す（Undo）" },
-  { key: "Ctrl + Y",     desc: "やり直す（Redo）" },
-  { key: "Ctrl + S",     desc: "下書き保存" },
-  { key: "Ctrl + F",     desc: "コード内検索" },
-  { key: "Tab",          desc: "インデント（2スペース）" },
-];
+
+/** 作りたいもの・選んだAI・進み具合を覚えておく（AIアプリから戻ってきても続きから） */
+const FLOW_STORAGE_KEY = "jisapp_studio_flow";
+
+type StoredFlow = {
+  idea?: string;
+  aiId?: StudioAi["id"];
+  awaitingCode?: boolean;
+  options?: IdeaOptions;
+};
+
+const DEFAULT_IDEA_OPTIONS: IdeaOptions = {
+  details: "",
+  useJisappDesign: true,
+  needSave: true,
+};
 
 // ─── トースト ───
 function Toast({ message, show }: { message: string; show: boolean }) {
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={cn(
-        "fixed bottom-6 right-6 z-[500] flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-emerald-900/20 transition-all duration-300",
-        show ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+        "fixed inset-x-4 bottom-24 z-[500] mx-auto flex max-w-sm items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-4 py-3 text-sm font-semibold text-white shadow-xl transition-all duration-300 md:inset-x-auto md:bottom-6 md:right-6",
+        show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       )}
     >
-      <CheckCircle2 className="h-4 w-4 shrink-0" />
-      {message}
+      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+      <span className="min-w-0">{message}</span>
     </div>
   );
 }
 
-// ─── コード未入力時の簡易ガイド ───
-function SimpleCodeGuide({
-  onPaste,
-  onManualInput,
-  onOpenGuide,
+// ─── メニュー項目 ───
+function MenuItem({
+  icon,
+  label,
+  onClick,
+  disabled = false,
+  danger = false,
+  hint,
 }: {
-  onPaste?: () => void;
-  onManualInput?: () => void;
-  onOpenGuide?: () => void;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  hint?: string;
 }) {
-  const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
-  const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
-  const [promptBuilderKey, setPromptBuilderKey] = useState(0);
-
-  const openPromptBuilder = (tab: "template" | "rules" = "template") => {
-    setPromptBuilderTab(tab);
-    setPromptBuilderKey((k) => k + 1);
-    setPromptBuilderOpen(true);
-  };
-
-  const steps: { text: string; buildPrompt?: boolean }[] = [
-    { text: "専用プロンプトを AI に送り、作りたいアプリを伝える", buildPrompt: true },
-    { text: "出力された HTML コードをすべてコピーする" },
-    { text: "上の「コードを貼り付ける」ボタンを押す" },
-    { text: "「プレビュー」タブで動作を確認する" },
-    { text: "問題なければ「公開/URL発行」から URL を発行する" },
-  ];
-
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-gradient-to-b from-emerald-50/80 to-white px-4 py-5">
-      <PromptBuilderModal
-        key={promptBuilderKey}
-        open={promptBuilderOpen}
-        onClose={() => setPromptBuilderOpen(false)}
-        onReturnToEditor={() => setPromptBuilderOpen(false)}
-        initialTab={promptBuilderTab}
-      />
-      {onPaste && (
-        <div className="rounded-2xl border-2 border-emerald-500 bg-white p-3 shadow-md shadow-emerald-100">
-          <button
-            type="button"
-            onClick={onPaste}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-4 text-base font-black text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.98] touch-manipulation"
-          >
-            <ClipboardPaste className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-            コードを貼り付ける
-          </button>
-          <p className="mt-2 text-center text-[11px] font-bold leading-relaxed text-emerald-800">
-            AI でコピーした HTML コードを、ここに貼り付けます
-          </p>
-        </div>
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        danger ? "text-rose-600 hover:bg-rose-50" : "text-slate-700 hover:bg-slate-100"
       )}
-
-      <p className="mt-5 text-xs font-bold tracking-wide text-emerald-700">使い方</p>
-      <h2 className="mt-1 text-base font-black text-gray-900">AI が作ったコードを貼り付けて動かす</h2>
-      <p className="mt-2 text-xs leading-relaxed text-gray-500">
-        プログラミングの知識は不要です。HTML コードを貼り付けるだけでアプリが動きます。
-      </p>
-      <ol className="mt-4 space-y-2.5">
-        {steps.map((step, i) => (
-          <li key={step.text} className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-emerald-100">
-            <div className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-black text-white">
-                {i + 1}
-              </span>
-              <span className="text-xs leading-relaxed text-gray-700">{step.text}</span>
-            </div>
-            {step.buildPrompt && (
-              <div className="mt-2.5 space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => openPromptBuilder("template")}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-sky-600 py-2 text-xs font-bold text-white transition-all hover:bg-sky-500 active:scale-[0.98] touch-manipulation"
-                >
-                  <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                  チャットからプロンプトを作成
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openPromptBuilder("rules")}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 py-2 text-xs font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98] touch-manipulation"
-                >
-                  必須ルールだけコピー（自分で書く人向け）
-                </button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ol>
-      <div className="mt-4 flex flex-col gap-2">
-        {onManualInput && (
-          <button
-            type="button"
-            onClick={onManualInput}
-            className="rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 touch-manipulation"
-          >
-            手動で入力する
-          </button>
-        )}
-        {onOpenGuide && (
-          <button
-            type="button"
-            onClick={onOpenGuide}
-            className="text-xs font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2 touch-manipulation"
-          >
-            詳しい手順を見る
-          </button>
-        )}
-      </div>
-    </div>
+    >
+      <span className={cn("shrink-0", danger ? "text-rose-500" : "text-slate-400")}>{icon}</span>
+      <span className="flex-1">{label}</span>
+      {hint && <span className="text-[11px] text-slate-400">{hint}</span>}
+    </button>
   );
 }
 
-// ─── プレビュー空状態（案内はエディタ側のみ） ───
-function PreviewPlaceholder() {
+// ─── アイコンだけのボタン ───
+function IconButton({
+  label,
+  onClick,
+  disabled = false,
+  danger = false,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-gradient-to-b from-emerald-50 via-white to-white px-6 py-6 text-center">
-      <h2 className="text-xl font-black text-gray-800">
-        コードを貼り付けると
-        <span className="text-emerald-600">ここに表示されます</span>
-      </h2>
-      <p className="mt-1 text-sm text-gray-500">
-        <span className="md:hidden">「コード」タブに HTML を貼り付けると、このプレビュー画面にアプリが表示されます。</span>
-        <span className="hidden md:inline">左のコード画面に HTML を貼り付けると、右側のこの画面にアプリが表示されます。</span>
-      </p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors disabled:opacity-30 touch-manipulation",
+        danger ? "hover:bg-rose-50 hover:text-rose-500" : "hover:bg-slate-100 hover:text-slate-700"
+      )}
+    >
+      {children}
+    </button>
   );
 }
+
 
 // ─── ガイドモーダルのステップ定義 ───
 // ─── ガイドモーダル（4ステップ） ───
@@ -336,7 +302,6 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
                 <div className="border-b border-sky-200 bg-sky-600 px-4 py-2.5">
                   <span className="inline-flex items-center gap-1.5 text-xs font-black text-white">
-                    <Wand2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                     ジサップ専用プロンプト
                   </span>
                 </div>
@@ -349,7 +314,6 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                     onClick={() => openPromptBuilder("template")}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-black text-sky-700 shadow-sm ring-1 ring-sky-200 transition-all hover:bg-sky-50 active:scale-[0.99]"
                   >
-                    <Wand2 className="h-4 w-4 shrink-0" strokeWidth={2} />
                     チャットからプロンプトを作成
                   </button>
                   <button
@@ -381,7 +345,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                   {SECRETS_STUDIO_GUIDE}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-violet-700">
-                  プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、「プレビュー更新」の横にある「APIキー」から登録してください。
+                  プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、右上の「…」メニューの「APIキーの登録」から登録してください。
                 </p>
               </div>
             </div>
@@ -438,7 +402,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                     APIキーが必要なアプリ
                   </p>
                   <p className="text-xs leading-relaxed text-violet-800">
-                    コードにキーを書かず、「プレビュー更新」の横「APIキー」から登録。AIがコード内で指定した secret 名（例: secret: &apos;WEATHER&apos;）と同じ名前で登録してください。
+                    コードにキーを書かず、右上の「…」メニューの「APIキーの登録」から登録。AIがコード内で指定した secret 名（例: secret: &apos;WEATHER&apos;）と同じ名前で登録してください。
                   </p>
                 </div>
               </div>
@@ -450,7 +414,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
                 いい感じに動いたら<br />
-                <span className="text-emerald-600">「下書き保存」</span>を押そう！
+                <span className="text-emerald-600">「下書き保存」</span>を押そう！（右上の「…」メニューにもあります）
               </p>
 
               <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-4">
@@ -538,51 +502,6 @@ function GuideModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── ツールバーボタン（アイコン＋テキスト） ───
-function ToolBtn({
-  icon,
-  label,
-  onClick,
-  disabled = false,
-  danger = false,
-  active = false,
-  title,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-  active?: boolean;
-  title?: string;
-}) {
-  if (disabled) {
-    return (
-      <div className="flex flex-col items-center gap-0.5 px-1.5 py-1 opacity-30 cursor-not-allowed">
-        <div className="flex h-6 w-6 items-center justify-center">{icon}</div>
-        <span className="text-[9px] text-gray-400 whitespace-nowrap">{label}</span>
-      </div>
-    );
-  }
-  return (
-    <button
-      onClick={onClick}
-      title={title ?? label}
-      className={cn(
-        "flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 transition-all active:scale-95",
-        danger
-          ? "text-gray-500 hover:bg-rose-50 hover:text-rose-500"
-          : active
-          ? "bg-emerald-100 text-emerald-700"
-          : "text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
-      )}
-    >
-      <div className="flex h-6 w-6 items-center justify-center">{icon}</div>
-      <span className="text-[9px] whitespace-nowrap">{label}</span>
-    </button>
-  );
-}
-
 // ─── メインページ ───
 export default function PlaygroundPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -635,9 +554,7 @@ export default function PlaygroundPage() {
   const [autoRun, setAutoRun]           = useState(true);
   const [copied, setCopied]             = useState(false);
   const [activePane, setActivePane]     = useState<"editor" | "preview">("editor");
-  const [codeInputStarted, setCodeInputStarted] = useState(false);
   const [iframeKey, setIframeKey]       = useState(0);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKeysLoading, setApiKeysLoading] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
@@ -657,6 +574,23 @@ export default function PlaygroundPage() {
   const [publishUpdateNotes, setPublishUpdateNotes] = useState("");
 
   const isRepublish = !!publishContext?.appId;
+
+  // ── 作る流れ（作りたいもの → AI → 貼り付け） ──
+  const [idea, setIdea]                   = useState("");
+  const [ideaError, setIdeaError]         = useState("");
+  const [aiId, setAiId]                   = useState<StudioAi["id"]>("chatgpt");
+  const [ideaOptions, setIdeaOptions]     = useState<IdeaOptions>(DEFAULT_IDEA_OPTIONS);
+  const [awaitingCode, setAwaitingCode]   = useState(false);
+  const [launchedAi, setLaunchedAi]       = useState<StudioAi | null>(null);
+  const [returned, setReturned]           = useState(false);
+  const [pasteFailed, setPasteFailed]     = useState(false);
+  const [flowRestored, setFlowRestored]   = useState(false);
+  /** 始め方（プロンプトから／コードを貼る）を選んだか */
+  const [started, setStarted]             = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
+  const [menuOpen, setMenuOpen]           = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const leftForAiRef = useRef(false);
 
   useEffect(() => {
     if (!showPublishModal) return;
@@ -741,16 +675,14 @@ export default function PlaygroundPage() {
   const [showLeaveModal, setShowLeaveModal]   = useState(false);
   const [lastSavedCode, setLastSavedCode]     = useState("");
   const [leaveAfterSave, setLeaveAfterSave]   = useState(false);
-
-  // 下部ドロワー
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  /** ロゴから離れるときは、履歴を戻らずトップページへ行く */
+  const leaveToHomeRef = useRef(false);
 
   const drawerTextareaRef = useRef<HTMLTextAreaElement>(null);
   const mobileTextareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** ?project= / ?load=1 で既存アプリを開いたときだけ true（新規は前回アプリを引き継がない） */
   const isRestoredSessionRef = useRef(false);
-  const [editorFocused, setEditorFocused] = useState(false);
 
   const router = useRouter();
 
@@ -1065,23 +997,108 @@ export default function PlaygroundPage() {
   const handleClear = () => {
     applyCode("");
     setPreviewHtml("");
-    setCodeInputStarted(false);
-    mobileTextareaRef.current?.focus();
-    drawerTextareaRef.current?.focus();
+    setAwaitingCode(true);
+    setPasteFailed(false);
   };
 
-  const handlePaste = async () => {
+  /** AI から受け取ったコードを整えて、そのまま動かす */
+  const applyIncomingCode = useCallback((raw: string) => {
+    const next = normalizePastedCode(raw);
+    if (!next) return;
+    applyCode(next);
+    setPreviewHtml(next);
+    setIframeKey((k) => k + 1);
+    setActivePane("preview");
+    setAwaitingCode(false);
+    setPasteFailed(false);
+    setReturned(false);
+  }, [applyCode]);
+
+  const handlePasteFromClipboard = async () => {
+    let text = "";
     try {
-      const text = await navigator.clipboard.readText();
-      if (text.trim()) {
-        applyCode(text);
-        setCodeInputStarted(true);
-      }
-      mobileTextareaRef.current?.focus();
-      drawerTextareaRef.current?.focus();
+      text = await navigator.clipboard.readText();
     } catch {
-      alert("クリップボードへのアクセスを許可してください（ブラウザの設定）");
+      text = "";
     }
+    if (text.trim()) {
+      applyIncomingCode(text);
+      return;
+    }
+    // SNS のアプリ内ブラウザなどで読めないときは、手で貼る枠に切り替える
+    if (code.trim()) {
+      setActivePane("editor");
+      showToast("コード欄を長押しして「ペースト」してください");
+      requestAnimationFrame(() => getActiveTextarea()?.select());
+      return;
+    }
+    setAwaitingCode(true);
+    setPasteFailed(true);
+  };
+
+  /** 指示文をコピーしてから AI を開く（リンクの遷移はそのまま任せる） */
+  const launchAi = (ai: StudioAi): boolean => {
+    const name = idea.trim();
+    if (!name) {
+      setIdeaError("作りたいものを書いてください");
+      return false;
+    }
+    const prompt = buildPromptFromTemplate(name, ideaOptions.details, {
+      useJisappDesign: ideaOptions.useJisappDesign,
+      storage: ideaOptions.needSave ? "zisup" : "local",
+    });
+    // リンクで AI を開く前に同期コピーする。だめなら Clipboard API で追いかける
+    if (copyTextNow(prompt)) {
+      showToast("指示文をコピーしました。AIに貼り付けて送信してください");
+    } else {
+      void copyText(prompt).then((ok) =>
+        showToast(ok ? "指示文をコピーしました。AIに貼り付けて送信してください" : "指示文をコピーできませんでした。もう一度お試しください")
+      );
+    }
+    setLaunchedAi(ai);
+    setAwaitingCode(true);
+    setPasteFailed(false);
+    setReturned(false);
+    leftForAiRef.current = true;
+    return true;
+  };
+
+  const goToPaste = () => {
+    setLaunchedAi(null);
+    setAwaitingCode(true);
+    setPasteFailed(false);
+  };
+
+  const backToIdea = () => {
+    setStarted(true);
+    setAwaitingCode(false);
+    setPasteFailed(false);
+    setReturned(false);
+  };
+
+  const runSample = () => {
+    applyIncomingCode(SAMPLE_APP_HTML);
+    showToast("サンプルを動かしました");
+  };
+
+  const startOver = () => {
+    applyCode("");
+    setPreviewHtml("");
+    setStarted(false);
+    setAwaitingCode(false);
+    setPasteFailed(false);
+    setReturned(false);
+    setLaunchedAi(null);
+    setActivePane("editor");
+  };
+
+  /** 空のエディタに直接貼られたときも、AIの説明文や囲みを取り除く */
+  const handleEditorChange = (value: string) => {
+    if (!code.trim() && value.trim().length > 20) {
+      applyIncomingCode(value);
+      return;
+    }
+    applyCode(value);
   };
 
   const ensurePreviewAppId = useCallback(async (): Promise<string | null> => {
@@ -1137,32 +1154,15 @@ export default function PlaygroundPage() {
     setActivePane("preview");
   }, [code, session?.user, ensurePreviewAppId]);
 
-  const handlePasteAndRun = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text.trim()) {
-        applyCode(text);
-        setPreviewHtml(text);
-        setIframeKey((k) => k + 1);
-        setCodeInputStarted(true);
-        setActivePane("preview");
-      } else {
-        mobileTextareaRef.current?.focus();
-      }
-    } catch {
-      alert("クリップボードへのアクセスを許可してください");
-    }
-  };
-
   const handleCopyCode = async () => {
     if (!code.trim()) return;
-    try {
-      await navigator.clipboard.writeText(code);
+    // SNS のアプリ内ブラウザでも通るよう、クリック中に同期的にコピーする
+    if (await copyText(code)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       showToast("コードを全部コピーしました");
-    } catch {
-      showToast("コピーできませんでした。ブラウザの設定を確認してください");
+    } else {
+      showToast("コピーできませんでした。「ファイル保存」を使ってください");
     }
   };
 
@@ -1278,10 +1278,7 @@ export default function PlaygroundPage() {
     // 「保存してから戻る」フローの場合は離脱
     if (leaveAfterSave) {
       setLeaveAfterSave(false);
-      setTimeout(() => {
-        if (window.history.length > 1) router.back();
-        else router.push("/");
-      }, 600);
+      setTimeout(leaveStudio, 600);
     }
   };
 
@@ -1346,44 +1343,393 @@ export default function PlaygroundPage() {
   const charCount = code.length;
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
-  const showCodeEditor = code.trim().length > 0 || codeInputStarted;
   const showGuide = !previewHtml.trim();
-  const isDirty = code.trim() !== "" && code !== lastSavedCode;
+  const isDirty = code.trim() !== "" && code !== lastSavedCode && code.trim() !== SAMPLE_APP_HTML.trim();
 
-  const focusCodeEditor = useCallback(() => {
-    setCodeInputStarted(true);
-    setActivePane("editor");
-    requestAnimationFrame(() => {
-      mobileTextareaRef.current?.focus();
-      drawerTextareaRef.current?.focus();
-    });
+  const stage: StudioStage = code.trim() ? "ready" : awaitingCode ? "paste" : started ? "idea" : "choose";
+  const localOnly = usesLocalStorageOnly(code);
+  const codeIssue = detectCodeIssue(code);
+  const needsKeys = usesStudioSecrets(code);
+  const isSample = code.trim() === SAMPLE_APP_HTML.trim();
+
+  // 作りたいもの・AI・進み具合を復元（URLの ?idea= / ?sample=1 を優先）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("project") || params.get("load") === "1") {
+      setFlowRestored(true);
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem(FLOW_STORAGE_KEY) ?? "{}") as StoredFlow;
+      if (stored.idea) setIdea(stored.idea);
+      if (stored.aiId) setAiId(findStudioAi(stored.aiId).id);
+      if (stored.options) setIdeaOptions({ ...DEFAULT_IDEA_OPTIONS, ...stored.options });
+      // 開き直したときは必ず「始め方を選ぶ」画面から。入力内容とAIの選択だけ引き継ぐ
+    } catch { /* noop */ }
+    const ideaParam = params.get("idea");
+    if (ideaParam) {
+      // 選択画面は出したまま、「プロンプトから作る」を選んだときの入力欄に入れておく
+      setIdea(ideaParam.slice(0, 200));
+    }
+    if (params.get("sample") === "1") {
+      applyIncomingCode(SAMPLE_APP_HTML);
+    }
+    setFlowRestored(true);
+    // 初回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!flowRestored) return;
+    try {
+      const data: StoredFlow = {
+        idea,
+        aiId,
+        awaitingCode: awaitingCode && !code.trim(),
+        options: ideaOptions,
+      };
+      localStorage.setItem(FLOW_STORAGE_KEY, JSON.stringify(data));
+    } catch { /* noop */ }
+  }, [flowRestored, idea, aiId, awaitingCode, ideaOptions, code]);
 
-  const handleBack = () => {
+  // AI のタブ・アプリから戻ってきたら「おかえりなさい」を出す
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && leftForAiRef.current) {
+        leftForAiRef.current = false;
+        setReturned(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
+
+  // メニューの外を押したら閉じる
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  function leaveStudio() {
+    if (leaveToHomeRef.current) {
+      leaveToHomeRef.current = false;
+      router.push("/");
+      return;
+    }
+    if (window.history.length > 1) router.back();
+    else router.push("/");
+  }
+
+  /** 未保存の変更があれば確認してから離れる */
+  const requestLeave = (toHome: boolean) => {
+    leaveToHomeRef.current = toHome;
     if (isDirty) {
       setShowLeaveModal(true);
     } else {
-      if (window.history.length > 1) router.back();
-      else router.push("/");
+      leaveStudio();
     }
   };
 
+  const handleBack = () => requestLeave(false);
+
   const confirmLeave = () => {
     setShowLeaveModal(false);
-    if (window.history.length > 1) router.back();
-    else router.push("/");
+    leaveStudio();
   };
 
+  const selectedAi = findStudioAi(aiId);
+
+  const primaryLaunch = (className?: string) => (
+    <LaunchAiLink ai={selectedAi} onLaunch={() => launchAi(selectedAi)} className={className} />
+  );
+
+  // コードの下に出す注意（途中で切れている・サンプル・APIキー）
+  const renderNotices = () => (
+    <>
+      {codeIssue === "truncated" && (
+        <div className="flex shrink-0 items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">コードが途中で切れているようです</p>
+            <p className="mt-0.5 text-amber-800">AIに続きを頼んで、最初から最後まで全部を貼り直してください。</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void copyText(TRUNCATED_RETRY_MESSAGE).then((ok) => showToast(ok ? "AIに送る文をコピーしました" : "コピーできませんでした"));
+            }}
+            className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100"
+          >
+            依頼文をコピー
+          </button>
+        </div>
+      )}
+      {codeIssue === "not_html" && (
+        <div className="flex shrink-0 items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p>
+            <span className="font-semibold">HTMLのコードではないようです。</span>
+            AIの返事のうち、<code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code> から始まる部分をコピーしてください。
+          </p>
+        </div>
+      )}
+      {needsKeys && (
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
+          <Key className="h-4 w-4 shrink-0 text-slate-400" />
+          <p className="min-w-0 flex-1">このアプリは外部サービスのAPIキーを使います</p>
+          <button
+            type="button"
+            onClick={() => void openApiKeys()}
+            className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+          >
+            {apiKeysLoading ? "準備中…" : "キーを登録"}
+          </button>
+        </div>
+      )}
+      {localOnly && !isSample && (
+        <div className="flex shrink-0 items-start gap-2.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
+          <Database className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+          <p className="min-w-0 flex-1 leading-relaxed">
+            このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには{" "}
+            <code className="rounded bg-white px-1 ring-1 ring-slate-200">window.Zisup.saveData</code> / <code className="rounded bg-white px-1 ring-1 ring-slate-200">loadData</code> を使います。
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void copyText(STORAGE_FIX_MESSAGE).then((ok) => showToast(ok ? "AIに送る書き換え依頼をコピーしました" : "コピーできませんでした"));
+            }}
+            className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+          >
+            依頼文をコピー
+          </button>
+        </div>
+      )}
+      {isSample && (
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-emerald-100 bg-emerald-50/70 px-4 py-2.5 text-xs text-emerald-900">
+          <Zap className="h-4 w-4 shrink-0 text-emerald-600" />
+          <p className="min-w-0 flex-1">これはAIが作ったサンプルです。あなたのアプリも同じように作れます</p>
+          <button
+            type="button"
+            onClick={startOver}
+            className="hidden shrink-0 md:block rounded-lg bg-emerald-600 px-2.5 py-1.5 font-semibold text-white hover:bg-emerald-700"
+          >
+            自分で作る
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  const renderEditor = (
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+    variant: "mobile" | "desktop"
+  ) => (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+      <div className="flex shrink-0 items-center gap-1 border-b border-slate-200/80 px-2 py-1.5 sm:px-3">
+        <button
+          type="button"
+          onClick={() => void handlePasteFromClipboard()}
+          className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-100 transition hover:bg-emerald-100 touch-manipulation"
+        >
+          <ClipboardPaste className="h-3.5 w-3.5" />
+          貼り直す
+        </button>
+        <span className="ml-2 hidden text-[11px] text-slate-400 xl:inline">
+          {lineCount}行 · {charCount.toLocaleString()}文字
+        </span>
+        <div className="ml-auto flex items-center">
+          {/* スマホは幅が足りないため、コピー・保存を優先して元に戻す/やり直すを隠す */}
+          <span className="hidden items-center sm:flex">
+            <IconButton label="元に戻す" onClick={undo} disabled={!canUndo}>
+              <Undo2 className="h-4 w-4" />
+            </IconButton>
+            <IconButton label="やり直す" onClick={redo} disabled={!canRedo}>
+              <Redo2 className="h-4 w-4" />
+            </IconButton>
+            <span className="mx-1 h-4 w-px bg-slate-200" />
+          </span>
+          <button
+            type="button"
+            onClick={() => void handleCopyCode()}
+            title="コードを全部コピー（AIに修正を頼むときに）"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 touch-manipulation"
+          >
+            {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+            <span className="md:hidden lg:inline">{copied ? "コピー済み" : "全部コピー"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSaveCodeFile()}
+            title="コードをテキストファイルで保存"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 touch-manipulation"
+          >
+            <Download className="h-4 w-4" />
+            <span className="md:hidden lg:inline">ファイル保存</span>
+          </button>
+          <span className="mx-1 h-4 w-px bg-slate-200" />
+          <IconButton label="コードを消す" onClick={handleClear} danger>
+            <Trash2 className="h-4 w-4" />
+          </IconButton>
+        </div>
+      </div>
+      {renderNotices()}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <CodeEditorPanel
+          code={code}
+          onChange={handleEditorChange}
+          onKeyDown={handleKeyDown}
+          placeholder={"ここにAIのコードを貼り付け"}
+          textareaRef={textareaRef}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          showSearch={showSearch}
+          onToggleSearch={setShowSearch}
+          matchCount={matchCount}
+          currentMatch={currentMatch}
+          onJumpMatch={jumpToMatch}
+        />
+      </div>
+      {variant === "desktop" && (
+        <div className="flex shrink-0 items-center gap-3 border-t border-slate-200/80 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setAutoRun((v) => !v)}
+            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700"
+            title="コードを書き換えると自動でプレビューを更新します"
+          >
+            <span
+              className={cn(
+                "relative h-4 w-7 rounded-full transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform",
+                autoRun ? "bg-emerald-500 after:translate-x-3" : "bg-slate-300"
+              )}
+            />
+            自動で反映
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleRun()}
+            className="ml-auto flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+          >
+            <Play className="h-3.5 w-3.5" />
+            動かす
+            <kbd className="ml-1 rounded bg-white/15 px-1 font-sans text-[10px] text-white/80">Ctrl+Enter</kbd>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPreview = (variant: "mobile" | "desktop") => (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center gap-2 border-b border-slate-200/80 bg-white px-3 py-1.5">
+        <span className={cn("h-2 w-2 shrink-0 rounded-full", showGuide ? "bg-slate-300" : "bg-emerald-500")} />
+        <span className="truncate text-xs font-semibold text-slate-600">
+          {showGuide ? "プレビュー" : isSample ? "サンプル：反射神経タップ" : "あなたのアプリ"}
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          {variant === "desktop" && (
+            <div className="mr-1 flex rounded-lg bg-slate-100 p-0.5" role="group" aria-label="表示する幅">
+              <button
+                type="button"
+                onClick={() => setPreviewDevice("mobile")}
+                aria-pressed={previewDevice === "mobile"}
+                title="スマホの幅で表示"
+                className={cn(
+                  "rounded-md p-1.5 transition",
+                  previewDevice === "mobile" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewDevice("desktop")}
+                aria-pressed={previewDevice === "desktop"}
+                title="PCの幅で表示"
+                className={cn(
+                  "rounded-md p-1.5 transition",
+                  previewDevice === "desktop" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                <Monitor className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+          <IconButton
+            label="再読み込み"
+            onClick={() => {
+              if (code.trim()) {
+                setPreviewHtml(code);
+                setIframeKey((k) => k + 1);
+              }
+            }}
+            disabled={!code.trim()}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </IconButton>
+        </div>
+      </div>
+      {variant === "mobile" && renderNotices()}
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-emerald-50/70 via-white/40 to-sky-50/70">
+        {showGuide ? (
+          <PreviewEmpty onRunSample={runSample} />
+        ) : variant === "desktop" && previewDevice === "mobile" ? (
+          <div className="flex h-full items-center justify-center p-6">
+            <div className="h-full max-h-[780px] w-full max-w-[390px] overflow-hidden rounded-[28px] bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-900/10">
+              <AppRunner
+                key={iframeKey}
+                srcDoc={previewHtml}
+                title="プレビュー"
+                className="h-full"
+                appId={publishContext?.appId ?? "playground"}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-white">
+            <AppRunner
+              key={iframeKey}
+              srcDoc={previewHtml}
+              title="プレビュー"
+              className="h-full min-h-0"
+              appId={publishContext?.appId ?? "playground"}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden overscroll-none bg-gray-50">
+    <div
+      className="flex h-[100dvh] flex-col overflow-hidden overscroll-none text-slate-900"
+      style={{
+        backgroundColor: "#f7faf9",
+        backgroundImage:
+          "radial-gradient(900px 520px at 0% 0%, rgba(167, 230, 205, 0.38), transparent 62%), radial-gradient(760px 480px at 100% 8%, rgba(186, 225, 253, 0.42), transparent 60%), radial-gradient(820px 520px at 55% 110%, rgba(254, 236, 196, 0.38), transparent 62%)",
+      }}
+    >
 
       {/* ══ トースト ══ */}
       <Toast message={toast.msg} show={toast.show} />
 
       {/* ══ 使い方ガイドモーダル ══ */}
       {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} />}
-
 
       <EmbeddedSecretWarningModal
         open={secretWarningOpen}
@@ -1428,462 +1774,311 @@ export default function PlaygroundPage() {
       />
 
       {/* ══════════ ヘッダー ══════════ */}
-      <header className="relative z-30 flex shrink-0 flex-col border-b border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-center">
-
-        {/* 上段: 戻る・タイトル・ガイド */}
-        <div className="flex min-w-0 items-center gap-1 px-2 py-2 sm:gap-2 sm:px-3">
+      <header className="relative z-30 shrink-0 border-b border-white/70 bg-white/75 backdrop-blur-xl">
+        <div aria-hidden className="h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400" />
+        <div className="flex h-14 items-center gap-1.5 px-2 sm:gap-2 sm:px-4">
           <button
             type="button"
             onClick={handleBack}
-            className="relative flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+            aria-label="戻る"
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">戻る</span>
+            <ArrowLeft className="h-[18px] w-[18px]" />
             {isDirty && (
-              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400" title="未保存の変更があります" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-white" title="未保存の変更があります" />
             )}
           </button>
 
-          <div className="mx-0.5 h-4 w-px bg-gray-200" />
-
-          <div className="flex min-w-0 items-center gap-1.5">
+          <Link
+            href="/"
+            onClick={(e) => {
+              // 通常のクリックは未保存の確認を挟む（新しいタブで開く操作はそのまま）
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+              e.preventDefault();
+              requestLeave(true);
+            }}
+            aria-label="ジサップのトップページへ"
+            className="flex min-w-0 items-center gap-2 rounded-lg transition-opacity hover:opacity-80"
+          >
             <JisappLogoIcon className="h-7 w-7 shrink-0" />
-            <span className="truncate text-sm font-black text-gray-900">
-              <span className="hidden sm:inline">アプリ開発スタジオ</span>
-              <span className="sm:hidden">開発スタジオ</span>
-            </span>
+            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">開発<span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">スタジオ</span></span>
+          </Link>
+
+          <div className="hidden flex-1 justify-center lg:flex">
+            <StageIndicator stage={stage} />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowGuideModal(true)}
-            className="ml-auto flex shrink-0 items-center gap-1 rounded-xl bg-amber-100 px-2 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 transition-all hover:bg-amber-200 active:scale-95 sm:gap-1.5 sm:px-3 touch-manipulation"
-          >
-            <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-            <span className="md:hidden">使い方</span>
-            <span className="hidden md:inline">初心者ガイド</span>
-          </button>
-        </div>
-
-        {/* 下段（モバイル）/ 右側（PC）: アクションボタン */}
-        <div className="flex items-center gap-1 border-t border-gray-100 px-2 py-1.5 sm:ml-auto sm:border-0 sm:px-3 sm:py-2 sm:gap-1.5">
-
-          {/* 自動実行トグル（PCのみ） */}
-          <button
-            onClick={() => setAutoRun((v) => !v)}
-            className={cn(
-              "hidden md:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all",
-              autoRun
-                ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+          <div className="ml-auto flex items-center gap-1.5">
+            {stage === "ready" && (
+              <button
+                type="button"
+                onClick={handleSave}
+                className="hidden items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:flex"
+              >
+                <Save className="h-4 w-4" />
+                下書き保存
+              </button>
             )}
-          >
-            <Settings2 className="h-3 w-3 shrink-0" strokeWidth={2} />
-            {autoRun ? "自動実行 ON" : "自動実行 OFF"}
-          </button>
-
-          <div className="hidden md:block mx-0.5 h-6 w-px bg-gray-200" />
-
-          {/* ① 下書き保存 */}
-          <button
-            type="button"
-            onClick={handleSave}
-            title="マイプロジェクトに下書き保存（非公開）"
-            className="flex flex-1 flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700 transition-all hover:bg-gray-100 active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation"
-          >
-            <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
-              <Save className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">下書き保存</span>
-              <span className="sm:hidden">保存</span>
-            </span>
-            <span className="mt-0.5 hidden text-[9px] font-medium text-gray-400 lg:block">
-              自分だけ・非公開
-            </span>
-          </button>
-
-          {/* ② プレビュー更新 */}
-          <button
-            type="button"
-            onClick={handleRun}
-            disabled={!code.trim()}
-            title="右側のプレビューで動作を確認"
-            className={cn(
-              "flex flex-1 flex-col items-center rounded-xl border-2 px-2 py-1.5 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation",
-              code.trim()
-                ? "border-emerald-600 bg-white text-emerald-700 hover:bg-emerald-50"
-                : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400"
-            )}
-          >
-            <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
-              <Play className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">プレビュー更新</span>
-              <span className="sm:hidden">更新</span>
-            </span>
-            <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-600/80 lg:block">
-              右側で動作確認
-            </span>
-          </button>
-
-          {/* ②b APIキー */}
-          <button
-            type="button"
-            onClick={() => void openApiKeys()}
-            disabled={apiKeysLoading}
-            title="外部API・AIのキーをコードに書かず登録"
-            className={cn(
-              "flex flex-1 flex-col items-center rounded-xl border border-violet-200 bg-violet-50 px-2 py-1.5 text-violet-800 transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation hover:bg-violet-100 disabled:opacity-50",
-            )}
-          >
-            <span className="flex items-center gap-1 text-[11px] font-bold sm:text-xs">
-              <Key className="h-3.5 w-3.5 shrink-0" />
-              <span>{apiKeysLoading ? "準備中…" : "APIキー"}</span>
-            </span>
-            <span className="mt-0.5 hidden text-[9px] font-medium text-violet-600/80 lg:block">
-              コードに書かない
-            </span>
-          </button>
-
-          {/* ③ 公開/URL発行 */}
-          <button
-            type="button"
-            onClick={() => runWithLoginPrompt("publish", openPublishModal)}
-            disabled={!code.trim()}
-            title="URLを発行して共有・出品"
-            className={cn(
-              "flex flex-1 flex-col items-center rounded-xl px-2 py-1.5 shadow-sm transition-all active:scale-[0.98] sm:flex-none sm:min-w-[5.5rem] sm:px-3 touch-manipulation",
-              code.trim()
-                ? "bg-emerald-600 text-white shadow-emerald-200 hover:bg-emerald-700"
-                : "cursor-not-allowed bg-gray-200 text-gray-400 shadow-none"
-            )}
-          >
-            <span className="flex items-center gap-1 text-[10px] font-black sm:text-xs">
-              <Upload className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              公開/URL発行
-            </span>
-            <span className="mt-0.5 hidden text-[9px] font-medium text-emerald-100 lg:block">
-              URL発行・共有
-            </span>
-          </button>
-        </div>
-
-        {/* モバイル: コード / プレビュー 切り替え */}
-        <div className="shrink-0 border-t border-gray-100 bg-white px-3 py-2 md:hidden">
-          <div className="flex rounded-xl bg-gray-100 p-1">
             <button
               type="button"
-              onClick={() => setActivePane("editor")}
+              onClick={() => {
+                if (!code.trim()) {
+                  showToast("先にAIのコードを貼り付けてください");
+                  return;
+                }
+                runWithLoginPrompt("publish", openPublishModal);
+              }}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold transition-all touch-manipulation",
-                activePane === "editor"
-                  ? "bg-white text-emerald-700 shadow-sm"
-                  : "text-gray-500"
+                "hidden items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition md:flex",
+                code.trim()
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700"
+                  : "bg-slate-100 text-slate-400"
               )}
             >
-              <Code2 className="h-4 w-4" />
-              コード
+              <Upload className="h-4 w-4" strokeWidth={2.25} />
+              公開する
             </button>
-            <button
-              type="button"
-              onClick={() => setActivePane("preview")}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold transition-all touch-manipulation",
-                activePane === "preview"
-                  ? "bg-white text-emerald-700 shadow-sm"
-                  : "text-gray-500"
+
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="メニュー"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800",
+                  menuOpen && "bg-slate-100 text-slate-800"
+                )}
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-11 z-50 w-64 rounded-2xl bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/10"
+                >
+                  <MenuItem
+                    icon={<Save className="h-4 w-4" />}
+                    label="下書き保存"
+                    hint="自分だけ"
+                    disabled={!code.trim()}
+                    onClick={() => { setMenuOpen(false); handleSave(); }}
+                  />
+                  <MenuItem
+                    icon={<Key className="h-4 w-4" />}
+                    label="APIキーの登録"
+                    onClick={() => { setMenuOpen(false); void openApiKeys(); }}
+                  />
+                  <MenuItem
+                    icon={<Copy className="h-4 w-4" />}
+                    label="コードを全部コピー"
+                    disabled={!code.trim()}
+                    onClick={() => { setMenuOpen(false); void handleCopyCode(); }}
+                  />
+                  <MenuItem
+                    icon={<Download className="h-4 w-4" />}
+                    label="コードをファイルで保存"
+                    disabled={!code.trim()}
+                    onClick={() => { setMenuOpen(false); void handleSaveCodeFile(); }}
+                  />
+                  <MenuItem
+                    icon={<FolderOpen className="h-4 w-4" />}
+                    label="マイプロジェクト"
+                    onClick={() => { setMenuOpen(false); router.push("/projects"); }}
+                  />
+                  <div className="my-1 h-px bg-slate-100" />
+                  <MenuItem
+                    icon={<HelpCircle className="h-4 w-4" />}
+                    label="使い方ガイド"
+                    onClick={() => { setMenuOpen(false); setShowGuideModal(true); }}
+                  />
+                  <MenuItem
+                    icon={<RotateCcw className="h-4 w-4" />}
+                    label="最初からやり直す"
+                    danger
+                    onClick={() => { setMenuOpen(false); startOver(); }}
+                  />
+                </div>
               )}
-            >
-              <Eye className="h-4 w-4" />
-              プレビュー
-            </button>
+            </div>
           </div>
         </div>
 
+        <div className="px-3 pb-2 lg:hidden">
+          <StageIndicator stage={stage} compact />
+        </div>
+
+        {/* スマホ: コード / プレビュー 切り替え（コードがあるときだけ） */}
+        {stage === "ready" && (
+          <div className="px-3 pb-2.5 md:hidden">
+            <div className="flex rounded-xl bg-slate-100 p-1" role="tablist">
+              {([
+                { id: "preview", label: "アプリ", icon: <Play className="h-3.5 w-3.5" /> },
+                { id: "editor", label: "コード", icon: <Code2 className="h-3.5 w-3.5" /> },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activePane === tab.id}
+                  onClick={() => setActivePane(tab.id)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition-all touch-manipulation",
+                    activePane === tab.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                  )}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ══════════ メインコンテンツ ══════════ */}
 
-      {/* ── モバイル: 全画面切り替え ── */}
+      {/* ── スマホ ── */}
       <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden md:hidden">
-          {activePane === "preview" ? (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
-              <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-gray-100 px-3 py-2">
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                </div>
-                <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
-                  <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
-                  <span className="truncate text-[11px] text-gray-400">
-                    {showGuide ? (
-                      <>
-                        <span className="md:hidden">コードタブに貼り付けると表示</span>
-                        <span className="hidden md:inline">左のコード画面に貼り付けると表示</span>
-                      </>
-                    ) : "プレビュー"}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { if (code.trim()) { setPreviewHtml(code); setIframeKey((k) => k + 1); } }}
-                  title="再読み込み"
-                  className="shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600 touch-manipulation"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 overflow-hidden">
-                {showGuide ? (
-                  <PreviewPlaceholder />
-                ) : (
-                  <AppRunner
-                    key={iframeKey}
-                    srcDoc={previewHtml}
-                    title="プレビュー"
-                    className="h-full min-h-0"
-                    appId={publishContext?.appId ?? "playground"}
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
-              <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-                  <Code2 className="h-3.5 w-3.5 text-emerald-500" />
-                  HTMLコード
-                </span>
-                <div className="flex items-center gap-1">
-                  <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors touch-manipulation">
-                    <Undo2 className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={redo} disabled={!canRedo} title="やり直す" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors touch-manipulation">
-                    <Redo2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleCopyCode()}
-                    disabled={!code.trim()}
-                    title="コードを全部コピー"
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg transition-colors disabled:opacity-30 touch-manipulation",
-                      copied ? "text-emerald-600" : "text-gray-400 hover:bg-gray-100"
-                    )}
-                  >
-                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveCodeFile()}
-                    disabled={!code.trim()}
-                    title="コードをテキストファイルで保存"
-                    className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-30 touch-manipulation"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={handleClear} title="全削除" className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors touch-manipulation">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              {showCodeEditor && (
-                <button
-                  type="button"
-                  onClick={handlePasteAndRun}
-                  className="relative z-10 flex shrink-0 items-center justify-center gap-2 border-b-2 border-emerald-700 bg-emerald-600 py-3.5 text-sm font-black text-white transition-colors hover:bg-emerald-700 active:scale-[0.99] touch-manipulation"
-                >
-                  <ClipboardPaste className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                  コードを貼り付ける
-                </button>
-              )}
-              <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden">
-                {showCodeEditor ? (
-                  <CodeEditorPanel
-                    code={code}
-                    onChange={applyCode}
-                    onKeyDown={handleKeyDown}
-                    placeholder={"ここにHTMLコードを貼り付け\n（AIが生成したコードをそのまま貼り付け）"}
-                    textareaRef={mobileTextareaRef}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    showSearch={showSearch}
-                    onToggleSearch={setShowSearch}
-                    matchCount={matchCount}
-                    currentMatch={currentMatch}
-                    onJumpMatch={jumpToMatch}
-                  />
-                ) : (
-                  <SimpleCodeGuide
-                    onPaste={handlePasteAndRun}
-                    onManualInput={focusCodeEditor}
-                    onOpenGuide={() => setShowGuideModal(true)}
-                  />
-                )}
-              </div>
-              <div className="relative z-10 flex shrink-0 items-center justify-between border-t border-gray-100 bg-gray-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-                <span className="text-[10px] text-gray-400">
-                  {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!code.trim()) {
-                      setToast({ msg: "コードを貼り付けてください", show: true });
-                      setTimeout(() => setToast({ msg: "", show: false }), 2500);
-                      return;
-                    }
-                    handleRun();
-                  }}
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold transition-all touch-manipulation",
-                    code.trim()
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                      : "bg-gray-200 text-gray-500"
-                  )}
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  プレビューへ
-                </button>
-              </div>
-            </div>
-          )}
+        {stage === "choose" && (
+          <ChoosePanel
+            onChoosePrompt={() => setStarted(true)}
+            onChooseCode={goToPaste}
+            onRunSample={runSample}
+          />
+        )}
+        {stage === "idea" && (
+          <StartPanel
+            idea={idea}
+            onIdeaChange={(v) => { setIdea(v); setIdeaError(""); }}
+            ideaError={ideaError}
+            aiId={aiId}
+            onAiChange={setAiId}
+            options={ideaOptions}
+            onOptionsChange={setIdeaOptions}
+            primaryAction={null}
+            onBackToChoose={() => setStarted(false)}
+            onRunSample={runSample}
+          />
+        )}
+        {stage === "paste" && (
+          <PastePanel
+            idea={idea}
+            ai={launchedAi}
+            returned={returned}
+            pasteFailed={pasteFailed}
+            onPasteFromClipboard={() => void handlePasteFromClipboard()}
+            onManualPaste={applyIncomingCode}
+            onRelaunch={() => (launchedAi ? launchAi(launchedAi) : false)}
+            onBack={backToIdea}
+          />
+        )}
+        {stage === "ready" && (activePane === "preview" ? renderPreview("mobile") : renderEditor(mobileTextareaRef, "mobile"))}
       </div>
 
-      {/* ── PC: 左右分割（コード左・プレビュー右） ── */}
+      {/* スマホ: 下部の主ボタン（今やることを1つだけ） */}
+      <div className={cn("relative z-20 shrink-0 border-t border-white/80 bg-white/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden", stage === "choose" && "hidden")}>
+        {stage === "idea" && (
+          <>
+            {primaryLaunch("w-full")}
+            <p className="mt-1.5 text-center text-[11px] text-slate-400">{launchCaption(selectedAi)}</p>
+          </>
+        )}
+        {stage === "paste" && (
+          <button
+            type="button"
+            onClick={() => void handlePasteFromClipboard()}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation",
+              returned && "animate-[pulse_1.6s_ease-in-out_2]"
+            )}
+          >
+            <ClipboardPaste className="h-4 w-4" strokeWidth={2.25} />
+            コードを貼り付けて動かす
+          </button>
+        )}
+        {stage === "ready" && activePane === "editor" && (
+          <button
+            type="button"
+            onClick={() => void handleRun()}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-[15px] font-bold text-white transition-all active:scale-[0.98] touch-manipulation"
+          >
+            <Play className="h-4 w-4" />
+            動かしてみる
+          </button>
+        )}
+        {stage === "ready" && activePane === "preview" && isSample && (
+          <button
+            type="button"
+            onClick={startOver}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
+          >
+            自分のアプリを作る
+          </button>
+        )}
+        {stage === "ready" && activePane === "preview" && !isSample && (
+          <>
+            <button
+              type="button"
+              onClick={() => runWithLoginPrompt("publish", openPublishModal)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
+            >
+              <Upload className="h-4 w-4" strokeWidth={2.25} />
+              公開してURLをもらう
+            </button>
+            <p className="mt-1.5 text-center text-[11px] text-slate-400">直したいところはAIに頼んで、コードを貼り直すだけ</p>
+          </>
+        )}
+      </div>
+
+      {/* ── PC: 左右分割（左：作る・コード / 右：プレビュー） ── */}
       <div className="relative z-0 hidden min-h-0 flex-1 md:flex md:flex-row">
-
-        {/* ── コードパネル（左） ── */}
-        <div className="flex min-h-0 w-[42%] shrink-0 flex-col border-r-[3px] border-r-black bg-white">
-
-          {/* パネルヘッダー */}
-          <div className="flex shrink-0 items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-              <Code2 className="h-3.5 w-3.5 text-emerald-500" />
-              HTMLコード
-            </span>
-            <div className="flex items-center gap-0.5">
-              <button type="button" onClick={undo} disabled={!canUndo} title="元に戻す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
-                <Undo2 className="h-3.5 w-3.5" />
-              </button>
-              <button type="button" onClick={redo} disabled={!canRedo} title="やり直す" className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition-colors">
-                <Redo2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleCopyCode()}
-                disabled={!code.trim()}
-                title="コードを全部コピー"
-                className={cn(
-                  "rounded p-1.5 transition-colors disabled:opacity-30",
-                  copied ? "text-emerald-600" : "text-gray-400 hover:bg-gray-100"
-                )}
-              >
-                {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSaveCodeFile()}
-                disabled={!code.trim()}
-                title="コードをテキストファイルで保存"
-                className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-30"
-              >
-                <Download className="h-3.5 w-3.5" />
-              </button>
-              <button type="button" onClick={handleClear} title="全削除" className="rounded p-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-colors">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {showCodeEditor && (
-            <button
-              type="button"
-              onClick={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
-              className="flex shrink-0 items-center justify-center gap-2 border-b-2 border-emerald-700 bg-emerald-600 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 active:scale-[0.99]"
-            >
-              <ClipboardPaste className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-              コードを貼り付ける
-            </button>
-          )}
-
-          {/* テキストエリア or 簡易ガイド */}
-          {showCodeEditor ? (
-            <CodeEditorPanel
-              code={code}
-              onChange={applyCode}
-              onKeyDown={handleKeyDown}
-              placeholder={"ここにコードを貼り付けてください\n（AIが生成したHTMLをそのまま貼り付けるだけでOK）"}
-              textareaRef={drawerTextareaRef}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              showSearch={showSearch}
-              onToggleSearch={setShowSearch}
-              matchCount={matchCount}
-              currentMatch={currentMatch}
-              onJumpMatch={jumpToMatch}
+        <section
+          aria-label={stage === "ready" ? "コード" : "作る"}
+          className="flex min-h-0 w-[44%] max-w-[640px] shrink-0 flex-col border-r border-white/80 bg-white/40 backdrop-blur-sm"
+        >
+          {stage === "choose" && (
+            <ChoosePanel
+              onChoosePrompt={() => setStarted(true)}
+              onChooseCode={goToPaste}
+              onRunSample={runSample}
             />
-          ) : (
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <SimpleCodeGuide
-                onPaste={async () => { await handlePaste(); setTimeout(handleRun, 100); }}
-                onManualInput={focusCodeEditor}
-                onOpenGuide={() => setShowGuideModal(true)}
-              />
-            </div>
           )}
+          {stage === "idea" && (
+            <StartPanel
+              idea={idea}
+              onIdeaChange={(v) => { setIdea(v); setIdeaError(""); }}
+              ideaError={ideaError}
+              aiId={aiId}
+              onAiChange={setAiId}
+              options={ideaOptions}
+              onOptionsChange={setIdeaOptions}
+              primaryAction={primaryLaunch("w-full")}
+              onBackToChoose={() => setStarted(false)}
+              onRunSample={runSample}
+            />
+          )}
+          {stage === "paste" && (
+            <PastePanel
+              idea={idea}
+              ai={launchedAi}
+              returned={returned}
+              pasteFailed={pasteFailed}
+              onPasteFromClipboard={() => void handlePasteFromClipboard()}
+              onManualPaste={applyIncomingCode}
+              onRelaunch={() => (launchedAi ? launchAi(launchedAi) : false)}
+              onBack={backToIdea}
+            />
+          )}
+          {stage === "ready" && renderEditor(drawerTextareaRef, "desktop")}
+        </section>
 
-          {/* フッター */}
-          <div className="flex shrink-0 items-center border-t border-gray-100 bg-gray-50 px-3 py-1.5">
-            <span className="text-[10px] text-gray-400">
-              {code.trim() ? `${code.split("\n").length}行 · ${code.length.toLocaleString()}文字` : "コードを貼り付けて開始"}
-            </span>
-          </div>
-        </div>
-
-        {/* ── プレビューパネル（右） ── */}
-        <div className="flex min-h-0 flex-1 flex-col bg-white">
-
-          {/* ブラウザクローム */}
-          <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-gray-100 px-3 py-2">
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-            </div>
-            <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 ring-1 ring-gray-200">
-              <span className={cn("h-2 w-2 shrink-0 rounded-full transition-colors", showGuide ? "bg-gray-300" : "animate-pulse bg-emerald-400")} />
-              <span className="truncate text-[11px] text-gray-400">
-                {showGuide ? "左のコード画面に貼り付けると表示" : "プレビュー"}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => { if (code.trim()) { setPreviewHtml(code); setIframeKey((k) => k + 1); } }}
-              title="再読み込み"
-              className="shrink-0 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {/* プレビュー or 空状態 */}
-          <div className="relative min-h-0 flex-1 overflow-hidden">
-            <div className="absolute inset-0 overflow-y-auto">
-              {showGuide ? (
-                <PreviewPlaceholder />
-              ) : (
-                <AppRunner
-                  key={iframeKey}
-                  srcDoc={previewHtml}
-                  title="プレビュー"
-                  className="h-full"
-                  appId={publishContext?.appId ?? "playground"}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+        <section aria-label="プレビュー" className="flex min-h-0 flex-1 flex-col">
+          {renderPreview("desktop")}
+        </section>
       </div>
+
 
       {/* チャットウィジェット（非表示中） */}
       {/* ── 離脱確認モーダル ── */}
@@ -2015,6 +2210,18 @@ export default function PlaygroundPage() {
                   <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? "同じURLで内容が更新されました" : publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`「${publishTitle || "アプリ"}」をAIと作って公開しました
+#ジサップ #個人開発`)}&url=${encodeURIComponent(publishedUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-current">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    Xでシェアする
+                  </a>
                   <ShareButtonRow
                     url={publishedUrl}
                     title={publishTitle}

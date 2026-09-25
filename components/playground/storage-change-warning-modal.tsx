@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ClipboardCopy,
   Database,
-  Wand2,
   X,
 } from "lucide-react";
 import {
@@ -79,7 +78,6 @@ export function StorageChangeWarningModal({
               </>
             ) : (
               <>
-                <Wand2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" strokeWidth={2.5} />
                 AIに直してもらう
               </>
             )}
@@ -149,7 +147,6 @@ export function StorageChangeWarningModal({
                 onClick={() => setView("fix")}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-black text-white shadow-sm hover:bg-emerald-700 active:scale-[0.99]"
               >
-                <Wand2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                 コードを見直す（AIへの指示をコピー）
               </button>
               {onProceedWithReset && (

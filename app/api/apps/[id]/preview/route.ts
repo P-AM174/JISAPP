@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { buildSrcDoc } from "@/lib/products/build-srcdoc";
 import { touchAppLastAccessed } from "@/lib/apps/access";
+import { buildMediaPosterHtml, detectMediaUsage } from "@/lib/apps/media-usage";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -20,6 +21,21 @@ export async function GET(
   }
 
   touchAppLastAccessed(id).catch(() => {});
+
+  // 一覧のサムネイル（?thumb=1）では、カメラ・マイクを使うアプリを動かさず静止画を返す
+  const isThumbnail = new URL(request.url).searchParams.get("thumb") === "1";
+  if (isThumbnail) {
+    const media = detectMediaUsage([data.html_code, data.js_code].filter(Boolean).join("\n"));
+    if (media) {
+      return new NextResponse(buildMediaPosterHtml(media), {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Frame-Options": "SAMEORIGIN",
+          "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+        },
+      });
+    }
+  }
 
   const html = buildSrcDoc(
     data.html_code ?? "",

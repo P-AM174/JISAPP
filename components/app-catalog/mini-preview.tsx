@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { CategoryIcon } from "@/lib/category-icon";
 import { buildSrcDoc } from "@/lib/products/build-srcdoc";
+import {
+  THUMBNAIL_IFRAME_ALLOW,
+  buildMediaPosterHtml,
+  detectMediaUsage,
+} from "@/lib/apps/media-usage";
 
 /** ホバーしてからプレビューを読み込むまでの待ち時間（通り過ぎただけでは読み込まない） */
 const HOVER_LOAD_DELAY_MS = 250;
@@ -83,6 +88,13 @@ export function MiniPreview({
 
   const showFrame = enabled && (live === "always" ? inView : hovered) && !errored;
 
+  // 直接渡したコードも、カメラ・マイクを使うなら動かさず静止画にする
+  const srcDoc = useMemo(() => {
+    if (html == null) return null;
+    const media = detectMediaUsage(html);
+    return media ? buildMediaPosterHtml(media) : buildSrcDoc(html, null, null);
+  }, [html]);
+
   return (
     <div
       ref={containerRef}
@@ -119,9 +131,11 @@ export function MiniPreview({
           style={{ top: "26px", left: 0, right: 0, bottom: 0 }}
         >
           <iframe
-            {...(html != null
-              ? { srcDoc: buildSrcDoc(html, null, null) }
-              : { src: `/api/apps/${id}/preview` })}
+            {...(srcDoc != null
+              ? { srcDoc }
+              : { src: `/api/apps/${id}/preview?thumb=1` })}
+            // カメラ・マイクなどの許可を求めさせない（見分けに漏れたアプリの保険）
+            allow={THUMBNAIL_IFRAME_ALLOW}
             style={{
               position: "absolute",
               top: 0,

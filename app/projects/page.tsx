@@ -46,6 +46,7 @@ import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
 import { ShareButton, ShareButtonRow, CopyUrlButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
+import { ProjectThumb } from "@/components/projects/project-thumb";
 import { supabase } from "@/lib/supabase";
 
 // ─── 型定義 ───
@@ -98,10 +99,10 @@ function mapServerProject(row: {
   const charCount = row.code_chars ?? row.html_code?.length ?? 0;
   const status = row.status as Project["status"];
   const meta = {
-    draft:    { tag: "作業中",   tagColor: "bg-violet-100 text-violet-700",  gradient: "from-violet-500 to-purple-600" },
+    draft:    { tag: "作業中",   tagColor: "bg-sky-100 text-sky-700",        gradient: "from-sky-400 to-cyan-500" },
     listed:   { tag: "公開中",   tagColor: "bg-emerald-100 text-emerald-700", gradient: "from-emerald-500 to-teal-600" },
-    url_only: { tag: "URL発行済", tagColor: "bg-blue-100 text-blue-700",     gradient: "from-blue-500 to-indigo-600" },
-  }[status ?? "draft"] ?? { tag: "作業中", tagColor: "bg-violet-100 text-violet-700", gradient: "from-violet-500 to-purple-600" };
+    url_only: { tag: "URL発行済", tagColor: "bg-teal-100 text-teal-700",     gradient: "from-teal-500 to-cyan-600" },
+  }[status ?? "draft"] ?? { tag: "作業中", tagColor: "bg-sky-100 text-sky-700", gradient: "from-sky-400 to-cyan-500" };
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   return {
@@ -150,24 +151,24 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200">
 
-      {/* グラデーションヘッダー */}
-      <div className={`h-24 bg-gradient-to-br ${proj.gradient} relative flex items-end px-4 pb-3`}>
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
-            <Code2 className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-              {proj.tag}
-            </span>
-          </div>
-        </div>
+      {/* アプリ画面のサムネイル（トップページのカードと同じ見た目） */}
+      <div className="relative">
+        <ProjectThumb
+          projectId={proj.id}
+          appId={proj.appId}
+          fallbackGradient={proj.gradient}
+          categoryId={proj.category}
+        />
+        <span className={`absolute bottom-2.5 left-3 z-30 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-sm ring-1 ring-white/60 ${proj.tagColor}`}>
+          {proj.tag}
+        </span>
 
         {/* 3点メニュー */}
-        <div className="absolute right-3 top-3">
+        <div className="absolute right-2 top-9 z-30">
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 transition-colors"
+            aria-label="メニュー"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-sm ring-1 ring-black/5 hover:bg-white transition-colors"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
           </button>
@@ -256,7 +257,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
             </Link>
             <button
               onClick={() => onPublish?.(proj)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98]"
             >
               <Upload className="h-3.5 w-3.5" />
               {getPublishActionLabel(proj)}
@@ -338,7 +339,7 @@ function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
       </div>
       <Link
         href={tab === "mine" ? "/playground" : "/"}
-        className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-[0.97]"
+        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700 transition-all active:scale-[0.97]"
       >
         {tab === "mine"
           ? <><Terminal className="h-4 w-4" /> 開発スタジオを開く</>
@@ -702,9 +703,9 @@ export default function ProjectsPage() {
             updatedAt: new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
             lines,
             chars,
-            gradient: "from-violet-500 to-purple-600",
+            gradient: "from-sky-400 to-cyan-500",
             tag: "作業中",
-            tagColor: "bg-violet-100 text-violet-700",
+            tagColor: "bg-sky-100 text-sky-700",
             status: "draft",
           };
           setMyProjects([savedProject, ...activeDemos]);
@@ -782,10 +783,11 @@ export default function ProjectsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f3f6f4]">
+    <div className="min-h-screen bg-jisapp-ambient">
 
       {/* ══════════ ヘッダー ══════════ */}
-      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/70 bg-white/75 backdrop-blur-xl">
+        <div aria-hidden className="h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400" />
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
 
           <BackButton label="戻る" hideLabelOnMobile />
@@ -797,7 +799,7 @@ export default function ProjectsPage() {
           <div className="ml-auto flex items-center gap-2">
             <Link
               href="/playground"
-              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:from-emerald-700 hover:to-teal-700"
             >
               <Plus className="h-4 w-4 shrink-0" strokeWidth={2} />
               <span className="hidden sm:inline">新規プロジェクト</span>
@@ -813,7 +815,7 @@ export default function ProjectsPage() {
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+              <p className="text-xs font-bold tracking-wide text-teal-700">
                 アプリ開発スタジオ
               </p>
               <p className="mt-1.5 text-sm leading-relaxed text-gray-500">
@@ -841,8 +843,14 @@ export default function ProjectsPage() {
                   ? myProjects.reduce((s, p) => s + p.lines, 0).toLocaleString()
                   : "—",
               },
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl bg-gray-50 py-2.5">
+            ].map((s, i) => (
+              <div
+                key={s.label}
+                className={cn(
+                  "rounded-xl bg-gradient-to-br py-2.5",
+                  ["from-emerald-50 to-teal-50", "from-sky-50 to-cyan-50", "from-amber-50 to-orange-50"][i]
+                )}
+              >
                 <p className="text-lg font-bold tracking-tight text-gray-900">{s.value}</p>
                 <p className="mt-0.5 text-[10px] text-gray-400">{s.label}</p>
               </div>
@@ -863,7 +871,7 @@ export default function ProjectsPage() {
         </div>
 
         {/* ══════════ タブ ══════════ */}
-        <div className="flex gap-1 rounded-2xl bg-gray-100 p-1">
+        <div className="flex gap-1 rounded-2xl bg-white/60 p-1 ring-1 ring-white/80 backdrop-blur-sm">
           {([
             { id: "mine",     label: "自分が作ったツール",     icon: Wrench,  count: myProjects.length    },
             { id: "acquired", label: "ジサップでGETしたツール", icon: Package, count: acquiredApps.length  },
@@ -919,10 +927,10 @@ export default function ProjectsPage() {
                   {/* 新規作成カード */}
                   <Link
                     href="/playground"
-                    className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-300 bg-white py-10 text-center transition-colors hover:border-emerald-300 hover:bg-emerald-50/40"
+                    className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-emerald-200 bg-white/70 py-10 text-center transition-colors hover:border-emerald-300 hover:bg-emerald-50/40"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 transition-colors group-hover:bg-emerald-100">
-                      <Plus className="h-6 w-6 text-gray-400 transition-colors group-hover:text-emerald-600" strokeWidth={2} />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md shadow-emerald-600/25 transition-transform group-hover:scale-105">
+                      <Plus className="h-6 w-6 text-white" strokeWidth={2.25} />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-700">新規プロジェクトを作成</p>
@@ -1207,7 +1215,7 @@ export default function ProjectsPage() {
                     <button
                       onClick={handleSaveEdit}
                       disabled={saving || !publishTitle.trim()}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] disabled:opacity-50"
                     >
                       {saving ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />保存中…</> : "保存する"}
                     </button>
@@ -1348,7 +1356,7 @@ export default function ProjectsPage() {
                     {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />上書き中…</> : <><CheckCircle2 className="h-4 w-4 text-gray-500" />{isRepublish ? "上書きする" : "URLだけ発行する（非公開）"}</>}
                   </button>
                   <button onClick={() => handlePublish(true)} disabled={publishing || publishTarget.isDemo || !publishTitle.trim() || !publishCategory}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
                     {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />上書き中…</> : <><Upload className="h-4 w-4" />{isRepublish ? "上書きする" : "出品する（トップに掲載）"}</>}
                   </button>
                   <p className="text-center text-[10px] text-gray-400">「URLだけ発行」はカテゴリ未選択でも利用できます</p>
@@ -1360,7 +1368,7 @@ export default function ProjectsPage() {
       )}
 
       {/* ══════════ フッター ══════════ */}
-      <footer className="border-t border-gray-100 bg-white px-4 py-6 text-center">
+      <footer className="border-t border-white/70 bg-white/50 px-4 py-6 text-center backdrop-blur-sm">
         <div className="mb-2 flex justify-center">
           <JisappLogo href="/" />
         </div>

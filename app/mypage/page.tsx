@@ -154,7 +154,7 @@ export default function MyPage() {
   // セッション読込中 or 未認証リダイレクト中
   if (status === "loading" || status === "unauthenticated") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f3f6f4]">
+      <div className="flex min-h-screen items-center justify-center bg-jisapp-ambient">
         <span className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
       </div>
     );
@@ -167,9 +167,10 @@ export default function MyPage() {
   const initials  = userName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#f3f6f4]">
+    <div className="min-h-screen bg-jisapp-ambient">
       {/* ─── ヘッダー ─── */}
-      <header className="sticky top-0 z-50 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-white/70 bg-white/75 backdrop-blur-xl">
+        <div aria-hidden className="h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400" />
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <BackButton label="戻る" hideLabelOnMobile />
           <JisappLogo href="/" />
@@ -299,17 +300,17 @@ export default function MyPage() {
         <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
             <div className="flex items-center gap-2">
-              <Code2 className="h-4 w-4 text-violet-500" />
+              <Code2 className="h-4 w-4 text-teal-500" />
               <h2 className="text-sm font-bold text-gray-700">マイプロジェクト</h2>
               {mounted && (
-                <span className="ml-1 rounded-full bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700">
+                <span className="ml-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700">
                   {myListings.length + (playgroundCode ? 1 : 0)}
                 </span>
               )}
             </div>
             <Link
               href="/projects"
-              className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700"
+              className="flex items-center gap-1 text-xs font-semibold text-teal-600 hover:text-teal-700"
             >
               <FolderOpen className="h-3.5 w-3.5" />
               すべて見る
@@ -323,9 +324,9 @@ export default function MyPage() {
               <>
                 {/* プレイグラウンドで保存したコード */}
                 {playgroundCode && (
-                  <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-violet-50 to-purple-50 p-4 ring-1 ring-violet-100">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100">
-                      <Code2 className="h-5 w-5 text-violet-600" />
+                  <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-teal-50 to-sky-50 p-4 ring-1 ring-teal-100">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-100">
+                      <Code2 className="h-5 w-5 text-teal-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 text-sm">開発スタジオの作業中コード</p>
@@ -337,14 +338,14 @@ export default function MyPage() {
                     <div className="flex shrink-0 gap-2">
                       <Link
                         href="/playground"
-                        className="flex items-center gap-1 rounded-xl bg-violet-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-violet-700 transition-colors"
+                        className="flex items-center gap-1 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
                       >
                         <Edit3 className="h-3 w-3" />
                         編集
                       </Link>
                       <Link
                         href="/create"
-                        className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:from-emerald-700 hover:to-teal-700 transition-colors"
                       >
                         <Upload className="h-3 w-3 shrink-0" strokeWidth={2} />
                         出品
@@ -355,7 +356,7 @@ export default function MyPage() {
 
                 {/* 出品済みアプリ */}
                 {myListings.map(app => (
-                  <div key={app.id} className="flex items-center justify-between gap-4 rounded-2xl bg-[#f5f5f3] px-4 py-3">
+                  <div key={app.id} className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50/80 px-4 py-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
                         <Package className="h-4 w-4 text-emerald-600" />
@@ -396,7 +397,7 @@ export default function MyPage() {
                     </div>
                     <Link
                       href="/playground"
-                      className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-700 transition-colors"
+                      className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition-colors"
                     >
                       <Code2 className="h-4 w-4" />
                       開発スタジオを開く
@@ -408,7 +409,7 @@ export default function MyPage() {
                 {(playgroundCode || myListings.length > 0) && (
                   <Link
                     href="/playground"
-                    className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-violet-200 py-3 text-sm font-semibold text-violet-500 hover:border-violet-400 hover:bg-violet-50 transition-all"
+                    className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-teal-200 py-3 text-sm font-semibold text-teal-500 hover:border-teal-400 hover:bg-teal-50 transition-all"
                   >
                     <Plus className="h-4 w-4" />
                     新しいプロジェクトを作る
@@ -437,7 +438,7 @@ export default function MyPage() {
                 purchasedAppData.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {purchasedAppData.map(app => (
-                      <div key={app.id} className="flex items-center justify-between gap-4 rounded-xl bg-[#f5f5f3] px-4 py-3">
+                      <div key={app.id} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50/80 px-4 py-3">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-gray-900">{app.name}</p>
                           <p className="text-xs text-gray-400">{app.category}</p>
@@ -470,7 +471,7 @@ export default function MyPage() {
                       <Link
                         key={app.id}
                         href={`/apps/${app.id}`}
-                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-[#f5f5f3] p-3 hover:border-emerald-200 hover:bg-emerald-50 transition-colors group"
+                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-slate-50/80 p-3 hover:border-emerald-200 hover:bg-emerald-50 transition-colors group"
                       >
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
                           <Package className="h-4 w-4 text-emerald-600" />
@@ -500,7 +501,7 @@ export default function MyPage() {
                       <Link
                         key={creator.id}
                         href={`/creators/${creator.id}`}
-                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-[#f5f5f3] p-3 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
+                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-slate-50/80 p-3 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
                       >
                         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${creator.color} text-sm font-bold text-white`}>
                           {creator.avatar}
@@ -531,7 +532,7 @@ export default function MyPage() {
                 myRequests.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     {myRequests.map(req => (
-                      <div key={req.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-[#f5f5f3] px-4 py-3">
+                      <div key={req.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-slate-50/80 px-4 py-3">
                         <p className="flex-1 truncate text-sm text-gray-800">{req.title}</p>
                         <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                           {req.proposalCount ? `${req.proposalCount}名と相談中` : "提案待ち"}

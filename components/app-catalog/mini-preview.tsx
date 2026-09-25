@@ -3,31 +3,51 @@
 import { useEffect, useRef, useState } from "react";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { CategoryIcon } from "@/lib/category-icon";
+import { buildSrcDoc } from "@/lib/products/build-srcdoc";
+
+/** ホバーしてからプレビューを読み込むまでの待ち時間（通り過ぎただけでは読み込まない） */
+const HOVER_LOAD_DELAY_MS = 250;
 
 export function MiniPreview({
   id,
   fallbackGradient,
   fallbackCategoryId,
   height = 120,
+  live = "hover",
+  html,
+  enabled = true,
 }: {
   id: string | number;
   fallbackGradient: string;
   /** 読み込み前に表示するカテゴリアイコン用 */
   fallbackCategoryId?: string | null;
   height?: number;
+  /**
+   * hover: 一覧向け。普段はカテゴリ色の静止表示で、カーソルを載せたときだけ実アプリを読み込む
+   *        （タッチ端末はホバーがないため静止表示のまま）
+   * always: 詳細モーダル向け。画面に入ったら実アプリを読み込む
+   */
+  live?: "hover" | "always";
+  /** 未公開の下書きなど、URLがないアプリはコードを直接渡して表示する */
+  html?: string | null;
+  /** false の間はアプリを読み込まず、カテゴリ色の表示のままにする */
+  enabled?: boolean;
 }) {
   const [loaded, setLoaded] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [errored, setErrored] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (live !== "always") return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisible(true);
+          setInView(true);
           observer.disconnect();
         }
       },
@@ -35,20 +55,49 @@ export function MiniPreview({
     );
     observer.observe(el);
     return () => observer.disconnect();
+  }, [live]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    };
   }, []);
+
+  const startHover = () => {
+    if (live !== "hover" || hoverTimer.current) return;
+    hoverTimer.current = setTimeout(() => {
+      hoverTimer.current = null;
+      setHovered(true);
+    }, HOVER_LOAD_DELAY_MS);
+  };
+
+  const endHover = () => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+    if (live === "hover") {
+      setHovered(false);
+      setLoaded(false);
+    }
+  };
+
+  const showFrame = enabled && (live === "always" ? inView : hovered) && !errored;
 
   return (
     <div
       ref={containerRef}
       className="relative overflow-hidden bg-gray-950"
       style={{ height: `${height}px` }}
+      onMouseEnter={startHover}
+      onMouseLeave={endHover}
     >
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-1 bg-gray-900 px-2.5 py-1.5">
         <span className="h-2 w-2 rounded-full bg-red-500/70" />
         <span className="h-2 w-2 rounded-full bg-yellow-500/70" />
         <span className="h-2 w-2 rounded-full bg-green-500/70" />
         <div className="mx-2 h-3.5 flex-1 rounded-sm bg-gray-700/60 text-[9px] text-gray-500 flex items-center px-1.5 truncate">
-          {String(id).slice(0, 8)}…
+          jisapp.app
         </div>
       </div>
 
@@ -65,25 +114,29 @@ export function MiniPreview({
         </div>
       )}
 
-      {visible && !errored && (
+      {showFrame && (
         <div
           className="absolute overflow-hidden"
           style={{ top: "26px", left: 0, right: 0, bottom: 0 }}
         >
           <iframe
-            src={`/api/apps/${id}/preview`}
+            {...(html != null
+              ? { srcDoc: buildSrcDoc(html, null, null) }
+              : { src: `/api/apps/${id}/preview` })}
             style={{
               position: "absolute",
               top: 0,
               left: 0,
               width: "500%",
-              height: "470px",
+              // 上の疑似ブラウザバー（26px）を除いた高さを、縮小率 0.2 で割り戻す
+              height: `${Math.max(0, height - 26) / 0.2}px`,
               transform: "scale(0.2)",
               transformOrigin: "top left",
               pointerEvents: "none",
               border: "none",
             }}
-            sandbox={APP_IFRAME_SANDBOX}
+            // 直接渡したコードは同一オリジン扱いにしない（サムネ表示に不要な権限を与えない）
+            sandbox={html != null ? "allow-scripts" : APP_IFRAME_SANDBOX}
             tabIndex={-1}
             aria-hidden
             onLoad={() => setLoaded(true)}

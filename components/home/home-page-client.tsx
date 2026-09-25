@@ -920,6 +920,18 @@ export function HomePageClient({
     newApps.filter(a => a.category === "ゲーム"),
   [newApps]);
 
+  // アプリが少ないうちは「みんなが作ったアプリ」に全件が出ており、
+  // 「新着」「ゲーム」は同じカードの繰り返しになるため出さない
+  const NEW_SECTION_LIMIT = 8;
+  const mainListShowsEverything =
+    pgCategoryFilter === "all" && newApps.length <= NEW_SECTION_LIMIT;
+  const showNewSection = !mainListShowsEverything;
+  const showGameSection = gameApps.length > 0 && !mainListShowsEverything;
+
+  // 人気系は数が揃うまで出さない（1〜2件だと寂しく見える）
+  const MIN_POPULAR_APPS = 3;
+  const MIN_POPULAR_CREATORS = 3;
+
   return (
     <div className="min-h-screen bg-[#f3f6f4]">
       <SiteHeader query={query} setQuery={setQuery} onOpenContact={() => setShowContact(true)} />
@@ -1010,11 +1022,11 @@ export function HomePageClient({
         )}
 
         {/* ─── 今月の人気アプリ TOP5 ─── */}
-        {popularMonth.length > 0 && (
+        {popularMonth.length >= MIN_POPULAR_APPS && (
           <section>
             <SectionHeader
               icon={<TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={2.5} />}
-              title="今月の人気アプリ TOP5"
+              title="今月の人気アプリ"
               sub="今月最も応援バッジをもらったアプリ"
             />
             <div className="relative">
@@ -1071,7 +1083,7 @@ export function HomePageClient({
         )}
 
         {/* ─── 人気クリエイター ─── */}
-        {popularCreators.length > 0 && (
+        {popularCreators.length >= MIN_POPULAR_CREATORS && (
           <section>
             <SectionHeader
               icon={<Users className="h-5 w-5 text-blue-500" strokeWidth={2.5} />}
@@ -1199,12 +1211,15 @@ export function HomePageClient({
             </div>
           ) : (
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
-              <p className="text-sm font-semibold text-gray-500">このカテゴリのアプリはまだありません</p>
+              <p className="text-sm font-semibold text-gray-500">
+                {query ? `「${query}」に一致するアプリはありません` : "このカテゴリのアプリはまだありません"}
+              </p>
             </div>
           )}
         </section>
 
         {/* ─── 新着・注目アプリ ─── */}
+        {showNewSection && (
         <section>
           <SectionHeader
             icon={<JisappLogoIcon className="h-5 w-5" />}
@@ -1234,9 +1249,10 @@ export function HomePageClient({
             </div>
           )}
         </section>
+        )}
 
         {/* ─── 個人開発ゲーム ─── */}
-        {gameApps.length > 0 && (
+        {showGameSection && (
           <section>
             <SectionHeader
               icon={<Gamepad2 className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}

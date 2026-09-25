@@ -170,6 +170,7 @@ export function AppDetailModal({
             fallbackGradient={app.gradient}
             fallbackCategoryId={app.categoryId}
             height={180}
+            live="always"
           />
           <button
             onClick={onClose}

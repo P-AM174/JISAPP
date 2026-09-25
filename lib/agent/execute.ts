@@ -14,6 +14,8 @@ type GameContent = {
   description?: string;
   category?: string;
   html?: string;
+  feature_bullets?: string[];
+  best_hook?: string;
 };
 
 const LIBRARY_KEY = "__in_library__";
@@ -131,7 +133,19 @@ async function publishOfficialGame(task: AgentTask): Promise<AgentTask> {
 
   const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jisapp.app").replace(/\/$/, "");
   try {
-    await generateXPostDraft();
+    const bullets = (content.feature_bullets ?? []).filter(Boolean);
+    await generateXPostDraft({
+      id: data.id,
+      title,
+      analysis:
+        bullets.length > 0
+          ? {
+              feature_bullets: bullets,
+              best_hook: content.best_hook || bullets[0],
+              genre_feel: "",
+            }
+          : undefined,
+    });
   } catch (genError) {
     await notifySlack(
       `アプリは公開しましたが、紹介ポスト下書きの生成に失敗しました: ${

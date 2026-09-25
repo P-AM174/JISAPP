@@ -14,7 +14,13 @@ import {
 import { JisappLogo } from "@/components/jisapp-logo";
 import { AppRunner } from "@/components/app-runner";
 
-type Safety = { ok?: boolean; reasons?: string[] };
+type Safety = {
+  ok?: boolean;
+  reasons?: string[];
+  note?: string;
+  safety_flags?: string[];
+  quality_flags?: string[];
+};
 type OfficialCreator = { id: string; email: string; name: string | null } | null;
 
 type AgentTaskRow = {
@@ -23,12 +29,19 @@ type AgentTaskRow = {
   status: "pending" | "approved" | "rejected" | "executed";
   title: string;
   content: {
+    kind?: "app" | "platform";
     text?: string;
+    post_text?: string;
     angle?: string;
+    angle_used?: string;
+    type_used?: string;
+    source_app?: string;
     title?: string;
     description?: string;
     category?: string;
     html?: string;
+    feature_bullets?: string[];
+    best_hook?: string;
   };
   previewData: { publishedAppId?: string } | null;
   safetyCheckResult: Safety | null;
@@ -58,7 +71,9 @@ export default function AdminApprovalsPage() {
   const [official, setOfficial] = useState<OfficialCreator>(null);
   const [filter, setFilter] = useState<"pending" | "all">("pending");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [generating, setGenerating] = useState<"x_post" | "game_generation" | null>(null);
+  const [generating, setGenerating] = useState<"x_post" | "x_intro" | "game_generation" | null>(
+    null
+  );
   const [error, setError] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -119,7 +134,7 @@ export default function AdminApprovalsPage() {
     setCreatorPassword("");
   };
 
-  const generate = async (type: "x_post" | "game_generation") => {
+  const generate = async (type: "x_post" | "x_intro" | "game_generation") => {
     setGenerating(type);
     setError("");
     try {
@@ -313,7 +328,15 @@ export default function AdminApprovalsPage() {
             onClick={() => void generate("x_post")}
             className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
           >
-            {generating === "x_post" ? "生成中…" : "X下書きを今すぐ作る"}
+            {generating === "x_post" ? "生成中…" : "アプリ紹介の下書きを作る"}
+          </button>
+          <button
+            type="button"
+            disabled={!!generating}
+            onClick={() => void generate("x_intro")}
+            className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
+          >
+            {generating === "x_intro" ? "生成中…" : "ジサップ紹介の下書きを作る"}
           </button>
           <button
             type="button"
@@ -343,12 +366,20 @@ export default function AdminApprovalsPage() {
         {tasks.map((task) => {
           const safety = task.safetyCheckResult;
           const html = task.content.html ?? "";
-          const postText = task.content.text ?? "";
+          const postText = task.content.post_text ?? task.content.text ?? "";
+          const xKindLabel =
+            task.content.kind === "platform" ? "ジサップ紹介" : task.type === "x_post" ? "アプリ紹介" : TYPE_LABEL[task.type];
+          const flags = [
+            ...(safety?.safety_flags ?? []),
+            ...(safety?.quality_flags ?? []),
+            ...(safety?.reasons ?? []),
+          ];
+          const uniqueFlags = [...new Set(flags)];
           return (
             <article key={task.id} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                  {TYPE_LABEL[task.type]}
+                  {xKindLabel}
                 </span>
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                   {STATUS_LABEL[task.status]}
@@ -356,20 +387,32 @@ export default function AdminApprovalsPage() {
                 <h2 className="text-sm font-bold text-gray-900">{task.title}</h2>
               </div>
 
-              {safety && safety.ok === false && (
+              {safety && (safety.ok === false || uniqueFlags.length > 0) && (
                 <div className="mt-3 flex items-start gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-800">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
                   <div>
                     <p className="font-bold">自動チェックで指摘があります</p>
-                    <p className="mt-0.5">{(safety.reasons ?? []).join(" / ")}</p>
+                    <p className="mt-0.5">{uniqueFlags.join(" / ")}</p>
+                    {safety.note && <p className="mt-1 text-rose-700">{safety.note}</p>}
                   </div>
                 </div>
+              )}
+              {safety?.ok !== false && safety?.note && safety.note !== "特に問題なし" && (
+                <p className="mt-2 text-[11px] text-gray-400">{safety.note}</p>
               )}
 
               {task.type === "x_post" && (
                 <div className="mt-3">
-                  {task.content.angle && (
-                    <p className="text-[11px] text-gray-400">狙い: {task.content.angle}</p>
+                  {(task.content.angle_used || task.content.angle) && (
+                    <p className="text-[11px] text-gray-400">
+                      視点: {task.content.angle_used || task.content.angle}
+                    </p>
+                  )}
+                  {task.content.type_used && (
+                    <p className="text-[11px] text-gray-400">型: {task.content.type_used}</p>
+                  )}
+                  {task.content.source_app && (
+                    <p className="text-[11px] text-gray-400">紹介: {task.content.source_app}</p>
                   )}
                   <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-gray-50 p-3 text-sm text-gray-800">
                     {postText}
@@ -397,6 +440,9 @@ export default function AdminApprovalsPage() {
               {task.type === "game_generation" && (
                 <div className="mt-3 space-y-2">
                   <p className="text-xs text-gray-500">{task.content.description}</p>
+                  {task.content.best_hook && (
+                    <p className="text-[11px] text-gray-400">見どころ: {task.content.best_hook}</p>
+                  )}
                   {html && (
                     <AppRunner
                       html={html}

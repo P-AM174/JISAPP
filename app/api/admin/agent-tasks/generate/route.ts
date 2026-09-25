@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { generateOfficialGameDraft } from "@/lib/agent/generate-game";
-import { generateXPostDraft } from "@/lib/agent/generate-x-post";
+import {
+  generatePlatformIntroDraft,
+  generateXPostDraft,
+} from "@/lib/agent/generate-x-post";
 
 export const maxDuration = 60;
 
@@ -11,7 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { type?: "x_post" | "game_generation" };
+  let body: { type?: "x_post" | "x_intro" | "game_generation" };
   try {
     body = await request.json();
   } catch {
@@ -21,6 +24,10 @@ export async function POST(request: Request) {
   try {
     if (body.type === "x_post") {
       const created = await generateXPostDraft();
+      return NextResponse.json({ created });
+    }
+    if (body.type === "x_intro") {
+      const created = await generatePlatformIntroDraft();
       return NextResponse.json({ created });
     }
     if (body.type === "game_generation") {

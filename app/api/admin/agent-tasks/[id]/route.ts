@@ -58,10 +58,12 @@ export async function POST(
       const executed = await executeApprovedTask(approved);
       if (approved.type === "x_post") {
         const text =
-          typeof approved.content === "object" &&
-          approved.content &&
-          "text" in approved.content
-            ? String((approved.content as { text?: string }).text ?? "")
+          typeof approved.content === "object" && approved.content
+            ? String(
+                (approved.content as { post_text?: string; text?: string }).post_text ??
+                  (approved.content as { text?: string }).text ??
+                  ""
+              )
             : approved.title;
         const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jisapp.app").replace(
           /\/$/,

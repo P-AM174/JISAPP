@@ -27,7 +27,7 @@ function buildEmailHtml(name: string, code: string): string {
 
           <!-- ヘッダー -->
           <tr>
-            <td style="background:linear-gradient(135deg,#059669,#10b981);padding:32px 40px;text-align:center;">
+            <td style="background:linear-gradient(135deg,#1a7358,#2b8a6c);padding:32px 40px;text-align:center;">
               <div>
                 <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-.5px;">ジサップ</span>
               </div>
@@ -46,8 +46,8 @@ function buildEmailHtml(name: string, code: string): string {
 
               <!-- コードボックス -->
               <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:2px solid #a7f3d0;border-radius:16px;padding:28px;text-align:center;margin:0 0 28px;">
-                <p style="font-size:12px;color:#065f46;font-weight:700;letter-spacing:.08em;margin:0 0 12px;text-transform:uppercase;">認証コード</p>
-                <p style="font-size:48px;font-weight:900;letter-spacing:12px;color:#065f46;margin:0;font-family:'Courier New',monospace;">${code}</p>
+                <p style="font-size:12px;color:#134b3b;font-weight:700;letter-spacing:.08em;margin:0 0 12px;text-transform:uppercase;">認証コード</p>
+                <p style="font-size:48px;font-weight:900;letter-spacing:12px;color:#134b3b;margin:0;font-family:'Courier New',monospace;">${code}</p>
                 <p style="font-size:12px;color:#6ee7b7;margin:12px 0 0;">このコードは10分間有効です</p>
               </div>
 

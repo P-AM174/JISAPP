@@ -19,7 +19,7 @@ function buildResetEmailHtml(name: string, resetUrl: string): string {
       <td align="center" style="padding:40px 16px;">
         <table width="100%" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
           <tr>
-            <td style="background:linear-gradient(135deg,#059669,#10b981);padding:32px 40px;text-align:center;">
+            <td style="background:linear-gradient(135deg,#1a7358,#2b8a6c);padding:32px 40px;text-align:center;">
               <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-.5px;">ジサップ</span>
               <p style="color:rgba(255,255,255,.8);font-size:13px;margin:8px 0 0;">個人間アプリ売買プラットフォーム</p>
             </td>
@@ -32,7 +32,7 @@ function buildResetEmailHtml(name: string, resetUrl: string): string {
                 以下のボタンから新しいパスワードを設定してください。
               </p>
               <div style="text-align:center;margin:0 0 28px;">
-                <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#059669,#10b981);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:12px;">
+                <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#1a7358,#2b8a6c);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:12px;">
                   パスワードをリセット
                 </a>
               </div>

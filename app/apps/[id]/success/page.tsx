@@ -138,22 +138,22 @@ function setDailyTrigger() {
       box-shadow: 0 4px 24px rgba(0,0,0,.08);
     }
     h1 {
-      font-size: 1.2rem; color: #065f46; margin-bottom: 1rem;
+      font-size: 1.2rem; color: #134b3b; margin-bottom: 1rem;
       display: flex; align-items: center; gap: .5rem;
     }
     .btn {
       width: 100%; padding: .875rem;
-      background: #10b981; color: white;
+      background: #2b8a6c; color: white;
       border: none; border-radius: 10px;
       font-size: .9rem; font-weight: 700;
       cursor: pointer; margin-top: 1rem;
       transition: background .2s;
     }
-    .btn:hover { background: #059669; }
+    .btn:hover { background: #1a7358; }
     .status {
       margin-top: 1rem; padding: .75rem;
       background: #d1fae5; border-radius: 8px;
-      color: #065f46; font-size: .85rem;
+      color: #134b3b; font-size: .85rem;
       align-items: center; gap: .5rem;
       display: none;
     }

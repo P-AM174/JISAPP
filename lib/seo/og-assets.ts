@@ -6,16 +6,16 @@ export const OG_SIZE = { width: 1200, height: 630 };
 /** トップページ（ヒーロー・ロゴ）に合わせた明るいトーン */
 export const OG_THEME = {
   pageBg: "linear-gradient(145deg, #ecfdf5 0%, #ffffff 38%, #f0fdfa 72%, #ecfeff 100%)",
-  heroAccent: "linear-gradient(135deg, #34d399 0%, #2dd4bf 48%, #22d3ee 100%)",
+  heroAccent: "linear-gradient(135deg, #4fa386 0%, #2dd4bf 48%, #22d3ee 100%)",
   brandText: "#1D4242",
   titleText: "#0f3d3d",
   bodyText: "#475569",
   mutedText: "#64748b",
   badgeBg: "#d1fae5",
-  badgeText: "#047857",
+  badgeText: "#155d48",
   pillBg: "rgba(255,255,255,0.92)",
   cardBorder: "rgba(16, 185, 129, 0.22)",
-  emerald600: "#059669",
+  emerald600: "#1a7358",
   white: "#ffffff",
 };
 

@@ -13,7 +13,7 @@ export function MiniPreview({
   fallbackGradient,
   fallbackCategoryId,
   height = 120,
-  live = "hover",
+  live = "always",
   html,
   enabled = true,
 }: {
@@ -23,9 +23,8 @@ export function MiniPreview({
   fallbackCategoryId?: string | null;
   height?: number;
   /**
-   * hover: 一覧向け。普段はカテゴリ色の静止表示で、カーソルを載せたときだけ実アプリを読み込む
-   *        （タッチ端末はホバーがないため静止表示のまま）
-   * always: 詳細モーダル向け。画面に入ったら実アプリを読み込む
+   * always: 画面に入ったら実アプリを読み込む（既定。トップページ・一覧のカード）
+   * hover: カーソルを載せたときだけ読み込む（タッチ端末では静止表示のまま）
    */
   live?: "hover" | "always";
   /** 未公開の下書きなど、URLがないアプリはコードを直接渡して表示する */

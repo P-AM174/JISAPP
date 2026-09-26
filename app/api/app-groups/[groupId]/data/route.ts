@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import {
   GROUP_LIMITS,
+  WRITE_LIMITS,
+  allowWrite,
   authenticateMember,
+  touchGroupActivity,
   db,
   findGroupById,
   isValidDataKey,
@@ -56,6 +59,16 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!member) return fail("このグループのメンバーではありません。招待リンクから参加し直してください", 403);
 
   const client = db();
+
+  // 書き込みが多すぎるときは断る（荒らし・誤作動の無限ループ対策）
+  if ((body.op === "set" || body.op === "add" || body.op === "remove") && !allowWrite(member.id)) {
+    return fail("書き込みが多すぎます。少し待ってからもう一度試してください", 429);
+  }
+
+  // 使われていることを記録（長く使われていないグループの自動削除用。確認だけの versions は除く）
+  if (body.op !== "versions") {
+    await touchGroupActivity(groupId).catch(() => {});
+  }
 
   switch (body.op) {
     case "me":
@@ -122,6 +135,21 @@ export async function POST(req: Request, ctx: Ctx) {
         .eq("group_id", groupId)
         .eq("data_key", body.key);
       if ((count ?? 0) >= GROUP_LIMITS.itemsPerKey) return fail("これ以上追加できません（上限に達しました）");
+      const minuteAgo = new Date(Date.now() - 60_000).toISOString();
+      const [{ count: recent }, { count: total }] = await Promise.all([
+        client
+          .from("app_group_items")
+          .select("id", { count: "exact", head: true })
+          .eq("author_id", member.id)
+          .gt("created_at", minuteAgo),
+        client.from("app_group_items").select("id", { count: "exact", head: true }).eq("group_id", groupId),
+      ]);
+      if ((recent ?? 0) >= WRITE_LIMITS.addsPerMinute) {
+        return fail("追加が多すぎます。1分ほど待ってからもう一度試してください", 429);
+      }
+      if ((total ?? 0) >= WRITE_LIMITS.itemsPerGroup) {
+        return fail("このグループのデータがいっぱいです。不要な項目を消してください");
+      }
       const { data, error } = await client
         .from("app_group_items")
         .insert({ group_id: groupId, data_key: body.key, data_value: value, author_id: member.id })

@@ -62,7 +62,10 @@ export async function POST(req: Request) {
   });
 }
 
-/** 自分が作ったグループの一覧: GET /api/app-groups?appId=xxx */
+/**
+ * 自分のグループの一覧: GET /api/app-groups?appId=xxx
+ * 作ったグループと、ログインした状態で参加したグループ（別の端末から戻るため）
+ */
 export async function GET(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ groups: [] });
@@ -70,14 +73,23 @@ export async function GET(req: Request) {
   const appId = new URL(req.url).searchParams.get("appId")?.trim();
   if (!appId) return NextResponse.json({ error: "appId が必要です" }, { status: 400 });
 
-  const { data } = await db()
-    .from("app_groups")
-    .select("*")
-    .eq("app_id", appId)
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: false });
+  const { data: memberships } = await db()
+    .from("app_group_members")
+    .select("group_id")
+    .eq("user_id", userId);
+  const joinedIds = [...new Set(((memberships ?? []) as { group_id: string }[]).map((m) => m.group_id))];
+
+  const { data: owned } = await db().from("app_groups").select("*").eq("app_id", appId).eq("owner_id", userId);
+  const { data: joined } = joinedIds.length
+    ? await db().from("app_groups").select("*").eq("app_id", appId).in("id", joinedIds)
+    : { data: [] as GroupRow[] };
+
+  const byId = new Map<string, GroupRow>();
+  for (const g of [...((owned ?? []) as GroupRow[]), ...((joined ?? []) as GroupRow[])]) byId.set(g.id, g);
 
   return NextResponse.json({
-    groups: ((data ?? []) as GroupRow[]).map((g) => ({ ...toPublicGroup(g), inviteToken: g.invite_token })),
+    groups: [...byId.values()]
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .map((g) => ({ ...toPublicGroup(g), isOwner: g.owner_id === userId })),
   });
 }

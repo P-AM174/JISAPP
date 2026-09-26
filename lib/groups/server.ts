@@ -136,3 +136,78 @@ export function toPublicGroup(group: GroupRow) {
 export function toPublicMember(member: MemberRow) {
   return { id: member.id, name: member.display_name, isOwner: member.is_owner };
 }
+
+// ─── 作った人だけの操作 ───
+
+/** グループを作った人（ログイン中）か確かめる */
+export async function requireGroupOwner(
+  groupId: string,
+  userId: string | null
+): Promise<{ group: GroupRow } | { error: string; status: number }> {
+  if (!userId) return { error: "ログインが必要です", status: 401 };
+  const group = await findGroupById(groupId);
+  if (!group) return { error: "グループが見つかりません", status: 404 };
+  if (group.owner_id !== userId) return { error: "グループを作った人だけが操作できます", status: 403 };
+  return { group };
+}
+
+// ─── 利用状況・自動削除 ───
+
+/** 長く使われていないグループを消すための「最後に使われた日時」を更新する（1時間に1回まで） */
+export async function touchGroupActivity(groupId: string) {
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  await db()
+    .from("app_groups")
+    .update({ last_active_at: new Date().toISOString() })
+    .eq("id", groupId)
+    .lt("last_active_at", hourAgo);
+}
+
+/** この日数使われていないグループは、共有データごと削除する */
+export const GROUP_INACTIVE_DAYS = 180;
+
+export async function deleteInactiveGroups(): Promise<{ deleted: number; error?: string }> {
+  const cutoff = new Date(Date.now() - GROUP_INACTIVE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await db()
+    .from("app_groups")
+    .delete()
+    .lt("last_active_at", cutoff)
+    .select("id");
+  if (error) return { deleted: 0, error: error.message };
+  return { deleted: data?.length ?? 0 };
+}
+
+// ─── 書き込みの回数制限 ───
+
+export const WRITE_LIMITS = {
+  /** 1人が1分間に追加できる項目の数 */
+  addsPerMinute: 30,
+  /** 1人が1分間にできる保存・削除の回数（サーバーごとの目安） */
+  writesPerMinute: 60,
+  /** 1つのグループに置ける項目の合計 */
+  itemsPerGroup: 20_000,
+};
+
+const recentWrites = new Map<string, number[]>();
+
+/**
+ * 保存・削除の回数を数える（サーバーのメモリ上の目安。追加は DB で正確に数える）。
+ * 上限を超えたら false。
+ */
+export function allowWrite(memberId: string): boolean {
+  const now = Date.now();
+  const times = (recentWrites.get(memberId) ?? []).filter((t) => now - t < 60_000);
+  if (times.length >= WRITE_LIMITS.writesPerMinute) {
+    recentWrites.set(memberId, times);
+    return false;
+  }
+  times.push(now);
+  recentWrites.set(memberId, times);
+  if (recentWrites.size > 5000) {
+    // 古い記録を掃除
+    for (const [key, list] of recentWrites) {
+      if (list.every((t) => now - t >= 60_000)) recentWrites.delete(key);
+    }
+  }
+  return true;
+}

@@ -5,6 +5,9 @@ export type StorageUsage = {
   localStorageKeys: string[];
   usesZisup: boolean;
   usesLocalStorage: boolean;
+  /** window.Zisup.shared.*（グループ共有）で使っている名前 */
+  sharedKeys: string[];
+  usesShared: boolean;
 };
 
 export type StorageChangeKind =
@@ -13,7 +16,9 @@ export type StorageChangeKind =
   | "mode_local_to_zisup"
   | "key_renamed"
   | "key_removed"
-  | "key_added";
+  | "key_added"
+  | "shared_removed"
+  | "shared_key_changed";
 
 export type StorageChangeFinding = {
   kind: StorageChangeKind;
@@ -34,6 +39,8 @@ export function extractStorageUsage(source: string): StorageUsage {
       localStorageKeys: [],
       usesZisup: false,
       usesLocalStorage: false,
+      sharedKeys: [],
+      usesShared: false,
     };
   }
 
@@ -59,6 +66,16 @@ export function extractStorageUsage(source: string): StorageUsage {
     if (m[1]) localStorageKeys.add(m[1]);
   }
 
+  // Zisup.shared.add('key') など（グループ共有）
+  const sharedKeys = new Set<string>();
+  const sharedRe = new RegExp(
+    String.raw`(?:window\.)?Zisup\.shared\.(?:save|load|add|list|remove|onChange)\s*\(\s*${STRING_LIT}`,
+    "gi"
+  );
+  while ((m = sharedRe.exec(source)) !== null) {
+    if (m[1]) sharedKeys.add(m[1]);
+  }
+
   // 名前が変数の場合も「使っている」ことだけ検知する
   const usesZisup =
     zisupKeys.size > 0 ||
@@ -72,6 +89,8 @@ export function extractStorageUsage(source: string): StorageUsage {
     localStorageKeys: [...localStorageKeys].sort(),
     usesZisup,
     usesLocalStorage,
+    sharedKeys: [...sharedKeys].sort(),
+    usesShared: sharedKeys.size > 0 || /Zisup\.shared\./.test(source),
   };
 }
 
@@ -91,6 +110,34 @@ export function compareStorageUsage(
   const prev = extractStorageUsage(previous);
   const curr = extractStorageUsage(next);
   const findings: StorageChangeFinding[] = [];
+
+  // グループで共有しているデータ（メンバー全員に影響するので先に確かめる）
+  if (prev.usesShared && !curr.usesShared) {
+    findings.push({
+      kind: "shared_removed",
+      title: "グループで共有する部分がなくなっています",
+      detail:
+        "新しいコードには、グループのメンバーでデータを共有する処理が見つかりません。このまま公開すると、メンバーがこれまで書き込んだ内容はアプリに表示されなくなります。",
+      severity: "warn",
+      removedKeys: prev.sharedKeys,
+    });
+  } else if (prev.sharedKeys.length > 0) {
+    const currShared = new Set(curr.sharedKeys);
+    const removedShared = prev.sharedKeys.filter((k) => !currShared.has(k));
+    if (removedShared.length > 0) {
+      const addedShared = curr.sharedKeys.filter((k) => !prev.sharedKeys.includes(k));
+      findings.push({
+        kind: "shared_key_changed",
+        title: "グループで共有しているデータの名前が変わっています",
+        detail: `前は${formatKeys(removedShared)}という名前でメンバーのデータを共有していましたが、新しいコードではその名前が使われていません${
+          addedShared.length ? `（新しい名前: ${formatKeys(addedShared)}）` : ""
+        }。このまま公開すると、メンバー全員がこれまで書き込んだ内容が、アプリに表示されなくなります。`,
+        severity: "warn",
+        removedKeys: removedShared,
+        addedKeys: addedShared,
+      });
+    }
+  }
 
   // 保存機能そのものが消えた
   if ((prev.usesZisup || prev.usesLocalStorage) && !curr.usesZisup && !curr.usesLocalStorage) {

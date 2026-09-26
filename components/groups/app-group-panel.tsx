@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeftRight,
   Check,
   ChevronDown,
   Copy,
@@ -11,6 +12,7 @@ import {
   RefreshCw,
   Share2,
   Trash2,
+  UserMinus,
   Users,
   X,
 } from "lucide-react";
@@ -61,6 +63,89 @@ export function AppGroupPanel({
   const [creating, setCreating] = useState(false);
   const [sharing, setSharing] = useState<GroupSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [myGroups, setMyGroups] = useState<MyGroup[]>([]);
+  const [choosing, setChoosing] = useState(false);
+  const [managing, setManaging] = useState(false);
+
+  // ログインしている人のグループ（作ったもの・ログインして参加したもの）。別の端末から戻るため
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setMyGroups([]);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/app-groups?appId=${encodeURIComponent(appId)}`)
+      .then((r) => (r.ok ? r.json() : { groups: [] }))
+      .then((d: { groups?: MyGroup[] }) => {
+        if (!cancelled) setMyGroups(d.groups ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [appId, isLoggedIn, group?.groupId]);
+
+  // 参加中のグループが削除された・外されたときは、この端末からも外す
+  useEffect(() => {
+    if (!group) return;
+    let cancelled = false;
+    void fetch(`/api/app-groups/${group.groupId}/data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberKey: group.memberKey, op: "me" }),
+    })
+      .then((r) => {
+        if (cancelled || r.ok || (r.status !== 403 && r.status !== 404)) return;
+        leaveActiveGroup(appId, true);
+        onGroupChange(null);
+        setInviteError(
+          r.status === 404
+            ? `グループ「${group.groupName}」は削除されました`
+            : `グループ「${group.groupName}」から外れました。参加するには招待リンクが必要です`
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // グループが変わったときだけ確かめる
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group?.groupId]);
+
+  /** 自分のグループに切り替える（この端末に鍵がなければ、ログイン中のアカウントで受け取り直す） */
+  const switchTo = async (target: MyGroup) => {
+    setChoosing(false);
+    const existing = readGroupSession(target.id);
+    if (existing) {
+      saveGroupSession(existing);
+      onGroupChange(existing);
+      return;
+    }
+    const res = await fetch(`/api/app-groups/${target.id}/rejoin`, { method: "POST" });
+    const data = (await res.json().catch(() => ({}))) as {
+      group?: { id: string; name: string };
+      member?: { id: string; name: string; isOwner: boolean };
+      memberKey?: string;
+      inviteToken?: string;
+      error?: string;
+    };
+    if (!res.ok || !data.group || !data.member || !data.memberKey) {
+      window.alert(data.error ?? "グループに戻れませんでした");
+      return;
+    }
+    const session: GroupSession = {
+      groupId: data.group.id,
+      groupName: data.group.name,
+      appId,
+      memberId: data.member.id,
+      memberKey: data.memberKey,
+      displayName: data.member.name,
+      isOwner: data.member.isOwner,
+      inviteToken: data.inviteToken,
+    };
+    saveGroupSession(session);
+    onGroupChange(session);
+  };
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 招待リンク（?g=トークン）から来たとき
@@ -201,6 +286,10 @@ export function AppGroupPanel({
                   <div className="absolute right-0 top-9 z-50 w-56 rounded-xl bg-white p-1.5 text-sm shadow-xl ring-1 ring-slate-900/10">
                     {group.isOwner && (
                       <>
+                        <button type="button" onClick={() => { setMenuOpen(false); setManaging(true); }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
+                          <Users className="h-4 w-4 text-slate-400" />
+                          メンバー一覧
+                        </button>
                         <button type="button" onClick={() => void regenerate()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
                           <RefreshCw className="h-4 w-4 text-slate-400" />
                           招待リンクを作り直す
@@ -211,6 +300,12 @@ export function AppGroupPanel({
                         </button>
                         <div className="my-1 h-px bg-slate-100" />
                       </>
+                    )}
+                    {(myGroups.length > 1 || isLoggedIn) && (
+                      <button type="button" onClick={() => { setMenuOpen(false); setChoosing(true); }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
+                        <ArrowLeftRight className="h-4 w-4 text-slate-400" />
+                        グループを切り替える・作る
+                      </button>
                     )}
                     <button type="button" onClick={leave} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
                       <LogOut className="h-4 w-4 text-slate-400" />
@@ -226,6 +321,15 @@ export function AppGroupPanel({
                 <span className="font-bold">みんなでデータを共有できるアプリです。</span>
                 <span className="hidden text-emerald-800/70 sm:inline"> グループを作って、招待リンクをメンバーに送りましょう</span>
               </p>
+              {myGroups.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setChoosing(true)}
+                  className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                >
+                  自分のグループ（{myGroups.length}）
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => (isLoggedIn ? setCreating(true) : goLogin())}
@@ -269,7 +373,125 @@ export function AppGroupPanel({
       {sharing?.inviteToken && (
         <InviteModal appId={appId} appTitle={appTitle} group={sharing} onClose={() => setSharing(null)} />
       )}
+
+      {choosing && (
+        <ModalShell title="自分のグループ" onClose={() => setChoosing(false)}>
+          {myGroups.length === 0 ? (
+            <p className="text-sm text-slate-500">まだグループはありません。</p>
+          ) : (
+            <ul className="space-y-2">
+              {myGroups.map((g) => (
+                <li key={g.id}>
+                  <button
+                    type="button"
+                    onClick={() => void switchTo(g)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left ring-1 transition",
+                      group?.groupId === g.id ? "bg-emerald-50 ring-emerald-300" : "bg-white ring-slate-200 hover:ring-emerald-300"
+                    )}
+                  >
+                    <Users className="h-4 w-4 shrink-0 text-emerald-700" />
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{g.name}</span>
+                    <span className="shrink-0 text-[11px] text-slate-400">{g.isOwner ? "作った" : "参加中"}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => {
+                setChoosing(false);
+                setCreating(true);
+              }}
+              className={cn(PRIMARY, "mt-4")}
+            >
+              新しいグループを作る
+            </button>
+          )}
+          <p className="mt-2 text-center text-[11px] text-slate-400">ログインして参加したグループは、別の端末でもここから開けます</p>
+        </ModalShell>
+      )}
+
+      {managing && group && (
+        <MembersModal group={group} onClose={() => setManaging(false)} />
+      )}
     </>
+  );
+}
+
+type MyGroup = { id: string; name: string; appId: string; isOwner: boolean };
+
+type MemberInfo = { id: string; name: string; isOwner: boolean; loggedIn: boolean; joinedAt: string };
+
+function MembersModal({ group, onClose }: { group: GroupSession; onClose: () => void }) {
+  const [members, setMembers] = useState<MemberInfo[] | null>(null);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    const res = await fetch(`/api/app-groups/${group.groupId}/members`);
+    const data = (await res.json().catch(() => ({}))) as { members?: MemberInfo[]; error?: string };
+    if (!res.ok) {
+      setError(data.error ?? "メンバーを読み込めませんでした");
+      return;
+    }
+    setMembers(data.members ?? []);
+  };
+
+  useEffect(() => {
+    void load();
+    // 開いたときだけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const remove = async (m: MemberInfo) => {
+    if (!window.confirm(`「${m.name}」をグループから外しますか？\nこの人はグループのデータを見たり書き込んだりできなくなります。`)) return;
+    const res = await fetch(`/api/app-groups/${group.groupId}/members?memberId=${encodeURIComponent(m.id)}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      window.alert(data.error ?? "外せませんでした");
+      return;
+    }
+    await load();
+  };
+
+  return (
+    <ModalShell title={`メンバー（${members?.length ?? "…"}人）`} onClose={onClose}>
+      {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
+      {!members && !error && <p className="text-sm text-slate-400">読み込んでいます…</p>}
+      {members && (
+        <ul className="max-h-[50dvh] space-y-1.5 overflow-y-auto">
+          {members.map((m) => (
+            <li key={m.id} className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-2.5 ring-1 ring-slate-200">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold text-slate-800">
+                  {m.name}
+                  {m.id === group.memberId && <span className="ml-1.5 text-[11px] font-semibold text-slate-400">（あなた）</span>}
+                </span>
+                <span className="block text-[11px] text-slate-400">
+                  {m.isOwner ? "作った人" : m.loggedIn ? "ログインして参加" : "ログインなしで参加"}・
+                  {new Date(m.joinedAt).toLocaleDateString("ja-JP")}
+                </span>
+              </span>
+              {!m.isOwner && (
+                <button
+                  type="button"
+                  onClick={() => void remove(m)}
+                  className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
+                >
+                  <UserMinus className="h-3.5 w-3.5" />
+                  外す
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+        招待リンクが知らない人に広まった場合は、メンバーを外したうえで「招待リンクを作り直す」をしてください。
+      </p>
+    </ModalShell>
   );
 }
 

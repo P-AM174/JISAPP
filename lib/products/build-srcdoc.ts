@@ -17,10 +17,24 @@ function normalizeMobileViewport(docHtml: string): string {
   return docHtml;
 }
 
-/** Zisup シムを <head> の先頭（最初の <script> より前）に注入するヘルパー */
-export function injectZisupShim(docHtml: string): string {
+/** アプリの localStorage の中身（起動時に渡す）。</script> で途切れないようにエスケープする */
+function storageSnapshotScript(snapshot?: Record<string, string> | null): string {
+  if (!snapshot || Object.keys(snapshot).length === 0) return "";
+  const json = JSON.stringify(snapshot)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+  return `<script>window.__ZISUP_STORAGE__=${json};</script>`;
+}
+
+/**
+ * Zisup シムを <head> の先頭（最初の <script> より前）に注入するヘルパー。
+ * storageSnapshot を渡すと、アプリの localStorage の中身として起動時に使える。
+ */
+export function injectZisupShim(docHtml: string, storageSnapshot?: Record<string, string> | null): string {
   const doc = normalizeMobileViewport(docHtml);
-  const headInjection = MOBILE_NO_ZOOM_STYLE + `<script>${ZISUP_SHIM_SCRIPT}</script>`;
+  const headInjection =
+    MOBILE_NO_ZOOM_STYLE + storageSnapshotScript(storageSnapshot) + `<script>${ZISUP_SHIM_SCRIPT}</script>`;
 
   if (/<head[^>]*>/i.test(doc)) {
     return doc.replace(/<head[^>]*>/i, (m) => m + headInjection);
@@ -35,7 +49,8 @@ export function injectZisupShim(docHtml: string): string {
 export function buildSrcDoc(
   html: string,
   css?: string | null,
-  js?: string | null
+  js?: string | null,
+  storageSnapshot?: Record<string, string> | null
 ): string {
   const h = html?.trim() ?? "";
   const c = css?.trim() ?? "";
@@ -78,7 +93,7 @@ ${h}
 </html>`;
   }
 
-  return injectZisupShim(doc);
+  return injectZisupShim(doc, storageSnapshot);
 }
 
 /** ファイル配列から html / css / js を抽出 */

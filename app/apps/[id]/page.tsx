@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -37,7 +37,8 @@ import {
 } from "lucide-react";
 import { type AppRow } from "@/lib/supabase";
 import { AppUpdateModal, type PendingUpdateInfo } from "@/components/library/app-update-modal";
-import { buildSrcDoc as buildAppSrcDoc } from "@/lib/products/build-srcdoc";
+import { buildSrcDoc as buildAppSrcDoc, injectZisupShim } from "@/lib/products/build-srcdoc";
+import { readAppStorageSnapshot } from "@/lib/apps/app-storage";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
@@ -111,6 +112,13 @@ function SupabaseAppPage({ id }: { id: string }) {
   useEffect(() => {
     if (enableCloud) setIframeKey((k) => k + 1);
   }, [enableCloud]);
+
+  // アプリの localStorage の中身（枠を作り直すときだけ読み直す。毎回読むと再描画のたびにアプリが再起動してしまう）
+  const appStorage = useMemo(
+    () => (app ? readAppStorageSnapshot(id, `${app.html_code ?? ""}\n${app.js_code ?? ""}`) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [id, app, iframeKey, group?.groupId, enableCloud, userId]
+  );
 
   const loadRuntime = async () => {
     const res = await fetch(`/api/apps/${id}/runtime`);
@@ -212,7 +220,7 @@ function SupabaseAppPage({ id }: { id: string }) {
     );
   }
 
-  const srcDoc = buildAppSrcDoc(app.html_code ?? "", app.css_code, app.js_code);
+  const srcDoc = buildAppSrcDoc(app.html_code ?? "", app.css_code, app.js_code, appStorage);
 
   return (
     <div className="app-viewport flex flex-col overflow-hidden bg-white">
@@ -663,7 +671,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
               </div>
             </div>
             <iframe
-              srcDoc={previewSrc}
+              srcDoc={previewSrc ? injectZisupShim(previewSrc) : ""}
               sandbox={APP_IFRAME_SANDBOX}
               className="h-[440px] w-full border-0 bg-white"
               title={`${app.name} デモ`}

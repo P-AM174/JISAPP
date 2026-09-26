@@ -2,11 +2,15 @@
 
 import { useEffect, useCallback, useRef, type RefObject } from "react";
 import type { GroupSession } from "@/lib/groups/client";
+import { applyAppStorageMessage } from "@/lib/apps/app-storage";
 
 type SharedMessage = { op?: string; key?: string; value?: string; itemId?: string };
 
-/** 他のメンバーの更新を確かめる間隔 */
-const SHARED_POLL_MS = 5000;
+/**
+ * 他のメンバーの更新を確かめる間隔。
+ * 変化がない間は少しずつ間隔を延ばし、サーバーの負担を減らす。変化や書き込みがあれば短く戻す。
+ */
+const SHARED_POLL_STEPS_MS = [5_000, 5_000, 5_000, 10_000, 10_000, 20_000, 30_000];
 
 /** グループの共有データ API を呼ぶ */
 async function callGroupData(group: GroupSession, body: Record<string, unknown>): Promise<unknown> {
@@ -170,6 +174,8 @@ export function useZisupBridge(
 ) {
   /** アプリが onChange で見張っているキー */
   const watchedKeysRef = useRef<Set<string>>(new Set());
+  /** すぐに確かめ直すための合図（アプリが書き込んだとき） */
+  const pollNowRef = useRef<(() => void) | null>(null);
 
   const send = useCallback(
     (id: string, value: string | null, error?: string) => {
@@ -232,9 +238,16 @@ export function useZisupBridge(
           d.__zisup_type !== "load" &&
           d.__zisup_type !== "fetch" &&
           d.__zisup_type !== "shared" &&
-          d.__zisup_type !== "shared_watch")
+          d.__zisup_type !== "shared_watch" &&
+          d.__zisup_type !== "ls")
       ) return;
       if (e.source !== iframeRef.current?.contentWindow) return;
+
+      // アプリの localStorage への書き込み（アプリごとの場所に保存する）
+      if (d.__zisup_type === "ls") {
+        applyAppStorageMessage(appId, d as { op?: string; key?: string; value?: string });
+        return;
+      }
 
       if (d.__zisup_type === "shared_watch") {
         if (d.key) watchedKeysRef.current.add(d.key);
@@ -251,6 +264,8 @@ export function useZisupBridge(
             ? await callGroupData(group, { op: msg.op, key: msg.key, value: msg.value, itemId: msg.itemId })
             : localShared(appId, msg);
           send(id, JSON.stringify(result ?? null));
+          // 自分が書き込んだら、他のメンバーの返事も来やすいので確認の間隔を短く戻す
+          if (msg.op === "set" || msg.op === "add" || msg.op === "remove") pollNowRef.current?.();
         } catch (err) {
           send(id, null, err instanceof Error ? err.message : "共有データのエラー");
         }
@@ -341,6 +356,10 @@ export function useZisupBridge(
     if (!group) return;
     let last: Record<string, string> | null = null;
     let stopped = false;
+    let step = 0;
+    let timer: number | undefined;
+    /** 確認のループが重ならないよう、最新のループだけを続ける */
+    let generation = 0;
 
     const tick = async () => {
       const keys = [...watchedKeysRef.current];
@@ -348,24 +367,50 @@ export function useZisupBridge(
       try {
         const versions = (await callGroupData(group, { op: "versions", keys })) as Record<string, string>;
         if (stopped) return;
+        let changed = false;
         if (last) {
           for (const key of keys) {
             if (last[key] !== undefined && versions[key] !== last[key]) {
+              changed = true;
               iframeRef.current?.contentWindow?.postMessage({ __zisup_type: "shared_changed", key }, "*");
             }
           }
         }
         last = { ...(last ?? {}), ...versions };
+        step = changed ? 0 : Math.min(step + 1, SHARED_POLL_STEPS_MS.length - 1);
       } catch {
         /* 次の確認で再試行 */
       }
     };
 
-    const timer = window.setInterval(() => void tick(), SHARED_POLL_MS);
-    void tick();
+    const schedule = (gen: number) => {
+      if (stopped || gen !== generation) return;
+      timer = window.setTimeout(async () => {
+        await tick();
+        schedule(gen);
+      }, SHARED_POLL_STEPS_MS[step]);
+    };
+
+    // 書き込んだとき・画面に戻ってきたときは、すぐ確かめて間隔を短く戻す
+    const pollNow = () => {
+      step = 0;
+      window.clearTimeout(timer);
+      const gen = ++generation;
+      void tick().then(() => schedule(gen));
+    };
+    pollNowRef.current = pollNow;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") pollNow();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    const firstGen = generation;
+    void tick().then(() => schedule(firstGen));
     return () => {
       stopped = true;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
+      pollNowRef.current = null;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [group, iframeRef]);
 }

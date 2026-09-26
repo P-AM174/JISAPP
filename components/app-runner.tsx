@@ -9,6 +9,7 @@ import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { cn } from "@/lib/utils";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
+import { readAppStorageSnapshot } from "@/lib/apps/app-storage";
 
 type AppRunnerProps = {
   html?: string | null;
@@ -86,10 +87,12 @@ export function AppRunner({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const syncKey = enableCloud ? `cloud-${userId}` : isLoggedIn ? "local-auth" : "guest";
 
+  // アプリの localStorage の中身は、枠を作り直すたび（再読み込み・同期の切り替え）に最新を渡す
   const documentHtml = useMemo(() => {
-    if (srcDoc?.trim()) return injectZisupShim(srcDoc);
-    return buildSrcDoc(html ?? "", css, js);
-  }, [srcDoc, html, css, js]);
+    const snapshot = readAppStorageSnapshot(appId, srcDoc?.trim() ? srcDoc : `${html ?? ""}\n${js ?? ""}`);
+    if (srcDoc?.trim()) return injectZisupShim(srcDoc, snapshot);
+    return buildSrcDoc(html ?? "", css, js, snapshot);
+  }, [srcDoc, html, css, js, appId, iframeKey, syncKey]);
 
   useZisupBridge(iframeRef, appId, enableCloud ? userId : null);
 

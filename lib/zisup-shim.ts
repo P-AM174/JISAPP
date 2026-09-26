@@ -11,6 +11,65 @@ export const ZISUP_REQUEST_TIMEOUT_MS = 55_000;
 export const ZISUP_SHIM_SCRIPT = `
 (function () {
   'use strict';
+
+  /* ── localStorage の代わり ──
+     アプリはジサップ本体と切り離された（別オリジン扱いの）枠で動くため、ブラウザの localStorage は使えない。
+     ジサップの画面がアプリごとに分けて保存した内容を起動時に渡し（__ZISUP_STORAGE__）、
+     書き込みは画面に送って保存してもらう。アプリ側のコードは今までどおり localStorage を使える。 */
+  (function () {
+    var nativeOk = false;
+    try {
+      nativeOk = !!window.localStorage;
+      window.localStorage.getItem('__zisup_probe__');
+    } catch (e) {
+      nativeOk = false;
+    }
+    if (nativeOk) return;
+
+    var has = function (obj, k) { return Object.prototype.hasOwnProperty.call(obj, k); };
+
+    function makeStorage(data, persist) {
+      function send(op, key, value) {
+        if (!persist) return;
+        try { window.parent.postMessage({ __zisup_type: 'ls', op: op, key: key, value: value }, '*'); } catch (e) { /* noop */ }
+      }
+      var api = {
+        getItem: function (k) { k = String(k); return has(data, k) ? data[k] : null; },
+        setItem: function (k, v) { k = String(k); v = String(v); data[k] = v; send('set', k, v); },
+        removeItem: function (k) { k = String(k); delete data[k]; send('remove', k); },
+        clear: function () { Object.keys(data).forEach(function (k) { delete data[k]; }); send('clear'); },
+        key: function (i) { var keys = Object.keys(data); return i >= 0 && i < keys.length ? keys[i] : null; }
+      };
+      if (typeof Proxy === 'undefined') return api;
+      /* localStorage.xxx や localStorage['xxx'] の書き方にも対応する */
+      return new Proxy(api, {
+        get: function (t, p) {
+          if (p === 'length') return Object.keys(data).length;
+          if (has(t, p)) return t[p];
+          if (typeof p === 'string' && has(data, p)) return data[p];
+          return undefined;
+        },
+        set: function (t, p, v) { if (typeof p === 'string') api.setItem(p, v); return true; },
+        deleteProperty: function (t, p) { if (typeof p === 'string') api.removeItem(p); return true; },
+        has: function (t, p) { return has(data, p); },
+        ownKeys: function () { return Object.keys(data); },
+        getOwnPropertyDescriptor: function (t, p) {
+          return has(data, p) ? { value: data[p], writable: true, enumerable: true, configurable: true } : undefined;
+        }
+      });
+    }
+
+    var initial = window.__ZISUP_STORAGE__;
+    var data = {};
+    if (initial && typeof initial === 'object') {
+      Object.keys(initial).forEach(function (k) { data[k] = String(initial[k]); });
+    }
+    try {
+      Object.defineProperty(window, 'localStorage', { value: makeStorage(data, true), configurable: true });
+      Object.defineProperty(window, 'sessionStorage', { value: makeStorage({}, false), configurable: true });
+    } catch (e) { /* noop */ }
+  })();
+
   var _pending = {};
 
   /* 親ウィンドウへメッセージを送り、Promise で応答を待つ */

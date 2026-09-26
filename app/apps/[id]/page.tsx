@@ -45,6 +45,8 @@ import { SyncLoginButton } from "@/components/app-runner";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { ShareButton } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
+import { AppGroupPanel } from "@/components/groups/app-group-panel";
+import { readActiveGroup, usesSharedData, type GroupSession } from "@/lib/groups/client";
 
 
 
@@ -82,16 +84,29 @@ function SupabaseAppPage({ id }: { id: string }) {
   } = useLibrarySync(id);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { data: session } = useSession();
 
-  useZisupBridge(iframeRef, id, enableCloud ? userId : null);
+  // 参加しているグループ（グループ共有を使うアプリ用）
+  const [group, setGroup] = useState<GroupSession | null>(null);
+  useEffect(() => {
+    setGroup(readActiveGroup(id));
+  }, [id]);
+
+  useZisupBridge(iframeRef, id, enableCloud ? userId : null, group);
+
+  // 招待リンクから来た人・グループ参加中の人には、ログインを勧める案内を出さない
+  // （グループのデータはログインなしで共有できるため、「ログインが必要」と誤解させない）
+  const cameFromInviteRef = useRef(
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("g")
+  );
 
   useEffect(() => {
-    if (!syncReady || enableCloud) {
+    if (!syncReady || enableCloud || group || cameFromInviteRef.current) {
       setSyncModalOpen(false);
       return;
     }
     setSyncModalOpen(true);
-  }, [syncReady, enableCloud, isLoggedIn, inLibrary]);
+  }, [syncReady, enableCloud, isLoggedIn, inLibrary, group]);
 
   useEffect(() => {
     if (enableCloud) setIframeKey((k) => k + 1);
@@ -246,6 +261,18 @@ function SupabaseAppPage({ id }: { id: string }) {
         </div>
       )}
 
+      <AppGroupPanel
+        appId={id}
+        appTitle={app.title}
+        usesShared={usesSharedData(`${app.html_code ?? ""}
+${app.js_code ?? ""}`)}
+        isLoggedIn={isLoggedIn}
+        userName={session?.user?.name ?? null}
+        loginCallbackUrl={loginCallbackUrl}
+        group={group}
+        onGroupChange={setGroup}
+      />
+
       {/* アプリ実行エリア（残りの高さいっぱい。スクロールは iframe の中だけ） */}
       <main className="relative flex min-h-0 flex-1 flex-col">
         {codePanelOpen && app.code_public && (
@@ -280,7 +307,7 @@ function SupabaseAppPage({ id }: { id: string }) {
           <div className="min-h-0 flex-1 overflow-auto">
             <iframe
               ref={iframeRef}
-              key={`${id}-${enableCloud ? userId : "local"}-${iframeKey}`}
+              key={`${id}-${enableCloud ? userId : "local"}-${group?.groupId ?? "solo"}-${iframeKey}`}
               srcDoc={srcDoc}
               sandbox={APP_IFRAME_SANDBOX}
               className="h-full w-full border-0 bg-white"

@@ -36,9 +36,22 @@ export const ZISUP_SHIM_SCRIPT = `
     });
   }
 
+  /* グループ共有：他のメンバーの更新を知らせるコールバック（キーごと） */
+  var _watchers = {};
+
+  function shared(op, extra) {
+    var msg = { __zisup_type: 'shared', op: op };
+    for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) msg[k] = extra[k]; }
+    return request(msg);
+  }
+
   /* 親からの応答を受信してコールバックを解決 */
   window.addEventListener('message', function (e) {
     var d = e.data;
+    if (d && d.__zisup_type === 'shared_changed' && d.key && _watchers[d.key]) {
+      _watchers[d.key].forEach(function (cb) { try { cb(); } catch (err) { console.error(err); } });
+      return;
+    }
     if (!d || d.__zisup_type !== 'response') return;
     var cb = _pending[d.__zisup_id];
     if (!cb) return;
@@ -97,8 +110,54 @@ export const ZISUP_SHIM_SCRIPT = `
         secret: options.secret ? String(options.secret) : undefined,
       });
     },
+
+    /**
+     * グループのメンバー全員で共有するデータ。
+     * グループに参加していないとき（開発スタジオなど）は、この端末だけのテスト用データとして動く。
+     */
+    shared: {
+      /** 1つの値を共有して保存 */
+      save: function (key, value) {
+        return shared('set', { key: String(key), value: JSON.stringify(value) });
+      },
+      /** 共有している値を読み込む（なければ null） */
+      load: function (key) {
+        return shared('get', { key: String(key) });
+      },
+      /** 一覧に項目を追加（同時に入力しても消えない）。{ id, value, author, createdAt, mine } を返す */
+      add: function (key, value) {
+        return shared('add', { key: String(key), value: JSON.stringify(value) });
+      },
+      /** 一覧の項目を古い順に取得 */
+      list: function (key) {
+        return shared('list', { key: String(key) });
+      },
+      /** 項目を削除（自分の項目だけ。グループを作った人はすべて） */
+      remove: function (key, id) {
+        return shared('remove', { key: String(key), itemId: String(id) });
+      },
+      /** 他のメンバーがこのキーを更新したら呼ばれる */
+      onChange: function (key, callback) {
+        key = String(key);
+        if (!_watchers[key]) {
+          _watchers[key] = [];
+          try { window.parent.postMessage({ __zisup_type: 'shared_watch', key: key }, '*'); } catch (e) { /* noop */ }
+        }
+        _watchers[key].push(callback);
+      },
+    },
+
+    /** 自分の表示名など { id, name }。グループに参加していなければテスト用の名前 */
+    me: function () {
+      return shared('me', {});
+    },
+
+    /** 参加しているグループ { id, name }。参加していなければ null */
+    group: function () {
+      return shared('group', {});
+    },
   };
 
-  console.log('[Zisup] API ready (v3 cloud-sync + external fetch)');
+  console.log('[Zisup] API ready (v4 cloud-sync + external fetch + group shared data)');
 })();
 `;

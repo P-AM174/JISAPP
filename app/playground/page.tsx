@@ -13,6 +13,7 @@ import {
   Copy,
   Database,
   Download,
+  Eye,
   FolderOpen,
   Globe,
   HelpCircle,
@@ -33,6 +34,7 @@ import {
   TriangleAlert,
   Undo2,
   Upload,
+  Users,
   Wrench,
   X,
   Zap,
@@ -44,7 +46,11 @@ import { CategoryIcon } from "@/lib/category-icon";
 import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
-import { SECRETS_STUDIO_GUIDE, buildPromptFromTemplate } from "@/lib/playground/prompt-template";
+import {
+  SECRETS_STUDIO_GUIDE,
+  buildPromptFromTemplate,
+  buildSharedConvertMessage,
+} from "@/lib/playground/prompt-template";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
 import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
@@ -52,13 +58,11 @@ import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
 import {
-  LaunchAiLink,
-  PastePanel,
-  launchCaption,
+  EditorStart,
+  PaneTitleBar,
   PreviewEmpty,
+  PromptTemplateModal,
   StageIndicator,
-  StartPanel,
-  ChoosePanel,
   type IdeaOptions,
   type StudioStage,
 } from "@/components/playground/studio-flow";
@@ -78,6 +82,7 @@ import {
 } from "@/lib/playground/code-cleanup";
 import { copyText, copyTextNow, findStudioAi, type StudioAi } from "@/lib/playground/ai-launch";
 import { SAMPLE_APP_HTML } from "@/lib/playground/sample-app";
+import { usesSharedData } from "@/lib/groups/client";
 import { supabase } from "@/lib/supabase";
 import {
   markStudioLoginPromptShown,
@@ -98,6 +103,7 @@ const DEFAULT_IDEA_OPTIONS: IdeaOptions = {
   details: "",
   useJisappDesign: true,
   needSave: true,
+  shared: false,
 };
 
 // ─── トースト ───
@@ -585,8 +591,11 @@ export default function PlaygroundPage() {
   const [returned, setReturned]           = useState(false);
   const [pasteFailed, setPasteFailed]     = useState(false);
   const [flowRestored, setFlowRestored]   = useState(false);
-  /** 始め方（プロンプトから／コードを貼る）を選んだか */
-  const [started, setStarted]             = useState(false);
+  // テンプレートからプロンプトを作るモーダル
+  const [templateOpen, setTemplateOpen]   = useState(false);
+  const [templateStep, setTemplateStep]   = useState<"form" | "copied">("form");
+  const [promptText, setPromptText]       = useState("");
+  const [promptCopied, setPromptCopied]   = useState(true);
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
   const [menuOpen, setMenuOpen]           = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -1032,48 +1041,77 @@ export default function PlaygroundPage() {
       requestAnimationFrame(() => getActiveTextarea()?.select());
       return;
     }
-    setAwaitingCode(true);
     setPasteFailed(true);
+    requestAnimationFrame(() => {
+      const zone = [...document.querySelectorAll<HTMLTextAreaElement>("#studio-paste-zone")].find(
+        (el) => el.getClientRects().length > 0
+      );
+      zone?.scrollIntoView({ block: "center", behavior: "smooth" });
+      zone?.focus();
+    });
   };
 
-  /** 指示文をコピーしてから AI を開く（リンクの遷移はそのまま任せる） */
-  const launchAi = (ai: StudioAi): boolean => {
-    const name = idea.trim();
-    if (!name) {
-      setIdeaError("作りたいものを書いてください");
-      return false;
-    }
-    const prompt = buildPromptFromTemplate(name, ideaOptions.details, {
+  const buildPrompt = () =>
+    buildPromptFromTemplate(idea.trim(), ideaOptions.details, {
       useJisappDesign: ideaOptions.useJisappDesign,
       storage: ideaOptions.needSave ? "zisup" : "local",
+      shared: ideaOptions.shared,
     });
-    // リンクで AI を開く前に同期コピーする。だめなら Clipboard API で追いかける
-    if (copyTextNow(prompt)) {
-      showToast("指示文をコピーしました。AIに貼り付けて送信してください");
-    } else {
-      void copyText(prompt).then((ok) =>
-        showToast(ok ? "指示文をコピーしました。AIに貼り付けて送信してください" : "指示文をコピーできませんでした。もう一度お試しください")
-      );
+
+  /** コピーを試し、できたかどうかを「コピーしました」画面に反映する */
+  const copyPromptAndShow = async (prompt: string) => {
+    setPromptText(prompt);
+    const ok = copyTextNow(prompt) || (await copyText(prompt));
+    setPromptCopied(ok);
+    leftForAiRef.current = true;
+    setTemplateStep("copied");
+    setTemplateOpen(true);
+    return ok;
+  };
+
+  const openTemplateWith = (shared: boolean) => {
+    setIdeaOptions((o) => ({ ...o, shared }));
+    setTemplateStep("form");
+    setTemplateOpen(true);
+  };
+
+  /** 「プロンプトをテンプレートから作る」：「自分だけで使う」から始める */
+  const openTemplate = () => openTemplateWith(false);
+
+  /** サークルなど、メンバーとデータを共有するアプリを作る */
+  const openSharedTemplate = () => openTemplateWith(true);
+
+  /** テンプレートからプロンプトを作ってコピーする。コピーしたことを先にはっきり見せる */
+  const createPrompt = () => {
+    if (!idea.trim()) {
+      setIdeaError("作りたいものを書いてください");
+      return;
     }
+    void copyPromptAndShow(buildPrompt());
+  };
+
+  const recopyPrompt = () => {
+    const prompt = promptText || (idea.trim() ? buildPrompt() : "");
+    if (!prompt) {
+      openTemplate();
+      return;
+    }
+    void copyPromptAndShow(prompt).then((ok) => {
+      if (ok) showToast("プロンプトをもう一度コピーしました");
+    });
+  };
+
+  /**
+   * AIに送ったあと、貼り付け待ちにする。
+   * ここでプロンプトをコピーし直すと、AIからコピーしてきたコードを上書きしてしまうのでしない。
+   */
+  const launchAi = (ai: StudioAi): boolean => {
     setLaunchedAi(ai);
     setAwaitingCode(true);
     setPasteFailed(false);
     setReturned(false);
-    leftForAiRef.current = true;
+    setTemplateOpen(false);
     return true;
-  };
-
-  const goToPaste = () => {
-    setLaunchedAi(null);
-    setAwaitingCode(true);
-    setPasteFailed(false);
-  };
-
-  const backToIdea = () => {
-    setStarted(true);
-    setAwaitingCode(false);
-    setPasteFailed(false);
-    setReturned(false);
   };
 
   const runSample = () => {
@@ -1084,7 +1122,7 @@ export default function PlaygroundPage() {
   const startOver = () => {
     applyCode("");
     setPreviewHtml("");
-    setStarted(false);
+    setTemplateOpen(false);
     setAwaitingCode(false);
     setPasteFailed(false);
     setReturned(false);
@@ -1346,10 +1384,11 @@ export default function PlaygroundPage() {
   const showGuide = !previewHtml.trim();
   const isDirty = code.trim() !== "" && code !== lastSavedCode && code.trim() !== SAMPLE_APP_HTML.trim();
 
-  const stage: StudioStage = code.trim() ? "ready" : awaitingCode ? "paste" : started ? "idea" : "choose";
+  const stage: StudioStage = code.trim() ? "ready" : awaitingCode ? "paste" : "idea";
   const localOnly = usesLocalStorageOnly(code);
   const codeIssue = detectCodeIssue(code);
   const needsKeys = usesStudioSecrets(code);
+  const sharesData = usesSharedData(code);
   const isSample = code.trim() === SAMPLE_APP_HTML.trim();
 
   // 作りたいもの・AI・進み具合を復元（URLの ?idea= / ?sample=1 を優先）
@@ -1361,15 +1400,16 @@ export default function PlaygroundPage() {
     }
     try {
       const stored = JSON.parse(localStorage.getItem(FLOW_STORAGE_KEY) ?? "{}") as StoredFlow;
-      if (stored.idea) setIdea(stored.idea);
       if (stored.aiId) setAiId(findStudioAi(stored.aiId).id);
       if (stored.options) setIdeaOptions({ ...DEFAULT_IDEA_OPTIONS, ...stored.options });
-      // 開き直したときは必ず「始め方を選ぶ」画面から。入力内容とAIの選択だけ引き継ぐ
+      // 開き直したときはエディタの最初の画面から。入力内容とAIの選択だけ引き継ぐ
     } catch { /* noop */ }
     const ideaParam = params.get("idea");
     if (ideaParam) {
-      // 選択画面は出したまま、「プロンプトから作る」を選んだときの入力欄に入れておく
+      // SNS の投稿などから来たときは、作りたいものが入った状態でテンプレートを開く
       setIdea(ideaParam.slice(0, 200));
+      setTemplateStep("form");
+      setTemplateOpen(true);
     }
     if (params.get("sample") === "1") {
       applyIncomingCode(SAMPLE_APP_HTML);
@@ -1392,19 +1432,36 @@ export default function PlaygroundPage() {
     } catch { /* noop */ }
   }, [flowRestored, idea, aiId, awaitingCode, ideaOptions, code]);
 
-  // AI のタブ・アプリから戻ってきたら「おかえりなさい」を出す
+  // AI のアプリ・タブから戻ってきたら「おかえりなさい」を出す
+  const waitingOnCopiedRef = useRef(false);
   useEffect(() => {
+    waitingOnCopiedRef.current = templateOpen && templateStep === "copied";
+  }, [templateOpen, templateStep]);
+  useEffect(() => {
+    // 画面が一度隠れて（AIのアプリ・タブに移って）、また表示されたときだけ「戻ってきた」とみなす。
+    // ウィンドウのフォーカスだけでは判定しない（ページをクリックしただけで画面が進んでしまうため）
+    let hiddenSinceCopy = false;
     const onVisible = () => {
-      if (document.visibilityState === "visible" && leftForAiRef.current) {
+      if (document.visibilityState === "hidden") {
+        if (leftForAiRef.current) hiddenSinceCopy = true;
+        return;
+      }
+      if (hiddenSinceCopy && leftForAiRef.current) {
+        hiddenSinceCopy = false;
         leftForAiRef.current = false;
+        if (waitingOnCopiedRef.current) {
+          // コピーしました画面のまま AI に行って戻ってきた → そのまま貼り付け待ちへ
+          setLaunchedAi(findStudioAi("other"));
+          setAwaitingCode(true);
+          setPasteFailed(false);
+          setTemplateOpen(false);
+        }
         setReturned(true);
       }
     };
     document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
     };
   }, []);
 
@@ -1452,12 +1509,6 @@ export default function PlaygroundPage() {
     leaveStudio();
   };
 
-  const selectedAi = findStudioAi(aiId);
-
-  const primaryLaunch = (className?: string) => (
-    <LaunchAiLink ai={selectedAi} onLaunch={() => launchAi(selectedAi)} className={className} />
-  );
-
   // コードの下に出す注意（途中で切れている・サンプル・APIキー）
   const renderNotices = () => (
     <>
@@ -1499,6 +1550,15 @@ export default function PlaygroundPage() {
           >
             {apiKeysLoading ? "準備中…" : "キーを登録"}
           </button>
+        </div>
+      )}
+      {sharesData && (
+        <div className="flex shrink-0 items-start gap-2.5 border-b border-emerald-100 bg-emerald-50/70 px-4 py-2.5 text-xs leading-relaxed text-emerald-900">
+          <Users className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <p className="min-w-0 flex-1">
+            <span className="font-semibold">グループ共有を使うアプリです。</span>
+            スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。
+          </p>
         </div>
       )}
       {localOnly && !isSample && (
@@ -1765,6 +1825,23 @@ export default function PlaygroundPage() {
       />
 
       {/* ══ APIキー管理 ══ */}
+      <PromptTemplateModal
+        open={templateOpen}
+        step={templateStep}
+        onClose={() => setTemplateOpen(false)}
+        idea={idea}
+        onIdeaChange={(v) => { setIdea(v); setIdeaError(""); }}
+        ideaError={ideaError}
+        options={ideaOptions}
+        onOptionsChange={setIdeaOptions}
+        onCreate={createPrompt}
+        promptText={promptText}
+        copyOk={promptCopied}
+        onRecopy={recopyPrompt}
+        onLaunch={launchAi}
+        onEdit={() => setTemplateStep("form")}
+      />
+
       <SecretsSettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
@@ -1882,6 +1959,22 @@ export default function PlaygroundPage() {
                     disabled={!code.trim()}
                     onClick={() => { setMenuOpen(false); void handleSaveCodeFile(); }}
                   />
+                  {code.trim() && !sharesData && (
+                    <MenuItem
+                      icon={<Users className="h-4 w-4" />}
+                      label="グループで共有できるようにする"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        void copyText(buildSharedConvertMessage(code)).then((ok) =>
+                          showToast(
+                            ok
+                              ? "依頼文をコピーしました（今のコード入り）。AIに送って、返ってきたコードを貼り直してください"
+                              : "コピーできませんでした"
+                          )
+                        );
+                      }}
+                    />
+                  )}
                   <MenuItem
                     icon={<FolderOpen className="h-4 w-4" />}
                     label="マイプロジェクト"
@@ -1909,13 +2002,13 @@ export default function PlaygroundPage() {
           <StageIndicator stage={stage} compact />
         </div>
 
-        {/* スマホ: コード / プレビュー 切り替え（コードがあるときだけ） */}
-        {stage === "ready" && (
+        {/* スマホ: コードエディタ / プレビュー 切り替え（何の画面か伝わるよう最初から出す） */}
+        {(
           <div className="px-3 pb-2.5 md:hidden">
             <div className="flex rounded-xl bg-slate-100 p-1" role="tablist">
               {([
-                { id: "preview", label: "アプリ", icon: <Play className="h-3.5 w-3.5" /> },
-                { id: "editor", label: "コード", icon: <Code2 className="h-3.5 w-3.5" /> },
+                { id: "editor", label: "コードエディタ", icon: <Code2 className="h-3.5 w-3.5" /> },
+                { id: "preview", label: "プレビュー", icon: <Play className="h-3.5 w-3.5" /> },
               ] as const).map((tab) => (
                 <button
                   key={tab.id}
@@ -1941,50 +2034,28 @@ export default function PlaygroundPage() {
 
       {/* ── スマホ ── */}
       <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden md:hidden">
-        {stage === "choose" && (
-          <ChoosePanel
-            onChoosePrompt={() => setStarted(true)}
-            onChooseCode={goToPaste}
-            onRunSample={runSample}
-          />
-        )}
-        {stage === "idea" && (
-          <StartPanel
-            idea={idea}
-            onIdeaChange={(v) => { setIdea(v); setIdeaError(""); }}
-            ideaError={ideaError}
-            aiId={aiId}
-            onAiChange={setAiId}
-            options={ideaOptions}
-            onOptionsChange={setIdeaOptions}
-            primaryAction={null}
-            onBackToChoose={() => setStarted(false)}
-            onRunSample={runSample}
-          />
-        )}
-        {stage === "paste" && (
-          <PastePanel
-            idea={idea}
-            ai={launchedAi}
+        {activePane === "preview" && stage !== "ready" && renderPreview("mobile")}
+        {activePane === "editor" && stage !== "ready" && (
+          <EditorStart
+            waitingForAi={stage === "paste"}
             returned={returned}
+            ai={launchedAi}
+            idea={idea}
             pasteFailed={pasteFailed}
+            onOpenTemplate={openTemplate}
+            onOpenSharedTemplate={openSharedTemplate}
+            onReopenCopied={recopyPrompt}
+            onRelaunch={() => (launchedAi ? launchAi(launchedAi) : false)}
             onPasteFromClipboard={() => void handlePasteFromClipboard()}
             onManualPaste={applyIncomingCode}
-            onRelaunch={() => (launchedAi ? launchAi(launchedAi) : false)}
-            onBack={backToIdea}
+            onRunSample={runSample}
           />
         )}
         {stage === "ready" && (activePane === "preview" ? renderPreview("mobile") : renderEditor(mobileTextareaRef, "mobile"))}
       </div>
 
       {/* スマホ: 下部の主ボタン（今やることを1つだけ） */}
-      <div className={cn("relative z-20 shrink-0 border-t border-white/80 bg-white/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden", stage === "choose" && "hidden")}>
-        {stage === "idea" && (
-          <>
-            {primaryLaunch("w-full")}
-            <p className="mt-1.5 text-center text-[11px] text-slate-400">{launchCaption(selectedAi)}</p>
-          </>
-        )}
+      <div className={cn("relative z-20 shrink-0 border-t border-white/80 bg-white/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden", stage === "idea" && "hidden")}>
         {stage === "paste" && (
           <button
             type="button"
@@ -2036,45 +2107,30 @@ export default function PlaygroundPage() {
       <div className="relative z-0 hidden min-h-0 flex-1 md:flex md:flex-row">
         <section
           aria-label={stage === "ready" ? "コード" : "作る"}
-          className="flex min-h-0 w-[44%] max-w-[640px] shrink-0 flex-col border-r border-white/80 bg-white/40 backdrop-blur-sm"
+          className="flex min-h-0 w-[44%] max-w-[640px] shrink-0 flex-col border-r border-slate-200 bg-white"
         >
-          {stage === "choose" && (
-            <ChoosePanel
-              onChoosePrompt={() => setStarted(true)}
-              onChooseCode={goToPaste}
-              onRunSample={runSample}
-            />
-          )}
-          {stage === "idea" && (
-            <StartPanel
-              idea={idea}
-              onIdeaChange={(v) => { setIdea(v); setIdeaError(""); }}
-              ideaError={ideaError}
-              aiId={aiId}
-              onAiChange={setAiId}
-              options={ideaOptions}
-              onOptionsChange={setIdeaOptions}
-              primaryAction={primaryLaunch("w-full")}
-              onBackToChoose={() => setStarted(false)}
-              onRunSample={runSample}
-            />
-          )}
-          {stage === "paste" && (
-            <PastePanel
-              idea={idea}
-              ai={launchedAi}
+          <PaneTitleBar icon={<Code2 className="h-3.5 w-3.5" />} title="コードエディタ" sub="index.html" />
+          {stage !== "ready" && (
+            <EditorStart
+              waitingForAi={stage === "paste"}
               returned={returned}
+              ai={launchedAi}
+              idea={idea}
               pasteFailed={pasteFailed}
+              onOpenTemplate={openTemplate}
+              onOpenSharedTemplate={openSharedTemplate}
+              onReopenCopied={recopyPrompt}
+              onRelaunch={() => (launchedAi ? launchAi(launchedAi) : false)}
               onPasteFromClipboard={() => void handlePasteFromClipboard()}
               onManualPaste={applyIncomingCode}
-              onRelaunch={() => (launchedAi ? launchAi(launchedAi) : false)}
-              onBack={backToIdea}
+              onRunSample={runSample}
             />
           )}
           {stage === "ready" && renderEditor(drawerTextareaRef, "desktop")}
         </section>
 
         <section aria-label="プレビュー" className="flex min-h-0 flex-1 flex-col">
+          <PaneTitleBar icon={<Eye className="h-3.5 w-3.5" />} title="プレビュー" sub="ここでアプリが動きます" />
           {renderPreview("desktop")}
         </section>
       </div>
@@ -2210,6 +2266,33 @@ export default function PlaygroundPage() {
                   <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? "同じURLで内容が更新されました" : publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
+                  {sharesData && (
+                    <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
+                      <p className="flex items-center gap-1.5 text-sm font-bold text-sky-900">
+                        <Users className="h-4 w-4 shrink-0" />
+                        次は、メンバーを招待しましょう
+                      </p>
+                      <ol className="mt-2 space-y-1 text-xs leading-relaxed text-sky-900">
+                        <li>1. 下のボタンでアプリのページを開く</li>
+                        <li>2. 上の帯の「グループを作る」を押す（ログインが必要です）</li>
+                        <li>3. 出てきた招待リンクを、LINEなどでメンバーに送る</li>
+                      </ol>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            router.push(new URL(publishedUrl).pathname);
+                          } catch {
+                            router.push(publishedUrl);
+                          }
+                        }}
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 py-2.5 text-sm font-bold text-white shadow-sm hover:from-sky-700 hover:to-teal-700"
+                      >
+                        アプリを開いてグループを作る
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`「${publishTitle || "アプリ"}」をAIと作って公開しました
 #ジサップ #個人開発`)}&url=${encodeURIComponent(publishedUrl)}`}

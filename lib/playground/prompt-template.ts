@@ -22,6 +22,42 @@ export const PROMPT_STORAGE_LOCAL = `【データ保存（この端末のブラ�
 ・識別名は英数字で、アプリ内で一度決めたら変えない。
 ・同じスマホ・パソコンの同じブラウザでだけ残る。別の端末やブラウザでは引き継がれない。`;
 
+/** グループのメンバー全員で共有する（ジサップのグループ共有機能） */
+export const PROMPT_STORAGE_SHARED = `【みんなで共有するデータ（ジサップのグループ共有機能を使う）】
+・このアプリは、グループのメンバー全員で同じデータを見たり書き込んだりします。
+・メンバーで共有するデータは、必ず window.Zisup.shared を使う（localStorage や window.Zisup.saveData は使わない）。
+・メンバーが項目を足していくデータ（出欠、書き込み、記録、予定など）は「追加」を使う：
+  ・追加: const item = await window.Zisup.shared.add('キー名', データ)
+    戻り値: { id, value, author: { id, name }, createdAt, mine }（mine は自分が追加した項目なら true）
+  ・一覧: const items = await window.Zisup.shared.list('キー名')（古い順の配列）
+  ・削除: await window.Zisup.shared.remove('キー名', item.id)（自分の項目だけ消せる。グループを作った人はすべて消せる）
+・全員で1つだけ持つ値（今月の練習日、お知らせ文など）は：
+  ・保存: await window.Zisup.shared.save('キー名', データ)
+  ・読込: await window.Zisup.shared.load('キー名')（まだなければ null）
+・一覧を配列ごと save で上書きしない（同時に入力すると誰かの入力が消えるため、項目は必ず add で足す）。
+・他のメンバーの更新を画面に反映する: window.Zisup.shared.onChange('キー名', () => { 一覧を読み直して表示 })
+・自分の表示名: const me = await window.Zisup.me()（{ id, name }）
+・項目には「誰が書いたか」（item.author.name）と日時を表示する。削除ボタンは item.mine の項目にだけ出す。
+・キー名は英数字（例: attendance, posts）で、アプリ内で一度決めたら変えない。
+・グループの作成・招待・参加はジサップの画面が行うので、アプリの中には作らない。`;
+
+/**
+ * 今あるアプリを、グループ共有に対応させるための依頼文。
+ * コードを渡すと末尾に付ける（AIに1回貼るだけで済むように）。
+ */
+export function buildSharedConvertMessage(code?: string): string {
+  const current = code?.trim()
+    ? `【今のコード】\n${code.trim()}`
+    : "【今のコード】\n（ここに、今のアプリのコードを貼り付けてください）";
+  return `このアプリを、グループのメンバー全員で同じデータを見たり書き込んだりできるように書き換えてください。
+今の機能と見た目はそのままにして、メンバーで共有したいデータの保存を、次のジサップのグループ共有機能に置き換えてください。
+完成した index.html を、最初から最後まで省略せずに出力してください。
+
+${PROMPT_STORAGE_SHARED}
+
+${current}`;
+}
+
 /** 開発スタジオ・自由研究ガイド共通の AI 指示文 */
 export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優秀なフロントエンドエンジニアです。
 「${PROMPT_APP_NAME_PLACEHOLDER}」を作りたいです。
@@ -96,82 +132,31 @@ HTMLコードを出力したあと、最後に必ず次のような短い手順�
   ※ URLは https のみ。`;
 
 /**
- * ジサップオリジナルデザイン（オーロラグラデーション＋グラスモーフィズム）の指定。
+ * ジサップオリジナルデザイン（グラスモーフィズム）の指定。
+ * 配色と背景色はアプリごとにAIが決めるので、ここでは指定しない。
  * 自分でデザインしたい人は使わないため、テンプレートには任意で差し込む。
  */
-export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの厳格な指定】
+export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 以下の仕様に従って、Vanilla CSSのみでデザインを構築してください。外部フレームワーク（Tailwind等）は使用しないでください。
 
 1. 全体コンセプト
-「オーロラグラデーション」と「グラスモーフィズム（すりガラス）」を組み合わせた、モダンで透過感のあるプロフェッショナルなデザイン。
+「グラスモーフィズム（すりガラス）」を取り入れた、モダンで透過感のあるプロフェッショナルなデザイン。
 
-2. カラーパレット & CSS変数
-:root {
-  /* ベースカラー（エメラルドグリーンとブルーの爽やかな組み合わせ） */
-  --color-primary: #059669; /* メインカラー（エメラルド） */
-  --color-teal: #06b6d4;    /* アクセントカラー（ティール） */
+2. コンポーネントの仕様（グラスモーフィズム）
+・カード・ヘッダー・モーダル・サイドメニューなどの背景は半透明（rgba）にする。
+・背景のぼかしとして backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); を適用する。
+・境界線は 1px の薄い半透明の線にし、影は柔らかく控えめにする。
 
-  /* 状態表示カラー */
-  --danger: #ef4444;        /* エラーや削除などの危険操作 */
-  --success: #10b981;       /* 完了や成功 */
+3. ボタン・入力UI
+・メインボタンは角丸 9999px（完全なピル型）。ホバー時に transform: translateY(-2px) と影を少し濃くする。
+・入力欄（input, textarea, select）はフォーカス時に枠線の色を変え、box-shadow: 0 0 0 3px の薄いリングを出して、背景を少し不透明にする。
 
-  /* グラデーション */
-  --grad-primary: linear-gradient(135deg, #059669 0%, #3b82f6 50%, #10b981 100%);
-  --grad-button: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-
-  /* グラスモーフィズム（すりガラス）用の透明カラー */
-  --bg-card: rgba(255, 255, 255, 0.75);   /* カードやモーダルの背景 */
-  --bg-input: rgba(255, 255, 255, 0.6);   /* 入力欄やボタンの背景 */
-  --border-glass: rgba(255, 255, 255, 0.5); /* 薄い白枠線 */
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* 柔らかい影 */
-
-  /* テキストカラー */
-  --text-main: #0f172a;  /* 見出しやメインテキスト（濃いグレー） */
-  --text-sub: #334155;   /* サブテキスト */
-  --text-light: #64748b; /* 補足やプレースホルダーなど（薄いグレー） */
-}
-
-3. 背景スタイル・全体設定
-body {
-  /* 全体のフォント設定（OS標準のきれいなフォントを優先） */
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  color: var(--text-main);
-  -webkit-font-smoothing: antialiased; /* 文字をきれいにレンダリング */
-
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-
-  /* 背景ベースカラー（淡いブルーグレー） */
-  background-color: #e0e7ff;
-
-  /* メッシュグラデーション（4つの淡い光の玉を配置） */
-  background-image:
-    radial-gradient(at 10% 0%, rgba(5, 150, 105, 0.25) 0px, transparent 50%), /* 左上：エメラルド */
-    radial-gradient(at 90% 10%, rgba(16, 185, 129, 0.25) 0px, transparent 50%), /* 右上：グリーン */
-    radial-gradient(at 80% 90%, rgba(244, 63, 94, 0.15) 0px, transparent 50%),  /* 右下：ほんのりピンク */
-    radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.25) 0px, transparent 50%); /* 左下：ブルー */
-
-  /* スクロールしても背景のグラデーションを固定する */
-  background-attachment: fixed;
-}
-
-4. コンポーネントの仕様（グラスモーフィズム）
-・カード・ヘッダー・モーダル・サイドメニューなどの背景は必ず --bg-card や --bg-input などの半透明な白（rgba）にする。
-・背景のぼかしとして必ず backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); を適用する。
-・境界線は border: 1px solid var(--border-glass); を適用する。
-・ヘッダーの最上部には header::before で高さ3pxの --grad-primary のラインを引く。
-
-5. ボタン・入力UI
-・メインボタンは --grad-button を背景にし、文字は白。ホバー時に transform: translateY(-2px) と影を濃くする。角丸は 9999px（完全なピル型）。
-・入力欄（input, textarea, select）はフォーカス時に border-color: var(--color-teal); および box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3); を適用し、背景を白（rgba不透明度0.9程度）に変化させる。
-
-6. タイポグラフィとアイコン【最重要】
+4. タイポグラフィとアイコン【最重要】
 ・フォント: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif
 ・見出しや強調部分は font-weight: 700 または 800 を使用し、メリハリをつける。
 ・【厳守】絵文字（📱や✨など）は一切使用禁止。すべてのアイコンは、線の太さ（stroke-width="2"〜"2.5"）を統一したインラインSVGを使用すること。
 
-7. レイアウトとアニメーション
+5. レイアウトとアニメーション
 ・モバイルファースト設計（max-width: 640px; margin: 0 auto;）。
 ・コンテンツ表示時に下から少しフェードインするCSSアニメーション（@keyframes fadeIn）を適用する。
 ・ボタンやカードのホバー時は transition: all 0.2s; で滑らかに状態を変化させること。`;
@@ -181,6 +166,8 @@ type BuildPromptOptions = {
   useJisappDesign?: boolean;
   /** 保存方法。zisup = 端末をまたぐ保存、local = 同じ端末の localStorage */
   storage?: "zisup" | "local";
+  /** グループのメンバー全員でデータを共有するか */
+  shared?: boolean;
 };
 
 /**
@@ -194,8 +181,12 @@ export function buildPromptFromTemplate(
   const name = appName.trim() || PROMPT_APP_NAME_PLACEHOLDER;
   let prompt = PROMPT_TEMPLATE.split(PROMPT_APP_NAME_PLACEHOLDER).join(name);
 
-  const storageBlock =
+  const personalBlock =
     options?.storage === "local" ? PROMPT_STORAGE_LOCAL : PROMPT_STORAGE_ZISUP;
+  // 共有する場合は共有のルールを先に置く（自分だけの設定などは、これまでの保存を使う）
+  const storageBlock = options?.shared
+    ? `${PROMPT_STORAGE_SHARED}\n\n（共有しない、自分だけのデータがある場合）\n${personalBlock}`
+    : personalBlock;
   prompt = prompt.includes(PROMPT_STORAGE_MARKER)
     ? prompt.replace(PROMPT_STORAGE_MARKER, storageBlock)
     : `${prompt}\n\n${storageBlock}`;

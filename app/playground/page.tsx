@@ -102,7 +102,7 @@ type StoredFlow = {
 const DEFAULT_IDEA_OPTIONS: IdeaOptions = {
   details: "",
   useJisappDesign: true,
-  needSave: true,
+  needSave: false,
   shared: false,
 };
 
@@ -1409,7 +1409,8 @@ export default function PlaygroundPage() {
     try {
       const stored = JSON.parse(localStorage.getItem(FLOW_STORAGE_KEY) ?? "{}") as StoredFlow;
       if (stored.aiId) setAiId(findStudioAi(stored.aiId).id);
-      if (stored.options) setIdeaOptions({ ...DEFAULT_IDEA_OPTIONS, ...stored.options });
+      // 「データを保存する」は引き継がず、開くたびにオフから
+      if (stored.options) setIdeaOptions({ ...DEFAULT_IDEA_OPTIONS, ...stored.options, needSave: DEFAULT_IDEA_OPTIONS.needSave });
       // 開き直したときはエディタの最初の画面から。入力内容とAIの選択だけ引き継ぐ
     } catch { /* noop */ }
     const ideaParam = params.get("idea");

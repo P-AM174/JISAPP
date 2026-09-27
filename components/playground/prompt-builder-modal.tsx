@@ -35,7 +35,7 @@ export function PromptBuilderModal({
   const [appName, setAppName] = useState("");
   const [details, setDetails] = useState("");
   const [useJisappDesign, setUseJisappDesign] = useState(true);
-  const [needSave, setNeedSave] = useState(true);
+  const [needSave, setNeedSave] = useState(false);
   const [draft, setDraft] = useState("");
   const [copied, setCopied] = useState<"template" | "rules" | null>(null);
   const [error, setError] = useState("");

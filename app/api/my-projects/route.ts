@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getLibraryCounts } from "@/lib/library-counts";
+import { usesSharedData } from "@/lib/groups/client";
 
 async function getUserId(): Promise<string | null> {
   try {
@@ -29,6 +30,29 @@ export type UserProjectRow = {
   updated_at: string;
 };
 
+type AppStats = { openCount: number; groupSharing: boolean | null };
+
+/** アプリが開かれた回数と、グループ共有を使うかの設定（回数の仕組みがまだないときは回数なし） */
+async function getAppStats(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  appIds: string[]
+): Promise<Record<string, AppStats>> {
+  if (appIds.length === 0) return {};
+  type Row = { id: string; open_count?: number | null; group_sharing: boolean | null };
+  const withCount = await supabase.from("apps").select("id, open_count, group_sharing").in("id", appIds);
+  let rows = withCount.data as Row[] | null;
+  if (withCount.error) {
+    const withoutCount = await supabase.from("apps").select("id, group_sharing").in("id", appIds);
+    if (withoutCount.error) return {};
+    rows = withoutCount.data as Row[] | null;
+  }
+  const stats: Record<string, AppStats> = {};
+  for (const row of rows ?? []) {
+    stats[row.id] = { openCount: row.open_count ?? 0, groupSharing: row.group_sharing };
+  }
+  return stats;
+}
+
 /** GET /api/my-projects — ログインユーザーのプロジェクト一覧 */
 export async function GET() {
   const userId = await getUserId();
@@ -52,14 +76,24 @@ export async function GET() {
     ...rest,
     code_lines: html_code ? html_code.split("\n").length : 0,
     code_chars: html_code?.length ?? 0,
+    code_uses_shared: html_code ? usesSharedData(html_code) : false,
   }));
 
   const appIds = projects.map((p) => p.app_id).filter(Boolean) as string[];
-  const libraryCounts = await getLibraryCounts(appIds);
-  const projectsWithStats = projects.map((p) => ({
-    ...p,
-    library_count: p.app_id ? libraryCounts[p.app_id] ?? 0 : 0,
-  }));
+  const [libraryCounts, appStats] = await Promise.all([
+    getLibraryCounts(appIds),
+    getAppStats(supabase, appIds),
+  ]);
+  const projectsWithStats = projects.map(({ code_uses_shared, ...p }) => {
+    const stats = p.app_id ? appStats[p.app_id] : undefined;
+    return {
+      ...p,
+      library_count: p.app_id ? libraryCounts[p.app_id] ?? 0 : 0,
+      open_count: stats?.openCount ?? 0,
+      // 公開時に選んだ設定。選んでいない古いアプリはコードから判断する（アプリのページと同じ決め方）
+      group_sharing: p.app_id ? (stats?.groupSharing ?? code_uses_shared) : false,
+    };
+  });
 
   return NextResponse.json({ projects: projectsWithStats, logged_in: true });
 }

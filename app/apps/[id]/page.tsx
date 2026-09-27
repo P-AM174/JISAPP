@@ -137,7 +137,13 @@ function SupabaseAppPage({ id }: { id: string }) {
     setCreatorRemoved(!!data.creatorRemoved);
     setPendingUpdate(data.pendingUpdate ?? null);
     if (data.app?.status === "active") {
-      fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});
+      // 開かれた回数は、同じブラウザで開き直したり再読み込みしたりしても1回と数える
+      let counted = false;
+      try {
+        counted = sessionStorage.getItem(`jisapp_opened:${id}`) === "1";
+        sessionStorage.setItem(`jisapp_opened:${id}`, "1");
+      } catch { /* 記録できなくても開く処理は続ける */ }
+      if (!counted) fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});
     }
     return true;
   };

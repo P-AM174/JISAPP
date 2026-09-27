@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
@@ -28,6 +27,8 @@ import {
   Lightbulb,
   PenLine,
   EyeOff,
+  MousePointerClick,
+  Users,
   RefreshCw,
   AlertTriangle,
   type LucideIcon,
@@ -44,7 +45,7 @@ import {
 } from "@/lib/playground/detect-storage-keys";
 import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
-import { ShareButton, ShareButtonRow, CopyUrlButton, AppUrlCopyField } from "@/components/share-button";
+import { ShareButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { ProjectThumb } from "@/components/projects/project-thumb";
 import { supabase } from "@/lib/supabase";
@@ -66,6 +67,8 @@ type Project = {
   status?: "draft" | "listed" | "url_only";
   category?: string;
   libraryCount?: number;
+  openCount?: number;
+  groupSharing?: boolean;
 };
 
 function isPublishedProject(proj: Project) {
@@ -94,6 +97,8 @@ function mapServerProject(row: {
   category: string | null;
   updated_at: string;
   library_count?: number;
+  open_count?: number;
+  group_sharing?: boolean;
 }): Project {
   const lineCount = row.code_lines ?? (row.html_code ? row.html_code.split("\n").length : 0);
   const charCount = row.code_chars ?? row.html_code?.length ?? 0;
@@ -120,6 +125,8 @@ function mapServerProject(row: {
     status,
     category: row.category ?? undefined,
     libraryCount: row.library_count ?? 0,
+    openCount: row.open_count ?? 0,
+    groupSharing: row.group_sharing ?? false,
   };
 }
 
@@ -263,7 +270,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
               {getPublishActionLabel(proj)}
             </button>
           </div>
-          {(proj.url || proj.appId) && (
+          {proj.appId && (
             <div className="flex gap-2">
               <ShareButton
                 url={proj.url ?? getAppShareUrl(String(proj.appId))}
@@ -272,10 +279,13 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                 variant="outline"
                 className="flex-1"
               />
-              <CopyUrlButton
-                url={proj.url ?? getAppShareUrl(String(proj.appId))}
-                className="flex-1"
-              />
+              <Link
+                href={`/apps/${proj.appId}`}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2.5 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98]"
+              >
+                アプリを開く
+                <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              </Link>
             </div>
           )}
         </div>
@@ -354,7 +364,6 @@ type PublishedInfo = { appId: string; url: string; title: string; description: s
 
 // ─── メインページ ───
 export default function ProjectsPage() {
-  const router = useRouter();
   const [tab, setTab] = useState<"mine" | "acquired">("mine");
   const [query, setQuery] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -772,6 +781,7 @@ export default function ProjectsPage() {
       }
     } catch { /* noop */ }
     setMyProjects((prev) => prev.filter((p) => p.id !== id));
+    setPublishTarget((cur) => (cur?.id === id ? null : cur));
   };
 
   // 検索フィルター
@@ -1081,57 +1091,60 @@ export default function ProjectsPage() {
                       </span>
                     </div>
                   )}
-                  {publishDesc && (
-                    <div>
-                      <p className="mb-1 text-[10px] font-bold text-gray-500">説明</p>
-                      <p className="text-xs text-gray-600 leading-relaxed">{publishDesc}</p>
-                    </div>
-                  )}
                   <div>
                     <p className="mb-1 text-[10px] font-bold text-gray-500">アプリURL</p>
                     <AppUrlCopyField url={publishedUrl} />
                   </div>
-                  {republishAppId && (
-                    <button
-                      type="button"
-                      onClick={() => setShowSecretsModal(true)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100"
-                    >
-                      <Key className="h-3.5 w-3.5" />
-                      アプリ用シークレットを管理
-                    </button>
-                  )}
-                  {publishTarget && isPublishedProject(publishTarget) && (
-                    <div className="flex items-center gap-2 rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-teal-200">
-                      <LibraryBig className="h-4 w-4 shrink-0 text-teal-600" />
-                      <p className="text-xs font-bold text-teal-800">
-                        マイライブラリ登録: <span className="text-sm">{publishTarget.libraryCount ?? 0}</span> 人
-                      </p>
-                    </div>
-                  )}
                   <div className="flex flex-col gap-2">
-                    <ShareButtonRow
-                      url={publishedUrl}
-                      title={publishTitle}
-                      text={`${publishTitle} | ジサップで作った無料アプリ`}
-                    />
-                    <div className="flex gap-2">
+                    {republishAppId && (
                       <button
-                        onClick={() => router.push(publishedUrl.replace(window.location.origin, ""))}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-200 transition-all"
+                        type="button"
+                        onClick={() => setShowSecretsModal(true)}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100"
                       >
-                        アプリを開く
-                        <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                        <Key className="h-3.5 w-3.5" />
+                        アプリ用シークレットを管理
                       </button>
-                    </div>
+                    )}
                     <button
                       onClick={() => { setEditMode(true); setSaveSuccess(false); }}
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all"
                     >
                       <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                      出品情報を編集する
+                      出品情報を編集
                     </button>
-                    {publishTarget?.status === "listed" && (
+                    {publishTarget.groupSharing && publishTarget.appId && (
+                      <Link
+                        href={`/apps/${publishTarget.appId}?manage=1`}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all"
+                      >
+                        <Users className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                        グループ管理
+                      </Link>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-teal-50 px-3 py-2.5 ring-1 ring-teal-200">
+                      <p className="flex items-center gap-1 text-[10px] font-bold text-teal-700">
+                        <LibraryBig className="h-3.5 w-3.5 shrink-0" />
+                        マイライブラリ登録者数
+                      </p>
+                      <p className="mt-0.5 text-lg font-black text-teal-900">
+                        {(publishTarget.libraryCount ?? 0).toLocaleString()}<span className="ml-0.5 text-xs font-bold">人</span>
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-sky-50 px-3 py-2.5 ring-1 ring-sky-200">
+                      <p className="flex items-center gap-1 text-[10px] font-bold text-sky-700">
+                        <MousePointerClick className="h-3.5 w-3.5 shrink-0" />
+                        アプリが開かれた回数
+                      </p>
+                      <p className="mt-0.5 text-lg font-black text-sky-900">
+                        {(publishTarget.openCount ?? 0).toLocaleString()}<span className="ml-0.5 text-xs font-bold">回</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+                    {publishTarget.status === "listed" && (
                       <button
                         onClick={() => handleUnlist(publishTarget)}
                         disabled={unlisting}
@@ -1140,6 +1153,13 @@ export default function ProjectsPage() {
                         {unlisting ? "取り下げ中…" : <><EyeOff className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />出品を取り下げる</>}
                       </button>
                     )}
+                    <button
+                      onClick={() => void handleDeleteProject(publishTarget.id)}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                      アプリを削除する
+                    </button>
                   </div>
                   <button onClick={() => setPublishTarget(null)} className="text-center text-[10px] text-gray-400 hover:text-gray-600 transition-colors">閉じる</button>
                 </div>

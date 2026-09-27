@@ -72,6 +72,10 @@ export function AppGroupPanel({
   const [myGroups, setMyGroups] = useState<MyGroup[]>([]);
   const [choosing, setChoosing] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [myGroupsLoaded, setMyGroupsLoaded] = useState(false);
+  /** マイプロジェクトの「グループ管理」（?manage=1）から来たとき、グループ管理を開くまで待つ */
+  const [pendingManage, setPendingManage] = useState(false);
+  const autoSwitchedRef = useRef(false);
 
   // ログインしている人のグループ（作ったもの・ログインして参加したもの）。別の端末から戻るため
   useEffect(() => {
@@ -83,7 +87,9 @@ export function AppGroupPanel({
     void fetch(`/api/app-groups?appId=${encodeURIComponent(appId)}`)
       .then((r) => (r.ok ? r.json() : { groups: [] }))
       .then((d: { groups?: MyGroup[] }) => {
-        if (!cancelled) setMyGroups(d.groups ?? []);
+        if (cancelled) return;
+        setMyGroups(d.groups ?? []);
+        setMyGroupsLoaded(true);
       })
       .catch(() => {});
     return () => {
@@ -153,6 +159,42 @@ export function AppGroupPanel({
     onGroupChange(session);
   };
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // マイプロジェクトの「グループ管理」から来たとき
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("manage") !== "1") return;
+    url.searchParams.delete("manage");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    setPendingManage(true);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingManage) return;
+    // 作ったグループで開いていれば、そのまま管理を開く
+    if (group?.isOwner) {
+      setPendingManage(false);
+      setManaging(true);
+      return;
+    }
+    if (!isLoggedIn || !myGroupsLoaded) return;
+    const owned = myGroups.filter((g) => g.isOwner && g.appId === appId);
+    if (owned.length === 1) {
+      // 作ったグループがひとつなら、それに切り替えてから管理を開く
+      if (autoSwitchedRef.current) return;
+      autoSwitchedRef.current = true;
+      void switchTo(owned[0]);
+    } else if (owned.length > 1) {
+      // いくつもあるときは、選んでもらう（選んだら管理を開く）
+      setChoosing(true);
+    } else {
+      // まだ作っていなければ、作るところから
+      setPendingManage(false);
+      setCreating(true);
+    }
+    // switchTo は毎回作り直されるので、依存に入れない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingManage, group?.isOwner, isLoggedIn, myGroupsLoaded, myGroups, appId]);
 
   // 招待リンク（?g=トークン）から来たとき
   useEffect(() => {
@@ -372,7 +414,7 @@ export function AppGroupPanel({
       )}
 
       {choosing && (
-        <ModalShell title="自分のグループ" onClose={() => setChoosing(false)}>
+        <ModalShell title="自分のグループ" onClose={() => { setChoosing(false); setPendingManage(false); }}>
           {myGroups.length === 0 ? (
             <p className="text-sm text-slate-500">まだグループはありません。</p>
           ) : (

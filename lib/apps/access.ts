@@ -1,9 +1,13 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
-/** アプリへのアクセスを記録（ゲストURL削除判定用） */
+/** アプリへのアクセスを記録（開かれた回数と、ゲストURL削除判定用の最終アクセス日時） */
 export async function touchAppLastAccessed(appId: string): Promise<void> {
   try {
     const supabase = createServerSupabaseClient();
+    // 開かれた回数を数える（最終アクセス日時も一緒に更新される）
+    const { error } = await supabase.rpc("increment_app_open_count", { p_app_id: appId });
+    if (!error) return;
+    // 回数の仕組みがまだないときは、最終アクセス日時だけ更新する
     await supabase
       .from("apps")
       .update({ last_accessed_at: new Date().toISOString() })

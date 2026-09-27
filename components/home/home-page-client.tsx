@@ -331,7 +331,8 @@ function SiteHeader({
 
             <Link
               href="/projects"
-              title="マイプロジェクト"
+              title="マイプロジェクト（自分が作ったアプリ）"
+              aria-label="マイプロジェクト（自分が作ったアプリ）"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
             >
               <FolderOpen className="h-4 w-4" />
@@ -411,7 +412,7 @@ function SiteHeader({
             {([
               { icon: <Search className="h-4 w-4" />,      label: "アプリを探す",         href: "/search",    bg: "bg-emerald-50 text-emerald-600" },
               { icon: <Terminal className="h-4 w-4" />,    label: "アプリ開発スタジオへ", href: "/playground",bg: "bg-violet-600 text-white", highlight: true },
-              { icon: <Package className="h-4 w-4" />,     label: "マイプロジェクト",     href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
+              { icon: <Package className="h-4 w-4" />,     label: "自分の作ったアプリを見る", href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
               { icon: <BookOpen className="h-4 w-4" />,    label: "マイライブラリ",       href: "/library",   bg: "bg-teal-50 text-teal-600"       },
               { icon: <Wrench className="h-4 w-4" />,      label: "開発依頼掲示板",       href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
               { icon: <User className="h-4 w-4" />,        label: "マイページ",           href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
@@ -777,7 +778,10 @@ function HomeQuickActions() {
               className="flex items-center justify-center gap-2 rounded-2xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20 active:scale-[0.98]"
             >
               <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
-              マイプロジェクトへ
+              <span className="flex flex-col items-start leading-tight">
+                <span>自分が作ったアプリを見る</span>
+                <span className="text-[10px] font-semibold text-white/70">マイプロジェクト</span>
+              </span>
             </Link>
           </div>
         </div>
@@ -994,7 +998,10 @@ export function HomePageClient({
               className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-white px-8 py-4 text-base font-black text-emerald-700 shadow-sm transition-all hover:bg-emerald-50 active:scale-95"
             >
               <FolderOpen className="h-5 w-5" />
-              マイプロジェクトへ
+              <span className="flex flex-col items-start leading-tight">
+                <span>自分が作ったアプリを見る</span>
+                <span className="text-[11px] font-semibold text-emerald-600/70">マイプロジェクト</span>
+              </span>
             </Link>
           </div>
         </div>

@@ -294,6 +294,7 @@ function SupabaseAppPage({ id }: { id: string }) {
         usesShared={app.group_sharing ?? usesSharedData(`${app.html_code ?? ""}
 ${app.js_code ?? ""}`)}
         isLoggedIn={isLoggedIn}
+        isAppOwner={!!app.creator_id && app.creator_id === (session?.user as { id?: string } | undefined)?.id}
         userName={session?.user?.name ?? null}
         loginCallbackUrl={loginCallbackUrl}
         group={group}

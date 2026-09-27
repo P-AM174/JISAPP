@@ -69,6 +69,44 @@ async function userOwnsApp(
   return !!byCreator;
 }
 
+/** 比べるためにコードをそろえる（改行コードと前後の空白の違いは同じとみなす） */
+function normalizeCode(html: string, css?: string | null, js?: string | null): string {
+  return [html, css ?? "", js ?? ""].map((s) => s.replace(/\r\n?/g, "\n").trim()).join("\n\u0000\n");
+}
+
+/**
+ * 同じ人が公開している別のアプリに、まったく同じコードのものがあれば返す。
+ * 開発スタジオのプレビュー用に作られる下書きのアプリは対象外（出品・URL発行したものだけ比べる）
+ */
+async function findSameCodeApp(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  userId: string,
+  code: string,
+  excludeAppId: string | null
+): Promise<{ id: string; title: string } | null> {
+  const { data: published } = await supabase
+    .from("user_projects")
+    .select("app_id")
+    .eq("user_id", userId)
+    .in("status", ["listed", "url_only"])
+    .not("app_id", "is", null);
+  const appIds = [...new Set((published ?? []).map((p) => p.app_id as string))].filter(
+    (id) => id !== excludeAppId
+  );
+  if (appIds.length === 0) return null;
+
+  const { data } = await supabase
+    .from("apps")
+    .select("id, title, html_code, css_code, js_code")
+    .in("id", appIds)
+    .eq("creator_id", userId)
+    .eq("status", "active");
+  const same = (data ?? []).find(
+    (a) => normalizeCode(a.html_code ?? "", a.css_code, a.js_code) === code
+  );
+  return same ? { id: same.id as string, title: (same.title as string) ?? "" } : null;
+}
+
 export async function POST(request: Request) {
   // コンテンツサイズ事前チェック
   const contentLength = request.headers.get("content-length");
@@ -142,6 +180,25 @@ export async function POST(request: Request) {
   const supabase = createServerSupabaseClient();
   const overwriteAppId = (body.app_id ?? "").trim() || null;
   let appId: string;
+
+  // 同じ人が、まったく同じコードのアプリを重ねて公開することはできない
+  if (sessionUserId) {
+    const same = await findSameCodeApp(
+      supabase,
+      sessionUserId,
+      normalizeCode(html_code, body.css_code, body.js_code),
+      overwriteAppId
+    );
+    if (same) {
+      return NextResponse.json(
+        {
+          error: `まったく同じコードのアプリ「${same.title}」をすでに公開しています。同じアプリを重ねて公開することはできません。内容を変えたいときは、マイプロジェクトからそのアプリを上書き公開してください。`,
+          duplicate_app_id: same.id,
+        },
+        { status: 409 }
+      );
+    }
+  }
 
   if (overwriteAppId) {
     if (!sessionUserId) {

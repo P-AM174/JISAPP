@@ -566,6 +566,8 @@ export default function PlaygroundPage() {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [toast, setToast]               = useState<{ msg: string; show: boolean }>({ msg: "", show: false });
   const [publishing, setPublishing]     = useState(false);
+  /** 公開できなかった理由（公開画面の中に表示する） */
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishTitle, setPublishTitle]       = useState("");
   const [publishDesc, setPublishDesc]         = useState("");
@@ -704,6 +706,7 @@ export default function PlaygroundPage() {
     setLastPublishWasOverwrite(false);
     setPublishResetUserData(false);
     setPublishUpdateNotes("");
+    setPublishError(null);
     storageWarningAckRef.current = false;
     secretWarningAckRef.current = false;
     // 再公開以外は前回タイトルを入れず空欄から（新規作成のたびに残らないように）
@@ -758,6 +761,7 @@ export default function PlaygroundPage() {
     const title = publishTitle.trim() || "開発スタジオアプリ";
     if (!code.trim() || publishing) return;
     setPublishing(true);
+    setPublishError(null);
     try {
       const overwriting = !!publishContext?.appId;
       const res = await fetch("/api/apps/publish", {
@@ -800,9 +804,7 @@ export default function PlaygroundPage() {
         localStorage.setItem("jisapp_published_map", JSON.stringify(map));
       } catch { /* noop */ }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "出品に失敗しました";
-      setToast({ msg, show: true });
-      setTimeout(() => setToast({ msg: "", show: false }), 3000);
+      setPublishError(e instanceof Error ? e.message : "出品に失敗しました");
     } finally {
       setPublishing(false);
     }
@@ -2105,7 +2107,7 @@ export default function PlaygroundPage() {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
             >
               <Upload className="h-4 w-4" strokeWidth={2.25} />
-              公開してURLをもらう
+              公開してURLを発行
             </button>
             <p className="mt-1.5 text-center text-[11px] text-slate-400">直したいところはAIに頼んで、コードを貼り直すだけ</p>
           </>
@@ -2616,6 +2618,11 @@ export default function PlaygroundPage() {
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
                       未ログインで URL のみ発行したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます。ログインするとマイページから管理できます。
                     </div>
+                  )}
+                  {publishError && (
+                    <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-xs font-semibold leading-relaxed text-rose-700 ring-1 ring-rose-200">
+                      {publishError}
+                    </p>
                   )}
                   <div className="flex gap-3 pt-1">
                     <button

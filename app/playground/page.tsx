@@ -2291,10 +2291,11 @@ export default function PlaygroundPage() {
                       <button
                         type="button"
                         onClick={() => {
+                          // ?manage=1 で開くと、グループがなければ「グループを作る」、あれば「グループ管理」が開く
                           try {
-                            router.push(new URL(publishedUrl).pathname);
+                            router.push(`${new URL(publishedUrl).pathname}?manage=1`);
                           } catch {
-                            router.push(publishedUrl);
+                            router.push(`${publishedUrl}?manage=1`);
                           }
                         }}
                         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 py-2.5 text-sm font-bold text-white shadow-sm hover:from-sky-700 hover:to-teal-700"

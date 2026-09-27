@@ -43,6 +43,7 @@ export function AppGroupPanel({
   appTitle,
   usesShared,
   isLoggedIn,
+  isAppOwner = false,
   userName,
   loginCallbackUrl,
   group,
@@ -55,6 +56,8 @@ export function AppGroupPanel({
   /** アプリがグループ共有（Zisup.shared）を使っているか */
   usesShared: boolean;
   isLoggedIn: boolean;
+  /** 見ている人が、このアプリを出した本人か */
+  isAppOwner?: boolean;
   userName: string | null;
   loginCallbackUrl: string;
   group: GroupSession | null;
@@ -76,6 +79,8 @@ export function AppGroupPanel({
   /** マイプロジェクトの「グループ管理」（?manage=1）から来たとき、グループ管理を開くまで待つ */
   const [pendingManage, setPendingManage] = useState(false);
   const autoSwitchedRef = useRef(false);
+  /** 招待リンクから来たときは、出した本人でも「グループを作る」を自動では開かない */
+  const fromInviteRef = useRef(false);
 
   // ログインしている人のグループ（作ったもの・ログインして参加したもの）。別の端末から戻るため
   useEffect(() => {
@@ -190,17 +195,28 @@ export function AppGroupPanel({
     } else {
       // まだ作っていなければ、作るところから
       setPendingManage(false);
+      markGroupIntroShown(appId);
       setCreating(true);
     }
     // switchTo は毎回作り直されるので、依存に入れない
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingManage, group?.isOwner, isLoggedIn, myGroupsLoaded, myGroups, appId]);
 
+  // アプリを出した本人がまだグループを作っていなければ、最初に開いたときに1回だけ「グループを作る」を開く
+  useEffect(() => {
+    if (!isAppOwner || !usesShared || !isLoggedIn || !myGroupsLoaded) return;
+    if (group || pendingManage || fromInviteRef.current) return;
+    if (myGroups.some((g) => g.isOwner && g.appId === appId)) return;
+    if (!markGroupIntroShown(appId)) return;
+    setCreating(true);
+  }, [isAppOwner, usesShared, isLoggedIn, myGroupsLoaded, group, pendingManage, myGroups, appId]);
+
   // 招待リンク（?g=トークン）から来たとき
   useEffect(() => {
     const url = new URL(window.location.href);
     const token = url.searchParams.get("g");
     if (!token) return;
+    fromInviteRef.current = true;
     url.searchParams.delete("g");
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
 
@@ -404,7 +420,8 @@ export function AppGroupPanel({
           onCreated={(session) => {
             setCreating(false);
             onGroupChange(session);
-            setSharing(session);
+            // 作ったら、そのままグループ管理（招待リンク・メンバー・設定）を開く
+            setManaging(true);
           }}
         />
       )}
@@ -471,6 +488,21 @@ export function AppGroupPanel({
 }
 
 type MyGroup = { id: string; name: string; appId: string; isOwner: boolean };
+
+/**
+ * 「グループを作る」を自動で開くのは、このブラウザで1回だけ。
+ * まだ出していなければ記録して true を返す（記録できないときは、何度も出ないよう false）
+ */
+function markGroupIntroShown(appId: string): boolean {
+  const key = `jisapp_group_intro:${appId}`;
+  try {
+    if (localStorage.getItem(key)) return false;
+    localStorage.setItem(key, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 type MemberInfo = { id: string; name: string; isOwner: boolean; loggedIn: boolean; joinedAt: string };
 

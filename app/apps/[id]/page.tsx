@@ -89,6 +89,7 @@ function SupabaseAppPage({ id }: { id: string }) {
 
   // 参加しているグループ（グループ共有を使うアプリ用）
   const [group, setGroup] = useState<GroupSession | null>(null);
+  const [groupManageOpen, setGroupManageOpen] = useState(false);
   useEffect(() => {
     setGroup(readActiveGroup(id));
   }, [id]);
@@ -252,6 +253,18 @@ function SupabaseAppPage({ id }: { id: string }) {
                 {codeLoading ? "読込中…" : codePanelOpen ? "コードを閉じる" : "コード"}
               </button>
             )}
+            {group?.isOwner && (
+              <button
+                type="button"
+                onClick={() => setGroupManageOpen(true)}
+                title="グループを作った人だけの管理メニュー"
+                className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 transition hover:from-emerald-700 hover:to-teal-700"
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">グループ管理</span>
+                <span className="sm:hidden">管理</span>
+              </button>
+            )}
             <ShareButton
               url={getAppShareUrl(id)}
               title={app.title}
@@ -272,13 +285,15 @@ function SupabaseAppPage({ id }: { id: string }) {
       <AppGroupPanel
         appId={id}
         appTitle={app.title}
-        usesShared={usesSharedData(`${app.html_code ?? ""}
+        usesShared={app.group_sharing ?? usesSharedData(`${app.html_code ?? ""}
 ${app.js_code ?? ""}`)}
         isLoggedIn={isLoggedIn}
         userName={session?.user?.name ?? null}
         loginCallbackUrl={loginCallbackUrl}
         group={group}
         onGroupChange={setGroup}
+        manageOpen={groupManageOpen}
+        onManageClose={() => setGroupManageOpen(false)}
       />
 
       {/* アプリ実行エリア（残りの高さいっぱい。スクロールは iframe の中だけ） */}

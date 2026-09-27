@@ -572,6 +572,8 @@ export default function PlaygroundPage() {
   const [publishCategory, setPublishCategory] = useState("");
   const [publishListed, setPublishListed]     = useState(true);
   const [publishCodePublic, setPublishCodePublic] = useState(false);
+  /** グループ共有を使うか。null はまだ選んでいない（コードが共有機能を使っているかで決める） */
+  const [publishGroupSharing, setPublishGroupSharing] = useState<boolean | null>(null);
   const [publishedUrl, setPublishedUrl]       = useState<string | null>(null);
   const [urlCopied, setUrlCopied]             = useState(false);
   const [publishContext, setPublishContext]   = useState<{ projectId?: string; appId?: string } | null>(null);
@@ -630,6 +632,7 @@ export default function PlaygroundPage() {
     category?: string | null;
     is_listed?: boolean;
     code_public?: boolean;
+    group_sharing?: boolean | null;
     app_id?: string | null;
     project_id?: string;
   }) => {
@@ -638,6 +641,7 @@ export default function PlaygroundPage() {
     if (meta.category) setPublishCategory(meta.category);
     if (meta.is_listed != null) setPublishListed(meta.is_listed);
     if (meta.code_public != null) setPublishCodePublic(meta.code_public);
+    if (meta.group_sharing != null) setPublishGroupSharing(meta.group_sharing);
     if (meta.app_id) {
       setPublishContext({ projectId: meta.project_id, appId: meta.app_id });
     } else if (meta.project_id) {
@@ -705,6 +709,7 @@ export default function PlaygroundPage() {
     // 再公開以外は前回タイトルを入れず空欄から（新規作成のたびに残らないように）
     if (!isRepublish) {
       setPublishTitle("");
+      setPublishGroupSharing(null);
     }
     setShowPublishModal(true);
   }, [isRepublish]);
@@ -765,6 +770,7 @@ export default function PlaygroundPage() {
           category: publishCategory || null,
           is_listed: publishListed,
           code_public: publishCodePublic,
+          group_sharing: publishGroupSharing ?? sharesData,
           app_id: publishContext?.appId,
           project_id: publishContext?.projectId,
           reset_user_data: isRepublish ? publishResetUserData : undefined,
@@ -895,7 +901,7 @@ export default function PlaygroundPage() {
             if (project.app_id) {
               supabase
                 .from("apps")
-                .select("title, description, category, is_listed, code_public")
+                .select("title, description, category, is_listed, code_public, group_sharing")
                 .eq("id", project.app_id)
                 .maybeSingle()
                 .then(({ data }) => {
@@ -906,6 +912,7 @@ export default function PlaygroundPage() {
                       category: data.category,
                       is_listed: data.is_listed,
                       code_public: data.code_public,
+                      group_sharing: data.group_sharing,
                       app_id: project.app_id,
                       project_id: project.id,
                     });
@@ -939,7 +946,7 @@ export default function PlaygroundPage() {
         });
         supabase
           .from("apps")
-          .select("title, description, category, is_listed, code_public")
+          .select("title, description, category, is_listed, code_public, group_sharing")
           .eq("id", existing.appId)
           .maybeSingle()
           .then(({ data }) => {
@@ -950,6 +957,7 @@ export default function PlaygroundPage() {
                 category: data.category,
                 is_listed: data.is_listed,
                 code_public: data.code_public,
+                group_sharing: data.group_sharing,
                 app_id: existing.appId,
               });
             }
@@ -2266,7 +2274,7 @@ export default function PlaygroundPage() {
                   <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? "同じURLで内容が更新されました" : publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
-                  {sharesData && (
+                  {(publishGroupSharing ?? sharesData) && (
                     <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
                       <p className="flex items-center gap-1.5 text-sm font-bold text-sky-900">
                         <Users className="h-4 w-4 shrink-0" />
@@ -2328,6 +2336,7 @@ export default function PlaygroundPage() {
                         setPublishCategory("");
                         setPublishListed(true);
                         setPublishCodePublic(false);
+                        setPublishGroupSharing(null);
                       }}
                       className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
                     >
@@ -2456,6 +2465,78 @@ export default function PlaygroundPage() {
                       </div>
                     </div>
                   )}
+                  <div>
+                    <p className="mb-1.5 text-xs font-bold text-gray-700">グループ共有</p>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="グループ共有を使うか">
+                      {([
+                        { value: false, title: "使わない", desc: "ひとりずつ使うアプリ" },
+                        { value: true, title: "使う", desc: "メンバーでデータを共有" },
+                      ] as const).map((opt) => {
+                        const selected = (publishGroupSharing ?? sharesData) === opt.value;
+                        return (
+                          <button
+                            key={opt.title}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setPublishGroupSharing(opt.value)}
+                            className={cn(
+                              "rounded-xl px-3 py-2.5 text-left transition-all",
+                              selected
+                                ? opt.value
+                                  ? "bg-sky-50 ring-2 ring-sky-500"
+                                  : "bg-emerald-50 ring-2 ring-emerald-600"
+                                : "bg-white ring-1 ring-gray-200 hover:ring-gray-300"
+                            )}
+                          >
+                            <span className={cn("flex items-center gap-1.5 text-sm font-bold", selected ? (opt.value ? "text-sky-800" : "text-emerald-800") : "text-gray-700")}>
+                              {opt.value && <Users className="h-4 w-4" />}
+                              {opt.title}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] text-gray-500">{opt.desc}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(publishGroupSharing ?? sharesData) && (
+                      <div className="mt-2 space-y-2 rounded-2xl bg-sky-50/80 p-4 text-xs leading-relaxed text-sky-900 ring-1 ring-sky-100">
+                        <p className="font-bold">グループ共有のしくみ</p>
+                        <ol className="space-y-1">
+                          <li>1. 公開すると、アプリのページに「グループを作る」が表示されます（作る人はログインが必要です）。</li>
+                          <li>2. グループを作ると招待リンクが出ます。LINEなどでメンバーに送ります。</li>
+                          <li>3. メンバーはリンクを開いて表示名を入れるだけで参加できます（ログイン不要）。同じデータを見たり書き込んだりできます。</li>
+                          <li>4. 作った人は、アプリのページ上部の「グループ管理」から、招待リンクやメンバーを管理できます。</li>
+                        </ol>
+                        <p className="text-[11px] text-sky-800/80">
+                          グループの作成・参加には
+                          <Link href="/terms#groups" target="_blank" rel="noopener noreferrer" className="mx-0.5 font-semibold underline underline-offset-2">
+                            グループ共有の利用規約
+                          </Link>
+                          が適用されます。
+                        </p>
+                        {!sharesData && (
+                          <div className="rounded-xl bg-white/80 p-3 text-amber-900 ring-1 ring-amber-200">
+                            <p className="font-bold">このコードは、まだグループ共有の機能を使っていません</p>
+                            <p className="mt-0.5">
+                              このまま公開しても、グループは作れますが、データはメンバーで共有されません。共有したい場合は、AIに書き換えを頼んでから公開してください。
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void copyText(buildSharedConvertMessage(code)).then((ok) =>
+                                  showToast(ok ? "依頼文をコピーしました（今のコード入り）。AIに送ってください" : "コピーできませんでした")
+                                );
+                              }}
+                              className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-100 px-2.5 py-1.5 font-bold text-amber-900 hover:bg-amber-200"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              共有対応にする依頼文をコピー
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
                     <label className="flex cursor-pointer items-start gap-3">
                       <input

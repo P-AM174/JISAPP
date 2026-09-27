@@ -10,6 +10,7 @@ import {
   Copy,
   LogOut,
   RefreshCw,
+  Settings2,
   Share2,
   Trash2,
   UserMinus,
@@ -46,6 +47,8 @@ export function AppGroupPanel({
   loginCallbackUrl,
   group,
   onGroupChange,
+  manageOpen = false,
+  onManageClose,
 }: {
   appId: string;
   appTitle: string;
@@ -56,6 +59,9 @@ export function AppGroupPanel({
   loginCallbackUrl: string;
   group: GroupSession | null;
   onGroupChange: (group: GroupSession | null) => void;
+  /** ページ上部の「グループ管理」ボタンから開く */
+  manageOpen?: boolean;
+  onManageClose?: () => void;
 }) {
   const router = useRouter();
   const [invite, setInvite] = useState<{ token: string; info: InviteInfo } | null>(null);
@@ -216,7 +222,6 @@ export function AppGroupPanel({
     const next = { ...group, inviteToken: data.inviteToken };
     saveGroupSession(next);
     onGroupChange(next);
-    setSharing(next);
   };
 
   const removeGroup = async () => {
@@ -287,16 +292,8 @@ export function AppGroupPanel({
                     {group.isOwner && (
                       <>
                         <button type="button" onClick={() => { setMenuOpen(false); setManaging(true); }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
-                          <Users className="h-4 w-4 text-slate-400" />
-                          メンバー一覧
-                        </button>
-                        <button type="button" onClick={() => void regenerate()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
-                          <RefreshCw className="h-4 w-4 text-slate-400" />
-                          招待リンクを作り直す
-                        </button>
-                        <button type="button" onClick={() => void removeGroup()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50">
-                          <Trash2 className="h-4 w-4" />
-                          グループを削除
+                          <Settings2 className="h-4 w-4 text-slate-400" />
+                          グループ管理
                         </button>
                         <div className="my-1 h-px bg-slate-100" />
                       </>
@@ -414,8 +411,18 @@ export function AppGroupPanel({
         </ModalShell>
       )}
 
-      {managing && group && (
-        <MembersModal group={group} onClose={() => setManaging(false)} />
+      {(managing || manageOpen) && group?.isOwner && (
+        <ManageModal
+          appId={appId}
+          appTitle={appTitle}
+          group={group}
+          onRegenerate={() => void regenerate()}
+          onDelete={() => void removeGroup()}
+          onClose={() => {
+            setManaging(false);
+            onManageClose?.();
+          }}
+        />
       )}
     </>
   );
@@ -425,7 +432,21 @@ type MyGroup = { id: string; name: string; appId: string; isOwner: boolean };
 
 type MemberInfo = { id: string; name: string; isOwner: boolean; loggedIn: boolean; joinedAt: string };
 
-function MembersModal({ group, onClose }: { group: GroupSession; onClose: () => void }) {
+function ManageModal({
+  appId,
+  appTitle,
+  group,
+  onRegenerate,
+  onDelete,
+  onClose,
+}: {
+  appId: string;
+  appTitle: string;
+  group: GroupSession;
+  onRegenerate: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
   const [members, setMembers] = useState<MemberInfo[] | null>(null);
   const [error, setError] = useState("");
 
@@ -457,11 +478,32 @@ function MembersModal({ group, onClose }: { group: GroupSession; onClose: () => 
   };
 
   return (
-    <ModalShell title={`メンバー（${members?.length ?? "…"}人）`} onClose={onClose}>
+    <ModalShell title="グループ管理" onClose={onClose}>
+      <p className="-mt-1 text-sm font-bold text-emerald-800">{group.groupName}</p>
+      <p className="mt-0.5 text-[11px] text-slate-400">この画面は、グループを作った人だけに表示されます</p>
+
+      <section className="mt-4">
+        <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+          <Share2 className="h-4 w-4 text-emerald-600" />
+          メンバーを招待
+        </h3>
+        {group.inviteToken ? (
+          <InviteLinkSection appId={appId} appTitle={appTitle} group={group} />
+        ) : (
+          <p className="mt-2 text-xs text-slate-500">この端末には招待リンクがありません。「招待リンクを作り直す」で新しいリンクを出せます。</p>
+        )}
+      </section>
+
+      <section className="mt-5">
+        <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+          <Users className="h-4 w-4 text-emerald-600" />
+          メンバー（{members?.length ?? "…"}人）
+        </h3>
+        <div className="mt-2">
       {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
       {!members && !error && <p className="text-sm text-slate-400">読み込んでいます…</p>}
       {members && (
-        <ul className="max-h-[50dvh] space-y-1.5 overflow-y-auto">
+        <ul className="max-h-[36dvh] space-y-1.5 overflow-y-auto">
           {members.map((m) => (
             <li key={m.id} className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-2.5 ring-1 ring-slate-200">
               <span className="min-w-0 flex-1">
@@ -488,9 +530,33 @@ function MembersModal({ group, onClose }: { group: GroupSession; onClose: () => 
           ))}
         </ul>
       )}
-      <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-        招待リンクが知らない人に広まった場合は、メンバーを外したうえで「招待リンクを作り直す」をしてください。
-      </p>
+        </div>
+      </section>
+
+      <section className="mt-5 border-t border-slate-100 pt-4">
+        <h3 className="text-sm font-bold text-slate-800">リンクとグループの設定</h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+          招待リンクが知らない人に広まった場合は、メンバーを外したうえで、招待リンクを作り直してください。
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onRegenerate}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            リンクを作り直す
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            グループを削除
+          </button>
+        </div>
+      </section>
     </ModalShell>
   );
 }
@@ -512,7 +578,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">{children}</div>
+        <div className="max-h-[80dvh] overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">{children}</div>
       </div>
     </div>
   );
@@ -718,6 +784,15 @@ function InviteModal({
   group: GroupSession;
   onClose: () => void;
 }) {
+  return (
+    <ModalShell title="メンバーを招待" onClose={onClose}>
+      <p className="text-sm text-slate-500">このリンクを送ると、表示名を入れるだけで「{group.groupName}」に参加できます。</p>
+      <InviteLinkSection appId={appId} appTitle={appTitle} group={group} />
+    </ModalShell>
+  );
+}
+
+function InviteLinkSection({ appId, appTitle, group }: { appId: string; appTitle: string; group: GroupSession }) {
   const [copied, setCopied] = useState(false);
   const url = inviteUrl(appId, group.inviteToken ?? "");
   const message = `「${group.groupName}」で「${appTitle}」を使おう。このリンクから参加できます（登録不要）\n`;
@@ -733,9 +808,8 @@ function InviteModal({
   };
 
   return (
-    <ModalShell title="メンバーを招待" onClose={onClose}>
-      <p className="text-sm text-slate-500">このリンクを送ると、表示名を入れるだけで「{group.groupName}」に参加できます。</p>
-      <div className="mt-4 flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 ring-1 ring-slate-200">
+    <>
+      <div className="mt-3 flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 ring-1 ring-slate-200">
         <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 bg-transparent font-mono text-xs text-slate-600 outline-none" />
         <button type="button" onClick={() => void copy()} className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-white">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -753,6 +827,6 @@ function InviteModal({
       <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
         リンクを知っている人は誰でも参加できます。グループ外に漏れたときは、作った人が「招待リンクを作り直す」で古いリンクを使えなくできます。
       </p>
-    </ModalShell>
+    </>
   );
 }

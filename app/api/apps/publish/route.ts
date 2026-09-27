@@ -86,6 +86,8 @@ export async function POST(request: Request) {
     category?: string;
     is_listed?: boolean;
     code_public?: boolean;
+    /** グループ共有を使うか（送られたときだけ更新する） */
+    group_sharing?: boolean;
     project_id?: string;
     app_id?: string;
     reset_user_data?: boolean;
@@ -133,6 +135,8 @@ export async function POST(request: Request) {
     code_public: body.code_public ?? false,
     status: "active" as const,
     last_accessed_at: now,
+    // 送られてこなかったとき（マイプロジェクトからの再公開など）は、今の設定を変えない
+    ...(typeof body.group_sharing === "boolean" ? { group_sharing: body.group_sharing } : {}),
   };
 
   const supabase = createServerSupabaseClient();

@@ -33,6 +33,8 @@ export type AppRow = {
   is_listed: boolean;
   /** true = マイライブラリ登録者のみソースコード閲覧可 */
   code_public: boolean;
+  /** グループ共有を使うか。null はまだ選んでいない（コードから判断する） */
+  group_sharing?: boolean | null;
   status: string;
   created_at: string;
 };

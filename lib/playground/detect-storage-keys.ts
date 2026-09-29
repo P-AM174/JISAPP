@@ -7,7 +7,7 @@ export type StorageUsage = {
   localStorageKeys: string[];
   usesZisup: boolean;
   usesLocalStorage: boolean;
-  /** window.Zisup.shared.*（グループ共有）で使っている名前 */
+  /** window.Jisapp.shared.*（グループ共有）で使っている名前 */
   sharedKeys: string[];
   usesShared: boolean;
 };

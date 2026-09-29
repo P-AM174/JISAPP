@@ -41,7 +41,7 @@ function fail(message: string, status = 400) {
 
 /**
  * グループの共有データ: POST /api/app-groups/[groupId]/data
- * アプリの window.Zisup.shared.* から、ジサップの画面（ブリッジ）経由で呼ばれる。
+ * アプリの window.Jisapp.shared.*（旧名 window.Zisup.shared.*）から、ジサップの画面（ブリッジ）経由で呼ばれる。
  */
 export async function POST(req: Request, ctx: Ctx) {
   const { groupId } = await ctx.params;

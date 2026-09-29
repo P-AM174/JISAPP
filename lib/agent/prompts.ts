@@ -159,8 +159,8 @@ JSONのみ:
 - 実在の人物名・企業名・版権キャラクター・ロゴを一切使わない
 
 【データ保存API（正確に使うこと）】
-window.Zisup.saveData(key: string, value: any): Promise<void>
-window.Zisup.loadData(key: string): Promise<any | null>
+window.Jisapp.saveData(key: string, value: any): Promise<void>
+window.Jisapp.loadData(key: string): Promise<any | null>
 - 上記2つ以外のブラウザストレージAPIは使わない
 - 存在しないキーを読んだ場合はnullが返る前提でコードを書く（try/catchで防御する）
 - ハイスコア・自己ベストは必ずこのAPIで保存し、次回起動時に表示する

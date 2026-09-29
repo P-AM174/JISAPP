@@ -68,7 +68,7 @@ export function StudioLoginPromptModal({ open, action, onContinue, onClose }: Pr
               {t("ログインしない場合", "If you don't sign in")}
             </p>
             <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-amber-800">
-              <li>{t(<>・下書きは<strong>このブラウザだけ</strong>に保存されます。別端末や再インストール後は<strong>続きから編集できません</strong>。</>, <>• Drafts are saved <strong>only in this browser</strong>. You <strong>can't continue editing</strong> on another device or after reinstalling.</>)}</li>
+              <li>{t(<>・下書きは<strong>このブラウザだけ</strong>に保存されます。別端末や再インストール後は<strong>続きから編集できません</strong>。</>, <>• Drafts are saved <strong>only in this browser</strong>. You <strong>can’t continue editing</strong> on another device or after reinstalling.</>)}</li>
               <li>{t(<>・<strong>URLのみ</strong>で公開したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます（マーケット出品は削除されません）。</>, <>• Apps published <strong>by URL only</strong> are <strong>deleted automatically if nobody opens them for 2 months</strong> (apps listed in the market are kept).</>)}</li>
             </ul>
           </div>

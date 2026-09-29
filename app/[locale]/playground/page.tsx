@@ -427,7 +427,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <p className="text-base font-bold leading-relaxed text-[#334155]">
                 {t(
                   <>いい感じに動いたら<br /><span className="text-emerald-600">「下書き保存」</span>を押そう！（右上の「…」メニューにもあります）</>,
-                  <>Once it works nicely,<br />press <span className="text-emerald-600">“Save draft”</span>! (It's also in the “…” menu at the top right.)</>
+                  <>Once it works nicely,<br />press <span className="text-emerald-600">“Save draft”</span>! (It’s also in the “…” menu at the top right.)</>
                 )}
               </p>
 
@@ -1197,7 +1197,7 @@ export default function PlaygroundPage() {
       /* noop */
     }
     return appId;
-  }, [publishContext, session?.user, code]);
+  }, [publishContext, session?.user, code, t]);
 
   const handleRun = useCallback(async () => {
     if (!code.trim()) return;
@@ -1374,7 +1374,7 @@ export default function PlaygroundPage() {
     }
 
     await run();
-  }, [session?.user, publishContext?.appId, isLoggedIn, runWithLoginPrompt, ensurePreviewAppId]);
+  }, [session?.user, publishContext?.appId, isLoggedIn, runWithLoginPrompt, ensurePreviewAppId, t]);
 
   // ── キーボードショートカット ──
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1558,7 +1558,7 @@ export default function PlaygroundPage() {
           <p>
             {t(
               <><span className="font-semibold">HTMLのコードではないようです。</span>AIの返事のうち、<code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code> から始まる部分をコピーしてください。</>,
-              <><span className="font-semibold">This doesn't look like HTML code.</span> Copy the part of the AI's reply that starts with <code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code>.</>
+              <><span className="font-semibold">This doesn’t look like HTML code.</span> Copy the part of the AI’s reply that starts with <code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code>.</>
             )}
           </p>
         </div>
@@ -1582,7 +1582,7 @@ export default function PlaygroundPage() {
           <p className="min-w-0 flex-1">
             {t(
               <><span className="font-semibold">グループ共有を使うアプリです。</span>スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。</>,
-              <><span className="font-semibold">This app uses group sharing.</span> In the Studio it runs on test data kept only on this device. After publishing, choose “Create a group” on the app's page to share it with the members you invite.</>
+              <><span className="font-semibold">This app uses group sharing.</span> In the Studio it runs on test data kept only on this device. After publishing, choose “Create a group” on the app’s page to share it with the members you invite.</>
             )}
           </p>
         </div>

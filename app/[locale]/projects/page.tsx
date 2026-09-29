@@ -737,7 +737,7 @@ export default function ProjectsPage() {
       setMounted(true);
     };
     load();
-  }, []);
+  }, [locale, t]);
 
   const handleDeleteProject = async (id: string) => {
     const proj = myProjects.find((p) => p.id === id);

@@ -88,7 +88,7 @@ export function SecretsSettingsModal({
     } finally {
       setAppLoading(false);
     }
-  }, [appId]);
+  }, [appId, t]);
 
   useEffect(() => {
     if (!open) {

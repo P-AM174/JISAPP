@@ -25,9 +25,10 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
           <p className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs leading-relaxed text-gray-600">
             This is an English translation provided for convenience. If there is any difference between this translation
             and the{" "}
-            <a href="/ja/terms" lang="ja" className="font-semibold text-emerald-700 underline underline-offset-2">
+            {/* /ja/terms は日本語版（言語なしの URL）へ転送され、日本語を選んだことも覚える */}
+            <Link href="/ja/terms" lang="ja" className="font-semibold text-emerald-700 underline underline-offset-2">
               Japanese version
-            </a>
+            </Link>
             , the Japanese version prevails.
           </p>
         )}

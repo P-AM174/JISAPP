@@ -1,10 +1,12 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { CATEGORY_MAP } from "@/lib/categories";
+import { CATEGORY_MAP, categoryName } from "@/lib/categories";
+import { OFFICIAL_CREATOR_NAME } from "@/lib/agent/official-creator";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { CategoryIcon } from "@/lib/category-icon";
 import { MiniPreview } from "./mini-preview";
-import { catalogToModalApp } from "./utils";
+import { catalogToModalApp, displayCreatorName } from "./utils";
 import type { CatalogCardApp, ModalApp } from "./types";
 
 export function CatalogAppCard({
@@ -19,7 +21,9 @@ export function CatalogAppCard({
   const cat = app.category ? CATEGORY_MAP[app.category] : null;
   const gradient = cat?.gradient ?? "from-emerald-500 to-teal-600";
   const tagColor = cat?.tagColor ?? "bg-gray-100 text-gray-500";
-  const modalApp = catalogToModalApp(app);
+  const locale = useLocale();
+  const t = useT();
+  const modalApp = catalogToModalApp(app, locale);
 
   if (compact) {
     return (
@@ -40,7 +44,7 @@ export function CatalogAppCard({
             {cat && (
               <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${tagColor}`}>
                 <CategoryIcon categoryId={cat.id} className="h-3 w-3" />
-                {cat.name}
+                {categoryName(cat, locale)}
               </span>
             )}
             <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 ml-auto">
@@ -61,7 +65,7 @@ export function CatalogAppCard({
       <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} height={140} />
       <div className="flex flex-1 flex-col gap-2 p-4">
         <span className="w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
-          {cat?.name ?? app.category ?? "その他"}
+          {cat ? categoryName(cat, locale) : app.category ?? t("その他", "Other")}
         </span>
         <h3 className="text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700 line-clamp-2">
           {app.title}
@@ -71,10 +75,10 @@ export function CatalogAppCard({
         )}
         <div className="mt-1 flex items-center justify-between border-t border-gray-100 pt-2.5">
           <span className="flex min-w-0 items-center gap-1.5 text-xs text-gray-400">
-            <span className="truncate">by {app.creator_name ?? "匿名"}</span>
-            {app.creator_name === "ジサップ公式" && (
+            <span className="truncate">by {displayCreatorName(app.creator_name, locale)}</span>
+            {app.creator_name === OFFICIAL_CREATOR_NAME && (
               <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                公式
+                {t("公式", "Official")}
               </span>
             )}
           </span>

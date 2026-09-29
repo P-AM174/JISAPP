@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/i18n/navigation";
 import { ArrowRight, Check } from "lucide-react";
 import { HERO_THEME_STYLES } from "@/lib/hero/themes";
 import type { HeroSlidePublic } from "@/lib/hero/types";
+import { useT } from "@/lib/i18n/client";
 
 export function HeroSlideCopy({
   slide,
@@ -15,6 +16,7 @@ export function HeroSlideCopy({
   centered?: boolean;
 }) {
   const theme = HERO_THEME_STYLES[slide.theme];
+  const t = useT();
 
   return (
     <div className={centered ? "text-center" : "text-center md:text-left"}>
@@ -46,15 +48,15 @@ export function HeroSlideCopy({
       <div className={`mt-4 flex flex-wrap gap-3 text-[11px] text-white/70 ${centered ? "justify-center" : "justify-center md:justify-start"}`}>
         <span className="inline-flex items-center gap-1.5">
           <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-          プログラミング不要
+          {t("プログラミング不要", "No coding needed")}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-          サーバー設定ゼロ
+          {t("サーバー設定ゼロ", "Zero server setup")}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-          AIコードを貼るだけ
+          {t("AIコードを貼るだけ", "Just paste AI code")}
         </span>
       </div>
     </div>

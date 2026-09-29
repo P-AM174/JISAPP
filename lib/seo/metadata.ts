@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { DEFAULT_LOCALE, LOCALES, localizePath, type Locale } from "@/lib/i18n/config";
 import {
-  SITE_NAME,
-  SITE_TITLE,
-  SITE_DESCRIPTION,
-  SITE_OG_IMAGE,
+  siteName,
+  siteTitle,
+  siteDescription,
+  siteOgImage,
   SITE_OG_IMAGE_WIDTH,
   SITE_OG_IMAGE_HEIGHT,
   SITE_SAME_AS,
@@ -12,6 +13,8 @@ import {
 } from "@/lib/seo/site";
 
 type PageMetadataOptions = {
+  /** 表示言語。canonical と hreflang（言語ごとの URL）に使う */
+  locale?: Locale;
   title?: string;
   description?: string;
   path?: string;
@@ -37,21 +40,27 @@ export function createNoIndexPageMetadata(
 
 export function createPageMetadata(options: PageMetadataOptions = {}): Metadata {
   const {
+    locale = DEFAULT_LOCALE,
     title,
-    description = SITE_DESCRIPTION,
+    description = siteDescription(locale),
     path,
     noIndex = false,
-    ogImage = SITE_OG_IMAGE,
+    ogImage = siteOgImage(locale),
     ogImageWidth = SITE_OG_IMAGE_WIDTH,
     ogImageHeight = SITE_OG_IMAGE_HEIGHT,
     ogTitle,
     ogDescription,
   } = options;
 
-  const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_TITLE;
+  const name = siteName(locale);
+  const pageTitle = title ? `${title} | ${name}` : siteTitle(locale);
   const shareTitle = ogTitle ?? pageTitle;
   const shareDescription = ogDescription ?? description;
-  const canonical = path ? absoluteUrl(path) : getSiteUrl();
+  const basePath = path ?? "/";
+  const canonical = absoluteUrl(localizePath(basePath, locale));
+  const languages: Record<string, string> = {};
+  for (const l of LOCALES) languages[l] = absoluteUrl(localizePath(basePath, l));
+  languages["x-default"] = absoluteUrl(localizePath(basePath, DEFAULT_LOCALE));
   const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
   const imageMeta = {
     url: imageUrl,
@@ -65,11 +74,12 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
   return {
     ...(title ? { title } : {}),
     description,
-    alternates: { canonical },
+    alternates: { canonical, languages },
     openGraph: {
       type: "website",
-      locale: "ja_JP",
-      siteName: SITE_NAME,
+      locale: locale === "en" ? "en_US" : "ja_JP",
+      alternateLocale: locale === "en" ? ["ja_JP"] : ["en_US"],
+      siteName: name,
       title: shareTitle,
       description: shareDescription,
       url: canonical,
@@ -86,13 +96,13 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
   };
 }
 
-export function createRootMetadata(): Metadata {
+export function createRootMetadata(locale: Locale = DEFAULT_LOCALE): Metadata {
   return {
     metadataBase: new URL(getSiteUrl()),
-    ...createPageMetadata(),
+    ...createPageMetadata({ locale }),
     title: {
-      default: SITE_TITLE,
-      template: `%s | ${SITE_NAME}`,
+      default: siteTitle(locale),
+      template: `%s | ${siteName(locale)}`,
     },
     verification: {
       google: "MknTcu1dRo9xzP-DDlRK5K0p0GDBZEReO3ftFe1tFFM",
@@ -100,18 +110,18 @@ export function createRootMetadata(): Metadata {
   };
 }
 
-export function createWebsiteJsonLd() {
+export function createWebsiteJsonLd(locale: Locale = DEFAULT_LOCALE) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: SITE_NAME,
-    alternateName: ["Jisapp", "ジサップ（Jisapp）"],
-    url: getSiteUrl(),
-    description: SITE_DESCRIPTION,
-    inLanguage: "ja-JP",
+    name: siteName(locale),
+    alternateName: locale === "en" ? ["ジサップ", "ジサップ（Jisapp）"] : ["Jisapp", "ジサップ（Jisapp）"],
+    url: absoluteUrl(localizePath("/", locale)),
+    description: siteDescription(locale),
+    inLanguage: locale === "en" ? "en" : "ja-JP",
     publisher: {
       "@type": "Organization",
-      name: SITE_NAME,
+      name: siteName(locale),
       url: getSiteUrl(),
       logo: absoluteUrl("/logo-header.png"),
       sameAs: SITE_SAME_AS,
@@ -120,7 +130,7 @@ export function createWebsiteJsonLd() {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${getSiteUrl()}/search?q={search_term_string}`,
+        urlTemplate: absoluteUrl(`${localizePath("/search", locale)}?q={search_term_string}`),
       },
       "query-input": "required name=search_term_string",
     },
@@ -133,13 +143,17 @@ export function createSoftwareApplicationJsonLd(app: {
   description: string;
   category?: string | null;
   creatorName?: string | null;
-}) {
+}, locale: Locale = DEFAULT_LOCALE) {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: app.title,
-    description: app.description || `${app.title} - ${SITE_NAME}で公開中のアプリ`,
-    url: absoluteUrl(`/apps/${app.id}`),
+    description:
+      app.description ||
+      (locale === "en"
+        ? `${app.title} — an app published on ${siteName(locale)}`
+        : `${app.title} - ${siteName(locale)}で公開中のアプリ`),
+    url: absoluteUrl(localizePath(`/apps/${app.id}`, locale)),
     applicationCategory: app.category ?? "UtilitiesApplication",
     operatingSystem: "Web Browser",
     offers: {

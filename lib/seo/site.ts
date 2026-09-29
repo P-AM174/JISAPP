@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/config";
+
 export const SITE_NAME = "ジサップ";
 
 export const SITE_BRAND = "ジサップ（Jisapp）";
@@ -10,11 +12,33 @@ export const SITE_TITLE = `${SITE_TAGLINE}（Jisapp）`;
 export const SITE_DESCRIPTION =
   "ChatGPT・Claude・Geminiで作ったコードを貼るだけ。サーバー設定不要で、誰でも無料でアプリを作って公開・共有できます。";
 
+/** 英語版の表記。英語ではカタカナを使わず Jisapp に統一する */
+export const SITE_NAME_EN = "Jisapp";
+export const SITE_TAGLINE_EN = "Turn AI-made code into your own app — free";
+export const SITE_TITLE_EN = `Jisapp — ${SITE_TAGLINE_EN}`;
+export const SITE_DESCRIPTION_EN =
+  "Paste code from ChatGPT, Claude or Gemini and it becomes a real app. No servers, no setup — anyone can make, publish and share apps for free.";
+
+export function siteName(locale: Locale): string {
+  return locale === "en" ? SITE_NAME_EN : SITE_NAME;
+}
+export function siteTitle(locale: Locale): string {
+  return locale === "en" ? SITE_TITLE_EN : SITE_TITLE;
+}
+export function siteDescription(locale: Locale): string {
+  return locale === "en" ? SITE_DESCRIPTION_EN : SITE_DESCRIPTION;
+}
+
 /**
  * SNSシェア用 OGP 画像（静的 PNG・1200×630）。
  * X は拡張子なしの動的 /opengraph-image より .png の絶対URLの方がカード化しやすい。
  */
 export const SITE_OG_IMAGE = "/og.png";
+export const SITE_OG_IMAGE_EN = "/og-en.png";
+
+export function siteOgImage(locale: Locale): string {
+  return locale === "en" ? SITE_OG_IMAGE_EN : SITE_OG_IMAGE;
+}
 
 export const SITE_OG_IMAGE_WIDTH = 1200;
 export const SITE_OG_IMAGE_HEIGHT = 630;

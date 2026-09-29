@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/i18n/navigation";
 import { Cloud, LogIn, X, AlertTriangle, BookOpen, FolderOpen } from "lucide-react";
 
 type Props = {

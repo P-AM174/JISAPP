@@ -5,11 +5,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { HeroSlidePublic } from "@/lib/hero/types";
 import { cn } from "@/lib/utils";
 import { HeroSlideRenderer } from "./hero-slide-renderer";
+import { useT } from "@/lib/i18n/client";
 
 export function HeroCarousel({ slides }: { slides: HeroSlidePublic[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = slides.length;
+  const t = useT();
 
   useEffect(() => {
     if (paused || total <= 1) return;
@@ -53,7 +55,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlidePublic[] }) {
             type="button"
             onClick={() => go(index - 1)}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50"
-            aria-label="前のスライド"
+            aria-label={t("前のスライド", "Previous slide")}
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
@@ -68,7 +70,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlidePublic[] }) {
                   "h-1.5 rounded-full transition-all duration-300",
                   i === index ? "w-6 bg-emerald-500" : "w-1.5 bg-gray-300 hover:bg-gray-400"
                 )}
-                aria-label={`スライド ${i + 1}`}
+                aria-label={t(`スライド ${i + 1}`, `Slide ${i + 1}`)}
                 aria-current={i === index ? "true" : undefined}
               />
             ))}
@@ -82,7 +84,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlidePublic[] }) {
             type="button"
             onClick={() => go(index + 1)}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50"
-            aria-label="次のスライド"
+            aria-label={t("次のスライド", "Next slide")}
           >
             <ChevronRight className="h-3.5 w-3.5" />
           </button>

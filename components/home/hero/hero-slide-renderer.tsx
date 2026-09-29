@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/i18n/navigation";
 import { CATEGORY_MAP } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
 import { HERO_BG_PATTERN_CLASS, HERO_THEME_STYLES } from "@/lib/hero/themes";
@@ -8,6 +8,7 @@ import type { HeroSlidePublic } from "@/lib/hero/types";
 import { HeroSlideCopy } from "./hero-slide-copy";
 import { HeroVisual } from "./hero-visual";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 function HeroBackground({ slide }: { slide: HeroSlidePublic }) {
   const theme = HERO_THEME_STYLES[slide.theme];
@@ -54,6 +55,7 @@ export function HeroSlideTheme({ slide }: { slide: HeroSlidePublic }) {
 }
 
 export function HeroSlideCard({ slide }: { slide: HeroSlidePublic }) {
+  const t = useT();
   const theme = HERO_THEME_STYLES[slide.theme];
   const apps = slide.featuredApps ?? [];
 
@@ -94,11 +96,11 @@ export function HeroSlideCard({ slide }: { slide: HeroSlidePublic }) {
           )}
           {!apps.length && (
             <p className={`mt-4 text-xs text-white/70`}>
-              アプリ未指定時は人気アプリを自動表示します
+              {t("アプリ未指定時は人気アプリを自動表示します", "Popular apps are shown when none are chosen")}
             </p>
           )}
         </div>
-        <p className="sr-only">{theme.label}</p>
+        {t(<p className="sr-only">{theme.label}</p>, null)}
       </div>
     </div>
   );

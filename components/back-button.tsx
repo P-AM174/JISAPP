@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/i18n/navigation";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 type BackButtonProps = {
   label?: React.ReactNode;
@@ -13,13 +14,15 @@ type BackButtonProps = {
 };
 
 export function BackButton({
-  label = "戻る",
+  label,
   fallbackHref = "/",
   className,
   iconClassName,
   hideLabelOnMobile = false,
 }: BackButtonProps) {
   const router = useRouter();
+  const t = useT();
+  if (label === undefined) label = t("戻る", "Back");
 
   const handleBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {

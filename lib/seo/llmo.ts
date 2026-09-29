@@ -1,109 +1,234 @@
+import { DEFAULT_LOCALE, localizePath, type Locale } from "@/lib/i18n/config";
 import {
   SITE_BRAND,
-  SITE_DESCRIPTION,
-  SITE_NAME,
   SITE_SAME_AS,
   SITE_SOCIAL_PROFILES,
   SITE_TAGLINE,
+  SITE_TAGLINE_EN,
   absoluteUrl,
   getSiteUrl,
+  siteDescription,
+  siteName,
 } from "@/lib/seo/site";
-
-/** AI・検索に引用させたい、サイト共通の言い切り */
-export const LLMO_DEFINITION =
-  "ジサップ（Jisapp）は、ChatGPT・Claude・Gemini などで作ったコードを貼るだけで、ブラウザ上のアプリを公開できる無料の個人向け開発スタジオです。サーバーやデータベースの設定は不要です。";
-
-export const LLMO_AUDIENCE =
-  "プログラミング未経験の個人、学生、自分用の小さなツールを作りたい人を想定しています。";
 
 export type LlmoFaqItem = {
   question: string;
   answer: string;
 };
 
-export const LLMO_FAQS: LlmoFaqItem[] = [
-  {
-    question: "ジサップとは何ですか？",
-    answer:
-      "ジサップ（Jisapp）は、AIが生成したHTMLコードを開発スタジオに貼り付けるだけで、Webアプリを動かして公開できるサービスです。公式サイトは https://jisapp.app です。",
-  },
-  {
-    question: "プログラミング未経験でも使えますか？",
-    answer:
-      "使えます。コードは ChatGPT・Claude・Gemini などのAIに書いてもらい、ジサップではコピーして貼り付ける作業が中心です。",
-  },
-  {
-    question: "料金はかかりますか？",
-    answer:
-      "ジサップでアプリを作る・公開するのは無料です。コード生成に使うAIサービス側は、各社の無料枠や料金に従います。マーケットに並ぶアプリの一部は、作者が有料に設定している場合があります。",
-  },
-  {
-    question: "会員登録は必要ですか？",
-    answer:
-      "開発スタジオは登録なしでも試せます。作ったアプリを安定して残す、公開する、別の端末でもデータを引き継ぐ場合は、ログインを推奨します。",
-  },
-  {
-    question: "サーバーやデータベースの契約は必要ですか？",
-    answer:
-      "不要です。アプリはブラウザ上で動き、データの保存はジサップが用意する window.Zisup.saveData / loadData を使えます。",
-  },
-  {
-    question: "どのAIのコードが使えますか？",
-    answer:
-      "ChatGPT、Claude、Gemini など、HTMLとして出力できるAIであれば利用できます。ジサップの開発スタジオに、生成されたコードを貼り付けて動かします。",
-  },
-  {
-    question: "作ったアプリはどうやって公開しますか？",
-    answer:
-      "開発スタジオでプレビューを確認したあと、公開するとURLが発行されます。そのURLをSNSやメッセージで共有できます。トップページのマーケットに載せることもできます。",
-  },
-  {
-    question: "保存したデータはどこに入りますか？",
-    answer:
-      "ログインしてマイライブラリに入れたアプリは、ジサップ側に保存され、別の端末からも読み込めます。未ログインの場合は、使っている端末のブラウザ内に保存されます。",
-  },
-  {
-    question: "他の人が作ったアプリは使えますか？",
-    answer:
-      "トップページや検索から、公開されているアプリを探すことができます。無料のアプリはその場で使えます。",
-  },
-  {
-    question: "window.Zisup とは何ですか？",
-    answer:
-      "ジサップがアプリ内に用意しているJavaScriptの仕組みです。データの保存・読み込みや、外部APIへの通信に使います。対外名称はジサップ（Jisapp）、コード上の名前は Zisup です。",
-  },
-];
+type LlmoContent = {
+  /** AI・検索に引用させたい、サイト共通の言い切り */
+  definition: string;
+  audience: string;
+  faqs: LlmoFaqItem[];
+  howToName: string;
+  howToSteps: { name: string; text: string }[];
+  featureList: string[];
+  howToSupply: string;
+  howToTool: string;
+  faqPageName: string;
+};
 
-export const LLMO_HOWTO_NAME = "ジサップでアプリを作って公開する";
+const LLMO_JA: LlmoContent = {
+  definition:
+    "ジサップ（Jisapp）は、ChatGPT・Claude・Gemini などで作ったコードを貼るだけで、ブラウザ上のアプリを公開できる無料の個人向け開発スタジオです。サーバーやデータベースの設定は不要です。",
+  audience:
+    "プログラミング未経験の個人、学生、自分用の小さなツールを作りたい人を想定しています。",
+  faqs: [
+    {
+      question: "ジサップとは何ですか？",
+      answer:
+        "ジサップ（Jisapp）は、AIが生成したHTMLコードを開発スタジオに貼り付けるだけで、Webアプリを動かして公開できるサービスです。公式サイトは https://jisapp.app です。",
+    },
+    {
+      question: "プログラミング未経験でも使えますか？",
+      answer:
+        "使えます。コードは ChatGPT・Claude・Gemini などのAIに書いてもらい、ジサップではコピーして貼り付ける作業が中心です。",
+    },
+    {
+      question: "料金はかかりますか？",
+      answer:
+        "ジサップでアプリを作る・公開するのは無料です。コード生成に使うAIサービス側は、各社の無料枠や料金に従います。マーケットに並ぶアプリの一部は、作者が有料に設定している場合があります。",
+    },
+    {
+      question: "会員登録は必要ですか？",
+      answer:
+        "開発スタジオは登録なしでも試せます。作ったアプリを安定して残す、公開する、別の端末でもデータを引き継ぐ場合は、ログインを推奨します。",
+    },
+    {
+      question: "サーバーやデータベースの契約は必要ですか？",
+      answer:
+        "不要です。アプリはブラウザ上で動き、データの保存はジサップが用意する window.Jisapp.saveData / loadData を使えます。",
+    },
+    {
+      question: "どのAIのコードが使えますか？",
+      answer:
+        "ChatGPT、Claude、Gemini など、HTMLとして出力できるAIであれば利用できます。ジサップの開発スタジオに、生成されたコードを貼り付けて動かします。",
+    },
+    {
+      question: "作ったアプリはどうやって公開しますか？",
+      answer:
+        "開発スタジオでプレビューを確認したあと、公開するとURLが発行されます。そのURLをSNSやメッセージで共有できます。トップページのマーケットに載せることもできます。",
+    },
+    {
+      question: "保存したデータはどこに入りますか？",
+      answer:
+        "ログインしてマイライブラリに入れたアプリは、ジサップ側に保存され、別の端末からも読み込めます。未ログインの場合は、使っている端末のブラウザ内に保存されます。",
+    },
+    {
+      question: "他の人が作ったアプリは使えますか？",
+      answer:
+        "トップページや検索から、公開されているアプリを探すことができます。無料のアプリはその場で使えます。",
+    },
+    {
+      question: "window.Jisapp とは何ですか？",
+      answer:
+        "ジサップがアプリ内に用意しているJavaScriptの仕組みです。データの保存・読み込みや、外部APIへの通信に使います。以前の名前 window.Zisup も、そのまま使えます。",
+    },
+    {
+      question: "英語でも使えますか？",
+      answer:
+        "使えます。画面右上の言語ボタンで English に切り替えると、画面の表示も、AIが作るアプリの言語も英語になります。英語版のURLは https://jisapp.app/en です。",
+    },
+  ],
+  howToName: "ジサップでアプリを作って公開する",
+  howToSteps: [
+    {
+      name: "AIに作りたいアプリを伝える",
+      text: "ChatGPT・Claude・Gemini などに、作りたいアプリの内容を日本語で伝え、HTMLコードを生成してもらいます。",
+    },
+    {
+      name: "生成されたコードをコピーする",
+      text: "AIが出力したHTMLを、省略せずにすべてコピーします。",
+    },
+    {
+      name: "開発スタジオに貼り付けて確認する",
+      text: "https://jisapp.app/playground を開き、コピーしたコードを貼り付けてプレビューします。",
+    },
+    {
+      name: "公開してURLを共有する",
+      text: "問題なければ公開し、発行されたURLを共有します。サーバー契約は不要です。",
+    },
+  ],
+  featureList: [
+    "AIが生成したHTMLコードを貼り付けて実行",
+    "サーバー・データベース設定が不要",
+    "ブラウザだけでプレビューと公開",
+    "登録なしでも開発スタジオを試せる",
+  ],
+  howToSupply: "ChatGPT・Claude・Gemini など、HTMLを出力できるAI",
+  howToTool: "ジサップ 開発スタジオ",
+  faqPageName: "ジサップ よくある質問",
+};
 
-export const LLMO_HOWTO_STEPS: { name: string; text: string }[] = [
-  {
-    name: "AIに作りたいアプリを伝える",
-    text: "ChatGPT・Claude・Gemini などに、作りたいアプリの内容を日本語で伝え、HTMLコードを生成してもらいます。",
-  },
-  {
-    name: "生成されたコードをコピーする",
-    text: "AIが出力したHTMLを、省略せずにすべてコピーします。",
-  },
-  {
-    name: "開発スタジオに貼り付けて確認する",
-    text: "https://jisapp.app/playground を開き、コピーしたコードを貼り付けてプレビューします。",
-  },
-  {
-    name: "公開してURLを共有する",
-    text: "問題なければ公開し、発行されたURLを共有します。サーバー契約は不要です。",
-  },
-];
+const LLMO_EN: LlmoContent = {
+  definition:
+    "Jisapp is a free app studio for everyone: paste the code you made with ChatGPT, Claude or Gemini, and it runs as a real app in the browser that you can publish and share. No servers or databases to set up.",
+  audience:
+    "Made for people who have never programmed, students, and anyone who wants a small tool of their own.",
+  faqs: [
+    {
+      question: "What is Jisapp?",
+      answer:
+        "Jisapp lets you paste HTML code generated by an AI into the Studio, run it as a web app, and publish it. The official site is https://jisapp.app/en.",
+    },
+    {
+      question: "Can I use it if I've never programmed?",
+      answer:
+        "Yes. An AI like ChatGPT, Claude or Gemini writes the code — on Jisapp, you mostly just copy and paste it.",
+    },
+    {
+      question: "How much does it cost?",
+      answer:
+        "Making and publishing apps on Jisapp is free. The AI service you use to generate code follows its own free tier and pricing. Some apps in the market may be set as paid by their creators.",
+    },
+    {
+      question: "Do I need to sign up?",
+      answer:
+        "You can try the Studio without an account. We recommend signing in if you want to keep your apps, publish them, or use your data on other devices.",
+    },
+    {
+      question: "Do I need a server or database?",
+      answer:
+        "No. Apps run in the browser, and they can save data with window.Jisapp.saveData / loadData, which Jisapp provides.",
+    },
+    {
+      question: "Which AIs can I use?",
+      answer:
+        "Any AI that can output HTML — ChatGPT, Claude, Gemini and more. Paste the generated code into the Jisapp Studio to run it.",
+    },
+    {
+      question: "How do I publish my app?",
+      answer:
+        "Check the preview in the Studio, then publish to get a URL. Share it on social media or in messages. You can also list it in the market on the home page.",
+    },
+    {
+      question: "Where is my saved data stored?",
+      answer:
+        "For apps in your library while signed in, data is saved on Jisapp and can be loaded from other devices. When you're not signed in, it stays in your browser on that device.",
+    },
+    {
+      question: "Can I use apps other people made?",
+      answer: "Yes. Browse published apps from the home page or search. Free apps open right away.",
+    },
+    {
+      question: "What is window.Jisapp?",
+      answer:
+        "A small JavaScript toolkit Jisapp provides inside every app, used to save and load data and to call external APIs. The older name window.Zisup still works too.",
+    },
+    {
+      question: "Is Jisapp available in Japanese?",
+      answer:
+        "Yes. Jisapp started in Japan — switch the language button at the top right to 日本語 to see the Japanese site.",
+    },
+  ],
+  howToName: "Make and publish an app with Jisapp",
+  howToSteps: [
+    {
+      name: "Tell an AI what you want to make",
+      text: "Describe the app you want to ChatGPT, Claude, Gemini or another AI, and ask it to write the HTML code.",
+    },
+    {
+      name: "Copy the generated code",
+      text: "Copy all of the HTML the AI wrote, without leaving anything out.",
+    },
+    {
+      name: "Paste it into the Studio",
+      text: "Open https://jisapp.app/en/playground, paste the code, and check the preview.",
+    },
+    {
+      name: "Publish and share the URL",
+      text: "If it looks good, publish it and share the URL. No server needed.",
+    },
+  ],
+  featureList: [
+    "Paste and run HTML code generated by AI",
+    "No server or database setup",
+    "Preview and publish right in the browser",
+    "Try the Studio without an account",
+  ],
+  howToSupply: "An AI that can output HTML, such as ChatGPT, Claude or Gemini",
+  howToTool: "Jisapp Studio",
+  faqPageName: "Jisapp FAQ",
+};
 
-export function createOrganizationJsonLd() {
+export function getLlmo(locale: Locale = DEFAULT_LOCALE): LlmoContent {
+  return locale === "en" ? LLMO_EN : LLMO_JA;
+}
+
+function inLanguage(locale: Locale) {
+  return locale === "en" ? "en" : "ja-JP";
+}
+
+export function createOrganizationJsonLd(locale: Locale = DEFAULT_LOCALE) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: SITE_NAME,
-    alternateName: [SITE_BRAND, "Jisapp", "Zisup"],
+    name: siteName(locale),
+    alternateName: [SITE_BRAND, "Jisapp", "ジサップ"],
     url: getSiteUrl(),
     logo: absoluteUrl("/logo-header.png"),
-    description: SITE_DESCRIPTION,
+    description: siteDescription(locale),
     sameAs: SITE_SAME_AS,
     foundingLocation: {
       "@type": "Country",
@@ -112,40 +237,37 @@ export function createOrganizationJsonLd() {
   };
 }
 
-export function createPlatformSoftwareJsonLd() {
+export function createPlatformSoftwareJsonLd(locale: Locale = DEFAULT_LOCALE) {
+  const llmo = getLlmo(locale);
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: SITE_BRAND,
+    name: locale === "en" ? "Jisapp" : SITE_BRAND,
     alternateName: ["ジサップ", "Jisapp"],
-    url: getSiteUrl(),
-    description: LLMO_DEFINITION,
+    url: absoluteUrl(localizePath("/", locale)),
+    description: llmo.definition,
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web Browser",
-    inLanguage: "ja-JP",
+    inLanguage: ["ja-JP", "en"],
     offers: {
       "@type": "Offer",
       price: "0",
-      priceCurrency: "JPY",
+      priceCurrency: locale === "en" ? "USD" : "JPY",
     },
     sameAs: SITE_SAME_AS,
-    featureList: [
-      "AIが生成したHTMLコードを貼り付けて実行",
-      "サーバー・データベース設定が不要",
-      "ブラウザだけでプレビューと公開",
-      "登録なしでも開発スタジオを試せる",
-    ],
+    featureList: llmo.featureList,
   };
 }
 
-export function createFaqPageJsonLd() {
+export function createFaqPageJsonLd(locale: Locale = DEFAULT_LOCALE) {
+  const llmo = getLlmo(locale);
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    name: `${SITE_NAME} よくある質問`,
-    url: absoluteUrl("/faq"),
-    inLanguage: "ja-JP",
-    mainEntity: LLMO_FAQS.map((item) => ({
+    name: llmo.faqPageName,
+    url: absoluteUrl(localizePath("/faq", locale)),
+    inLanguage: inLanguage(locale),
+    mainEntity: llmo.faqs.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: {
@@ -156,60 +278,64 @@ export function createFaqPageJsonLd() {
   };
 }
 
-export function createHowToJsonLd() {
+export function createHowToJsonLd(locale: Locale = DEFAULT_LOCALE) {
+  const llmo = getLlmo(locale);
+  const faqUrl = absoluteUrl(localizePath("/faq", locale));
   return {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    name: LLMO_HOWTO_NAME,
-    description: LLMO_DEFINITION,
-    url: absoluteUrl("/faq"),
-    inLanguage: "ja-JP",
+    name: llmo.howToName,
+    description: llmo.definition,
+    url: faqUrl,
+    inLanguage: inLanguage(locale),
     supply: [
       {
         "@type": "HowToSupply",
-        name: "ChatGPT・Claude・Gemini など、HTMLを出力できるAI",
+        name: llmo.howToSupply,
       },
     ],
     tool: [
       {
         "@type": "HowToTool",
-        name: "ジサップ 開発スタジオ",
-        url: absoluteUrl("/playground"),
+        name: llmo.howToTool,
+        url: absoluteUrl(localizePath("/playground", locale)),
       },
     ],
-    step: LLMO_HOWTO_STEPS.map((step, index) => ({
+    step: llmo.howToSteps.map((step, index) => ({
       "@type": "HowToStep",
       position: index + 1,
       name: step.name,
       text: step.text,
-      url: absoluteUrl("/faq"),
+      url: faqUrl,
     })),
   };
 }
 
-export function buildLlmsTxt(): string {
+function buildLlmsTxtJa(): string {
   const site = getSiteUrl();
-  const lines = [
+  const llmo = LLMO_JA;
+  return [
     `# ${SITE_BRAND}`,
     "",
-    `> ${LLMO_DEFINITION}`,
+    `> ${llmo.definition}`,
     "",
     SITE_TAGLINE,
-    LLMO_AUDIENCE,
+    llmo.audience,
     "",
     "## 事実",
     "",
     `- 公式サイト: ${site}`,
+    `- 英語版: ${site}/en`,
     `- 開発スタジオ: ${site}/playground`,
     ...SITE_SOCIAL_PROFILES.map((p) => `- 公式${p.name}: ${p.url}`),
     "- 料金: アプリの作成・公開は無料（コード生成に使うAI側の料金は各社による）",
     "- 対象: 個人の無料アプリ開発。サーバー契約やDB構築は不要",
     "- 対応AI: ChatGPT、Claude、Gemini など、HTMLを出力できるもの",
-    "- アプリ内API名: window.Zisup（saveData / loadData など）",
+    "- アプリ内API名: window.Jisapp（saveData / loadData など。旧名 window.Zisup も使える）",
     "",
     "## 使い方",
     "",
-    ...LLMO_HOWTO_STEPS.map((step, i) => `${i + 1}. ${step.name} — ${step.text}`),
+    ...llmo.howToSteps.map((step, i) => `${i + 1}. ${step.name} — ${step.text}`),
     "",
     "## ページ",
     "",
@@ -218,19 +344,43 @@ export function buildLlmsTxt(): string {
     `- [開発スタジオ](${site}/playground): コードを貼り付けて実行・公開する画面`,
     `- [アプリを探す](${site}/search): 公開アプリの検索`,
     `- [利用規約](${site}/terms)`,
+    `- [English](${site}/en): 英語版`,
     ...SITE_SOCIAL_PROFILES.map((p) => `- [公式${p.name}](${p.url})`),
     "",
     "## よくある質問",
     "",
-    ...LLMO_FAQS.flatMap((item) => ["", `### ${item.question}`, "", item.answer]),
+    ...llmo.faqs.flatMap((item) => ["", `### ${item.question}`, "", item.answer]),
     "",
     "## 注意",
     "",
     "- ジサップは、AIそのものではなく、AIが書いたコードを動かして公開する場です。",
     "- 有料アプリがマーケットに並ぶことがありますが、スタジオの利用料はかかりません。",
-    "- 引用するときは「ジサップ（Jisapp）」と表記してください。コード上の名前は Zisup です。",
-    "",
-  ];
+    "- 引用するときは「ジサップ（Jisapp）」と表記してください。英語では Jisapp です。",
+  ].join("\n");
+}
 
-  return lines.join("\n").trim() + "\n";
+function buildLlmsTxtEn(): string {
+  const site = getSiteUrl();
+  const llmo = LLMO_EN;
+  return [
+    "## English",
+    "",
+    `> ${llmo.definition}`,
+    "",
+    SITE_TAGLINE_EN,
+    llmo.audience,
+    "",
+    `- Website: ${site}/en`,
+    `- Studio: ${site}/en/playground`,
+    `- FAQ: ${site}/en/faq`,
+    "- Price: making and publishing apps is free",
+    "- In-app API: window.Jisapp (saveData / loadData, etc.)",
+    "- Name: write it as “Jisapp” (ジサップ in Japanese)",
+    "",
+    ...llmo.howToSteps.map((step, i) => `${i + 1}. ${step.name} — ${step.text}`),
+  ].join("\n");
+}
+
+export function buildLlmsTxt(): string {
+  return `${buildLlmsTxtJa()}\n\n${buildLlmsTxtEn()}`.trim() + "\n";
 }

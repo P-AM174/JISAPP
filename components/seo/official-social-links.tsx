@@ -1,4 +1,7 @@
+"use client";
+
 import { SITE_SOCIAL_PROFILES } from "@/lib/seo/site";
+import { useT } from "@/lib/i18n/client";
 
 function XIcon({ className }: { className?: string }) {
   return (
@@ -44,8 +47,9 @@ export function OfficialSocialLinks({
 }: {
   className?: string;
 }) {
+  const t = useT();
   return (
-    <nav aria-label="公式SNS" className={`flex items-center gap-2 ${className}`}>
+    <nav aria-label={t("公式SNS", "Official social accounts")} className={`flex items-center gap-2 ${className}`}>
       {SITE_SOCIAL_PROFILES.map((profile) => {
         const Icon = ICONS[profile.name];
         return (

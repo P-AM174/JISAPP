@@ -1,4 +1,7 @@
-import Link from "next/link";
+"use client";
+
+import Link from "@/lib/i18n/navigation";
+import { useT } from "@/lib/i18n/client";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +32,7 @@ type JisappLogoProps = {
 /** アイコン＋「Jisapp」テキストのインラインロゴ */
 export function JisappLogo({ className, href = "/", onClick, size = "default" }: JisappLogoProps) {
   const isLg = size === "lg";
+  const t = useT();
   const content = (
     <span className={cn("inline-flex items-center", isLg ? "h-12 gap-2.5" : "h-10 gap-2")}>
       <JisappLogoIcon className={cn("shrink-0", isLg ? "h-11 w-11" : "h-10 w-10")} />
@@ -51,7 +55,7 @@ export function JisappLogo({ className, href = "/", onClick, size = "default" }:
         "shrink-0 cursor-pointer transition-opacity hover:opacity-80",
         className
       )}
-      aria-label="Jisapp トップページへ"
+      aria-label={t("Jisapp トップページへ", "Jisapp home")}
     >
       {content}
     </Link>

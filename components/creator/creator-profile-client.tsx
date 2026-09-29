@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/lib/i18n/navigation";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import {
@@ -101,7 +101,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
     <div className="min-h-screen bg-[#f3f6f4]">
       <header className="sticky top-0 z-50 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-4xl items-center gap-3 px-4">
-          <BackButton label="戻る" hideLabelOnMobile />
+          <BackButton hideLabelOnMobile />
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
           <span className="truncate text-sm font-semibold text-gray-700">{profile.name}</span>

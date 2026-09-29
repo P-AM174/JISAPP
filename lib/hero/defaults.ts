@@ -70,6 +70,58 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   },
 ];
 
+/** 英語版のスライド（運営画面で編集するスライドは日本語用） */
+export const DEFAULT_HERO_SLIDES_EN: HeroSlide[] = [
+  {
+    id: "default-main-en",
+    sortOrder: 0,
+    enabled: true,
+    badge: "Jisapp Studio",
+    title: "Ask AI for the code. Paste it. Your app is ready.",
+    subtitle: "No servers, no databases. Paste code from the AI you already use and publish it instantly.",
+    ctaEnabled: true,
+    ctaLabel: "Open the Studio",
+    ctaHref: "/playground",
+    layout: "two_column",
+    theme: "studio",
+    visualType: "studio",
+    bgPattern: "grid",
+    featuredAppIds: [],
+  },
+  {
+    id: "default-mobile-en",
+    sortOrder: 1,
+    enabled: true,
+    badge: "Works on your phone",
+    title: "Turn an idea into an app — with just your phone.",
+    subtitle: "No computer needed. From a chat on your commute to your own published tool, in minutes.",
+    ctaEnabled: false,
+    ctaLabel: null,
+    ctaHref: null,
+    layout: "two_column",
+    theme: "cyan",
+    visualType: "phone",
+    bgPattern: "grid",
+    featuredAppIds: [],
+  },
+  {
+    id: "default-requests-en",
+    sortOrder: 2,
+    enabled: true,
+    badge: "App requests",
+    title: "Want an app? Just ask: “Can someone make this?”",
+    subtitle: "Post the tool you wish existed. A community that builds from everyone's ideas.",
+    ctaEnabled: false,
+    ctaLabel: null,
+    ctaHref: null,
+    layout: "two_column",
+    theme: "amber",
+    visualType: "requests",
+    bgPattern: "none",
+    featuredAppIds: [],
+  },
+];
+
 export const EMPTY_SLIDE_INPUT: HeroSlideInput = {
   sortOrder: 0,
   enabled: true,

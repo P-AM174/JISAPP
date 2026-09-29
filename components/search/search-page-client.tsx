@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
-import Link from "next/link";
+import Link from "@/lib/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
@@ -84,7 +84,7 @@ export function SearchPageClient({
       {/* ─── ヘッダー ─── */}
       <header className="sticky top-0 z-50 border-b border-emerald-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-          <BackButton label="戻る" hideLabelOnMobile />
+          <BackButton hideLabelOnMobile />
           <JisappLogo href="/" />
 
           {/* 検索バー */}

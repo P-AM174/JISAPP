@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/i18n/navigation";
+import { useRouter } from "@/lib/i18n/navigation";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/config";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSession } from "next-auth/react";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import { OfficialSocialLinks } from "@/components/seo/official-social-links";
@@ -42,7 +45,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { CATEGORIES, CATEGORY_MAP } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
 import type { HomeCatalogData } from "@/lib/home/catalog";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
@@ -84,6 +87,8 @@ function SiteHeader({
 }) {
   const router = useRouter();
   const { status } = useSession();
+  const t = useT();
+  const locale = useLocale();
 
   // 通知
   const [showNotif, setShowNotif] = useState(false);
@@ -140,10 +145,10 @@ function SiteHeader({
     try {
       const d = new Date(iso);
       const diff = Date.now() - d.getTime();
-      if (diff < 60000) return "たった今";
-      if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
-      if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
-      return d.toLocaleDateString("ja-JP");
+      if (diff < 60000) return t("たった今", "just now");
+      if (diff < 3600000) return t(`${Math.floor(diff / 60000)}分前`, `${Math.floor(diff / 60000)}m ago`);
+      if (diff < 86400000) return t(`${Math.floor(diff / 3600000)}時間前`, `${Math.floor(diff / 3600000)}h ago`);
+      return d.toLocaleDateString(intlLocale(locale));
     } catch {
       return "";
     }
@@ -234,6 +239,12 @@ function SiteHeader({
     setShowFollowModal(true);
   };
 
+  const statusLabel = (s?: string) => {
+    const v = s ?? "相談中";
+    if (locale !== "en") return v;
+    return ({ 完了: "Done", 納品済み: "Delivered", 開発中: "In progress", 相談中: "Discussing" } as Record<string, string>)[v] ?? v;
+  };
+
   const statusColor = (s?: string) => {
     if (s === "完了") return "bg-gray-100 text-gray-500";
     if (s === "納品済み") return "bg-blue-50 text-blue-600";
@@ -251,7 +262,7 @@ function SiteHeader({
             <button
               onClick={() => setShowMenu(true)}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
-              aria-label="メニューを開く"
+              aria-label={t("メニューを開く", "Open menu")}
             >
               <Menu className="h-4 w-4" />
             </button>
@@ -264,6 +275,7 @@ function SiteHeader({
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setShowNotif((v) => !v)}
+                aria-label={t("お知らせ", "Notifications")}
                 className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
               >
                 <Bell className="h-4 w-4" />
@@ -277,7 +289,7 @@ function SiteHeader({
                   <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Bell className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-black text-gray-900">お知らせ</span>
+                      <span className="text-sm font-black text-gray-900">{t("お知らせ", "Notifications")}</span>
                       {hasUnread && (
                         <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                           {notifications.filter((n) => !n.isRead).length}
@@ -288,12 +300,12 @@ function SiteHeader({
                       onClick={markAllRead}
                       className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700"
                     >
-                      すべて既読にする
+                      {t("すべて既読にする", "Mark all as read")}
                     </button>
                   </div>
                   <div className="max-h-[420px] overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <p className="px-4 py-8 text-center text-xs text-gray-400">お知らせはありません</p>
+                      <p className="px-4 py-8 text-center text-xs text-gray-400">{t("お知らせはありません", "No notifications yet")}</p>
                     ) : (
                       notifications.map((n, i) => (
                         <Link
@@ -322,7 +334,7 @@ function SiteHeader({
                       onClick={() => setShowNotif(false)}
                       className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
                     >
-                      すべての通知を見る →
+                      {t("すべての通知を見る →", "See all notifications →")}
                     </Link>
                   </div>
                 </div>
@@ -331,15 +343,18 @@ function SiteHeader({
 
             <Link
               href="/projects"
-              title="マイプロジェクト（自分が作ったアプリ）"
-              aria-label="マイプロジェクト（自分が作ったアプリ）"
+              title={t("マイプロジェクト（自分が作ったアプリ）", "My projects (apps you made)")}
+              aria-label={t("マイプロジェクト（自分が作ったアプリ）", "My projects (apps you made)")}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
             >
               <FolderOpen className="h-4 w-4" />
             </Link>
 
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+
             <Link
               href="/mypage"
+              aria-label={t("マイページ", "My page")}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
             >
               <User className="h-4 w-4" />
@@ -355,7 +370,7 @@ function SiteHeader({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="アプリを検索..."
+                placeholder={t("アプリを検索...", "Search apps...")}
                 className="h-9 w-full rounded-full border border-gray-200 bg-gray-50 pl-9 pr-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20"
               />
             </div>
@@ -364,14 +379,14 @@ function SiteHeader({
               className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-3 text-xs font-bold text-gray-600 shadow-sm transition-all hover:bg-gray-200 active:scale-[0.97]"
             >
               <Search className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">検索</span>
+              <span className="hidden sm:inline">{t("検索", "Search")}</span>
             </button>
             <Link
               href="/playground"
               className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-4 text-xs font-black text-white shadow-md shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 active:scale-[0.97] sm:h-10 sm:px-5 sm:text-sm"
             >
               <Terminal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span>開発スタジオ</span>
+              <span>{t("開発スタジオ", "Studio")}</span>
             </Link>
           </form>
         </div>
@@ -397,6 +412,7 @@ function SiteHeader({
           <JisappLogo href="/" onClick={closeMenu} />
           <button
             onClick={closeMenu}
+            aria-label={t("メニューを閉じる", "Close menu")}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
           >
             <X className="h-4 w-4" />
@@ -408,14 +424,14 @@ function SiteHeader({
 
           {/* メインナビ */}
           <nav className="px-3 pt-4 pb-2">
-            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">メインメニュー</p>
+            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">{t("メインメニュー", "Menu")}</p>
             {([
-              { icon: <Search className="h-4 w-4" />,      label: "アプリを探す",         href: "/search",    bg: "bg-emerald-50 text-emerald-600" },
-              { icon: <Terminal className="h-4 w-4" />,    label: "アプリ開発スタジオへ", href: "/playground",bg: "bg-violet-600 text-white", highlight: true },
-              { icon: <Package className="h-4 w-4" />,     label: "自分の作ったアプリを見る", href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
-              { icon: <BookOpen className="h-4 w-4" />,    label: "マイライブラリ",       href: "/library",   bg: "bg-teal-50 text-teal-600"       },
-              { icon: <Wrench className="h-4 w-4" />,      label: "開発依頼掲示板",       href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
-              { icon: <User className="h-4 w-4" />,        label: "マイページ",           href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
+              { icon: <Search className="h-4 w-4" />,      label: t("アプリを探す", "Browse apps"), href: "/search",    bg: "bg-emerald-50 text-emerald-600" },
+              { icon: <Terminal className="h-4 w-4" />,    label: t("アプリ開発スタジオへ", "Open the Studio"), href: "/playground",bg: "bg-violet-600 text-white", highlight: true },
+              { icon: <Package className="h-4 w-4" />,     label: t("自分の作ったアプリを見る", "Apps you made"), href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
+              { icon: <BookOpen className="h-4 w-4" />,    label: t("マイライブラリ", "My library"), href: "/library",   bg: "bg-teal-50 text-teal-600"       },
+              { icon: <Wrench className="h-4 w-4" />,      label: t("開発依頼掲示板", "App requests"), href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
+              { icon: <User className="h-4 w-4" />,        label: t("マイページ", "My page"), href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
             ] as { icon: React.ReactNode; label: string; href: string; bg: string; highlight?: boolean }[]).map((item) => (
               <Link
                 key={item.label}
@@ -443,7 +459,7 @@ function SiteHeader({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-500">
                 <Heart className="h-4 w-4" />
               </span>
-              お気に入り
+              {t("お気に入り", "Favorites")}
               <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300" />
             </button>
 
@@ -455,7 +471,7 @@ function SiteHeader({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
                 <Users className="h-4 w-4" />
               </span>
-              フォロー中のクリエイター
+              {t("フォロー中のクリエイター", "Creators you follow")}
               <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300" />
             </button>
           </nav>
@@ -465,9 +481,9 @@ function SiteHeader({
           {/* 進行中のチャット */}
           <div className="px-3 py-3">
             <div className="mb-2 flex items-center justify-between px-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">進行中のチャット</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t("進行中のチャット", "Active chats")}</p>
               <Link href="/requests" onClick={closeMenu} className="text-[10px] font-semibold text-emerald-600 hover:underline">
-                すべて →
+                {t("すべて →", "All →")}
               </Link>
             </div>
 
@@ -487,7 +503,7 @@ function SiteHeader({
                       <p className="truncate text-sm font-medium text-gray-800">{room.title}</p>
                       <div className="mt-0.5 flex items-center gap-2">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor(room.status)}`}>
-                          {room.status ?? "相談中"}
+                          {statusLabel(room.status)}
                         </span>
                         {room.budget && <span className="text-[10px] text-gray-400">{room.budget}</span>}
                       </div>
@@ -499,13 +515,13 @@ function SiteHeader({
             ) : (
               <div className="flex flex-col items-center gap-2 rounded-xl bg-gray-50 py-6 text-center">
                 <MessagesSquare className="h-7 w-7 text-gray-300" />
-                <p className="text-xs text-gray-400">進行中のチャットはありません</p>
+                <p className="text-xs text-gray-400">{t("進行中のチャットはありません", "No active chats")}</p>
                 <Link
                   href="/requests"
                   onClick={closeMenu}
                   className="text-xs font-semibold text-emerald-600 hover:underline"
                 >
-                  依頼掲示板を見る →
+                  {t("依頼掲示板を見る →", "See app requests →")}
                 </Link>
               </div>
             )}
@@ -515,14 +531,14 @@ function SiteHeader({
 
           {/* クリエイター / カテゴリ */}
           <nav className="px-3 py-3">
-            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">カテゴリ・探索</p>
+            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">{t("カテゴリ・探索", "Explore")}</p>
             {[
-              { label: "生産性ツール",           href: "/search?category=生産性"     },
-              { label: "業務効率化",             href: "/search?category=業務効率化" },
-              { label: "SNS運用",                href: "/search?category=SNS運用"    },
-              { label: "個人開発のゲーム",       href: "/search?category=ゲーム"     },
-              { label: "無料アプリ",             href: "/search?filter=free"         },
-              { label: "みんなのリクエスト",     href: "/requests"                   },
+              { label: t("生産性ツール", "Productivity"), href: "/search?category=生産性" },
+              { label: t("業務効率化", "Work efficiency"), href: "/search?category=業務効率化" },
+              { label: t("SNS運用", "Social media"), href: "/search?category=SNS運用" },
+              { label: t("個人開発のゲーム", "Indie games"), href: "/search?category=ゲーム" },
+              { label: t("無料アプリ", "Free apps"), href: "/search?filter=free" },
+              { label: t("みんなのリクエスト", "Community requests"), href: "/requests" },
             ].map((item) => (
               <Link
                 key={item.label}
@@ -540,7 +556,7 @@ function SiteHeader({
 
           {/* ヘルプ */}
           <nav className="px-3 py-3 pb-8">
-            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">サポート</p>
+            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">{t("サポート", "Support")}</p>
             <button
               type="button"
               onClick={() => { closeMenu(); onOpenContact(); }}
@@ -549,7 +565,7 @@ function SiteHeader({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                 <MessageSquare className="h-4 w-4" />
               </span>
-              運営への問い合わせ
+              {t("運営への問い合わせ", "Contact us")}
               <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300" />
             </button>
             <Link
@@ -560,7 +576,7 @@ function SiteHeader({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400">
                 <CircleHelp className="h-4 w-4" />
               </span>
-              よくある質問
+              {t("よくある質問", "FAQ")}
             </Link>
             <Link
               href="/playground"
@@ -570,7 +586,7 @@ function SiteHeader({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400">
                 <HelpCircle className="h-4 w-4" />
               </span>
-              使い方・開発スタジオへ
+              {t("使い方・開発スタジオへ", "How to use · Studio")}
             </Link>
             <Link
               href="/terms"
@@ -580,8 +596,11 @@ function SiteHeader({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400">
                 <BookOpen className="h-4 w-4" />
               </span>
-              利用規約・プライバシー
+              {t("利用規約・プライバシー", "Terms & privacy")}
             </Link>
+            <div className="px-3 pt-3">
+              <LanguageSwitcher />
+            </div>
           </nav>
         </div>
 
@@ -593,7 +612,7 @@ function SiteHeader({
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-emerald-600 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-200/40 hover:from-violet-700 hover:to-emerald-700 transition-colors"
           >
             <Terminal className="h-4 w-4" />
-            アプリ開発スタジオへ
+            {t("アプリ開発スタジオへ", "Open the Studio")}
           </Link>
         </div>
       </div>
@@ -615,7 +634,7 @@ function SiteHeader({
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50">
                   <Heart className="h-4 w-4 text-rose-500" />
                 </span>
-                <h2 className="text-base font-black text-gray-900">お気に入り</h2>
+                <h2 className="text-base font-black text-gray-900">{t("お気に入り", "Favorites")}</h2>
               </div>
               <button
                 onClick={() => setShowFavModal(false)}
@@ -627,13 +646,13 @@ function SiteHeader({
             {favApps.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
                 <Heart className="h-10 w-10 text-gray-200" />
-                <p className="text-sm text-gray-400">お気に入りがまだありません</p>
+                <p className="text-sm text-gray-400">{t("お気に入りがまだありません", "No favorites yet")}</p>
                 <Link
                   href="/search"
                   onClick={() => setShowFavModal(false)}
                   className="text-xs font-semibold text-emerald-600 hover:underline"
                 >
-                  アプリを探す →
+                  {t("アプリを探す →", "Browse apps →")}
                 </Link>
               </div>
             ) : (
@@ -680,7 +699,7 @@ function SiteHeader({
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
                   <Users className="h-4 w-4 text-violet-600" />
                 </span>
-                <h2 className="text-base font-black text-gray-900">フォロー中のクリエイター</h2>
+                <h2 className="text-base font-black text-gray-900">{t("フォロー中のクリエイター", "Creators you follow")}</h2>
               </div>
               <button
                 onClick={() => setShowFollowModal(false)}
@@ -692,13 +711,13 @@ function SiteHeader({
             {followedList.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
                 <Users className="h-10 w-10 text-gray-200" />
-                <p className="text-sm text-gray-400">フォロー中のクリエイターがいません</p>
+                <p className="text-sm text-gray-400">{t("フォロー中のクリエイターがいません", "You aren't following anyone yet")}</p>
                 <Link
                   href="/#creators"
                   onClick={() => setShowFollowModal(false)}
                   className="text-xs font-semibold text-emerald-600 hover:underline"
                 >
-                  クリエイターを探す →
+                  {t("クリエイターを探す →", "Find creators →")}
                 </Link>
               </div>
             ) : (
@@ -731,6 +750,7 @@ function SiteHeader({
 
 // ─── セクションヘッダー ───
 function SectionHeader({ icon, title, sub, href }: { icon: React.ReactNode; title: string; sub?: string; href?: string }) {
+  const t = useT();
   return (
     <div className="mb-5 flex items-end justify-between">
       <div>
@@ -742,7 +762,7 @@ function SectionHeader({ icon, title, sub, href }: { icon: React.ReactNode; titl
       </div>
       {href && (
         <Link href={href} className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-          すべて見る <ArrowRight className="h-3.5 w-3.5" />
+          {t("すべて見る", "See all")} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       )}
     </div>
@@ -750,6 +770,7 @@ function SectionHeader({ icon, title, sub, href }: { icon: React.ReactNode; titl
 }
 
 function HomeQuickActions() {
+  const t = useT();
   return (
     <div className="border-b border-gray-100 bg-gradient-to-b from-violet-50/70 to-white px-4 py-6 shadow-sm">
       <div className="mx-auto max-w-4xl">
@@ -760,9 +781,9 @@ function HomeQuickActions() {
               <Terminal className="h-7 w-7" />
             </span>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-white/75">無料 · 登録不要で試せる</p>
-              <p className="text-xl font-black sm:text-2xl">アプリ開発スタジオへ</p>
-              <p className="mt-0.5 text-sm text-white/85">AIのコードを貼るだけで、すぐにアプリが完成</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/75">{t("無料 · 登録不要で試せる", "Free · No sign-up needed to try")}</p>
+              <p className="text-xl font-black sm:text-2xl">{t("アプリ開発スタジオへ", "Open the Studio")}</p>
+              <p className="mt-0.5 text-sm text-white/85">{t("AIのコードを貼るだけで、すぐにアプリが完成", "Paste code from AI and your app is ready")}</p>
             </div>
           </div>
           <div className="relative flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[220px]">
@@ -770,7 +791,7 @@ function HomeQuickActions() {
               href="/playground"
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-emerald-700 shadow-lg transition-colors hover:bg-emerald-50 active:scale-[0.98]"
             >
-              今すぐ作る
+              {t("今すぐ作る", "Start making")}
               <ArrowRight className="h-5 w-5 shrink-0" strokeWidth={2} />
             </Link>
             <Link
@@ -779,8 +800,8 @@ function HomeQuickActions() {
             >
               <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2} />
               <span className="flex flex-col items-start leading-tight">
-                <span>自分が作ったアプリを見る</span>
-                <span className="text-[10px] font-semibold text-white/70">マイプロジェクト</span>
+                <span>{t("自分が作ったアプリを見る", "Apps you made")}</span>
+                <span className="text-[10px] font-semibold text-white/70">{t("マイプロジェクト", "My projects")}</span>
               </span>
             </Link>
           </div>
@@ -791,14 +812,14 @@ function HomeQuickActions() {
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
           >
             <MessageSquarePlus className="h-4 w-4" />
-            開発依頼掲示板をみる
+            {t("開発依頼掲示板をみる", "See app requests")}
           </Link>
           <Link
             href="/search"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-bold text-gray-800 transition-all hover:bg-gray-100 active:scale-[0.98]"
           >
             <SearchIcon className="h-4 w-4" />
-            みんなが作ったアプリをさがす
+            {t("みんなが作ったアプリをさがす", "Explore apps from the community")}
           </Link>
         </div>
       </div>
@@ -820,6 +841,8 @@ function HomeLibrarySection() {
   const isLoggedIn = status === "authenticated" && !!userId;
   const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const t = useT();
+  const locale = useLocale();
 
   useEffect(() => {
     if (status === "loading") return;
@@ -848,8 +871,8 @@ function HomeLibrarySection() {
       <div className="mx-auto max-w-6xl">
         <SectionHeader
           icon={<LibraryBig className="h-5 w-5 text-teal-600" />}
-          title="マイライブラリ"
-          sub="追加したアプリをすぐに開けます"
+          title={t("マイライブラリ", "My library")}
+          sub={t("追加したアプリをすぐに開けます", "Open the apps you've added")}
           href="/library"
         />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -869,11 +892,11 @@ function HomeLibrarySection() {
                 />
                 <div className="flex flex-1 flex-col gap-1 p-3">
                   <p className="line-clamp-2 text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700">
-                    {entry.name ?? "アプリ"}
+                    {entry.name ?? t("アプリ", "App")}
                   </p>
                   {entry.category && (
                     <p className="text-[10px] font-semibold text-gray-400">
-                      {CATEGORY_MAP[entry.category]?.name ?? entry.category}
+                      {categoryName(entry.category, locale)}
                     </p>
                   )}
                 </div>
@@ -902,6 +925,8 @@ export function HomePageClient({
   const loadingPG = false;
   const [pgCategoryFilter, setPgCategoryFilter] = useState<string>("all");
   const [selectedApp, setSelectedApp]         = useState<ModalApp | null>(null);
+  const t = useT();
+  const locale = useLocale();
 
   // 人気順（応援バッジ数）でフィルタ済み
   const filteredPlaygroundApps = useMemo(() => {
@@ -953,22 +978,22 @@ export function HomePageClient({
               {
                 step: "01",
                 icon: <JisappLogoIcon className="h-6 w-6" />,
-                title: "AIにアイデアを伝える",
-                desc: "ChatGPT・Claude・Geminiなど、使い慣れたAIに「こんなアプリを作って」と送るだけ。コードが自動で生成されます。",
+                title: t("AIにアイデアを伝える", "Tell AI your idea"),
+                desc: t("ChatGPT・Claude・Geminiなど、使い慣れたAIに「こんなアプリを作って」と送るだけ。コードが自動で生成されます。", "Just ask ChatGPT, Claude, Gemini or any AI you like: “make me an app that…”. It writes the code for you."),
                 color: "bg-emerald-50 border-emerald-100",
               },
               {
                 step: "02",
                 icon: <Code2 className="h-6 w-6 text-teal-600" />,
-                title: "コードをコピーして貼る",
-                desc: "生成されたコードをコピーして、ジサップの開発スタジオに貼り付けるだけ。サーバーもDBも設定不要です。",
+                title: t("コードをコピーして貼る", "Copy and paste the code"),
+                desc: t("生成されたコードをコピーして、ジサップの開発スタジオに貼り付けるだけ。サーバーもDBも設定不要です。", "Copy the code and paste it into the Jisapp Studio. No server or database to set up."),
                 color: "bg-teal-50 border-teal-100",
               },
               {
                 step: "03",
                 icon: <Globe className="h-6 w-6 text-cyan-600" />,
-                title: "即公開・シェア",
-                desc: "コードを貼り付けたらすぐ公開。URLを発行してSNSやメッセージで友だちに共有できます。",
+                title: t("即公開・シェア", "Publish & share instantly"),
+                desc: t("コードを貼り付けたらすぐ公開。URLを発行してSNSやメッセージで友だちに共有できます。", "Publish right after pasting. Get a URL and share it with friends on social media or in messages."),
                 color: "bg-cyan-50 border-cyan-100",
               },
             ].map(({ step, icon, title, desc, color }) => (
@@ -990,7 +1015,7 @@ export function HomePageClient({
               className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 hover:shadow-xl active:scale-95"
             >
               <Terminal className="h-5 w-5" />
-              アプリ開発スタジオへ
+              {t("アプリ開発スタジオへ", "Open the Studio")}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
@@ -999,8 +1024,8 @@ export function HomePageClient({
             >
               <FolderOpen className="h-5 w-5" />
               <span className="flex flex-col items-start leading-tight">
-                <span>自分が作ったアプリを見る</span>
-                <span className="text-[11px] font-semibold text-emerald-600/70">マイプロジェクト</span>
+                <span>{t("自分が作ったアプリを見る", "Apps you made")}</span>
+                <span className="text-[11px] font-semibold text-emerald-600/70">{t("マイプロジェクト", "My projects")}</span>
               </span>
             </Link>
           </div>
@@ -1016,8 +1041,8 @@ export function HomePageClient({
           <section>
             <SectionHeader
               icon={<BadgeCheck className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
-              title="注目のアプリ"
-              sub="運営がピックアップしたおすすめアプリ"
+              title={t("注目のアプリ", "Featured apps")}
+              sub={t("運営がピックアップしたおすすめアプリ", "Hand-picked by the Jisapp team")}
               href="/search?sort=featured"
             />
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -1033,8 +1058,8 @@ export function HomePageClient({
           <section>
             <SectionHeader
               icon={<TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={2.5} />}
-              title="今月の人気アプリ"
-              sub="今月最も応援バッジをもらったアプリ"
+              title={t("今月の人気アプリ", "Popular this month")}
+              sub={t("今月最も応援バッジをもらったアプリ", "Apps that got the most cheer badges this month")}
             />
             <div className="relative">
               <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -1045,10 +1070,10 @@ export function HomePageClient({
                     id: app.id,
                     name: app.title,
                     description: app.description ?? "",
-                    creator: app.creator_name ?? "匿名",
+                    creator: app.creator_name ?? t("匿名", "Anonymous"),
                     rating: 5.0,
                     reviews: app.stamp_count ?? 0,
-                    category: cat?.name ?? app.category ?? "",
+                    category: cat ? categoryName(cat, locale) : app.category ?? "",
                     gradient,
                     categoryId: app.category ?? null,
                   };
@@ -1094,8 +1119,8 @@ export function HomePageClient({
           <section>
             <SectionHeader
               icon={<Users className="h-5 w-5 text-blue-500" strokeWidth={2.5} />}
-              title="人気クリエイター"
-              sub="たくさんのアプリを作った注目のユーザー"
+              title={t("人気クリエイター", "Popular creators")}
+              sub={t("たくさんのアプリを作った注目のユーザー", "People who've made lots of apps")}
             />
             <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {popularCreators.map((creator) => {
@@ -1121,11 +1146,11 @@ export function HomePageClient({
                       {initial}
                     </div>
                     <p className="mt-2 text-sm font-black text-gray-900 truncate">{creator.name}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">アプリ {creator.appCount}本</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{t(`アプリ ${creator.appCount}本`, `${creator.appCount} ${creator.appCount === 1 ? "app" : "apps"}`)}</p>
                     {creator.totalStamps > 0 && (
                       <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5">
                         <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        <span className="text-[10px] font-bold text-emerald-600">{creator.totalStamps} バッジ</span>
+                        <span className="text-[10px] font-bold text-emerald-600">{creator.totalStamps} {t("バッジ", creator.totalStamps === 1 ? "badge" : "badges")}</span>
                       </div>
                     )}
                     {creator.topApp && (
@@ -1142,7 +1167,7 @@ export function HomePageClient({
                             creator: creator.name,
                             rating: 5.0,
                             reviews: 0,
-                            category: cat?.name ?? creator.topApp!.category ?? "",
+                            category: cat ? categoryName(cat, locale) : creator.topApp!.category ?? "",
                             gradient: cat?.gradient ?? "from-emerald-500 to-teal-600",
                             categoryId: creator.topApp!.category ?? null,
                           });
@@ -1163,8 +1188,8 @@ export function HomePageClient({
         <section>
           <SectionHeader
             icon={<Terminal className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
-            title="みんなが作ったアプリ"
-            sub="応援バッジが多い順 · 開発スタジオで作成・公開"
+            title={t("みんなが作ったアプリ", "Apps from the community")}
+            sub={t("応援バッジが多い順 · 開発スタジオで作成・公開", "Most cheered first · made and published in the Studio")}
             href="/search?source=playground"
           />
           {/* カテゴリフィルタータブ */}
@@ -1179,7 +1204,7 @@ export function HomePageClient({
                     : "bg-gray-100 text-gray-600 hover:bg-violet-50 hover:text-violet-700"
                 )}
               >
-                すべて
+                {t("すべて", "All")}
               </button>
               {CATEGORIES.map((cat) => (
                 <button
@@ -1193,7 +1218,7 @@ export function HomePageClient({
                   )}
                 >
                   <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
-                  {cat.name}
+                  {categoryName(cat, locale)}
                 </button>
               ))}
             </div>
@@ -1210,16 +1235,16 @@ export function HomePageClient({
             </div>
           ) : playgroundApps.length === 0 ? (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
-              <p className="text-sm font-semibold text-gray-500">まだ公開されたアプリがありません</p>
-              <p className="mt-2 text-xs text-gray-400">開発スタジオでアプリを作って出品してみましょう！</p>
+              <p className="text-sm font-semibold text-gray-500">{t("まだ公開されたアプリがありません", "No apps have been published yet")}</p>
+              <p className="mt-2 text-xs text-gray-400">{t("開発スタジオでアプリを作って出品してみましょう！", "Make an app in the Studio and publish it!")}</p>
               <Link href="/playground" className="mt-4 inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2 text-sm font-bold text-white hover:bg-violet-700">
-                開発スタジオへ <ArrowRight className="h-4 w-4" />
+                {t("開発スタジオへ", "Go to the Studio")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           ) : (
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
               <p className="text-sm font-semibold text-gray-500">
-                {query ? `「${query}」に一致するアプリはありません` : "このカテゴリのアプリはまだありません"}
+                {query ? t(`「${query}」に一致するアプリはありません`, `No apps match “${query}”`) : t("このカテゴリのアプリはまだありません", "No apps in this category yet")}
               </p>
             </div>
           )}
@@ -1230,8 +1255,8 @@ export function HomePageClient({
         <section>
           <SectionHeader
             icon={<JisappLogoIcon className="h-5 w-5" />}
-            title="新着アプリ"
-            sub="最近開発スタジオで公開された新しいアプリ"
+            title={t("新着アプリ", "New apps")}
+            sub={t("最近開発スタジオで公開された新しいアプリ", "Recently published from the Studio")}
             href="/search?sort=new"
           />
           {loadingPG ? (
@@ -1247,11 +1272,11 @@ export function HomePageClient({
           ) : (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
               <p className="text-sm font-semibold text-gray-500">
-                {query ? `「${query}」に一致するアプリはありません` : "まだアプリが登録されていません"}
+                {query ? t(`「${query}」に一致するアプリはありません`, `No apps match “${query}”`) : t("まだアプリが登録されていません", "No apps yet")}
               </p>
-              <p className="mt-2 text-xs text-gray-400">開発スタジオでアプリを作って公開してみましょう！</p>
+              <p className="mt-2 text-xs text-gray-400">{t("開発スタジオでアプリを作って公開してみましょう！", "Make an app in the Studio and publish it!")}</p>
               <Link href="/playground" className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-700">
-                開発スタジオへ <ArrowRight className="h-4 w-4" />
+                {t("開発スタジオへ", "Go to the Studio")} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           )}
@@ -1263,8 +1288,8 @@ export function HomePageClient({
           <section>
             <SectionHeader
               icon={<Gamepad2 className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
-              title="ゲームアプリ"
-              sub="ジサップで作られた遊べるゲーム集。ブラウザひとつで今すぐプレイ！"
+              title={t("ゲームアプリ", "Games")}
+              sub={t("ジサップで作られた遊べるゲーム集。ブラウザひとつで今すぐプレイ！", "Games made on Jisapp. Play right now in your browser!")}
               href="/search?category=ゲーム"
             />
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -1280,21 +1305,21 @@ export function HomePageClient({
           <div className="mb-4 flex items-center justify-between">
             <SectionHeader
               icon={<Heart className="h-5 w-5 text-rose-500" />}
-              title="こんなアプリが欲しい！リクエスト"
-              sub="作ってほしいアプリをリクエスト。ジサップユーザーがAIで作ってくれるかも"
+              title={t("こんなアプリが欲しい！リクエスト", "App requests")}
+              sub={t("作ってほしいアプリをリクエスト。ジサップユーザーがAIで作ってくれるかも", "Ask for an app you want. Someone on Jisapp might build it with AI")}
               href="/requests"
             />
           </div>
           <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 p-6 ring-1 ring-rose-100 shadow-sm">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex-1 text-center sm:text-left">
-                <p className="font-bold text-gray-800 text-sm">「こんなゲームが欲しい」「こんなツールがあったら便利」</p>
-                <p className="mt-1 text-xs text-gray-500">リクエストを投稿すると、他のジサップユーザーがAIで作って返信してくれます。</p>
+                <p className="font-bold text-gray-800 text-sm">{t("「こんなゲームが欲しい」「こんなツールがあったら便利」", "“I want a game like this” · “A tool like this would help”")}</p>
+                <p className="mt-1 text-xs text-gray-500">{t("リクエストを投稿すると、他のジサップユーザーがAIで作って返信してくれます。", "Post a request and other Jisapp users may build it with AI and reply.")}</p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <Link href="/requests"
                   className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-rose-600 transition-colors">
-                  リクエストを見る <ArrowRight className="h-4 w-4" />
+                  {t("リクエストを見る", "See requests")} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -1304,50 +1329,50 @@ export function HomePageClient({
         {/* ─── 他の開発環境との違い ─── */}
         <section className="py-2">
           <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900">他の開発環境とここが違う</h2>
-            <p className="mt-2 text-sm text-gray-500">むずかしい設定は一切なし。初心者が詰まるポイントをすべて取り除きました。</p>
+            <h2 className="text-2xl font-bold text-gray-900">{t("他の開発環境とここが違う", "What makes Jisapp different")}</h2>
+            <p className="mt-2 text-sm text-gray-500">{t("むずかしい設定は一切なし。初心者が詰まるポイントをすべて取り除きました。", "No tricky setup. We removed every step where beginners get stuck.")}</p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" style={{ maxWidth: "72rem", margin: "0 auto" }}>
             {([
               {
                 Icon: Settings2,
-                title: "サーバー設定ゼロ",
-                desc: "VPS・クラウド・ドメイン取得など、一切不要。コードを貼った瞬間から動くアプリが手に入ります。Vercel や Heroku すら使いません。",
+                title: t("サーバー設定ゼロ", "Zero server setup"),
+                desc: t("VPS・クラウド・ドメイン取得など、一切不要。コードを貼った瞬間から動くアプリが手に入ります。Vercel や Heroku すら使いません。", "No VPS, cloud account or domain needed. Your app runs the moment you paste the code — no Vercel or Heroku either."),
                 bg: "bg-emerald-50",
                 iconColor: "text-emerald-600",
               },
               {
                 Icon: ShieldCheck,
-                title: "データベース設定不要",
-                desc: "MySQL・PostgreSQL・Firebaseなどのセットアップ知識は必要なし。ローカルストレージやAPIで完結するアプリならそのまま動きます。",
+                title: t("データベース設定不要", "No database setup"),
+                desc: t("MySQL・PostgreSQL・Firebaseなどのセットアップ知識は必要なし。ローカルストレージやAPIで完結するアプリならそのまま動きます。", "No need to know MySQL, PostgreSQL or Firebase. Apps that use local storage or APIs just work."),
                 bg: "bg-teal-50",
                 iconColor: "text-teal-600",
               },
               {
                 Icon: Code2,
-                title: "AIが作ったコードをそのまま貼る",
-                desc: "ChatGPT・Claude・Gemini が出力したコードを、npm install も環境構築も一切せずにそのまま開発スタジオに貼るだけで完成。",
+                title: t("AIが作ったコードをそのまま貼る", "Paste AI code as-is"),
+                desc: t("ChatGPT・Claude・Gemini が出力したコードを、npm install も環境構築も一切せずにそのまま開発スタジオに貼るだけで完成。", "Paste code from ChatGPT, Claude or Gemini straight into the Studio — no npm install, no dev environment."),
                 bg: "bg-cyan-50",
                 iconColor: "text-cyan-600",
               },
               {
                 Icon: Globe,
-                title: "スマホ・タブレットから開発できる",
-                desc: "専用アプリのインストール不要。ブラウザさえあればどこからでも開発・公開が可能。電車の中でもカフェでもアプリが作れます。",
+                title: t("スマホ・タブレットから開発できる", "Build from your phone or tablet"),
+                desc: t("専用アプリのインストール不要。ブラウザさえあればどこからでも開発・公開が可能。電車の中でもカフェでもアプリが作れます。", "Nothing to install. All you need is a browser — make and publish apps on the train or at a café."),
                 bg: "bg-violet-50",
                 iconColor: "text-violet-600",
               },
               {
                 Icon: Lock,
-                title: "安全な実行環境",
-                desc: "アプリはブラウザの sandbox 内で動作します。外部API（HTTPS）も window.Zisup.fetch 経由で利用でき、作る側も使う側も安心して利用できます。",
+                title: t("安全な実行環境", "A safe place to run apps"),
+                desc: t("アプリはブラウザの sandbox 内で動作します。外部API（HTTPS）も window.Jisapp.fetch 経由で利用でき、作る側も使う側も安心して利用できます。", "Apps run inside a browser sandbox. External HTTPS APIs go through window.Jisapp.fetch, so makers and users can feel at ease."),
                 bg: "bg-emerald-50",
                 iconColor: "text-emerald-600",
               },
               {
                 Icon: UserPlus,
-                title: "作ったアプリをそのまま公開・シェア",
-                desc: "完成したアプリはURLで誰でも使えます。マーケットに公開してみんなに使ってもらおう。",
+                title: t("作ったアプリをそのまま公開・シェア", "Publish and share what you make"),
+                desc: t("完成したアプリはURLで誰でも使えます。マーケットに公開してみんなに使ってもらおう。", "Anyone can use your app from its URL. List it in the market so everyone can try it."),
                 bg: "bg-rose-50",
                 iconColor: "text-rose-600",
               },
@@ -1370,13 +1395,13 @@ export function HomePageClient({
               <div>
                 <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-emerald-300">
                   <Terminal className="h-4 w-4" />
-                  初心者大歓迎
+                  {t("初心者大歓迎", "Beginners welcome")}
                 </div>
                 <h2 className="text-2xl font-black">
-                  今すぐ、あなたの最初のアプリを作ろう
+                  {t("今すぐ、あなたの最初のアプリを作ろう", "Make your first app today")}
                 </h2>
                 <p className="mt-1.5 text-sm text-white/70 max-w-md">
-                  AIにアイデアを伝えてコードを生成 → 開発スタジオに貼るだけ。サーバーもDBも設定不要です。
+                  {t("AIにアイデアを伝えてコードを生成 → 開発スタジオに貼るだけ。サーバーもDBも設定不要です。", "Tell AI your idea to get the code → paste it into the Studio. No server or database needed.")}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
@@ -1385,7 +1410,7 @@ export function HomePageClient({
                   className="flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-black text-emerald-700 shadow-md transition-all hover:bg-emerald-50 hover:shadow-lg active:scale-[0.98]"
                 >
                   <JisappLogoIcon className="h-4 w-4" />
-                  アプリ開発スタジオへ
+                  {t("アプリ開発スタジオへ", "Open the Studio")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -1393,7 +1418,7 @@ export function HomePageClient({
                   className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-[0.98]"
                 >
                   <Search className="h-4 w-4" />
-                  アプリを探す
+                  {t("アプリを探す", "Browse apps")}
                 </Link>
               </div>
             </div>
@@ -1406,15 +1431,16 @@ export function HomePageClient({
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <JisappLogo href="/" />
           <OfficialSocialLinks />
-          <p className="text-xs text-gray-400">© 2026 ジサップ — AIコードを貼るだけの開発スタジオ</p>
+          <p className="text-xs text-gray-400">{t("© 2026 ジサップ — AIコードを貼るだけの開発スタジオ", "© 2026 Jisapp — the studio where AI code becomes apps")}</p>
           <div className="flex flex-wrap justify-center gap-4 text-xs text-gray-400">
-            <button type="button" onClick={() => setShowContact(true)} className="hover:text-emerald-600">運営への問い合わせ</button>
-            <Link href="/mypage" className="hover:text-emerald-600">マイページ</Link>
-            <Link href="/faq" className="hover:text-emerald-600">よくある質問</Link>
-            <Link href="/playground" className="hover:text-emerald-600">アプリ開発スタジオへ</Link>
-            <Link href="/terms" className="hover:text-emerald-600">利用規約</Link>
+            <button type="button" onClick={() => setShowContact(true)} className="hover:text-emerald-600">{t("運営への問い合わせ", "Contact us")}</button>
+            <Link href="/mypage" className="hover:text-emerald-600">{t("マイページ", "My page")}</Link>
+            <Link href="/faq" className="hover:text-emerald-600">{t("よくある質問", "FAQ")}</Link>
+            <Link href="/playground" className="hover:text-emerald-600">{t("アプリ開発スタジオへ", "Studio")}</Link>
+            <Link href="/terms" className="hover:text-emerald-600">{t("利用規約", "Terms")}</Link>
+            <LanguageSwitcher />
           </div>
-          <nav aria-label="カテゴリ一覧" className="flex flex-wrap justify-center gap-2 pt-2">
+          <nav aria-label={t("カテゴリ一覧", "Categories")} className="flex flex-wrap justify-center gap-2 pt-2">
             {CATEGORIES.map((cat) => (
               <Link
                 key={cat.id}
@@ -1422,7 +1448,7 @@ export function HomePageClient({
                 className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-500 ring-1 ring-gray-100 hover:text-emerald-600 hover:ring-emerald-200"
               >
                 <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
-                {cat.name}
+                {categoryName(cat, locale)}
               </Link>
             ))}
           </nav>

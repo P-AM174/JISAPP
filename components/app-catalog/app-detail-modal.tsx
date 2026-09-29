@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/i18n/navigation";
+import { useRouter } from "@/lib/i18n/navigation";
 import { useSession } from "next-auth/react";
 import {
   X,
@@ -27,14 +27,15 @@ import { ShareButtonRow } from "@/components/share-button";
 import { CreatorFollowButton } from "@/components/creator-follow-button";
 import { getAppShareUrl } from "@/lib/share";
 import { MiniPreview } from "./mini-preview";
-import { getCreatorProfilePath } from "./utils";
+import { displayCreatorName, getCreatorProfilePath } from "./utils";
+import { useLocale, useT } from "@/lib/i18n/client";
 import type { ModalApp } from "./types";
 
 const STAMPS = [
-  { id: "like", Icon: Heart, label: "いいね！" },
-  { id: "genius", Icon: Brain, label: "天才！" },
-  { id: "useful", Icon: Wrench, label: "便利！" },
-  { id: "design", Icon: Palette, label: "デザインが好き！" },
+  { id: "like", Icon: Heart, label: "いいね！", labelEn: "Love it!" },
+  { id: "genius", Icon: Brain, label: "天才！", labelEn: "Genius!" },
+  { id: "useful", Icon: Wrench, label: "便利！", labelEn: "So useful!" },
+  { id: "design", Icon: Palette, label: "デザインが好き！", labelEn: "Great design!" },
 ] as const;
 type StampId = (typeof STAMPS)[number]["id"];
 
@@ -49,6 +50,8 @@ export function AppDetailModal({
   const userId = (session?.user as { id?: string })?.id ?? null;
   const isLoggedIn = status === "authenticated" && !!userId;
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
 
   const [libState, setLibState] = useState<"idle" | "loading" | "done" | "login_required">("idle");
 
@@ -120,7 +123,7 @@ export function AppDetailModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: requestText.trim().slice(0, 300) }),
       });
-      if (!res.ok) throw new Error("送信失敗");
+      if (!res.ok) throw new Error("request failed");
       setRequestState("done");
       setRequestText("");
     } catch {
@@ -174,6 +177,7 @@ export function AppDetailModal({
           />
           <button
             onClick={onClose}
+            aria-label={t("閉じる", "Close")}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
           >
             <X className="h-4 w-4" />
@@ -198,7 +202,7 @@ export function AppDetailModal({
           {showCreator && (
             <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 shadow-sm">
               <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-emerald-700">
-                出品者
+                {t("出品者", "Creator")}
               </p>
               <div className="flex items-center gap-3">
                 <Link
@@ -214,11 +218,11 @@ export function AppDetailModal({
                     onClick={onClose}
                     className="flex items-center gap-1 text-base font-black text-gray-900 hover:text-emerald-700 transition-colors"
                   >
-                    <span className="truncate">{app.creator}</span>
+                    <span className="truncate">{displayCreatorName(app.creator, locale)}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-emerald-600" />
                   </Link>
                   <div className="mt-1 text-xs font-semibold text-emerald-700">
-                    プロフィール・出品一覧を見る
+                    {t("プロフィール・出品一覧を見る", "View profile & apps")}
                   </div>
                 </div>
                 <CreatorFollowButton creatorName={app.creator} size="md" />
@@ -229,10 +233,10 @@ export function AppDetailModal({
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Heart className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2} />
-              <p className="text-xs font-bold text-emerald-800">応援バッジを送る</p>
+              <p className="text-xs font-bold text-emerald-800">{t("応援バッジを送る", "Send a cheer badge")}</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {STAMPS.map(({ id, Icon, label }) => {
+              {STAMPS.map(({ id, Icon, label, labelEn }) => {
                 const active = myStamps.includes(id);
                 const count = stampCounts[id] ?? 0;
                 return (
@@ -247,7 +251,7 @@ export function AppDetailModal({
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                    <span className="flex-1 text-left text-xs">{label}</span>
+                    <span className="flex-1 text-left text-xs">{t(label, labelEn)}</span>
                     {count > 0 && (
                       <span
                         className={cn(
@@ -267,15 +271,15 @@ export function AppDetailModal({
           <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
             <div className="flex items-center gap-2 mb-2">
               <MessageCirclePlus className="h-4 w-4 text-violet-600" />
-              <p className="text-xs font-bold text-violet-800">こうなったらもっと最高！</p>
+              <p className="text-xs font-bold text-violet-800">{t("こうなったらもっと最高！", "It'd be even better if…")}</p>
             </div>
             <p className="text-[11px] text-violet-600 mb-3">
-              改善リクエストを作者に届けよう。批判じゃなく「期待」として受け取ってもらえます。
+              {t("改善リクエストを作者に届けよう。批判じゃなく「期待」として受け取ってもらえます。", "Send the creator an idea. It reaches them as encouragement, not criticism.")}
             </p>
             {requestState === "done" ? (
               <div className="flex items-center gap-2 rounded-xl bg-violet-100 px-3 py-2.5 text-xs font-bold text-violet-700">
                 <CheckCircle2 className="h-4 w-4" />
-                リクエストを送りました！ありがとうございます！
+                {t("リクエストを送りました！ありがとうございます！", "Sent! Thank you!")}
               </div>
             ) : (
               <div className="flex gap-2">
@@ -283,7 +287,7 @@ export function AppDetailModal({
                   type="text"
                   value={requestText}
                   onChange={(e) => setRequestText(e.target.value)}
-                  placeholder="例：ダークモードがあると最高！"
+                  placeholder={t("例：ダークモードがあると最高！", "e.g. A dark mode would be awesome!")}
                   className="flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs placeholder:text-gray-300 focus:border-violet-400 focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleRequest();
@@ -292,6 +296,7 @@ export function AppDetailModal({
                 <button
                   onClick={handleRequest}
                   disabled={!requestText.trim() || requestState === "loading"}
+                  aria-label={t("送信", "Send")}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
                 >
                   {requestState === "loading" ? (
@@ -308,15 +313,14 @@ export function AppDetailModal({
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 leading-relaxed">
               <p className="mb-0.5 flex items-center gap-1.5 font-bold">
                 <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                ログインせずにご利用の場合
+                {t("ログインせずにご利用の場合", "Using without signing in")}
               </p>
               <p>
-                アプリは使えますが、データの保存はお使いのブラウザにのみ保存されます。
-                ブラウザデータを削除すると消えることがあります。
+                {t("アプリは使えますが、データの保存はお使いのブラウザにのみ保存されます。ブラウザデータを削除すると消えることがあります。", "You can use the app, but your data is only saved in this browser and may be lost if you clear browser data.")}
                 <Link href="/login" className="font-bold underline ml-1">
-                  ログイン
+                  {t("ログイン", "Sign in")}
                 </Link>
-                するとクラウドに安全に保存されます。
+                {t("するとクラウドに安全に保存されます。", " to keep it safely in the cloud.")}
               </p>
             </div>
           )}
@@ -325,9 +329,9 @@ export function AppDetailModal({
             <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-xs text-teal-800 leading-relaxed">
               <p className="mb-1 flex items-center gap-1.5 font-bold">
                 <Smartphone className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                ホーム画面に追加しよう！
+                {t("ホーム画面に追加しよう！", "Add it to your home screen!")}
               </p>
-              <p>ブラウザの「共有」→「ホーム画面に追加」でアプリのように起動できます。</p>
+              <p>{t("ブラウザの「共有」→「ホーム画面に追加」でアプリのように起動できます。", "Use your browser's “Share” → “Add to Home Screen” to open it like an app.")}</p>
             </div>
           )}
 
@@ -335,11 +339,11 @@ export function AppDetailModal({
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
               <LogIn className="h-4 w-4 shrink-0" />
               <span>
-                マイライブラリへの追加には
+                {t("マイライブラリへの追加には", "Please")}
                 <Link href="/login" className="font-bold underline ml-1">
-                  ログイン
+                  {t("ログイン", "sign in")}
                 </Link>
-                が必要です
+                {t("が必要です", " to add apps to your library")}
               </span>
             </div>
           )}
@@ -348,7 +352,7 @@ export function AppDetailModal({
             <ShareButtonRow
               url={getAppShareUrl(String(app.id))}
               title={app.name}
-              text={`${app.name} | ジサップで作った無料アプリ`}
+              text={t(`${app.name} | ジサップで作った無料アプリ`, `${app.name} | a free app made on Jisapp`)}
             />
 
             <button
@@ -356,13 +360,13 @@ export function AppDetailModal({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] transition-all"
             >
               <ExternalLink className="h-4 w-4" />
-              アプリを開く
+              {t("アプリを開く", "Open app")}
             </button>
 
             {libState === "done" ? (
               <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-50 border border-teal-200 py-3 text-sm font-bold text-teal-700">
                 <CheckCircle2 className="h-4 w-4" />
-                マイライブラリに追加済み
+                {t("マイライブラリに追加済み", "In your library")}
               </div>
             ) : (
               <button
@@ -375,7 +379,7 @@ export function AppDetailModal({
                 ) : (
                   <LibraryBig className="h-4 w-4" />
                 )}
-                マイライブラリに追加
+                {t("マイライブラリに追加", "Add to my library")}
               </button>
             )}
             <button
@@ -384,7 +388,7 @@ export function AppDetailModal({
               className="flex w-full items-center justify-center gap-1.5 py-1 text-xs text-gray-400 hover:text-rose-500 transition-colors"
             >
               <Flag className="h-3.5 w-3.5" />
-              このアプリを報告する
+              {t("このアプリを報告する", "Report this app")}
             </button>
           </div>
         </div>

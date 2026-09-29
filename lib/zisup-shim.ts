@@ -1,5 +1,5 @@
 /**
- * iframe 内に注入する window.Zisup API シム。
+ * iframe 内に注入する window.Jisapp API シム（旧名 window.Zisup も同じもの）。
  * saveData / loadData を postMessage 経由で親ウィンドウにブリッジし、
  * ログイン状態に応じてクラウドまたは localStorage に保存先を自動分岐させる。
  *
@@ -89,7 +89,7 @@ export const ZISUP_SHIM_SCRIPT = `
       setTimeout(function () {
         if (_pending[id]) {
           delete _pending[id];
-          reject(new Error('[Zisup] タイムアウト: 親ウィンドウと通信できませんでした'));
+          reject(new Error('[Jisapp] Timeout: could not reach the Jisapp page (タイムアウト: 親ウィンドウと通信できませんでした)'));
         }
       }, ${ZISUP_REQUEST_TIMEOUT_MS});
     });
@@ -126,8 +126,9 @@ export const ZISUP_SHIM_SCRIPT = `
     }
   });
 
-  /* ── window.Zisup 公開 API ── */
-  window.Zisup = {
+  /* ── 公開 API ──
+     正式名は window.Jisapp。以前の名前 window.Zisup も、公開済みのアプリのためにそのまま使える */
+  window.Jisapp = window.Zisup = {
     /**
      * データをクラウド（ログイン時）または localStorage（未ログイン時）に保存。
      * @param {string} key   - 識別キー（例: 'score', 'settings'）
@@ -217,6 +218,6 @@ export const ZISUP_SHIM_SCRIPT = `
     },
   };
 
-  console.log('[Zisup] API ready (v4 cloud-sync + external fetch + group shared data)');
+  console.log('[Jisapp] API ready (v4 cloud-sync + external fetch + group shared data)');
 })();
 `;

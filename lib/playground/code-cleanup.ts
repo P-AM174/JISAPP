@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/config";
+
 /**
  * AI の回答から貼り付けられたコードを、そのまま動かせる形に整える。
  * - 回答全体をコピーしたときに付いてくる ```html ～ ``` の囲みや前後の説明文を取り除く
@@ -49,17 +51,29 @@ export function detectCodeIssue(code: string): CodeIssue | null {
 /** AI に送る「続きを出して」の依頼文 */
 export const TRUNCATED_RETRY_MESSAGE =
   "コードが途中で切れていました。index.html を最初から最後まで、省略せずにもう一度すべて出力してください。";
+export const TRUNCATED_RETRY_MESSAGE_EN =
+  "The code was cut off partway. Please output the whole index.html again, from start to finish, without leaving anything out.";
+
+export function truncatedRetryMessage(locale: Locale = "ja"): string {
+  return locale === "en" ? TRUNCATED_RETRY_MESSAGE_EN : TRUNCATED_RETRY_MESSAGE;
+}
 
 /** コードが外部APIのキー（ジサップのシークレット）を使うか */
 export function usesStudioSecrets(code: string): boolean {
-  return /Zisup\.fetch\s*\([^)]*secret\s*:/.test(code) || /secret\s*:\s*['"][A-Z0-9_]+['"]/.test(code);
+  return /(?:Jisapp|Zisup)\.fetch\s*\([^)]*secret\s*:/.test(code) || /secret\s*:\s*['"][A-Z0-9_]+['"]/.test(code);
 }
 
 /** localStorage だけで保存していて、ジサップの保存機能を使っていないか */
 export function usesLocalStorageOnly(code: string): boolean {
-  return /localStorage\s*\.\s*(setItem|getItem)/.test(code) && !/Zisup\s*\.\s*(saveData|loadData)/.test(code);
+  return /localStorage\s*\.\s*(setItem|getItem)/.test(code) && !/(?:Jisapp|Zisup)\s*\.\s*(saveData|loadData)/.test(code);
 }
 
 /** ジサップの保存機能に書き換えてもらうための依頼文 */
 export const STORAGE_FIX_MESSAGE =
-  "このアプリのデータ保存を、localStorage ではなくジサップの保存機能に書き換えてください。保存は await window.Zisup.saveData('識別名', データ)、読み込みは await window.Zisup.loadData('識別名') を使い、画面を出す前に読み込みを await で完了させてください。index.html を最初から最後まで省略せずに出力してください。";
+  "このアプリのデータ保存を、localStorage ではなくジサップの保存機能に書き換えてください。保存は await window.Jisapp.saveData('識別名', データ)、読み込みは await window.Jisapp.loadData('識別名') を使い、画面を出す前に読み込みを await で完了させてください。index.html を最初から最後まで省略せずに出力してください。";
+export const STORAGE_FIX_MESSAGE_EN =
+  "Please change how this app saves data from localStorage to Jisapp's save feature. Save with await window.Jisapp.saveData('keyName', data) and load with await window.Jisapp.loadData('keyName'), and finish loading with await before showing the screen. Output the whole index.html from start to finish without leaving anything out.";
+
+export function storageFixMessage(locale: Locale = "ja"): string {
+  return locale === "en" ? STORAGE_FIX_MESSAGE_EN : STORAGE_FIX_MESSAGE;
+}

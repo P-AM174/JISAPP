@@ -20,19 +20,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STUDIO_AIS, copyText, type StudioAi } from "@/lib/playground/ai-launch";
-import {
-  PROMPT_STORAGE_SHARED,
-  PROMPT_STORAGE_ZISUP,
-  buildSharedConvertMessage,
-} from "@/lib/playground/prompt-template";
-import { STORAGE_FIX_MESSAGE } from "@/lib/playground/code-cleanup";
+import { buildSharedConvertMessage, getPromptStorage } from "@/lib/playground/prompt-template";
+import { storageFixMessage } from "@/lib/playground/code-cleanup";
+import { useLocale, useT } from "@/lib/i18n/client";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
 
-const STAGES: { id: StudioStage; label: string }[] = [
-  { id: "idea", label: "AIに作ってもらう" },
-  { id: "paste", label: "貼って動かす" },
-  { id: "ready", label: "公開する" },
+const STAGES: { id: StudioStage; label: string; labelEn: string }[] = [
+  { id: "idea", label: "AIに作ってもらう", labelEn: "Have AI make it" },
+  { id: "paste", label: "貼って動かす", labelEn: "Paste and run" },
+  { id: "ready", label: "公開する", labelEn: "Publish" },
 ];
 
 // ─── 進行表示 ───
@@ -44,12 +41,13 @@ export function StageIndicator({
   stage: StudioStage;
   compact?: boolean;
 }) {
+  const t = useT();
   // 始め方を選ぶ画面はステップ1として扱う
   const current = Math.max(0, STAGES.findIndex((s) => s.id === stage));
 
   if (compact) {
     return (
-      <div className="flex gap-1" aria-label={`ステップ ${current + 1} / 3：${STAGES[current].label}`}>
+      <div className="flex gap-1" aria-label={t(`ステップ ${current + 1} / 3：${STAGES[current].label}`, `Step ${current + 1} of 3: ${STAGES[current].labelEn}`)}>
         {STAGES.map((s, i) => (
           <span
             key={s.id}
@@ -85,7 +83,7 @@ export function StageIndicator({
               >
                 {done ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
               </span>
-              <span className="whitespace-nowrap">{s.label}</span>
+              <span className="whitespace-nowrap">{t(s.label, s.labelEn)}</span>
             </span>
           </li>
         );
@@ -108,6 +106,7 @@ export function LaunchAiLink({
   className?: string;
   children?: React.ReactNode;
 }) {
+  const t = useT();
   const classes = cn(
     "flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation",
     className
@@ -119,7 +118,7 @@ export function LaunchAiLink({
         {children ?? (
           <>
             <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-            指示文をコピーする
+            {t("指示文をコピーする", "Copy the instructions")}
           </>
         )}
       </button>
@@ -138,7 +137,7 @@ export function LaunchAiLink({
     >
       {children ?? (
         <>
-          {ai.name}で作る
+          {t(`${ai.name}で作る`, `Make it with ${ai.name}`)}
           <ArrowUpRight className="h-4 w-4 shrink-0 opacity-80" strokeWidth={2.25} />
         </>
       )}
@@ -147,7 +146,12 @@ export function LaunchAiLink({
 }
 
 /** 主ボタンの下の一言 */
-export function launchCaption(ai: StudioAi): string {
+export function launchCaption(ai: StudioAi, locale = "ja"): string {
+  if (locale === "en") {
+    return ai.url
+      ? `Copies the instructions and opens ${ai.name}`
+      : "Paste the copied instructions into the AI you use";
+  }
   return ai.url
     ? `指示文をコピーして${ai.name}を開きます`
     : "コピーした指示文を、使っているAIに貼り付けてください";
@@ -163,24 +167,36 @@ function StorageRequirementNote({
   withCopy?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
+  const locale = useLocale();
   return (
     <div className={cn("rounded-xl bg-sky-50/70 px-3.5 py-3 ring-1 ring-sky-100", className)}>
       <p className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
         <Database className="h-3.5 w-3.5 shrink-0 text-sky-600" />
-        データを保存するアプリの場合
+        {t("データを保存するアプリの場合", "If your app saves data")}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-slate-600">
-        保存と読み込みに{" "}
-        <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">window.Zisup.saveData</code>
-        {" / "}
-        <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">loadData</code>{" "}
-        を使う指定が必要です。localStorage のままだと、同じ端末のブラウザにしか残りません。
+        {t(
+          <>
+            保存と読み込みに{" "}
+            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">window.Jisapp.saveData</code>
+            {" / "}
+            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">loadData</code>{" "}
+            を使う指定が必要です。localStorage のままだと、同じ端末のブラウザにしか残りません。
+          </>,
+          <>
+            The code needs to save and load with{" "}
+            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">window.Jisapp.saveData</code>
+            {" / "}
+            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">loadData</code>. With localStorage, data only stays in this browser on this device.
+          </>
+        )}
       </p>
       {withCopy && (
         <button
           type="button"
           onClick={() => {
-            void copyText(STORAGE_FIX_MESSAGE).then((ok) => {
+            void copyText(storageFixMessage(locale)).then((ok) => {
               if (!ok) return;
               setCopied(true);
               window.setTimeout(() => setCopied(false), 2500);
@@ -189,7 +205,7 @@ function StorageRequirementNote({
           className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950"
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? "コピーしました。AIに送ってください" : "AIに書き換えを頼む文をコピー"}
+          {copied ? t("コピーしました。AIに送ってください", "Copied. Send it to the AI") : t("AIに書き換えを頼む文をコピー", "Copy a rewrite request for the AI")}
         </button>
       )}
     </div>
@@ -295,6 +311,9 @@ export function EditorStart({
   const [directMode, setDirectMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const showCard = !directMode;
+  const t = useT();
+  const locale = useLocale();
+  const storagePrompts = getPromptStorage(locale);
 
   const startDirect = () => {
     setDirectMode(true);
@@ -332,7 +351,7 @@ export function EditorStart({
 
         {/* エディタ本体（ここに直接貼り付けもできる） */}
         <label htmlFor="studio-paste-zone" className="sr-only">
-          コードエディタ（AIのコードを貼り付け）
+          {t("コードエディタ（AIのコードを貼り付け）", "Code editor (paste the AI's code)")}
         </label>
         <textarea
           id="studio-paste-zone"
@@ -345,7 +364,7 @@ export function EditorStart({
           }}
           autoFocus={pasteFailed}
           spellCheck={false}
-          placeholder={showCard ? "" : "ここにAIのコードを貼り付け（スマホは長押し →「ペースト」／PCは Ctrl+V）"}
+          placeholder={showCard ? "" : t("ここにAIのコードを貼り付け（スマホは長押し →「ペースト」／PCは Ctrl+V）", "Paste the AI's code here (on a phone, long-press → “Paste”; on a computer, Ctrl+V)")}
           className="absolute inset-y-0 left-10 right-0 resize-none bg-transparent px-3 pt-3 font-mono text-xs leading-5 text-slate-700 outline-none placeholder:font-sans placeholder:text-sm placeholder:text-slate-400"
         />
 
@@ -357,8 +376,8 @@ export function EditorStart({
                 <button
                   type="button"
                   onClick={startDirect}
-                  aria-label="案内を閉じる"
-                  title="閉じてエディタに直接貼る"
+                  aria-label={t("案内を閉じる", "Close the guide")}
+                  title={t("閉じてエディタに直接貼る", "Close and paste directly into the editor")}
                   className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                 >
                   <X className="h-4 w-4" />
@@ -366,30 +385,30 @@ export function EditorStart({
                 {waitingForAi ? (
                   <>
                     <p className="text-xs font-bold tracking-wide text-teal-700">
-                      {returned ? "おかえりなさい" : `${ai?.url ? ai.name : "AI"}の返事を待っています`}
+                      {returned ? t("おかえりなさい", "Welcome back") : t(`${ai?.url ? ai.name : "AI"}の返事を待っています`, `Waiting for ${ai?.url ? ai.name : "the AI"}'s reply`)}
                     </p>
                     <h2 className="mt-1 text-xl font-extrabold leading-snug tracking-tight text-slate-900 [word-break:auto-phrase]">
-                      AIのコードを、このエディタに貼り付けてください
+                      {t("AIのコードを、このエディタに貼り付けてください", "Paste the AI's code into this editor")}
                     </h2>
                     <ol className="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-600">
                       <li className="flex gap-2.5">
                         <StepDot n={1} />
-                        <span>{ai?.url ? ai.name : "AI"}の返事にあるコードを、最初から最後まで全部コピー</span>
+                        <span>{t(`${ai?.url ? ai.name : "AI"}の返事にあるコードを、最初から最後まで全部コピー`, `Copy all the code in ${ai?.url ? ai.name : "the AI"}'s reply, from start to finish`)}</span>
                       </li>
                       <li className="flex gap-2.5">
                         <StepDot n={2} />
-                        <span>下の「コードを貼り付けて動かす」を押す</span>
+                        <span>{t("下の「コードを貼り付けて動かす」を押す", "Press “Paste the code and run it” below")}</span>
                       </li>
                     </ol>
                     {idea.trim() && (
                       <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                        作るもの：<span className="font-semibold text-slate-700">{idea}</span>
+                        {t("作るもの：", "Making: ")}<span className="font-semibold text-slate-700">{idea}</span>
                       </p>
                     )}
                     {/* スマホは画面下に同じボタンがあるので、PCだけ出す */}
                     <button type="button" onClick={onPasteFromClipboard} className={cn(PRIMARY_BUTTON, "mt-4 hidden md:flex")}>
                       <ClipboardPaste className="h-4 w-4" strokeWidth={2.25} />
-                      コードを貼り付けて動かす
+                      {t("コードを貼り付けて動かす", "Paste the code and run it")}
                     </button>
                     <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs font-semibold text-slate-500">
                       {ai?.url && (
@@ -399,16 +418,16 @@ export function EditorStart({
                           className="bg-none bg-transparent p-0 text-xs font-semibold text-slate-500 shadow-none hover:bg-transparent hover:text-slate-800"
                         >
                           <ArrowUpRight className="h-3.5 w-3.5" />
-                          もう一度{ai.name}を開く
+                          {t(`もう一度${ai.name}を開く`, `Open ${ai.name} again`)}
                         </LaunchAiLink>
                       )}
                       <button type="button" onClick={onReopenCopied} className="flex items-center gap-1 hover:text-slate-800">
                         <Copy className="h-3.5 w-3.5" />
-                        プロンプトをもう一度コピー
+                        {t("プロンプトをもう一度コピー", "Copy the prompt again")}
                       </button>
                       <button type="button" onClick={startDirect} className="flex items-center gap-1 hover:text-slate-800">
                         <Code2 className="h-3.5 w-3.5" />
-                        エディタに直接貼る
+                        {t("エディタに直接貼る", "Paste into the editor")}
                       </button>
                     </div>
                   </>
@@ -416,24 +435,24 @@ export function EditorStart({
                   <>
                     <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-teal-700">
                       <Code2 className="h-3.5 w-3.5" />
-                      コードエディタ
+                      {t("コードエディタ", "Code editor")}
                     </p>
                     <h2 className="mt-1 text-xl font-extrabold leading-snug tracking-tight text-slate-900 [word-break:auto-phrase]">
-                      ここにAIが出力したコードをペーストすると、アプリが動きます
+                      {t("ここにAIが出力したコードをペーストすると、アプリが動きます", "Paste code from an AI here and your app runs")}
                     </h2>
                     <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-                      コードは、いつも使っている生成AI（ChatGPT・Gemini・Claude など）が書きます。まずはAIに送るプロンプトを作りましょう。
+                      {t("コードは、いつも使っている生成AI（ChatGPT・Gemini・Claude など）が書きます。まずはAIに送るプロンプトを作りましょう。", "The code is written by the AI you already use (ChatGPT, Gemini, Claude, etc.). Start by making the prompt to send it.")}
                     </p>
 
                     <ol className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
-                      {["書く", "AIが作る", "ここに貼る"].map((t, i) => (
-                        <li key={t} className="flex items-center gap-1.5">
+                      {[t("書く", "Write"), t("AIが作る", "AI builds it"), t("ここに貼る", "Paste here")].map((label, i) => (
+                        <li key={label} className="flex items-center gap-1.5">
                           {i > 0 && <ArrowRight className="h-3 w-3 shrink-0 text-slate-300" />}
                           <span className="flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-50 px-2 py-1 text-emerald-800">
                             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
                               {i + 1}
                             </span>
-                            {t}
+                            {label}
                           </span>
                         </li>
                       ))}
@@ -441,11 +460,11 @@ export function EditorStart({
 
                     <div className="relative mt-5">
                       <span className="absolute -top-2.5 left-3 z-10 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow-sm ring-1 ring-amber-200">
-                        まずはここから
+                        {t("まずはここから", "Start here")}
                       </span>
                       <button type="button" onClick={onOpenTemplate} className={PRIMARY_BUTTON}>
                         <FileText className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                        プロンプトをテンプレートから作る
+                        {t("プロンプトをテンプレートから作る", "Make a prompt from a template")}
                       </button>
                     </div>
                     <button
@@ -454,11 +473,11 @@ export function EditorStart({
                       className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-sky-800 ring-1 ring-sky-200 transition hover:bg-sky-50 touch-manipulation"
                     >
                       <Users className="h-4 w-4 shrink-0" />
-                      グループで共有するアプリを作る
+                      {t("グループで共有するアプリを作る", "Make an app to share with a group")}
                     </button>
 
                     <div className="mt-4 border-t border-slate-100 pt-3">
-                      <p className="text-xs font-semibold text-slate-400">コードを持っている人は</p>
+                      <p className="text-xs font-semibold text-slate-400">{t("コードを持っている人は", "Already have code?")}</p>
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         <button
                           type="button"
@@ -466,7 +485,7 @@ export function EditorStart({
                           className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-2.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200 transition hover:bg-emerald-50 touch-manipulation"
                         >
                           <ClipboardPaste className="h-3.5 w-3.5" />
-                          貼り付けて動かす
+                          {t("貼り付けて動かす", "Paste and run")}
                         </button>
                         <button
                           type="button"
@@ -474,21 +493,21 @@ export function EditorStart({
                           className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-2.5 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 touch-manipulation"
                         >
                           <Code2 className="h-3.5 w-3.5" />
-                          エディタに直接貼る
+                          {t("エディタに直接貼る", "Paste into the editor")}
                         </button>
                       </div>
                       <details className="group mt-2">
                         <summary className="flex cursor-pointer list-none items-center gap-1 text-[11px] font-semibold text-sky-700 [&::-webkit-details-marker]:hidden">
                           <Database className="h-3 w-3" />
-                          データを保存するアプリの場合
+                          {t("データを保存するアプリの場合", "If your app saves data")}
                           <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
                         </summary>
                         <StorageRequirementNote className="mt-2" withCopy />
                       </details>
                       <CopyTextLink
-                        text={buildSharedConvertMessage()}
-                        label="持っているコードを共有対応にする依頼文をコピー"
-                        doneLabel="コピーしました。最後に今のコードを貼って、AIに送ってください"
+                        text={buildSharedConvertMessage(undefined, locale)}
+                        label={t("持っているコードを共有対応にする依頼文をコピー", "Copy a request to add group sharing to your code")}
+                        doneLabel={t("コピーしました。最後に今のコードを貼って、AIに送ってください", "Copied. Paste your current code at the end and send it to the AI")}
                         className="mt-1.5 text-[11px] font-semibold text-sky-700 hover:text-sky-900"
                       />
                     </div>
@@ -500,11 +519,11 @@ export function EditorStart({
                         className="flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-800"
                       >
                         <Play className="h-3.5 w-3.5" />
-                        まずはサンプルを動かしてみる
+                        {t("まずはサンプルを動かしてみる", "Try running the sample first")}
                       </button>
                       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
-                        <CopyTextLink text={PROMPT_STORAGE_ZISUP} label="保存方式のルールをコピー" />
-                        <CopyTextLink text={PROMPT_STORAGE_SHARED} label="共有のルールをコピー" />
+                        <CopyTextLink text={storagePrompts.cloud} label={t("保存方式のルールをコピー", "Copy the saving rules")} doneLabel={t("保存方式のルールをコピーしました", "Copied the saving rules")} />
+                        <CopyTextLink text={storagePrompts.shared} label={t("共有のルールをコピー", "Copy the sharing rules")} doneLabel={t("共有のルールをコピーしました", "Copied the sharing rules")} />
                       </div>
                     </div>
                   </>
@@ -516,14 +535,14 @@ export function EditorStart({
           <div className="absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-xl bg-slate-900/90 px-3.5 py-2.5 text-xs text-white shadow-lg backdrop-blur">
             <ClipboardPaste className="h-4 w-4 shrink-0 text-emerald-300" />
             <span className="min-w-0 flex-1">
-              {pasteFailed ? "自動で貼り付けできませんでした。エディタを長押しして「ペースト」してください" : "エディタにコードを貼り付けてください"}
+              {pasteFailed ? t("自動で貼り付けできませんでした。エディタを長押しして「ペースト」してください", "Couldn't paste automatically. Long-press the editor and choose “Paste”") : t("エディタにコードを貼り付けてください", "Paste the code into the editor")}
             </span>
             <button
               type="button"
               onClick={() => setDirectMode(false)}
               className="shrink-0 rounded-lg bg-white/10 px-2 py-1 font-semibold hover:bg-white/20"
             >
-              案内に戻る
+              {t("案内に戻る", "Back to the guide")}
             </button>
           </div>
         )}
@@ -570,6 +589,7 @@ export function PromptTemplateModal({
 }) {
   // 特定のAIに決めず、いつも使っている生成AIに貼ってもらう
   const ai = STUDIO_AIS.find((a) => a.id === "other") ?? STUDIO_AIS[STUDIO_AIS.length - 1];
+  const t = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -590,7 +610,7 @@ export function PromptTemplateModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={step === "form" ? "プロンプトを作成" : "プロンプトをコピーしました"}
+        aria-label={step === "form" ? t("プロンプトを作成", "Make a prompt") : t("プロンプトをコピーしました", "Prompt copied")}
         className="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-[#fbfdfc] shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -600,11 +620,11 @@ export function PromptTemplateModal({
             <span className="h-1.5 w-6 rounded-full bg-emerald-500" />
             <span className={cn("h-1.5 w-6 rounded-full", step === "copied" ? "bg-emerald-500" : "bg-slate-200")} />
           </div>
-          <span className="text-xs font-semibold text-slate-400">{step === "form" ? "1 / 2 作りたいものを書く" : "2 / 2 AIに送る"}</span>
+          <span className="text-xs font-semibold text-slate-400">{step === "form" ? t("1 / 2 作りたいものを書く", "1 / 2 Describe what you want") : t("2 / 2 AIに送る", "2 / 2 Send it to the AI")}</span>
           <button
             type="button"
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={t("閉じる", "Close")}
             className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-4 w-4" />
@@ -614,14 +634,14 @@ export function PromptTemplateModal({
         {step === "form" ? (
           <>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">プロンプトを作成</h2>
-              <p className="mt-1 text-sm text-slate-500">生成AIに送るプロンプトを、テンプレートから作ります。</p>
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{t("プロンプトを作成", "Make a prompt")}</h2>
+              <p className="mt-1 text-sm text-slate-500">{t("生成AIに送るプロンプトを、テンプレートから作ります。", "Build the prompt for your AI from a template.")}</p>
 
-              <p className="mt-5 text-sm font-bold text-slate-800">だれが使うアプリ？</p>
-              <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="だれが使うアプリ">
+              <p className="mt-5 text-sm font-bold text-slate-800">{t("だれが使うアプリ？", "Who will use the app?")}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("だれが使うアプリ", "Who will use the app")}>
                 {([
-                  { shared: false, title: "自分だけで使う", desc: "記録やツールなど", icon: <User className="h-4 w-4" /> },
-                  { shared: true, title: "グループで共有", desc: "出欠表・連絡板・当番表など", icon: <Users className="h-4 w-4" /> },
+                  { shared: false, title: t("自分だけで使う", "Just me"), desc: t("記録やツールなど", "Logs, tools and more"), icon: <User className="h-4 w-4" /> },
+                  { shared: true, title: t("グループで共有", "Shared with a group"), desc: t("出欠表・連絡板・当番表など", "Attendance, notice boards, rotas, etc."), icon: <Users className="h-4 w-4" /> },
                 ] as const).map((opt) => {
                   const selected = options.shared === opt.shared;
                   return (
@@ -651,12 +671,12 @@ export function PromptTemplateModal({
               </div>
               {options.shared && (
                 <p className="mt-2 rounded-xl bg-sky-50/80 px-3 py-2.5 text-xs leading-relaxed text-sky-900 ring-1 ring-sky-100">
-                  メンバーみんなで同じデータを見たり書き込んだりできるアプリにします。公開したあと、アプリのページで「グループを作る」→ 招待リンクをメンバーに送ると使えます（グループを作る人だけログインが必要です）。
+                  {t("メンバーみんなで同じデータを見たり書き込んだりできるアプリにします。公開したあと、アプリのページで「グループを作る」→ 招待リンクをメンバーに送ると使えます（グループを作る人だけログインが必要です）。", "Everyone in the group will see and write the same data. After publishing, choose “Create a group” on the app's page and send the invite link to members (only the group creator needs to sign in).")}
                 </p>
               )}
 
               <label htmlFor="studio-idea" className="mt-5 block text-sm font-bold text-slate-800">
-                何を作りますか。
+                {t("何を作りますか。", "What do you want to make?")}
               </label>
               <textarea
                 id="studio-idea"
@@ -665,7 +685,7 @@ export function PromptTemplateModal({
                 rows={2}
                 maxLength={200}
                 autoFocus
-                placeholder={options.shared ? "例：サークルの出欠表（練習日ごとに出欠を入れる）" : "例：4人の割り勘を一瞬で出すアプリ"}
+                placeholder={options.shared ? t("例：サークルの出欠表（練習日ごとに出欠を入れる）", "e.g. A club attendance sheet (mark attendance for each practice)") : t("例：4人の割り勘を一瞬で出すアプリ", "e.g. An app that splits a bill between 4 people instantly")}
                 className={cn(
                   "mt-2 w-full resize-none rounded-2xl border bg-white px-4 py-3.5 text-base leading-relaxed text-slate-900 shadow-sm shadow-emerald-900/5 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100",
                   ideaError ? "border-rose-300" : "border-slate-200"
@@ -676,27 +696,27 @@ export function PromptTemplateModal({
               <div className="mt-4 space-y-4 rounded-2xl bg-white p-4 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200">
                 <div>
                   <label htmlFor="studio-details" className="text-xs font-semibold text-slate-600">
-                    こだわり・機能の希望<span className="ml-1 font-normal text-slate-400">（任意）</span>
+                    {t("こだわり・機能の希望", "Details or features you want")}<span className="ml-1 font-normal text-slate-400">{t("（任意）", " (optional)")}</span>
                   </label>
                   <textarea
                     id="studio-details"
                     value={options.details}
                     onChange={(e) => onOptionsChange({ ...options, details: e.target.value })}
                     rows={2}
-                    placeholder="例：人数と金額を入れたら大きく表示。端数は幹事が払う"
+                    placeholder={t("例：人数と金額を入れたら大きく表示。端数は幹事が払う", "e.g. Show the result big after entering people and amount. The organizer pays any remainder")}
                     className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
                 </div>
                 <div className="h-px bg-slate-100" />
                 <ToggleRow
-                  label="ジサップのデザインで作る"
-                  description="すりガラス風の、透明感のあるデザイン（配色はアプリに合わせてAIが決めます）"
+                  label={t("ジサップのデザインで作る", "Use the Jisapp design")}
+                  description={t("すりガラス風の、透明感のあるデザイン（配色はアプリに合わせてAIが決めます）", "A clear, frosted-glass look (the AI picks colors to suit your app)")}
                   checked={options.useJisappDesign}
                   onChange={(v) => onOptionsChange({ ...options, useJisappDesign: v })}
                 />
                 <ToggleRow
-                  label={options.shared ? "自分だけのデータも保存する" : "データを保存する"}
-                  description={options.shared ? "設定など、共有しないデータを残します" : "ログインすると別の端末でも記録が残ります"}
+                  label={options.shared ? t("自分だけのデータも保存する", "Also save personal data") : t("データを保存する", "Save data")}
+                  description={options.shared ? t("設定など、共有しないデータを残します", "Keeps data you don't share, like settings") : t("ログインすると別の端末でも記録が残ります", "When signed in, your records carry over to other devices")}
                   checked={options.needSave}
                   onChange={(v) => onOptionsChange({ ...options, needSave: v })}
                 />
@@ -706,7 +726,7 @@ export function PromptTemplateModal({
             <div className="shrink-0 border-t border-slate-100 bg-white/80 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               <button type="button" onClick={onCreate} className={PRIMARY_BUTTON}>
                 <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                プロンプトを作ってコピーする
+                {t("プロンプトを作ってコピーする", "Make and copy the prompt")}
               </button>
             </div>
           </>
@@ -723,12 +743,12 @@ export function PromptTemplateModal({
                   {copyOk ? <Check className="h-7 w-7" strokeWidth={3} /> : <Copy className="h-6 w-6" />}
                 </span>
                 <h2 className="mt-3 text-xl font-extrabold tracking-tight text-slate-900">
-                  {copyOk ? "プロンプトをコピーしました" : "自動でコピーできませんでした"}
+                  {copyOk ? t("プロンプトをコピーしました", "Prompt copied") : t("自動でコピーできませんでした", "Couldn't copy automatically")}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {copyOk
-                    ? "いつも使っている生成AIのアプリに貼り付けて、送信してください"
-                    : "下の枠を長押しして、すべて選択 →「コピー」してください"}
+                    ? t("いつも使っている生成AIのアプリに貼り付けて、送信してください", "Paste it into the AI app you use and send it")
+                    : t("下の枠を長押しして、すべて選択 →「コピー」してください", "Long-press the box below, select all → “Copy”")}
                 </p>
               </div>
 
@@ -746,19 +766,19 @@ export function PromptTemplateModal({
                 <li className="flex gap-3">
                   <StepDot n={1} />
                   <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-slate-700">いつも使っている生成AIのアプリを開く</span>
-                    <p className="mt-0.5 text-xs text-slate-500">ChatGPT・Gemini・Claude など、どのAIでも使えます</p>
+                    <span className="text-sm font-semibold text-slate-700">{t("いつも使っている生成AIのアプリを開く", "Open the AI app you use")}</span>
+                    <p className="mt-0.5 text-xs text-slate-500">{t("ChatGPT・Gemini・Claude など、どのAIでも使えます", "Any AI works — ChatGPT, Gemini, Claude and more")}</p>
                     {copyOk && (
                       <div className="mt-2 overflow-hidden rounded-xl bg-white ring-1 ring-emerald-200">
                         <p className="flex items-center gap-1.5 border-b border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-800">
                           <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                          コピーしたプロンプト（この内容をAIに送ります）
+                          {t("コピーしたプロンプト（この内容をAIに送ります）", "The copied prompt (this is what you send to the AI)")}
                         </p>
                         <textarea
                           readOnly
                           value={promptText}
                           rows={4}
-                          aria-label="コピーしたプロンプト"
+                          aria-label={t("コピーしたプロンプト", "Copied prompt")}
                           className="block w-full resize-none bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-600 outline-none"
                         />
                       </div>
@@ -769,30 +789,30 @@ export function PromptTemplateModal({
                   <StepDot n={2} />
                   <div className="min-w-0 flex-1">
                     <span className="text-sm font-semibold text-slate-700">
-                      生成AIのチャット入力欄に、コピーしたプロンプトをペーストして送信する
+                      {t("生成AIのチャット入力欄に、コピーしたプロンプトをペーストして送信する", "Paste the copied prompt into the AI's chat box and send it")}
                     </span>
                     {/* チャット入力欄に、コピーしたプロンプトを貼った様子の絵 */}
                     <div aria-hidden className="mt-2 rounded-2xl bg-slate-100 p-3 pt-9">
                       <div className="relative flex items-end gap-2 rounded-2xl bg-white px-3.5 py-2.5 shadow-sm ring-1 ring-slate-200">
                         <span className="line-clamp-3 min-w-0 flex-1 whitespace-pre-line font-mono text-[10px] leading-snug text-slate-600">
-                          {promptText || "メッセージを入力…"}
+                          {promptText || t("メッセージを入力…", "Type a message…")}
                         </span>
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
                           <ArrowUp className="h-3.5 w-3.5" />
                         </span>
                         <span className="absolute -top-7 left-6 rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow">
-                          ペースト
+                          {t("ペースト", "Paste")}
                           <span className="absolute -bottom-1 left-3 h-2 w-2 rotate-45 bg-slate-900" />
                         </span>
                       </div>
-                      <p className="mt-2 text-[11px] text-slate-500">スマホは入力欄を長押し →「ペースト」／PCは Ctrl+V（Macは ⌘+V）</p>
+                      <p className="mt-2 text-[11px] text-slate-500">{t("スマホは入力欄を長押し →「ペースト」／PCは Ctrl+V（Macは ⌘+V）", "On a phone, long-press the box → “Paste”; on a computer, Ctrl+V (⌘+V on Mac)")}</p>
                     </div>
                   </div>
                 </li>
                 <li className="flex gap-3">
                   <StepDot n={3} />
                   <span className="text-sm font-semibold text-slate-700">
-                    返ってきたコードを全部コピーして、ジサップに戻って貼り付ける
+                    {t("返ってきたコードを全部コピーして、ジサップに戻って貼り付ける", "Copy all the code it returns, come back to Jisapp and paste it")}
                   </span>
                 </li>
               </ol>
@@ -800,16 +820,16 @@ export function PromptTemplateModal({
             <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white/80 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               <button type="button" onClick={() => onLaunch(ai)} className={PRIMARY_BUTTON}>
                 <ClipboardPaste className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                AIに送ったら、コードを貼り付けへ
+                {t("AIに送ったら、コードを貼り付けへ", "Sent it? Go paste the code")}
               </button>
               <div className="flex items-center justify-center gap-5 text-xs font-semibold text-slate-500">
                 <button type="button" onClick={onRecopy} className="flex items-center gap-1 hover:text-slate-800">
                   <Copy className="h-3.5 w-3.5" />
-                  もう一度コピー
+                  {t("もう一度コピー", "Copy again")}
                 </button>
                 <button type="button" onClick={onEdit} className="flex items-center gap-1 hover:text-slate-800">
                   <RotateCcw className="h-3.5 w-3.5" />
-                  内容を直す
+                  {t("内容を直す", "Edit the details")}
                 </button>
               </div>
             </div>
@@ -893,6 +913,7 @@ function StepDot({ n }: { n: number }) {
 // ─── プレビューが空のとき ───
 
 export function PreviewEmpty({ onRunSample }: { onRunSample: () => void }) {
+  const t = useT();
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 text-center">
       <div className="relative mb-6">
@@ -904,9 +925,9 @@ export function PreviewEmpty({ onRunSample }: { onRunSample: () => void }) {
           <div className="absolute inset-x-3 bottom-3 h-6 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500" />
         </div>
       </div>
-      <p className="text-base font-bold text-slate-800">ここでアプリが動きます</p>
+      <p className="text-base font-bold text-slate-800">{t("ここでアプリが動きます", "Your app runs here")}</p>
       <p className="mt-1 max-w-xs text-sm leading-relaxed text-slate-500">
-        AIのコードを貼ると、すぐにこの画面で動きます。
+        {t("AIのコードを貼ると、すぐにこの画面で動きます。", "Paste the AI's code and it runs right here.")}
       </p>
       <button
         type="button"
@@ -914,7 +935,7 @@ export function PreviewEmpty({ onRunSample }: { onRunSample: () => void }) {
         className="mt-5 flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-50"
       >
         <Play className="h-3.5 w-3.5" />
-        サンプルを動かしてみる
+        {t("サンプルを動かしてみる", "Try the sample")}
       </button>
     </div>
   );

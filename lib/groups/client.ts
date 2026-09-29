@@ -64,7 +64,7 @@ export function inviteUrl(appId: string, inviteToken: string): string {
   return `${origin}/apps/${appId}?g=${encodeURIComponent(inviteToken)}`;
 }
 
-/** コードがグループ共有（Zisup.shared）を使っているか */
+/** コードがグループ共有（Jisapp.shared／旧名 Zisup.shared）を使っているか */
 export function usesSharedData(code: string): boolean {
-  return /Zisup\s*\.\s*shared\s*\./.test(code);
+  return /(?:Jisapp|Zisup)\s*\.\s*shared\s*\./.test(code);
 }

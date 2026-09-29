@@ -7,6 +7,8 @@ import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { localizePath } from "@/lib/i18n/config";
 import {
   Package,
   ShieldCheck,
@@ -49,6 +51,8 @@ type RequestItem = {
 };
 
 export default function MyPage() {
+  const t = useT();
+  const locale = useLocale();
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -135,7 +139,7 @@ export default function MyPage() {
   const purchasedAppData = apiPurchases.map((p) => ({
     id: String(p.id),
     name: p.title,
-    category: p.category ?? "その他",
+    category: p.category ?? t("その他", "Other"),
     is_playground_app: Boolean(p.is_playground_app),
   }));
 
@@ -161,7 +165,7 @@ export default function MyPage() {
   }
 
   // セッションユーザー情報
-  const userName  = session?.user?.name  ?? "ジサップユーザー";
+  const userName  = session?.user?.name  ?? t("ジサップユーザー", "Jisapp user");
   const userEmail = session?.user?.email ?? "";
   const userImage = session?.user?.image ?? null;
   const initials  = userName.slice(0, 2).toUpperCase();
@@ -175,7 +179,7 @@ export default function MyPage() {
           <BackButton hideLabelOnMobile />
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
-          <span className="text-sm font-semibold text-gray-700">マイページ</span>
+          <span className="text-sm font-semibold text-gray-700">{t("マイページ", "My page")}</span>
         </div>
       </header>
 
@@ -184,21 +188,21 @@ export default function MyPage() {
         {/* ─── やることリスト ─── */}
         {mounted && purchasedApps.length > 0 && (
           <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">やることリスト</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">{t("やることリスト", "To-do")}</p>
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-2.5">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
                   <p className="text-sm text-gray-700">
-                    <span className="font-semibold text-rose-600">納品されたツールがあります。</span>
-                    {" "}実際に動かして問題なければ【受け取り完了】を押してください。
+                    <span className="font-semibold text-rose-600">{t("納品されたツールがあります。", "A tool has been delivered.")}</span>
+                    {t(" 実際に動かして問題なければ【受け取り完了】を押してください。", " Try it out, and if it works, press “Mark as received”.")}
                   </p>
                 </div>
                 <Link
                   href={`/apps/${purchasedApps[0]}/success`}
                   className="shrink-0 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
                 >
-                  動作確認へ
+                  {t("動作確認へ", "Check it")}
                 </Link>
               </div>
               <div className="h-px bg-gray-100" />
@@ -206,14 +210,14 @@ export default function MyPage() {
                 <div className="flex items-start gap-2.5">
                   <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
                   <p className="text-sm text-gray-700">
-                    <span className="font-semibold text-blue-600">依頼者からチャットの返信が届いています。</span>
+                    <span className="font-semibold text-blue-600">{t("依頼者からチャットの返信が届いています。", "You have a new chat reply.")}</span>
                   </p>
                 </div>
                 <Link
                   href="/requests"
                   className="shrink-0 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition-colors"
                 >
-                  チャットを開く
+                  {t("チャットを開く", "Open chat")}
                 </Link>
               </div>
             </div>
@@ -248,25 +252,25 @@ export default function MyPage() {
                   )}
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                     <ShieldCheck className="h-3 w-3" />
-                    本人確認済
+                    {t("本人確認済", "Verified")}
                   </span>
                 </div>
               </div>
               {/* ログアウトボタン */}
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => signOut({ callbackUrl: localizePath("/", locale) })}
                 className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-rose-300 hover:text-rose-500 transition-colors"
               >
                 <LogOut className="h-3.5 w-3.5" />
-                ログアウト
+                {t("ログアウト", "Sign out")}
               </button>
             </div>
             <div className="grid grid-cols-4 gap-2 text-center">
               {[
-                { label: "プロジェクト", value: mounted ? (myListings.length + (playgroundCode ? 1 : 0)) : "—" },
-                { label: "取得アプリ",   value: mounted ? purchasedApps.length     : "—" },
-                { label: "フォロー",     value: mounted ? followedCreators.length  : "—" },
-                { label: "お気に入り",   value: mounted ? savedApps.length         : "—" },
+                { label: t("プロジェクト", "Projects"), value: mounted ? (myListings.length + (playgroundCode ? 1 : 0)) : "—" },
+                { label: t("取得アプリ", "Apps"), value: mounted ? purchasedApps.length     : "—" },
+                { label: t("フォロー", "Following"), value: mounted ? followedCreators.length  : "—" },
+                { label: t("お気に入り", "Favorites"), value: mounted ? savedApps.length         : "—" },
               ].map(s => (
                 <div key={s.label} className="rounded-xl bg-gray-50 py-2">
                   <p className="text-base font-bold text-gray-900">{s.value}</p>
@@ -278,19 +282,19 @@ export default function MyPage() {
 
           {/* ライブラリ情報 */}
           <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-            <p className="mb-1 text-xs text-gray-400">取得済みアプリ</p>
+            <p className="mb-1 text-xs text-gray-400">{t("取得済みアプリ", "Apps you got")}</p>
             <p className="text-3xl font-bold tracking-tight text-gray-900">
               {mounted ? purchasedApps.length : "—"}
-              <span className="ml-1 text-sm font-medium text-gray-400">件</span>
+              {t(<span className="ml-1 text-sm font-medium text-gray-400">件</span>, null)}
             </p>
-            <p className="mt-0.5 text-xs text-gray-400">取得済みアプリの数</p>
+            <p className="mt-0.5 text-xs text-gray-400">{t("取得済みアプリの数", "Number of apps you got")}</p>
             <div className="mt-4 border-t border-gray-100 pt-4">
               <Link
                 href="/search"
                 className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition-colors"
               >
                 <Package className="h-4 w-4" />
-                アプリを探す →
+                {t("アプリを探す →", "Browse apps →")}
               </Link>
             </div>
           </div>
@@ -301,7 +305,7 @@ export default function MyPage() {
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
             <div className="flex items-center gap-2">
               <Code2 className="h-4 w-4 text-teal-500" />
-              <h2 className="text-sm font-bold text-gray-700">マイプロジェクト</h2>
+              <h2 className="text-sm font-bold text-gray-700">{t("マイプロジェクト", "My projects")}</h2>
               {mounted && (
                 <span className="ml-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700">
                   {myListings.length + (playgroundCode ? 1 : 0)}
@@ -313,7 +317,7 @@ export default function MyPage() {
               className="flex items-center gap-1 text-xs font-semibold text-teal-600 hover:text-teal-700"
             >
               <FolderOpen className="h-3.5 w-3.5" />
-              すべて見る
+              {t("すべて見る", "See all")}
             </Link>
           </div>
 
@@ -329,10 +333,10 @@ export default function MyPage() {
                       <Code2 className="h-5 w-5 text-teal-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 text-sm">開発スタジオの作業中コード</p>
+                      <p className="font-bold text-gray-900 text-sm">{t("開発スタジオの作業中コード", "Work in progress in the Studio")}</p>
                       <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {playgroundLines} 行 · {playgroundCode.length.toLocaleString()} 文字
+                        {t(`${playgroundLines} 行 · ${playgroundCode.length.toLocaleString()} 文字`, `${playgroundLines} lines · ${playgroundCode.length.toLocaleString()} characters`)}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
@@ -341,14 +345,14 @@ export default function MyPage() {
                         className="flex items-center gap-1 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
                       >
                         <Edit3 className="h-3 w-3" />
-                        編集
+                        {t("編集", "Edit")}
                       </Link>
                       <Link
                         href="/create"
                         className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:from-emerald-700 hover:to-teal-700 transition-colors"
                       >
                         <Upload className="h-3 w-3 shrink-0" strokeWidth={2} />
-                        出品
+                        {t("出品", "Publish")}
                       </Link>
                     </div>
                   </div>
@@ -369,7 +373,7 @@ export default function MyPage() {
                               ? "bg-amber-50 text-amber-600"
                               : "bg-emerald-50 text-emerald-700"
                           }`}>
-                            {app.status === "pending" ? "審査中" : "掲載中"}
+                            {app.status === "pending" ? t("審査中", "In review") : t("掲載中", "Live")}
                           </span>
                           {app.category && <span className="text-[10px] text-gray-400">{app.category}</span>}
                         </div>
@@ -380,7 +384,7 @@ export default function MyPage() {
                       className="shrink-0 flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      詳細
+                      {t("詳細", "Details")}
                     </Link>
                   </div>
                 ))}
@@ -392,15 +396,15 @@ export default function MyPage() {
                       <Code2 className="h-7 w-7 text-gray-300" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-500">まだプロジェクトがありません</p>
-                      <p className="text-xs text-gray-400 mt-0.5">開発スタジオでコードを作ってみよう</p>
+                      <p className="text-sm font-semibold text-gray-500">{t("まだプロジェクトがありません", "No projects yet")}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t("開発スタジオでコードを作ってみよう", "Make something in the Studio")}</p>
                     </div>
                     <Link
                       href="/playground"
                       className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition-colors"
                     >
                       <Code2 className="h-4 w-4" />
-                      開発スタジオを開く
+                      {t("開発スタジオを開く", "Open the Studio")}
                     </Link>
                   </div>
                 )}
@@ -412,7 +416,7 @@ export default function MyPage() {
                     className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-teal-200 py-3 text-sm font-semibold text-teal-500 hover:border-teal-400 hover:bg-teal-50 transition-all"
                   >
                     <Plus className="h-4 w-4" />
-                    新しいプロジェクトを作る
+                    {t("新しいプロジェクトを作る", "Start a new project")}
                   </Link>
                 )}
               </>
@@ -425,7 +429,7 @@ export default function MyPage() {
           <div className="border-b border-gray-100 px-5 py-4">
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-emerald-600" />
-              <h2 className="text-sm font-bold text-gray-700">取得・お気に入り</h2>
+              <h2 className="text-sm font-bold text-gray-700">{t("取得・お気に入り", "Your apps & favorites")}</h2>
             </div>
           </div>
 
@@ -433,7 +437,7 @@ export default function MyPage() {
 
             {/* GETしたアプリ */}
             <section className="p-5">
-              <SectionTitle icon={<Package className="h-4 w-4 text-emerald-600" />} label="GETしたアプリ一覧" count={mounted ? purchasedAppData.length : null} />
+              <SectionTitle icon={<Package className="h-4 w-4 text-emerald-600" />} label={t("GETしたアプリ一覧", "Apps you got")} count={mounted ? purchasedAppData.length : null} />
               {mounted ? (
                 purchasedAppData.length > 0 ? (
                   <div className="mt-3 space-y-2">
@@ -448,14 +452,14 @@ export default function MyPage() {
                           className="shrink-0 flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors"
                         >
                           <ExternalLink className="h-3 w-3" />
-                          {app.is_playground_app ? "起動" : "開く"}
+                          {app.is_playground_app ? t("起動", "Launch") : t("開く", "Open")}
                         </Link>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon={<Package className="h-8 w-8" />} text="まだGETしたアプリはありません">
-                    <Link href="/search" className="mt-1 text-xs text-emerald-600 hover:underline">アプリを探す →</Link>
+                  <EmptyState icon={<Package className="h-8 w-8" />} text={t("まだGETしたアプリはありません", "You haven't got any apps yet")}>
+                    <Link href="/search" className="mt-1 text-xs text-emerald-600 hover:underline">{t("アプリを探す →", "Browse apps →")}</Link>
                   </EmptyState>
                 )
               ) : <LoadingRows />}
@@ -463,7 +467,7 @@ export default function MyPage() {
 
             {/* お気に入り */}
             <section className="p-5">
-              <SectionTitle icon={<Heart className="h-4 w-4 text-rose-400" />} label="お気に入りに保存したアプリ" count={mounted ? savedAppData.length : null} />
+              <SectionTitle icon={<Heart className="h-4 w-4 text-rose-400" />} label={t("お気に入りに保存したアプリ", "Favorite apps")} count={mounted ? savedAppData.length : null} />
               {mounted ? (
                 savedAppData.length > 0 ? (
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -484,8 +488,8 @@ export default function MyPage() {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon={<Heart className="h-8 w-8" />} text="まだお気に入りに追加したアプリはありません">
-                    <Link href="/search" className="mt-1 text-xs text-emerald-600 hover:underline">アプリを探す →</Link>
+                  <EmptyState icon={<Heart className="h-8 w-8" />} text={t("まだお気に入りに追加したアプリはありません", "No favorites yet")}>
+                    <Link href="/search" className="mt-1 text-xs text-emerald-600 hover:underline">{t("アプリを探す →", "Browse apps →")}</Link>
                   </EmptyState>
                 )
               ) : <LoadingRows />}
@@ -493,7 +497,7 @@ export default function MyPage() {
 
             {/* フォロー中のクリエイター */}
             <section className="p-5">
-              <SectionTitle icon={<Users className="h-4 w-4 text-blue-400" />} label="フォロー中のクリエイター" count={mounted ? followedCreData.length : null} />
+              <SectionTitle icon={<Users className="h-4 w-4 text-blue-400" />} label={t("フォロー中のクリエイター", "Creators you follow")} count={mounted ? followedCreData.length : null} />
               {mounted ? (
                 followedCreData.length > 0 ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -515,8 +519,8 @@ export default function MyPage() {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon={<Users className="h-8 w-8" />} text="まだフォロー中のクリエイターはいません">
-                    <Link href="/" className="mt-1 text-xs text-emerald-600 hover:underline">クリエイターを探す →</Link>
+                  <EmptyState icon={<Users className="h-8 w-8" />} text={t("まだフォロー中のクリエイターはいません", "You aren't following anyone yet")}>
+                    <Link href="/" className="mt-1 text-xs text-emerald-600 hover:underline">{t("クリエイターを探す →", "Find creators →")}</Link>
                   </EmptyState>
                 )
               ) : <LoadingRows />}
@@ -525,8 +529,8 @@ export default function MyPage() {
             {/* 投稿したリクエスト */}
             <section className="p-5">
               <div className="flex items-center justify-between">
-                <SectionTitle icon={<Wrench className="h-4 w-4 text-amber-500" />} label="投稿したリクエスト履歴" count={mounted ? myRequests.length : null} />
-                <Link href="/requests" className="text-xs text-emerald-600 hover:underline">すべて見る →</Link>
+                <SectionTitle icon={<Wrench className="h-4 w-4 text-amber-500" />} label={t("投稿したリクエスト履歴", "Your requests")} count={mounted ? myRequests.length : null} />
+                <Link href="/requests" className="text-xs text-emerald-600 hover:underline">{t("すべて見る →", "See all →")}</Link>
               </div>
               {mounted ? (
                 myRequests.length > 0 ? (
@@ -535,14 +539,14 @@ export default function MyPage() {
                       <div key={req.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-slate-50/80 px-4 py-3">
                         <p className="flex-1 truncate text-sm text-gray-800">{req.title}</p>
                         <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                          {req.proposalCount ? `${req.proposalCount}名と相談中` : "提案待ち"}
+                          {req.proposalCount ? t(`${req.proposalCount}名と相談中`, `Talking with ${req.proposalCount}`) : t("提案待ち", "Waiting for offers")}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon={<Wrench className="h-8 w-8" />} text="まだリクエストを投稿していません">
-                    <Link href="/requests" className="mt-1 text-xs text-emerald-600 hover:underline">リクエストを投稿する →</Link>
+                  <EmptyState icon={<Wrench className="h-8 w-8" />} text={t("まだリクエストを投稿していません", "You haven't posted any requests yet")}>
+                    <Link href="/requests" className="mt-1 text-xs text-emerald-600 hover:underline">{t("リクエストを投稿する →", "Post a request →")}</Link>
                   </EmptyState>
                 )
               ) : <LoadingRows />}

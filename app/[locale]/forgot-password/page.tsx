@@ -4,8 +4,11 @@ import { useState } from "react";
 import Link from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { Mail, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useLocale, useT } from "@/lib/i18n/client";
 
 export default function ForgotPasswordPage() {
+  const t = useT();
+  const locale = useLocale();
   const [email, setEmail]     = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -19,13 +22,13 @@ export default function ForgotPasswordPage() {
       const res  = await fetch("/api/auth/forgot-password", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email }),
+        body:    JSON.stringify({ email, locale }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "送信に失敗しました"); return; }
+      if (!res.ok) { setError(data.error ?? t("送信に失敗しました", "Couldn't send. Please try again.")); return; }
       setSent(true);
     } catch {
-      setError("ネットワークエラーが発生しました");
+      setError(t("ネットワークエラーが発生しました", "A network error occurred"));
     } finally {
       setLoading(false);
     }
@@ -37,7 +40,7 @@ export default function ForgotPasswordPage() {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <JisappLogo href="/" />
           <Link href="/login" className="text-sm text-gray-400 hover:text-emerald-600 transition-colors">
-            ログインに戻る
+            {t("ログインに戻る", "Back to sign in")}
           </Link>
         </div>
       </header>
@@ -48,9 +51,9 @@ export default function ForgotPasswordPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
               <Mail className="h-7 w-7 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-black text-gray-900">パスワードをお忘れですか？</h1>
+            <h1 className="text-2xl font-black text-gray-900">{t("パスワードをお忘れですか？", "Forgot your password?")}</h1>
             <p className="mt-1.5 text-sm text-gray-500">
-              登録したメールアドレスを入力してください
+              {t("登録したメールアドレスを入力してください", "Enter the email address you signed up with")}
             </p>
           </div>
 
@@ -60,17 +63,18 @@ export default function ForgotPasswordPage() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                   <CheckCircle2 className="h-8 w-8 text-emerald-600" />
                 </div>
-                <h2 className="text-lg font-black text-gray-900 mb-2">メールを送信しました</h2>
+                <h2 className="text-lg font-black text-gray-900 mb-2">{t("メールを送信しました", "Email sent")}</h2>
                 <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                  <span className="font-semibold text-emerald-700">{email}</span> に<br />
-                  パスワードリセット用のリンクを送りました。<br />
-                  メールをご確認ください（迷惑メールフォルダも）。
+                  {t(
+                    <><span className="font-semibold text-emerald-700">{email}</span> に<br />パスワードリセット用のリンクを送りました。<br />メールをご確認ください（迷惑メールフォルダも）。</>,
+                    <>We sent a password reset link to<br /><span className="font-semibold text-emerald-700">{email}</span>.<br />Check your inbox (and your spam folder).</>
+                  )}
                 </p>
                 <Link
                   href="/login"
                   className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-emerald-700 hover:to-green-600 transition-all"
                 >
-                  ログインページへ
+                  {t("ログインページへ", "Go to sign in")}
                 </Link>
               </div>
             ) : (
@@ -82,7 +86,7 @@ export default function ForgotPasswordPage() {
                   </div>
                 )}
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">メールアドレス</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("メールアドレス", "Email")}</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
@@ -102,7 +106,7 @@ export default function ForgotPasswordPage() {
                 >
                   {loading
                     ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    : <><ArrowRight className="h-4 w-4" />リセットメールを送信</>
+                    : <><ArrowRight className="h-4 w-4" />{t("リセットメールを送信", "Send reset email")}</>
                   }
                 </button>
               </form>

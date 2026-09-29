@@ -47,10 +47,13 @@ import { AppRunner } from "@/components/app-runner";
 import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
 import {
-  SECRETS_STUDIO_GUIDE,
+  getSecretsStudioGuide,
   buildPromptFromTemplate,
   buildSharedConvertMessage,
 } from "@/lib/playground/prompt-template";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { localizePath } from "@/lib/i18n/config";
+import { categoryName } from "@/lib/categories";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
 import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
@@ -73,12 +76,12 @@ import {
   type StorageChangeFinding,
 } from "@/lib/playground/detect-storage-keys";
 import {
-  TRUNCATED_RETRY_MESSAGE,
+  truncatedRetryMessage,
   detectCodeIssue,
   normalizePastedCode,
   usesStudioSecrets,
   usesLocalStorageOnly,
-  STORAGE_FIX_MESSAGE,
+  storageFixMessage,
 } from "@/lib/playground/code-cleanup";
 import { copyText, copyTextNow, findStudioAi, type StudioAi } from "@/lib/playground/ai-launch";
 import { SAMPLE_APP_HTML } from "@/lib/playground/sample-app";
@@ -197,6 +200,8 @@ function GuideModal({ onClose }: { onClose: () => void }) {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(false);
   const [promptBuilderTab, setPromptBuilderTab] = useState<"template" | "rules">("template");
   const [promptBuilderKey, setPromptBuilderKey] = useState(0);
+  const t = useT();
+  const locale = useLocale();
   const total = 4;
   const isFirst = step === 0;
   const isLast  = step === total - 1;
@@ -231,6 +236,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {/* × 閉じる */}
           <button
             onClick={onClose}
+            aria-label={t("閉じる", "Close")}
             className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/35 transition-colors"
           >
             <X className="h-4 w-4" />
@@ -246,25 +252,25 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             {step === 0 && (
               <span className="flex items-start gap-2">
                 <Lightbulb className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
-                生成AI（ChatGPT・Gemini・Claude）でコードを出力しよう！
+                {t("生成AI（ChatGPT・Gemini・Claude）でコードを出力しよう！", "Get the code from an AI (ChatGPT, Gemini, Claude)!")}
               </span>
             )}
             {step === 1 && (
               <span className="flex items-start gap-2">
                 <Wrench className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
-                ジサップで動かして、AIと調整しよう！
+                {t("ジサップで動かして、AIと調整しよう！", "Run it on Jisapp and fine-tune it with AI!")}
               </span>
             )}
             {step === 2 && (
               <span className="flex items-start gap-2">
                 <Save className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
-                完成したら、名前をつけて保存しよう！
+                {t("完成したら、名前をつけて保存しよう！", "When it's done, name it and save it!")}
               </span>
             )}
             {step === 3 && (
               <span className="flex items-start gap-2">
                 <Upload className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
-                世界にひとつだけのアプリを出品しよう！
+                {t("世界にひとつだけのアプリを出品しよう！", "Publish your one-of-a-kind app!")}
               </span>
             )}
           </h2>
@@ -275,6 +281,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <button
                 key={i}
                 onClick={() => setStep(i)}
+                aria-label={t(`ステップ ${i + 1}`, `Step ${i + 1}`)}
                 className={cn(
                   "rounded-full transition-all",
                   i === step ? "h-2 w-7 bg-white" : "h-2 w-2 bg-white/40 hover:bg-white/60"
@@ -301,33 +308,32 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 initialTab={promptBuilderTab}
               />
               <p className="text-base font-bold leading-relaxed text-[#334155]">
-                プログラミング知識ゼロでOK！<br />
-                作りたいアプリを入力して、完成した指示文をAIに送ろう
+                {t(<>プログラミング知識ゼロでOK！<br />作りたいアプリを入力して、完成した指示文をAIに送ろう</>, <>No coding knowledge needed!<br />Type the app you want, then send the finished instructions to an AI</>)}
               </p>
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
                 <div className="border-b border-sky-200 bg-sky-600 px-4 py-2.5">
                   <span className="inline-flex items-center gap-1.5 text-xs font-black text-white">
-                    ジサップ専用プロンプト
+                    {t("ジサップ専用プロンプト", "Jisapp prompt")}
                   </span>
                 </div>
                 <div className="space-y-3 px-4 py-4">
                   <p className="text-sm leading-relaxed text-slate-700">
-                    チャットの質問に答えると、ジサップ用のルールが入った指示文ができます。コピーして ChatGPT・Claude・Gemini などに貼り付けて送ってください。
+                    {t("チャットの質問に答えると、ジサップ用のルールが入った指示文ができます。コピーして ChatGPT・Claude・Gemini などに貼り付けて送ってください。", "Answer a few questions in the chat and you'll get instructions with Jisapp's rules built in. Copy them and send them to ChatGPT, Claude, Gemini or another AI.")}
                   </p>
                   <button
                     type="button"
                     onClick={() => openPromptBuilder("template")}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-black text-sky-700 shadow-sm ring-1 ring-sky-200 transition-all hover:bg-sky-50 active:scale-[0.99]"
                   >
-                    チャットからプロンプトを作成
+                    {t("チャットからプロンプトを作成", "Make a prompt with the chat")}
                   </button>
                   <button
                     type="button"
                     onClick={() => openPromptBuilder("rules")}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 py-2.5 text-xs font-bold text-amber-800 ring-1 ring-amber-200 transition-all hover:bg-amber-100 active:scale-[0.99]"
                   >
-                    必須ルールだけコピー（自分で書く人向け）
+                    {t("必須ルールだけコピー（自分で書く人向け）", "Copy just the required rules (if you write your own)")}
                   </button>
                 </div>
               </div>
@@ -335,23 +341,23 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <div className="rounded-2xl bg-amber-100 border border-amber-300 px-4 py-3">
                 <p className="flex items-center gap-1.5 text-sm font-black text-amber-800">
                   <Lightbulb className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                  自分でプロンプトを書く場合
+                  {t("自分でプロンプトを書く場合", "If you write your own prompt")}
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-amber-700">
-                  要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。チャットなら質問に答えるだけで指示文ができます。
+                  {t("要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。チャットなら質問に答えるだけで指示文ができます。", "Write your requests however you like. Paste “just the required rules” at the end so saving and API keys are handled correctly. With the chat, you just answer questions.")}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
                 <p className="flex items-center gap-1.5 text-sm font-black text-violet-900">
                   <KeyRound className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                  AI・天気APIなどを使う場合
+                  {t("AI・天気APIなどを使う場合", "Using AI, a weather API, etc.")}
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-violet-800">
-                  {SECRETS_STUDIO_GUIDE}
+                  {getSecretsStudioGuide(locale)}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-violet-700">
-                  プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、右上の「…」メニューの「APIキーの登録」から登録してください。
+                  {t("プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、右上の「…」メニューの「APIキーの登録」から登録してください。", "The prompt also includes the rule “never write API keys in the code”. After the AI gives you code, register your key from “Register API key” in the “…” menu at the top right.")}
                 </p>
               </div>
             </div>
@@ -362,53 +368,53 @@ function GuideModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-4">
               <p className="flex items-center gap-2 text-base font-bold leading-relaxed text-[#334155]">
                 <Wrench className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                エラーもデザインも、AIに丸投げでOK！
+                {t("エラーもデザインも、AIに丸投げでOK！", "Leave errors and design to the AI!")}
               </p>
 
               <div className="space-y-2.5">
                 <div className="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3.5">
                   <p className="mb-2 flex items-center gap-1.5 text-sm font-black text-amber-800">
-                    困ったらこのまま貼るだけ
+                    {t("困ったらこのまま貼るだけ", "Stuck? Just paste one of these")}
                     <ArrowDown className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="shrink-0 text-sm">・動かない時</span>
+                      <span className="shrink-0 text-sm">{t("・動かない時", "• When it doesn't work")}</span>
                       <span className="inline-flex items-center gap-1 rounded-lg bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-900">
                         <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                        「このエラーを直して」
+                        {t("「このエラーを直して」", "“Fix this error”")}
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="shrink-0 text-sm">・変えたい時</span>
+                      <span className="shrink-0 text-sm">{t("・変えたい時", "• When you want changes")}</span>
                       <span className="inline-flex items-center gap-1 rounded-lg bg-amber-200 px-2 py-0.5 text-sm font-bold text-amber-900">
                         <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                        「もっと明るい色にして」
+                        {t("「もっと明るい色にして」", "“Use brighter colors”")}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-2xl bg-sky-50 border border-sky-200 px-4 py-3.5">
-                  <p className="text-sm font-black text-sky-800 mb-1.5">慣れてきたら…</p>
+                  <p className="text-sm font-black text-sky-800 mb-1.5">{t("慣れてきたら…", "Once you get the hang of it…")}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {["機能を追加して", "もっとおしゃれにして"].map((t) => (
-                      <span key={t} className="inline-flex items-center gap-1.5 rounded-full bg-sky-200 px-3 py-1 text-xs font-bold text-sky-800">
+                    {[t("機能を追加して", "Add a feature"), t("もっとおしゃれにして", "Make it more stylish")].map((phrase) => (
+                      <span key={phrase} className="inline-flex items-center gap-1.5 rounded-full bg-sky-200 px-3 py-1 text-xs font-bold text-sky-800">
                         <MessageCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                        「{t}」
+                        {t(`「${phrase}」`, `“${phrase}”`)}
                       </span>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-sky-700 leading-relaxed">AIと会話しながら自分だけのアプリを完成させよう！</p>
+                  <p className="mt-2 text-xs text-sky-700 leading-relaxed">{t("AIと会話しながら自分だけのアプリを完成させよう！", "Chat with the AI to finish your very own app!")}</p>
                 </div>
 
                 <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3.5">
                   <p className="mb-1 flex items-center gap-1.5 text-sm font-black text-violet-900">
                     <KeyRound className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                    APIキーが必要なアプリ
+                    {t("APIキーが必要なアプリ", "Apps that need an API key")}
                   </p>
                   <p className="text-xs leading-relaxed text-violet-800">
-                    コードにキーを書かず、右上の「…」メニューの「APIキーの登録」から登録。AIがコード内で指定した secret 名（例: secret: &apos;WEATHER&apos;）と同じ名前で登録してください。
+                    {t("コードにキーを書かず、右上の「…」メニューの「APIキーの登録」から登録。AIがコード内で指定した secret 名（例: secret: &apos;WEATHER&apos;）と同じ名前で登録してください。", "Don't write the key in the code — register it from “Register API key” in the “…” menu at the top right, using the same secret name the AI used in the code (e.g. secret: &apos;WEATHER&apos;).")}
                   </p>
                 </div>
               </div>
@@ -419,17 +425,19 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {step === 2 && (
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
-                いい感じに動いたら<br />
-                <span className="text-emerald-600">「下書き保存」</span>を押そう！（右上の「…」メニューにもあります）
+                {t(
+                  <>いい感じに動いたら<br /><span className="text-emerald-600">「下書き保存」</span>を押そう！（右上の「…」メニューにもあります）</>,
+                  <>Once it works nicely,<br />press <span className="text-emerald-600">“Save draft”</span>! (It's also in the “…” menu at the top right.)</>
+                )}
               </p>
 
               <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-4">
                 <p className="mb-1 flex items-center gap-1.5 text-sm font-black text-emerald-700">
                   <FolderOpen className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                  マイプロジェクトに保存されるよ
+                  {t("マイプロジェクトに保存されるよ", "It's saved to My projects")}
                 </p>
                 <p className="text-sm leading-relaxed text-emerald-700">
-                  ブラウザを閉じても消えない。<br />いつでも続きから再開できる！
+                  {t(<>ブラウザを閉じても消えない。<br />いつでも続きから再開できる！</>, <>It stays even after you close the browser.<br />Pick up where you left off anytime!</>)}
                 </p>
               </div>
             </div>
@@ -439,18 +447,18 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {step === 3 && (
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
-                いよいよクリエイターデビュー！<br />
+                {t("いよいよクリエイターデビュー！", "Time for your creator debut!")}<br />
                 <span className="inline-flex items-center gap-1.5">
-                  マーケットに出品しよう
+                  {t("マーケットに出品しよう", "List it in the market")}
                   <CheckCircle2 className="h-5 w-5 shrink-0" strokeWidth={2.5} />
                 </span>
               </p>
 
               <div className="space-y-2">
                 {[
-                  { num: "①", text: "「マイプロジェクト」ページへ移動" },
-                  { num: "②", text: "カードの「出品する」を押す" },
-                  { num: "③", text: "紹介文とアイコンを決めて完了！" },
+                  { num: "①", text: t("「マイプロジェクト」ページへ移動", "Go to the “My projects” page") },
+                  { num: "②", text: t("カードの「出品する」を押す", "Press “Publish” on the card") },
+                  { num: "③", text: t("紹介文とアイコンを決めて完了！", "Add a description and icon — done!") },
                 ].map(item => (
                   <div key={item.num} className="flex items-center gap-3 rounded-2xl bg-violet-50 px-4 py-3">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500 text-sm font-black text-white">
@@ -463,7 +471,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
 
               <div className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 px-4 py-3 text-sm font-bold text-violet-800 text-center">
                 <Globe className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                世界中の人があなたのアプリを使える！
+                {t("世界中の人があなたのアプリを使える！", "People all over the world can use your app!")}
               </div>
             </div>
           )}
@@ -478,7 +486,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-all"
             >
               <ArrowLeft className="h-4 w-4" />
-              戻る
+              {t("戻る", "Back")}
             </button>
           ) : (
             <div className="w-[88px]" /> // 戻るボタンと同幅のスペーサー
@@ -491,14 +499,14 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-[0.97]"
             >
               <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} />
-              閉じる（さっそく作ってみる！）
+              {t("閉じる（さっそく作ってみる！）", "Close (let's make something!)")}
             </button>
           ) : (
             <button
               onClick={() => setStep((s) => s + 1)}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#334155] py-2.5 text-sm font-black text-white hover:bg-slate-600 transition-all active:scale-[0.97]"
             >
-              次へ
+              {t("次へ", "Next")}
               <ArrowRight className="h-4 w-4" />
             </button>
           )}
@@ -511,6 +519,8 @@ function GuideModal({ onClose }: { onClose: () => void }) {
 // ─── メインページ ───
 export default function PlaygroundPage() {
   const { data: session, status: sessionStatus } = useSession();
+  const t = useT();
+  const locale = useLocale();
   const isLoggedIn = sessionStatus === "authenticated" && !!session?.user;
 
   // ── コード状態（デフォルト空：ガイドを表示するため） ──
@@ -718,10 +728,10 @@ export default function PlaygroundPage() {
   }, [isRepublish]);
 
   const handlePublish = async () => {
-    const title = publishTitle.trim() || "開発スタジオアプリ";
+    const title = publishTitle.trim() || t("開発スタジオアプリ", "Studio app");
     if (!code.trim() || publishing) return;
     if (publishListed && !publishCategory) {
-      setToast({ msg: "カテゴリを選択してください", show: true });
+      setToast({ msg: t("カテゴリを選択してください", "Please choose a category"), show: true });
       setTimeout(() => setToast({ msg: "", show: false }), 3000);
       return;
     }
@@ -742,7 +752,7 @@ export default function PlaygroundPage() {
         if (res.ok) {
           const data = (await res.json()) as { html_code?: string };
           const prevCode = data.html_code ?? "";
-          const storageDiff = compareStorageUsage(prevCode, code);
+          const storageDiff = compareStorageUsage(prevCode, code, locale);
           if (hasStorageWarnings(storageDiff)) {
             setStorageFindings(storageDiff);
             setStorageWarningOpen(true);
@@ -758,7 +768,7 @@ export default function PlaygroundPage() {
   };
 
   const executePublish = async () => {
-    const title = publishTitle.trim() || "開発スタジオアプリ";
+    const title = publishTitle.trim() || t("開発スタジオアプリ", "Studio app");
     if (!code.trim() || publishing) return;
     setPublishing(true);
     setPublishError(null);
@@ -782,8 +792,8 @@ export default function PlaygroundPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? (isRepublish ? "上書きに失敗しました" : "出品に失敗しました"));
-      const appUrl = `${window.location.origin}/apps/${json.id}`;
+      if (!res.ok) throw new Error(json.error ?? (isRepublish ? t("上書きに失敗しました", "Couldn't update the app") : t("出品に失敗しました", "Couldn't publish the app")));
+      const appUrl = `${window.location.origin}${localizePath(`/apps/${json.id}`, locale)}`;
       setPublishedUrl(appUrl);
       setLastPublishWasOverwrite(overwriting);
       setPublishContext((prev) => ({ projectId: prev?.projectId, appId: json.id }));
@@ -804,7 +814,7 @@ export default function PlaygroundPage() {
         localStorage.setItem("jisapp_published_map", JSON.stringify(map));
       } catch { /* noop */ }
     } catch (e) {
-      setPublishError(e instanceof Error ? e.message : "出品に失敗しました");
+      setPublishError(e instanceof Error ? e.message : t("出品に失敗しました", "Couldn't publish the app"));
     } finally {
       setPublishing(false);
     }
@@ -1006,8 +1016,8 @@ export default function PlaygroundPage() {
   // 検索語が変わったときだけ先頭マッチへ移動（入力中のコード編集では飛ばない）
   useEffect(() => {
     if (!searchQuery.trim()) return;
-    const t = window.setTimeout(() => selectMatchAt(0), 0);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => selectMatchAt(0), 0);
+    return () => window.clearTimeout(timer);
     // selectMatchAt は code 変更でも変わるが、ここでは query 変更時のみ実行したい
     // eslint-disable-next-line react-hooks/exhaustive-deps -- searchQuery only
   }, [searchQuery]);
@@ -1047,7 +1057,7 @@ export default function PlaygroundPage() {
     // SNS のアプリ内ブラウザなどで読めないときは、手で貼る枠に切り替える
     if (code.trim()) {
       setActivePane("editor");
-      showToast("コード欄を長押しして「ペースト」してください");
+      showToast(t("コード欄を長押しして「ペースト」してください", "Long-press the code box and choose “Paste”"));
       requestAnimationFrame(() => getActiveTextarea()?.select());
       return;
     }
@@ -1066,6 +1076,7 @@ export default function PlaygroundPage() {
       useJisappDesign: ideaOptions.useJisappDesign,
       storage: ideaOptions.needSave ? "zisup" : "local",
       shared: ideaOptions.shared,
+      locale,
     });
 
   /** コピーを試し、できたかどうかを「コピーしました」画面に反映する */
@@ -1094,7 +1105,7 @@ export default function PlaygroundPage() {
   /** テンプレートからプロンプトを作ってコピーする。コピーしたことを先にはっきり見せる */
   const createPrompt = () => {
     if (!idea.trim()) {
-      setIdeaError("作りたいものを書いてください");
+      setIdeaError(t("作りたいものを書いてください", "Tell us what you want to make"));
       return;
     }
     void copyPromptAndShow(buildPrompt());
@@ -1107,7 +1118,7 @@ export default function PlaygroundPage() {
       return;
     }
     void copyPromptAndShow(prompt).then((ok) => {
-      if (ok) showToast("プロンプトをもう一度コピーしました");
+      if (ok) showToast(t("プロンプトをもう一度コピーしました", "Copied the prompt again"));
     });
   };
 
@@ -1126,7 +1137,7 @@ export default function PlaygroundPage() {
 
   const runSample = () => {
     applyIncomingCode(SAMPLE_APP_HTML);
-    showToast("サンプルを動かしました");
+    showToast(t("サンプルを動かしました", "Running the sample"));
   };
 
   const startOver = () => {
@@ -1177,7 +1188,7 @@ export default function PlaygroundPage() {
       }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "準備に失敗しました");
+    if (!res.ok) throw new Error(data.error ?? t("準備に失敗しました", "Couldn't get things ready"));
     const appId = data.appId as string;
     setPublishContext((prev) => ({ ...prev, appId }));
     try {
@@ -1208,9 +1219,9 @@ export default function PlaygroundPage() {
     if (await copyText(code)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      showToast("コードを全部コピーしました");
+      showToast(t("コードを全部コピーしました", "Copied all the code"));
     } else {
-      showToast("コピーできませんでした。「ファイル保存」を使ってください");
+      showToast(t("コピーできませんでした。「ファイル保存」を使ってください", "Couldn't copy. Use “Save file” instead"));
     }
   };
 
@@ -1261,15 +1272,15 @@ export default function PlaygroundPage() {
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast(`${fileName} を保存しました`);
+      showToast(t(`${fileName} を保存しました`, `Saved ${fileName}`));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(code);
-      showToast("このブラウザでは保存できないため、コードをコピーしました。メモアプリに貼り付けてください");
+      showToast(t("このブラウザでは保存できないため、コードをコピーしました。メモアプリに貼り付けてください", "This browser can't save files, so we copied the code. Paste it into a notes app"));
     } catch {
-      showToast("保存できませんでした。コードを選択してコピーしてください");
+      showToast(t("保存できませんでした。コードを選択してコピーしてください", "Couldn't save. Please select the code and copy it"));
     }
   };
 
@@ -1307,9 +1318,9 @@ export default function PlaygroundPage() {
         body: JSON.stringify({ html_code: code, css_code: "", js_code: "" }),
       });
       if (!res.ok) {
-        showToast("ローカルに保存しました（サーバー保存は失敗）");
+        showToast(t("ローカルに保存しました（サーバー保存は失敗）", "Saved on this device (saving to the server failed)"));
       } else {
-        showToast(`「${title}」を保存しました`);
+        showToast(t(`「${title}」を保存しました`, `Saved “${title}”`));
         // ログイン済みならマイプロジェクトにも登録
         if (session?.user) {
           await fetch("/api/my-projects", {
@@ -1320,7 +1331,7 @@ export default function PlaygroundPage() {
         }
       }
     } catch {
-      showToast("ローカルに保存しました（オフライン）");
+      showToast(t("ローカルに保存しました（オフライン）", "Saved on this device (offline)"));
     }
 
     // 「保存してから戻る」フローの場合は離脱
@@ -1345,7 +1356,7 @@ export default function PlaygroundPage() {
         try {
           await ensurePreviewAppId();
         } catch (e) {
-          showToast(e instanceof Error ? e.message : "APIキーの準備に失敗しました");
+          showToast(e instanceof Error ? e.message : t("APIキーの準備に失敗しました", "Couldn't get API keys ready"));
           return;
         } finally {
           setApiKeysLoading(false);
@@ -1527,17 +1538,17 @@ export default function PlaygroundPage() {
         <div className="flex shrink-0 items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">コードが途中で切れているようです</p>
-            <p className="mt-0.5 text-amber-800">AIに続きを頼んで、最初から最後まで全部を貼り直してください。</p>
+            <p className="font-semibold">{t("コードが途中で切れているようです", "The code seems to be cut off")}</p>
+            <p className="mt-0.5 text-amber-800">{t("AIに続きを頼んで、最初から最後まで全部を貼り直してください。", "Ask the AI for the rest, then paste the whole thing again from start to finish.")}</p>
           </div>
           <button
             type="button"
             onClick={() => {
-              void copyText(TRUNCATED_RETRY_MESSAGE).then((ok) => showToast(ok ? "AIに送る文をコピーしました" : "コピーできませんでした"));
+              void copyText(truncatedRetryMessage(locale)).then((ok) => showToast(ok ? t("AIに送る文をコピーしました", "Copied a message to send to the AI") : t("コピーできませんでした", "Couldn't copy")));
             }}
             className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100"
           >
-            依頼文をコピー
+            {t("依頼文をコピー", "Copy the request")}
           </button>
         </div>
       )}
@@ -1545,21 +1556,23 @@ export default function PlaygroundPage() {
         <div className="flex shrink-0 items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p>
-            <span className="font-semibold">HTMLのコードではないようです。</span>
-            AIの返事のうち、<code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code> から始まる部分をコピーしてください。
+            {t(
+              <><span className="font-semibold">HTMLのコードではないようです。</span>AIの返事のうち、<code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code> から始まる部分をコピーしてください。</>,
+              <><span className="font-semibold">This doesn't look like HTML code.</span> Copy the part of the AI's reply that starts with <code className="rounded bg-amber-100 px-1">&lt;!DOCTYPE html&gt;</code>.</>
+            )}
           </p>
         </div>
       )}
       {needsKeys && (
         <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
           <Key className="h-4 w-4 shrink-0 text-slate-400" />
-          <p className="min-w-0 flex-1">このアプリは外部サービスのAPIキーを使います</p>
+          <p className="min-w-0 flex-1">{t("このアプリは外部サービスのAPIキーを使います", "This app uses an API key for an external service")}</p>
           <button
             type="button"
             onClick={() => void openApiKeys()}
             className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
           >
-            {apiKeysLoading ? "準備中…" : "キーを登録"}
+            {apiKeysLoading ? t("準備中…", "Preparing…") : t("キーを登録", "Register key")}
           </button>
         </div>
       )}
@@ -1567,8 +1580,10 @@ export default function PlaygroundPage() {
         <div className="flex shrink-0 items-start gap-2.5 border-b border-emerald-100 bg-emerald-50/70 px-4 py-2.5 text-xs leading-relaxed text-emerald-900">
           <Users className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
           <p className="min-w-0 flex-1">
-            <span className="font-semibold">グループ共有を使うアプリです。</span>
-            スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。
+            {t(
+              <><span className="font-semibold">グループ共有を使うアプリです。</span>スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。</>,
+              <><span className="font-semibold">This app uses group sharing.</span> In the Studio it runs on test data kept only on this device. After publishing, choose “Create a group” on the app's page to share it with the members you invite.</>
+            )}
           </p>
         </div>
       )}
@@ -1576,30 +1591,32 @@ export default function PlaygroundPage() {
         <div className="flex shrink-0 items-start gap-2.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
           <Database className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
           <p className="min-w-0 flex-1 leading-relaxed">
-            このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには{" "}
-            <code className="rounded bg-white px-1 ring-1 ring-slate-200">window.Zisup.saveData</code> / <code className="rounded bg-white px-1 ring-1 ring-slate-200">loadData</code> を使います。
+            {t(
+              <>このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには{" "}<code className="rounded bg-white px-1 ring-1 ring-slate-200">window.Jisapp.saveData</code> / <code className="rounded bg-white px-1 ring-1 ring-slate-200">loadData</code> を使います。</>,
+              <>This app saves with localStorage, so data only stays in this browser on this device. To keep it across devices, use{" "}<code className="rounded bg-white px-1 ring-1 ring-slate-200">window.Jisapp.saveData</code> / <code className="rounded bg-white px-1 ring-1 ring-slate-200">loadData</code>.</>
+            )}
           </p>
           <button
             type="button"
             onClick={() => {
-              void copyText(STORAGE_FIX_MESSAGE).then((ok) => showToast(ok ? "AIに送る書き換え依頼をコピーしました" : "コピーできませんでした"));
+              void copyText(storageFixMessage(locale)).then((ok) => showToast(ok ? t("AIに送る書き換え依頼をコピーしました", "Copied a rewrite request to send to the AI") : t("コピーできませんでした", "Couldn't copy")));
             }}
             className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
           >
-            依頼文をコピー
+            {t("依頼文をコピー", "Copy the request")}
           </button>
         </div>
       )}
       {isSample && (
         <div className="flex shrink-0 items-center gap-2.5 border-b border-emerald-100 bg-emerald-50/70 px-4 py-2.5 text-xs text-emerald-900">
           <Zap className="h-4 w-4 shrink-0 text-emerald-600" />
-          <p className="min-w-0 flex-1">これはAIが作ったサンプルです。あなたのアプリも同じように作れます</p>
+          <p className="min-w-0 flex-1">{t("これはAIが作ったサンプルです。あなたのアプリも同じように作れます", "This sample was made by AI. You can make your own app the same way")}</p>
           <button
             type="button"
             onClick={startOver}
             className="hidden shrink-0 md:block rounded-lg bg-emerald-600 px-2.5 py-1.5 font-semibold text-white hover:bg-emerald-700"
           >
-            自分で作る
+            {t("自分で作る", "Make my own")}
           </button>
         </div>
       )}
@@ -1618,18 +1635,18 @@ export default function PlaygroundPage() {
           className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-100 transition hover:bg-emerald-100 touch-manipulation"
         >
           <ClipboardPaste className="h-3.5 w-3.5" />
-          貼り直す
+          {t("貼り直す", "Paste again")}
         </button>
         <span className="ml-2 hidden text-[11px] text-slate-400 xl:inline">
-          {lineCount}行 · {charCount.toLocaleString()}文字
+          {t(`${lineCount}行 · ${charCount.toLocaleString()}文字`, `${lineCount} lines · ${charCount.toLocaleString()} chars`)}
         </span>
         <div className="ml-auto flex items-center">
           {/* スマホは幅が足りないため、コピー・保存を優先して元に戻す/やり直すを隠す */}
           <span className="hidden items-center sm:flex">
-            <IconButton label="元に戻す" onClick={undo} disabled={!canUndo}>
+            <IconButton label={t("元に戻す", "Undo")} onClick={undo} disabled={!canUndo}>
               <Undo2 className="h-4 w-4" />
             </IconButton>
-            <IconButton label="やり直す" onClick={redo} disabled={!canRedo}>
+            <IconButton label={t("やり直す", "Redo")} onClick={redo} disabled={!canRedo}>
               <Redo2 className="h-4 w-4" />
             </IconButton>
             <span className="mx-1 h-4 w-px bg-slate-200" />
@@ -1637,23 +1654,23 @@ export default function PlaygroundPage() {
           <button
             type="button"
             onClick={() => void handleCopyCode()}
-            title="コードを全部コピー（AIに修正を頼むときに）"
+            title={t("コードを全部コピー（AIに修正を頼むときに）", "Copy all the code (to ask the AI for fixes)")}
             className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 touch-manipulation"
           >
             {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-            <span className="md:hidden lg:inline">{copied ? "コピー済み" : "全部コピー"}</span>
+            <span className="md:hidden lg:inline">{copied ? t("コピー済み", "Copied") : t("全部コピー", "Copy all")}</span>
           </button>
           <button
             type="button"
             onClick={() => void handleSaveCodeFile()}
-            title="コードをテキストファイルで保存"
+            title={t("コードをテキストファイルで保存", "Save the code as a text file")}
             className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 touch-manipulation"
           >
             <Download className="h-4 w-4" />
-            <span className="md:hidden lg:inline">ファイル保存</span>
+            <span className="md:hidden lg:inline">{t("ファイル保存", "Save file")}</span>
           </button>
           <span className="mx-1 h-4 w-px bg-slate-200" />
-          <IconButton label="コードを消す" onClick={handleClear} danger>
+          <IconButton label={t("コードを消す", "Clear code")} onClick={handleClear} danger>
             <Trash2 className="h-4 w-4" />
           </IconButton>
         </div>
@@ -1664,7 +1681,7 @@ export default function PlaygroundPage() {
           code={code}
           onChange={handleEditorChange}
           onKeyDown={handleKeyDown}
-          placeholder={"ここにAIのコードを貼り付け"}
+          placeholder={t("ここにAIのコードを貼り付け", "Paste the AI's code here")}
           textareaRef={textareaRef}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -1681,7 +1698,7 @@ export default function PlaygroundPage() {
             type="button"
             onClick={() => setAutoRun((v) => !v)}
             className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700"
-            title="コードを書き換えると自動でプレビューを更新します"
+            title={t("コードを書き換えると自動でプレビューを更新します", "Updates the preview automatically when you edit the code")}
           >
             <span
               className={cn(
@@ -1689,7 +1706,7 @@ export default function PlaygroundPage() {
                 autoRun ? "bg-emerald-500 after:translate-x-3" : "bg-slate-300"
               )}
             />
-            自動で反映
+            {t("自動で反映", "Auto-update")}
           </button>
           <button
             type="button"
@@ -1697,7 +1714,7 @@ export default function PlaygroundPage() {
             className="ml-auto flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700"
           >
             <Play className="h-3.5 w-3.5" />
-            動かす
+            {t("動かす", "Run")}
             <kbd className="ml-1 rounded bg-white/15 px-1 font-sans text-[10px] text-white/80">Ctrl+Enter</kbd>
           </button>
         </div>
@@ -1710,16 +1727,16 @@ export default function PlaygroundPage() {
       <div className="flex shrink-0 items-center gap-2 border-b border-slate-200/80 bg-white px-3 py-1.5">
         <span className={cn("h-2 w-2 shrink-0 rounded-full", showGuide ? "bg-slate-300" : "bg-emerald-500")} />
         <span className="truncate text-xs font-semibold text-slate-600">
-          {showGuide ? "プレビュー" : isSample ? "サンプル：反射神経タップ" : "あなたのアプリ"}
+          {showGuide ? t("プレビュー", "Preview") : isSample ? t("サンプル：反射神経タップ", "Sample: Reaction Tap") : t("あなたのアプリ", "Your app")}
         </span>
         <div className="ml-auto flex items-center gap-1">
           {variant === "desktop" && (
-            <div className="mr-1 flex rounded-lg bg-slate-100 p-0.5" role="group" aria-label="表示する幅">
+            <div className="mr-1 flex rounded-lg bg-slate-100 p-0.5" role="group" aria-label={t("表示する幅", "Preview width")}>
               <button
                 type="button"
                 onClick={() => setPreviewDevice("mobile")}
                 aria-pressed={previewDevice === "mobile"}
-                title="スマホの幅で表示"
+                title={t("スマホの幅で表示", "Phone width")}
                 className={cn(
                   "rounded-md p-1.5 transition",
                   previewDevice === "mobile" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
@@ -1731,7 +1748,7 @@ export default function PlaygroundPage() {
                 type="button"
                 onClick={() => setPreviewDevice("desktop")}
                 aria-pressed={previewDevice === "desktop"}
-                title="PCの幅で表示"
+                title={t("PCの幅で表示", "Desktop width")}
                 className={cn(
                   "rounded-md p-1.5 transition",
                   previewDevice === "desktop" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
@@ -1742,7 +1759,7 @@ export default function PlaygroundPage() {
             </div>
           )}
           <IconButton
-            label="再読み込み"
+            label={t("再読み込み", "Reload")}
             onClick={() => {
               if (code.trim()) {
                 setPreviewHtml(code);
@@ -1765,7 +1782,7 @@ export default function PlaygroundPage() {
               <AppRunner
                 key={iframeKey}
                 srcDoc={previewHtml}
-                title="プレビュー"
+                title={t("プレビュー", "Preview")}
                 className="h-full"
                 appId={publishContext?.appId ?? "playground"}
               />
@@ -1776,7 +1793,7 @@ export default function PlaygroundPage() {
             <AppRunner
               key={iframeKey}
               srcDoc={previewHtml}
-              title="プレビュー"
+              title={t("プレビュー", "Preview")}
               className="h-full min-h-0"
               appId={publishContext?.appId ?? "playground"}
             />
@@ -1868,12 +1885,12 @@ export default function PlaygroundPage() {
           <button
             type="button"
             onClick={handleBack}
-            aria-label="戻る"
+            aria-label={t("戻る", "Back")}
             className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
           >
             <ArrowLeft className="h-[18px] w-[18px]" />
             {isDirty && (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-white" title="未保存の変更があります" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-white" title={t("未保存の変更があります", "You have unsaved changes")} />
             )}
           </button>
 
@@ -1885,11 +1902,11 @@ export default function PlaygroundPage() {
               e.preventDefault();
               requestLeave(true);
             }}
-            aria-label="ジサップのトップページへ"
+            aria-label={t("ジサップのトップページへ", "Jisapp home")}
             className="flex min-w-0 items-center gap-2 rounded-lg transition-opacity hover:opacity-80"
           >
             <JisappLogoIcon className="h-7 w-7 shrink-0" />
-            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">開発<span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">スタジオ</span></span>
+            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">{t(<>開発<span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">スタジオ</span></>, <>Jisapp <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Studio</span></>)}</span>
           </Link>
 
           <div className="hidden flex-1 justify-center lg:flex">
@@ -1904,14 +1921,14 @@ export default function PlaygroundPage() {
                 className="hidden items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:flex"
               >
                 <Save className="h-4 w-4" />
-                下書き保存
+                {t("下書き保存", "Save draft")}
               </button>
             )}
             <button
               type="button"
               onClick={() => {
                 if (!code.trim()) {
-                  showToast("先にAIのコードを貼り付けてください");
+                  showToast(t("先にAIのコードを貼り付けてください", "Paste the AI's code first"));
                   return;
                 }
                 runWithLoginPrompt("publish", openPublishModal);
@@ -1924,14 +1941,14 @@ export default function PlaygroundPage() {
               )}
             >
               <Upload className="h-4 w-4" strokeWidth={2.25} />
-              公開する
+              {t("公開する", "Publish")}
             </button>
 
             <div className="relative" ref={menuRef}>
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
-                aria-label="メニュー"
+                aria-label={t("メニュー", "Menu")}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 className={cn(
@@ -1948,39 +1965,39 @@ export default function PlaygroundPage() {
                 >
                   <MenuItem
                     icon={<Save className="h-4 w-4" />}
-                    label="下書き保存"
-                    hint="自分だけ"
+                    label={t("下書き保存", "Save draft")}
+                    hint={t("自分だけ", "Only you")}
                     disabled={!code.trim()}
                     onClick={() => { setMenuOpen(false); handleSave(); }}
                   />
                   <MenuItem
                     icon={<Key className="h-4 w-4" />}
-                    label="APIキーの登録"
+                    label={t("APIキーの登録", "Register API key")}
                     onClick={() => { setMenuOpen(false); void openApiKeys(); }}
                   />
                   <MenuItem
                     icon={<Copy className="h-4 w-4" />}
-                    label="コードを全部コピー"
+                    label={t("コードを全部コピー", "Copy all the code")}
                     disabled={!code.trim()}
                     onClick={() => { setMenuOpen(false); void handleCopyCode(); }}
                   />
                   <MenuItem
                     icon={<Download className="h-4 w-4" />}
-                    label="コードをファイルで保存"
+                    label={t("コードをファイルで保存", "Save the code as a file")}
                     disabled={!code.trim()}
                     onClick={() => { setMenuOpen(false); void handleSaveCodeFile(); }}
                   />
                   {code.trim() && !sharesData && (
                     <MenuItem
                       icon={<Users className="h-4 w-4" />}
-                      label="グループで共有できるようにする"
+                      label={t("グループで共有できるようにする", "Make it shareable with a group")}
                       onClick={() => {
                         setMenuOpen(false);
-                        void copyText(buildSharedConvertMessage(code)).then((ok) =>
+                        void copyText(buildSharedConvertMessage(code, locale)).then((ok) =>
                           showToast(
                             ok
-                              ? "依頼文をコピーしました（今のコード入り）。AIに送って、返ってきたコードを貼り直してください"
-                              : "コピーできませんでした"
+                              ? t("依頼文をコピーしました（今のコード入り）。AIに送って、返ってきたコードを貼り直してください", "Copied the request (with your current code). Send it to the AI, then paste back the code it returns")
+                              : t("コピーできませんでした", "Couldn't copy")
                           )
                         );
                       }}
@@ -1988,18 +2005,18 @@ export default function PlaygroundPage() {
                   )}
                   <MenuItem
                     icon={<FolderOpen className="h-4 w-4" />}
-                    label="マイプロジェクト"
+                    label={t("マイプロジェクト", "My projects")}
                     onClick={() => { setMenuOpen(false); router.push("/projects"); }}
                   />
                   <div className="my-1 h-px bg-slate-100" />
                   <MenuItem
                     icon={<HelpCircle className="h-4 w-4" />}
-                    label="使い方ガイド"
+                    label={t("使い方ガイド", "How to use")}
                     onClick={() => { setMenuOpen(false); setShowGuideModal(true); }}
                   />
                   <MenuItem
                     icon={<RotateCcw className="h-4 w-4" />}
-                    label="最初からやり直す"
+                    label={t("最初からやり直す", "Start over")}
                     danger
                     onClick={() => { setMenuOpen(false); startOver(); }}
                   />
@@ -2018,8 +2035,8 @@ export default function PlaygroundPage() {
           <div className="px-3 pb-2.5 md:hidden">
             <div className="flex rounded-xl bg-slate-100 p-1" role="tablist">
               {([
-                { id: "editor", label: "コードエディタ", icon: <Code2 className="h-3.5 w-3.5" /> },
-                { id: "preview", label: "プレビュー", icon: <Play className="h-3.5 w-3.5" /> },
+                { id: "editor", label: t("コードエディタ", "Code editor"), icon: <Code2 className="h-3.5 w-3.5" /> },
+                { id: "preview", label: t("プレビュー", "Preview"), icon: <Play className="h-3.5 w-3.5" /> },
               ] as const).map((tab) => (
                 <button
                   key={tab.id}
@@ -2077,7 +2094,7 @@ export default function PlaygroundPage() {
             )}
           >
             <ClipboardPaste className="h-4 w-4" strokeWidth={2.25} />
-            コードを貼り付けて動かす
+            {t("コードを貼り付けて動かす", "Paste the code and run it")}
           </button>
         )}
         {stage === "ready" && activePane === "editor" && (
@@ -2087,7 +2104,7 @@ export default function PlaygroundPage() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-[15px] font-bold text-white transition-all active:scale-[0.98] touch-manipulation"
           >
             <Play className="h-4 w-4" />
-            動かしてみる
+            {t("動かしてみる", "Run it")}
           </button>
         )}
         {stage === "ready" && activePane === "preview" && isSample && (
@@ -2096,7 +2113,7 @@ export default function PlaygroundPage() {
             onClick={startOver}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
           >
-            自分のアプリを作る
+            {t("自分のアプリを作る", "Make my own app")}
           </button>
         )}
         {stage === "ready" && activePane === "preview" && !isSample && (
@@ -2107,9 +2124,9 @@ export default function PlaygroundPage() {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
             >
               <Upload className="h-4 w-4" strokeWidth={2.25} />
-              公開してURLを発行
+              {t("公開してURLを発行", "Publish and get a URL")}
             </button>
-            <p className="mt-1.5 text-center text-[11px] text-slate-400">直したいところはAIに頼んで、コードを貼り直すだけ</p>
+            <p className="mt-1.5 text-center text-[11px] text-slate-400">{t("直したいところはAIに頼んで、コードを貼り直すだけ", "Want changes? Ask the AI and paste the new code")}</p>
           </>
         )}
       </div>
@@ -2117,10 +2134,10 @@ export default function PlaygroundPage() {
       {/* ── PC: 左右分割（左：作る・コード / 右：プレビュー） ── */}
       <div className="relative z-0 hidden min-h-0 flex-1 md:flex md:flex-row">
         <section
-          aria-label={stage === "ready" ? "コード" : "作る"}
+          aria-label={stage === "ready" ? t("コード", "Code") : t("作る", "Make")}
           className="flex min-h-0 w-[44%] max-w-[640px] shrink-0 flex-col border-r border-slate-200 bg-white"
         >
-          <PaneTitleBar icon={<Code2 className="h-3.5 w-3.5" />} title="コードエディタ" sub="index.html" />
+          <PaneTitleBar icon={<Code2 className="h-3.5 w-3.5" />} title={t("コードエディタ", "Code editor")} sub="index.html" />
           {stage !== "ready" && (
             <EditorStart
               waitingForAi={stage === "paste"}
@@ -2140,8 +2157,8 @@ export default function PlaygroundPage() {
           {stage === "ready" && renderEditor(drawerTextareaRef, "desktop")}
         </section>
 
-        <section aria-label="プレビュー" className="flex min-h-0 flex-1 flex-col">
-          <PaneTitleBar icon={<Eye className="h-3.5 w-3.5" />} title="プレビュー" sub="ここでアプリが動きます" />
+        <section aria-label={t("プレビュー", "Preview")} className="flex min-h-0 flex-1 flex-col">
+          <PaneTitleBar icon={<Eye className="h-3.5 w-3.5" />} title={t("プレビュー", "Preview")} sub={t("ここでアプリが動きます", "Your app runs here")} />
           {renderPreview("desktop")}
         </section>
       </div>
@@ -2156,8 +2173,8 @@ export default function PlaygroundPage() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
                 <Save className="h-7 w-7 text-amber-600" />
               </div>
-              <h3 className="text-base font-black text-gray-900">保存されていない変更があります</h3>
-              <p className="mt-2 text-sm text-gray-500">このまま戻るとコードが失われます。</p>
+              <h3 className="text-base font-black text-gray-900">{t("保存されていない変更があります", "You have unsaved changes")}</h3>
+              <p className="mt-2 text-sm text-gray-500">{t("このまま戻るとコードが失われます。", "If you go back now, your code will be lost.")}</p>
             </div>
             <div className="flex flex-col gap-2 border-t border-gray-100 p-4">
               <button
@@ -2170,19 +2187,19 @@ export default function PlaygroundPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98]"
               >
                 <Save className="h-4 w-4" />
-                保存してから戻る
+                {t("保存してから戻る", "Save, then go back")}
               </button>
               <button
                 onClick={confirmLeave}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 active:scale-[0.98]"
               >
-                保存せずに戻る
+                {t("保存せずに戻る", "Go back without saving")}
               </button>
               <button
                 onClick={() => setShowLeaveModal(false)}
                 className="py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
               >
-                キャンセル
+                {t("キャンセル", "Cancel")}
               </button>
             </div>
           </div>
@@ -2201,7 +2218,7 @@ export default function PlaygroundPage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600">
                   <Save className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-base font-black text-gray-900">プロジェクトを保存</span>
+                <span className="text-base font-black text-gray-900">{t("プロジェクトを保存", "Save project")}</span>
               </div>
               <button
                 onClick={() => setShowSaveModal(false)}
@@ -2213,28 +2230,28 @@ export default function PlaygroundPage() {
             <div className="space-y-4 p-6">
               <div>
                 <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                  プロジェクト名 <span className="text-rose-500">*</span>
+                  {t("プロジェクト名", "Project name")} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={saveTitle}
                   onChange={(e) => setSaveTitle(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSaveConfirm(); }}
-                  placeholder="例：タスク管理アプリ、計算機..."
+                  placeholder={t("例：タスク管理アプリ、計算機...", "e.g. Task manager, calculator...")}
                   maxLength={60}
                   autoFocus
                   autoComplete="off"
                   name="jisapp_save_project_title"
                   className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 />
-                <p className="mt-1.5 text-[11px] text-gray-400">マイプロジェクトページに表示される名前です</p>
+                <p className="mt-1.5 text-[11px] text-gray-400">{t("マイプロジェクトページに表示される名前です", "This name appears on your My projects page")}</p>
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setShowSaveModal(false)}
                   className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
                 >
-                  キャンセル
+                  {t("キャンセル", "Cancel")}
                 </button>
                 <button
                   onClick={handleSaveConfirm}
@@ -2242,7 +2259,7 @@ export default function PlaygroundPage() {
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
-                  保存する
+                  {t("保存する", "Save")}
                 </button>
               </div>
             </div>
@@ -2273,20 +2290,20 @@ export default function PlaygroundPage() {
                   <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 shadow-lg shadow-emerald-300">
                     <CheckCircle2 className="h-7 w-7 text-white" />
                   </div>
-                  <p className="text-base font-black text-emerald-900">{lastPublishWasOverwrite ? "上書きしました！" : publishListed ? "出品しました！" : "URLを発行しました！"}</p>
-                  <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? "同じURLで内容が更新されました" : publishListed ? "マーケットに公開されました" : "URLを知っている人だけがアクセスできます"}</p>
+                  <p className="text-base font-black text-emerald-900">{lastPublishWasOverwrite ? t("上書きしました！", "Updated!") : publishListed ? t("出品しました！", "Published!") : t("URLを発行しました！", "Your URL is ready!")}</p>
+                  <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? t("同じURLで内容が更新されました", "The same URL now shows the new version") : publishListed ? t("マーケットに公開されました", "It's now listed in the market") : t("URLを知っている人だけがアクセスできます", "Only people with the URL can open it")}</p>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
                   {(publishGroupSharing ?? sharesData) && (
                     <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
                       <p className="flex items-center gap-1.5 text-sm font-bold text-sky-900">
                         <Users className="h-4 w-4 shrink-0" />
-                        次は、メンバーを招待しましょう
+                        {t("次は、メンバーを招待しましょう", "Next, invite your members")}
                       </p>
                       <ol className="mt-2 space-y-1 text-xs leading-relaxed text-sky-900">
-                        <li>1. 下のボタンでアプリのページを開く</li>
-                        <li>2. 上の帯の「グループを作る」を押す（ログインが必要です）</li>
-                        <li>3. 出てきた招待リンクを、LINEなどでメンバーに送る</li>
+                        <li>{t("1. 下のボタンでアプリのページを開く", "1. Open the app's page with the button below")}</li>
+                        <li>{t("2. 上の帯の「グループを作る」を押す（ログインが必要です）", "2. Press “Create a group” in the bar at the top (you need to sign in)")}</li>
+                        <li>{t("3. 出てきた招待リンクを、LINEなどでメンバーに送る", "3. Send the invite link to your members by message")}</li>
                       </ol>
                       <button
                         type="button"
@@ -2300,14 +2317,18 @@ export default function PlaygroundPage() {
                         }}
                         className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 py-2.5 text-sm font-bold text-white shadow-sm hover:from-sky-700 hover:to-teal-700"
                       >
-                        アプリを開いてグループを作る
+                        {t("アプリを開いてグループを作る", "Open the app and create a group")}
                         <ArrowRight className="h-4 w-4" />
                       </button>
                     </div>
                   )}
                   <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`「${publishTitle || "アプリ"}」をAIと作って公開しました
-#ジサップ #個人開発`)}&url=${encodeURIComponent(publishedUrl)}`}
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                      t(
+                        `「${publishTitle || "アプリ"}」をAIと作って公開しました\n#ジサップ #個人開発`,
+                        `I made “${publishTitle || "an app"}” with AI and published it\n#Jisapp #buildinpublic`
+                      )
+                    )}&url=${encodeURIComponent(publishedUrl)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
@@ -2315,19 +2336,19 @@ export default function PlaygroundPage() {
                     <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-current">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                     </svg>
-                    Xでシェアする
+                    {t("Xでシェアする", "Share on X")}
                   </a>
                   <ShareButtonRow
                     url={publishedUrl}
                     title={publishTitle}
-                    text={`${publishTitle} | ジサップで作った無料アプリ`}
+                    text={t(`${publishTitle} | ジサップで作った無料アプリ`, `${publishTitle} | a free app made on Jisapp`)}
                   />
                   <div>
-                    <p className="mb-2 text-xs font-bold text-gray-600">アプリの URL</p>
+                    <p className="mb-2 text-xs font-bold text-gray-600">{t("アプリの URL", "App URL")}</p>
                     <AppUrlCopyField url={publishedUrl} className="border border-emerald-200 py-2.5" />
                   </div>
                   <p className="text-[11px] text-gray-400">
-                    URLを知っている人なら誰でもアクセス・使用できます
+                    {t("URLを知っている人なら誰でもアクセス・使用できます", "Anyone with the URL can open and use it")}
                   </p>
                   {/* アクションボタン */}
                   <div className="flex gap-3">
@@ -2344,7 +2365,7 @@ export default function PlaygroundPage() {
                       }}
                       className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
                     >
-                      編集を続ける
+                      {t("編集を続ける", "Keep editing")}
                     </button>
                     <button
                       onClick={() => {
@@ -2357,7 +2378,7 @@ export default function PlaygroundPage() {
                       }}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white hover:bg-emerald-700"
                     >
-                      アプリを開く
+                      {t("アプリを開く", "Open app")}
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -2371,7 +2392,7 @@ export default function PlaygroundPage() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600">
                       <Upload className="h-4 w-4 shrink-0 text-white" strokeWidth={2} />
                     </div>
-                    <span className="text-base font-black text-gray-900">{isRepublish ? "アプリを上書き公開" : "アプリを公開する"}</span>
+                    <span className="text-base font-black text-gray-900">{isRepublish ? t("アプリを上書き公開", "Update your app") : t("アプリを公開する", "Publish your app")}</span>
                   </div>
                   <button
                     onClick={() => setShowPublishModal(false)}
@@ -2394,7 +2415,7 @@ export default function PlaygroundPage() {
                     >
                       <span className="inline-flex items-center justify-center gap-1.5">
                         <Link2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                        URLのみ発行
+                        {t("URLのみ発行", "URL only")}
                       </span>
                     </button>
                     <button
@@ -2407,19 +2428,19 @@ export default function PlaygroundPage() {
                     >
                       <span className="inline-flex items-center justify-center gap-1.5">
                         <Upload className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                        マーケットに出品
+                        {t("マーケットに出品", "List in market")}
                       </span>
                     </button>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                      アプリ名 <span className="text-rose-500">*</span>
+                      {t("アプリ名", "App name")} <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={publishTitle}
                       onChange={(e) => setPublishTitle(e.target.value)}
-                      placeholder="例：タスク管理ツール、計算機アプリ..."
+                      placeholder={t("例：タスク管理ツール、計算機アプリ...", "e.g. Task manager, calculator app...")}
                       maxLength={60}
                       autoFocus
                       autoComplete="off"
@@ -2429,12 +2450,12 @@ export default function PlaygroundPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                      説明（任意）
+                      {t("説明（任意）", "Description (optional)")}
                     </label>
                     <textarea
                       value={publishDesc}
                       onChange={(e) => setPublishDesc(e.target.value)}
-                      placeholder="このアプリで何ができるか簡単に説明してください..."
+                      placeholder={t("このアプリで何ができるか簡単に説明してください...", "Briefly describe what this app does...")}
                       rows={3}
                       maxLength={200}
                       className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
@@ -2444,7 +2465,7 @@ export default function PlaygroundPage() {
                   {publishListed && (
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                        カテゴリ <span className="text-rose-500">*</span>
+                        {t("カテゴリ", "Category")} <span className="text-rose-500">*</span>
                       </label>
                       <div className="flex flex-wrap gap-1.5">
                         {CATEGORIES.map((cat) => {
@@ -2462,7 +2483,7 @@ export default function PlaygroundPage() {
                               )}
                             >
                               <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
-                              {cat.name}
+                              {categoryName(cat, locale)}
                             </button>
                           );
                         })}
@@ -2470,11 +2491,11 @@ export default function PlaygroundPage() {
                     </div>
                   )}
                   <div>
-                    <p className="mb-1.5 text-xs font-bold text-gray-700">グループ共有</p>
-                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="グループ共有を使うか">
+                    <p className="mb-1.5 text-xs font-bold text-gray-700">{t("グループ共有", "Group sharing")}</p>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("グループ共有を使うか", "Use group sharing?")}>
                       {([
-                        { value: false, title: "使わない", desc: "ひとりずつ使うアプリ" },
-                        { value: true, title: "使う", desc: "メンバーでデータを共有" },
+                        { value: false, title: t("使わない", "Off"), desc: t("ひとりずつ使うアプリ", "Everyone uses it on their own") },
+                        { value: true, title: t("使う", "On"), desc: t("メンバーでデータを共有", "Members share data") },
                       ] as const).map((opt) => {
                         const selected = (publishGroupSharing ?? sharesData) === opt.value;
                         return (
@@ -2504,37 +2525,37 @@ export default function PlaygroundPage() {
                     </div>
                     {(publishGroupSharing ?? sharesData) && (
                       <div className="mt-2 space-y-2 rounded-2xl bg-sky-50/80 p-4 text-xs leading-relaxed text-sky-900 ring-1 ring-sky-100">
-                        <p className="font-bold">グループ共有のしくみ</p>
+                        <p className="font-bold">{t("グループ共有のしくみ", "How group sharing works")}</p>
                         <ol className="space-y-1">
-                          <li>1. 公開すると、アプリのページに「グループを作る」が表示されます（作る人はログインが必要です）。</li>
-                          <li>2. グループを作ると招待リンクが出ます。LINEなどでメンバーに送ります。</li>
-                          <li>3. メンバーはリンクを開いて表示名を入れるだけで参加できます（ログイン不要）。同じデータを見たり書き込んだりできます。</li>
-                          <li>4. 作った人は、アプリのページ上部の「グループ管理」から、招待リンクやメンバーを管理できます。</li>
+                          <li>{t("1. 公開すると、アプリのページに「グループを作る」が表示されます（作る人はログインが必要です）。", "1. After publishing, “Create a group” appears on the app's page (the creator needs to sign in).")}</li>
+                          <li>{t("2. グループを作ると招待リンクが出ます。LINEなどでメンバーに送ります。", "2. Creating a group gives you an invite link. Send it to your members.")}</li>
+                          <li>{t("3. メンバーはリンクを開いて表示名を入れるだけで参加できます（ログイン不要）。同じデータを見たり書き込んだりできます。", "3. Members just open the link and enter a display name to join (no sign-in needed). They can see and write the same data.")}</li>
+                          <li>{t("4. 作った人は、アプリのページ上部の「グループ管理」から、招待リンクやメンバーを管理できます。", "4. The creator can manage invite links and members from “Manage group” at the top of the app's page.")}</li>
                         </ol>
                         <p className="text-[11px] text-sky-800/80">
-                          グループの作成・参加には
+                          {t("グループの作成・参加には", "Creating and joining groups is covered by the")}
                           <Link href="/terms#groups" target="_blank" rel="noopener noreferrer" className="mx-0.5 font-semibold underline underline-offset-2">
-                            グループ共有の利用規約
+                            {t("グループ共有の利用規約", "group sharing terms")}
                           </Link>
-                          が適用されます。
+                          {t("が適用されます。", ".")}
                         </p>
                         {!sharesData && (
                           <div className="rounded-xl bg-white/80 p-3 text-amber-900 ring-1 ring-amber-200">
-                            <p className="font-bold">このコードは、まだグループ共有の機能を使っていません</p>
+                            <p className="font-bold">{t("このコードは、まだグループ共有の機能を使っていません", "This code doesn't use group sharing yet")}</p>
                             <p className="mt-0.5">
-                              このまま公開しても、グループは作れますが、データはメンバーで共有されません。共有したい場合は、AIに書き換えを頼んでから公開してください。
+                              {t("このまま公開しても、グループは作れますが、データはメンバーで共有されません。共有したい場合は、AIに書き換えを頼んでから公開してください。", "You can still create a group if you publish as is, but data won't be shared among members. To share it, ask the AI to rewrite the app before publishing.")}
                             </p>
                             <button
                               type="button"
                               onClick={() => {
-                                void copyText(buildSharedConvertMessage(code)).then((ok) =>
-                                  showToast(ok ? "依頼文をコピーしました（今のコード入り）。AIに送ってください" : "コピーできませんでした")
+                                void copyText(buildSharedConvertMessage(code, locale)).then((ok) =>
+                                  showToast(ok ? t("依頼文をコピーしました（今のコード入り）。AIに送ってください", "Copied the request (with your current code). Send it to the AI") : t("コピーできませんでした", "Couldn't copy"))
                                 );
                               }}
                               className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-100 px-2.5 py-1.5 font-bold text-amber-900 hover:bg-amber-200"
                             >
                               <Copy className="h-3.5 w-3.5" />
-                              共有対応にする依頼文をコピー
+                              {t("共有対応にする依頼文をコピー", "Copy a request to add sharing")}
                             </button>
                           </div>
                         )}
@@ -2550,25 +2571,25 @@ export default function PlaygroundPage() {
                         className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-xs leading-relaxed text-violet-900">
-                        <span className="font-bold">ソースコードを公開する</span>
+                        <span className="font-bold">{t("ソースコードを公開する", "Make the source code public")}</span>
                         <br />
-                        マイライブラリに追加したユーザーだけが閲覧できます
+                        {t("マイライブラリに追加したユーザーだけが閲覧できます", "Only people who add it to their library can see it")}
                       </span>
                     </label>
                   </div>
                   {isRepublish && (
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                        マイライブラリ登録者への更新内容
-                        <span className="ml-1 text-[10px] font-normal text-gray-400">（任意・200字まで）</span>
+                        {t("マイライブラリ登録者への更新内容", "What's new (for people who added it to their library)")}
+                        <span className="ml-1 text-[10px] font-normal text-gray-400">{t("（任意・200字まで）", "(optional, up to 200 chars)")}</span>
                       </label>
                       <textarea
                         value={publishUpdateNotes}
                         onChange={(e) => setPublishUpdateNotes(e.target.value)}
                         placeholder={
                           publishResetUserData
-                            ? "例：UIを大幅に変更しました。保存データは互換性がないため、アップデート時にリセットされます。"
-                            : "例：ダークモードを追加しました。保存データはそのまま使えます。"
+                            ? t("例：UIを大幅に変更しました。保存データは互換性がないため、アップデート時にリセットされます。", "e.g. Big UI changes. Saved data isn't compatible, so it will be reset on update.")
+                            : t("例：ダークモードを追加しました。保存データはそのまま使えます。", "e.g. Added dark mode. Your saved data still works.")
                         }
                         rows={3}
                         maxLength={200}
@@ -2579,7 +2600,7 @@ export default function PlaygroundPage() {
                   )}
                   {isRepublish && (
                     <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-4">
-                      <p className="mb-3 text-xs font-bold text-amber-900">マイライブラリ登録者の保存データ</p>
+                      <p className="mb-3 text-xs font-bold text-amber-900">{t("マイライブラリ登録者の保存データ", "Saved data of people who added it to their library")}</p>
                       <label className="flex cursor-pointer items-start gap-3">
                         <input
                           type="radio"
@@ -2589,9 +2610,9 @@ export default function PlaygroundPage() {
                           className="mt-0.5 h-4 w-4 border-amber-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <span className="text-xs leading-relaxed text-amber-900">
-                          <span className="font-bold">データを引き継ぐ</span>
+                          <span className="font-bold">{t("データを引き継ぐ", "Keep their data")}</span>
                           <br />
-                          ユーザーはアップデートの確認後、保存データを維持したまま新しいコードを選べます
+                          {t("ユーザーはアップデートの確認後、保存データを維持したまま新しいコードを選べます", "After confirming the update, people can switch to the new code and keep their data")}
                         </span>
                       </label>
                       <label className="mt-3 flex cursor-pointer items-start gap-3">
@@ -2603,21 +2624,24 @@ export default function PlaygroundPage() {
                           className="mt-0.5 h-4 w-4 border-amber-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <span className="text-xs leading-relaxed text-amber-900">
-                          <span className="font-bold">アップデート時にデータをリセット</span>
+                          <span className="font-bold">{t("アップデート時にデータをリセット", "Reset data on update")}</span>
                           <br />
-                          ユーザーがアップデートを選んだ場合、保存データが消える可能性があることを案内します
+                          {t("ユーザーがアップデートを選んだ場合、保存データが消える可能性があることを案内します", "People who choose to update are told their saved data may be erased")}
                         </span>
                       </label>
                     </div>
                   )}
                   <div className="rounded-xl bg-gray-50 px-4 py-3 text-xs text-gray-500">
                     {publishListed
-                      ? "マーケットに公開されます。URLを知らない人もアプリを見つけられます。"
-                      : "URLを知っている人だけがアクセスできます。マーケットには掲載されません。"}
+                      ? t("マーケットに公開されます。URLを知らない人もアプリを見つけられます。", "It will be listed in the market, so people can find it without the URL.")
+                      : t("URLを知っている人だけがアクセスできます。マーケットには掲載されません。", "Only people with the URL can open it. It won't be listed in the market.")}
                   </div>
                   {!isLoggedIn && !publishListed && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
-                      未ログインで URL のみ発行したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます。ログインするとマイページから管理できます。
+                      {t(
+                        <>未ログインで URL のみ発行したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます。ログインするとマイページから管理できます。</>,
+                        <>Apps published by URL only without signing in are <strong>deleted automatically if nobody opens them for 2 months</strong>. Sign in to manage them from My page.</>
+                      )}
                     </div>
                   )}
                   {publishError && (
@@ -2630,7 +2654,7 @@ export default function PlaygroundPage() {
                       onClick={() => setShowPublishModal(false)}
                       className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
                     >
-                      キャンセル
+                      {t("キャンセル", "Cancel")}
                     </button>
                     <button
                       onClick={handlePublish}
@@ -2640,12 +2664,12 @@ export default function PlaygroundPage() {
                       {publishing ? (
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          {isRepublish ? "上書き中…" : publishListed ? "出品中…" : "発行中…"}
+                          {isRepublish ? t("上書き中…", "Updating…") : publishListed ? t("出品中…", "Publishing…") : t("発行中…", "Creating URL…")}
                         </>
                       ) : (
                         <>
                           <Upload className="h-4 w-4 shrink-0" strokeWidth={2} />
-                          {isRepublish ? "上書きする" : publishListed ? "出品する" : "URLを発行する"}
+                          {isRepublish ? t("上書きする", "Update") : publishListed ? t("出品する", "Publish") : t("URLを発行する", "Get URL")}
                         </>
                       )}
                     </button>

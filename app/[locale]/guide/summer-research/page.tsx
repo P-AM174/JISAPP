@@ -12,7 +12,13 @@ export const metadata = createPageMetadata({
 /** 季節外れのため非公開（404）。来夏に true へ戻す */
 const GUIDE_OPEN = false;
 
-export default function SummerResearchGuidePage() {
-  if (!GUIDE_OPEN) notFound();
+export default async function SummerResearchGuidePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // 日本の学校の自由研究向けの内容なので、英語版は用意しない
+  const { locale } = await params;
+  if (!GUIDE_OPEN || locale === "en") notFound();
   return <SummerResearchGuide />;
 }

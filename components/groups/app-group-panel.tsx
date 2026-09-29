@@ -25,6 +25,8 @@ import {
   saveGroupSession,
   type GroupSession,
 } from "@/lib/groups/client";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/config";
 
 type InviteInfo = { group: { id: string; name: string; appId: string }; appTitle: string; memberCount: number };
 
@@ -53,7 +55,7 @@ export function AppGroupPanel({
 }: {
   appId: string;
   appTitle: string;
-  /** アプリがグループ共有（Zisup.shared）を使っているか */
+  /** アプリがグループ共有（Jisapp.shared）を使っているか */
   usesShared: boolean;
   isLoggedIn: boolean;
   /** 見ている人が、このアプリを出した本人か */
@@ -67,6 +69,7 @@ export function AppGroupPanel({
   onManageClose?: () => void;
 }) {
   const router = useRouter();
+  const t = useT();
   const [invite, setInvite] = useState<{ token: string; info: InviteInfo } | null>(null);
   const [inviteError, setInviteError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -117,8 +120,8 @@ export function AppGroupPanel({
         onGroupChange(null);
         setInviteError(
           r.status === 404
-            ? `グループ「${group.groupName}」は削除されました`
-            : `グループ「${group.groupName}」から外れました。参加するには招待リンクが必要です`
+            ? t(`グループ「${group.groupName}」は削除されました`, `The group “${group.groupName}” was deleted`)
+            : t(`グループ「${group.groupName}」から外れました。参加するには招待リンクが必要です`, `You're no longer in “${group.groupName}”. You need an invite link to join again`)
         );
       })
       .catch(() => {});
@@ -147,7 +150,7 @@ export function AppGroupPanel({
       error?: string;
     };
     if (!res.ok || !data.group || !data.member || !data.memberKey) {
-      window.alert(data.error ?? "グループに戻れませんでした");
+      window.alert(data.error ?? t("グループに戻れませんでした", "Couldn't go back to the group"));
       return;
     }
     const session: GroupSession = {
@@ -224,7 +227,7 @@ export function AppGroupPanel({
       const res = await fetch(`/api/app-groups/invite/${encodeURIComponent(token)}`);
       const data = (await res.json().catch(() => ({}))) as InviteInfo & { error?: string };
       if (!res.ok) {
-        setInviteError(data.error ?? "招待リンクが無効です");
+        setInviteError(data.error ?? t("招待リンクが無効です", "This invite link isn't valid"));
         return;
       }
       // すでに参加済みなら、そのままそのグループで開く
@@ -266,7 +269,7 @@ export function AppGroupPanel({
   const regenerate = async () => {
     if (!group) return;
     setMenuOpen(false);
-    if (!window.confirm("招待リンクを作り直しますか？\n今までのリンクは使えなくなります（参加済みのメンバーはそのまま使えます）。")) return;
+    if (!window.confirm(t("招待リンクを作り直しますか？\n今までのリンクは使えなくなります（参加済みのメンバーはそのまま使えます）。", "Make a new invite link?\nThe old link will stop working (members who already joined stay in)."))) return;
     const res = await fetch(`/api/app-groups/${group.groupId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -274,7 +277,7 @@ export function AppGroupPanel({
     });
     const data = (await res.json().catch(() => ({}))) as { inviteToken?: string; error?: string };
     if (!res.ok || !data.inviteToken) {
-      window.alert(data.error ?? "作り直せませんでした");
+      window.alert(data.error ?? t("作り直せませんでした", "Couldn't make a new link"));
       return;
     }
     const next = { ...group, inviteToken: data.inviteToken };
@@ -285,11 +288,11 @@ export function AppGroupPanel({
   const removeGroup = async () => {
     if (!group) return;
     setMenuOpen(false);
-    if (!window.confirm(`グループ「${group.groupName}」を削除しますか？\nメンバー全員の共有データも消え、元に戻せません。`)) return;
+    if (!window.confirm(t(`グループ「${group.groupName}」を削除しますか？\nメンバー全員の共有データも消え、元に戻せません。`, `Delete the group “${group.groupName}”?\nAll members' shared data will be erased too. This can't be undone.`))) return;
     const res = await fetch(`/api/app-groups/${group.groupId}`, { method: "DELETE" });
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      window.alert(data.error ?? "削除できませんでした");
+      window.alert(data.error ?? t("削除できませんでした", "Couldn't delete"));
       return;
     }
     leaveActiveGroup(appId, true);
@@ -298,7 +301,7 @@ export function AppGroupPanel({
 
   const leave = () => {
     setMenuOpen(false);
-    if (!window.confirm("この端末でグループから抜けますか？\nもう一度参加するには招待リンクが必要です。")) return;
+    if (!window.confirm(t("この端末でグループから抜けますか？\nもう一度参加するには招待リンクが必要です。", "Leave the group on this device?\nYou'll need an invite link to join again."))) return;
     leaveActiveGroup(appId, true);
     onGroupChange(null);
   };
@@ -311,7 +314,7 @@ export function AppGroupPanel({
         <div className="flex shrink-0 items-center gap-2 border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-900">
           <Users className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1">{inviteError}</span>
-          <button type="button" onClick={() => setInviteError("")} aria-label="閉じる" className="text-amber-700">
+          <button type="button" onClick={() => setInviteError("")} aria-label={t("閉じる", "Close")} className="text-amber-700">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -324,7 +327,7 @@ export function AppGroupPanel({
             <>
               <p className="min-w-0 flex-1 truncate text-emerald-950">
                 <span className="font-bold">{group.groupName}</span>
-                <span className="text-emerald-800/70"> ・ {group.displayName}として参加中</span>
+                <span className="text-emerald-800/70">{t(` ・ ${group.displayName}として参加中`, ` · joined as ${group.displayName}`)}</span>
               </p>
               {group.inviteToken && (
                 <button
@@ -333,14 +336,14 @@ export function AppGroupPanel({
                   className="flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
                 >
                   <Share2 className="h-3.5 w-3.5" />
-                  招待
+                  {t("招待", "Invite")}
                 </button>
               )}
               <div className="relative shrink-0" ref={menuRef}>
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
-                  aria-label="グループの操作"
+                  aria-label={t("グループの操作", "Group options")}
                   className="flex items-center rounded-lg px-1.5 py-1.5 text-emerald-800 hover:bg-white/70"
                 >
                   <ChevronDown className="h-4 w-4" />
@@ -351,7 +354,7 @@ export function AppGroupPanel({
                       <>
                         <button type="button" onClick={() => { setMenuOpen(false); setManaging(true); }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
                           <Settings2 className="h-4 w-4 text-slate-400" />
-                          グループ管理
+                          {t("グループ管理", "Manage group")}
                         </button>
                         <div className="my-1 h-px bg-slate-100" />
                       </>
@@ -359,12 +362,12 @@ export function AppGroupPanel({
                     {(myGroups.length > 1 || isLoggedIn) && (
                       <button type="button" onClick={() => { setMenuOpen(false); setChoosing(true); }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
                         <ArrowLeftRight className="h-4 w-4 text-slate-400" />
-                        グループを切り替える・作る
+                        {t("グループを切り替える・作る", "Switch or create a group")}
                       </button>
                     )}
                     <button type="button" onClick={leave} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-slate-700 hover:bg-slate-100">
                       <LogOut className="h-4 w-4 text-slate-400" />
-                      この端末でグループを抜ける
+                      {t("この端末でグループを抜ける", "Leave the group on this device")}
                     </button>
                   </div>
                 )}
@@ -373,8 +376,8 @@ export function AppGroupPanel({
           ) : (
             <>
               <p className="min-w-0 flex-1 text-emerald-950">
-                <span className="font-bold">みんなでデータを共有できるアプリです。</span>
-                <span className="hidden text-emerald-800/70 sm:inline"> グループを作って、招待リンクをメンバーに送りましょう</span>
+                <span className="font-bold">{t("みんなでデータを共有できるアプリです。", "This app lets a group share data.")}</span>
+                <span className="hidden text-emerald-800/70 sm:inline">{t(" グループを作って、招待リンクをメンバーに送りましょう", " Create a group and send the invite link to your members")}</span>
               </p>
               {myGroups.length > 0 && (
                 <button
@@ -382,7 +385,7 @@ export function AppGroupPanel({
                   onClick={() => setChoosing(true)}
                   className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
                 >
-                  自分のグループ（{myGroups.length}）
+                  {t(`自分のグループ（${myGroups.length}）`, `My groups (${myGroups.length})`)}
                 </button>
               )}
               <button
@@ -390,7 +393,7 @@ export function AppGroupPanel({
                 onClick={() => (isLoggedIn ? setCreating(true) : goLogin())}
                 className="shrink-0 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 font-bold text-white shadow-sm hover:from-emerald-700 hover:to-teal-700"
               >
-                {isLoggedIn ? "グループを作る" : "ログインしてグループを作る"}
+                {isLoggedIn ? t("グループを作る", "Create a group") : t("ログインしてグループを作る", "Sign in to create a group")}
               </button>
             </>
           )}
@@ -431,9 +434,9 @@ export function AppGroupPanel({
       )}
 
       {choosing && (
-        <ModalShell title="自分のグループ" onClose={() => { setChoosing(false); setPendingManage(false); }}>
+        <ModalShell title={t("自分のグループ", "My groups")} onClose={() => { setChoosing(false); setPendingManage(false); }}>
           {myGroups.length === 0 ? (
-            <p className="text-sm text-slate-500">まだグループはありません。</p>
+            <p className="text-sm text-slate-500">{t("まだグループはありません。", "No groups yet.")}</p>
           ) : (
             <ul className="space-y-2">
               {myGroups.map((g) => (
@@ -448,7 +451,7 @@ export function AppGroupPanel({
                   >
                     <Users className="h-4 w-4 shrink-0 text-emerald-700" />
                     <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{g.name}</span>
-                    <span className="shrink-0 text-[11px] text-slate-400">{g.isOwner ? "作った" : "参加中"}</span>
+                    <span className="shrink-0 text-[11px] text-slate-400">{g.isOwner ? t("作った", "Created") : t("参加中", "Joined")}</span>
                   </button>
                 </li>
               ))}
@@ -463,10 +466,10 @@ export function AppGroupPanel({
               }}
               className={cn(PRIMARY, "mt-4")}
             >
-              新しいグループを作る
+              {t("新しいグループを作る", "Create a new group")}
             </button>
           )}
-          <p className="mt-2 text-center text-[11px] text-slate-400">ログインして参加したグループは、別の端末でもここから開けます</p>
+          <p className="mt-2 text-center text-[11px] text-slate-400">{t("ログインして参加したグループは、別の端末でもここから開けます", "Groups you joined while signed in can be opened here from other devices too")}</p>
         </ModalShell>
       )}
 
@@ -523,12 +526,14 @@ function ManageModal({
 }) {
   const [members, setMembers] = useState<MemberInfo[] | null>(null);
   const [error, setError] = useState("");
+  const t = useT();
+  const locale = useLocale();
 
   const load = async () => {
     const res = await fetch(`/api/app-groups/${group.groupId}/members`);
     const data = (await res.json().catch(() => ({}))) as { members?: MemberInfo[]; error?: string };
     if (!res.ok) {
-      setError(data.error ?? "メンバーを読み込めませんでした");
+      setError(data.error ?? t("メンバーを読み込めませんでした", "Couldn't load members"));
       return;
     }
     setMembers(data.members ?? []);
@@ -541,41 +546,41 @@ function ManageModal({
   }, []);
 
   const remove = async (m: MemberInfo) => {
-    if (!window.confirm(`「${m.name}」をグループから外しますか？\nこの人はグループのデータを見たり書き込んだりできなくなります。`)) return;
+    if (!window.confirm(t(`「${m.name}」をグループから外しますか？\nこの人はグループのデータを見たり書き込んだりできなくなります。`, `Remove “${m.name}” from the group?\nThey won't be able to see or write the group's data anymore.`))) return;
     const res = await fetch(`/api/app-groups/${group.groupId}/members?memberId=${encodeURIComponent(m.id)}`, { method: "DELETE" });
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      window.alert(data.error ?? "外せませんでした");
+      window.alert(data.error ?? t("外せませんでした", "Couldn't remove them"));
       return;
     }
     await load();
   };
 
   return (
-    <ModalShell title="グループ管理" onClose={onClose}>
+    <ModalShell title={t("グループ管理", "Manage group")} onClose={onClose}>
       <p className="-mt-1 text-sm font-bold text-emerald-800">{group.groupName}</p>
-      <p className="mt-0.5 text-[11px] text-slate-400">この画面は、グループを作った人だけに表示されます</p>
+      <p className="mt-0.5 text-[11px] text-slate-400">{t("この画面は、グループを作った人だけに表示されます", "Only the person who created the group sees this")}</p>
 
       <section className="mt-4">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
           <Share2 className="h-4 w-4 text-emerald-600" />
-          メンバーを招待
+          {t("メンバーを招待", "Invite members")}
         </h3>
         {group.inviteToken ? (
           <InviteLinkSection appId={appId} appTitle={appTitle} group={group} />
         ) : (
-          <p className="mt-2 text-xs text-slate-500">この端末には招待リンクがありません。「招待リンクを作り直す」で新しいリンクを出せます。</p>
+          <p className="mt-2 text-xs text-slate-500">{t("この端末には招待リンクがありません。「招待リンクを作り直す」で新しいリンクを出せます。", "There's no invite link on this device. Use “Make a new link” to get one.")}</p>
         )}
       </section>
 
       <section className="mt-5">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
           <Users className="h-4 w-4 text-emerald-600" />
-          メンバー（{members?.length ?? "…"}人）
+          {t(`メンバー（${members?.length ?? "…"}人）`, `Members (${members?.length ?? "…"})`)}
         </h3>
         <div className="mt-2">
       {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
-      {!members && !error && <p className="text-sm text-slate-400">読み込んでいます…</p>}
+      {!members && !error && <p className="text-sm text-slate-400">{t("読み込んでいます…", "Loading…")}</p>}
       {members && (
         <ul className="max-h-[36dvh] space-y-1.5 overflow-y-auto">
           {members.map((m) => (
@@ -583,11 +588,11 @@ function ManageModal({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold text-slate-800">
                   {m.name}
-                  {m.id === group.memberId && <span className="ml-1.5 text-[11px] font-semibold text-slate-400">（あなた）</span>}
+                  {m.id === group.memberId && <span className="ml-1.5 text-[11px] font-semibold text-slate-400">{t("（あなた）", "(you)")}</span>}
                 </span>
                 <span className="block text-[11px] text-slate-400">
-                  {m.isOwner ? "作った人" : m.loggedIn ? "ログインして参加" : "ログインなしで参加"}・
-                  {new Date(m.joinedAt).toLocaleDateString("ja-JP")}
+                  {m.isOwner ? t("作った人", "Creator") : m.loggedIn ? t("ログインして参加", "Joined signed in") : t("ログインなしで参加", "Joined without signing in")}{t("・", " · ")}
+                  {new Date(m.joinedAt).toLocaleDateString(intlLocale(locale))}
                 </span>
               </span>
               {!m.isOwner && (
@@ -597,7 +602,7 @@ function ManageModal({
                   className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
                 >
                   <UserMinus className="h-3.5 w-3.5" />
-                  外す
+                  {t("外す", "Remove")}
                 </button>
               )}
             </li>
@@ -608,9 +613,9 @@ function ManageModal({
       </section>
 
       <section className="mt-5 border-t border-slate-100 pt-4">
-        <h3 className="text-sm font-bold text-slate-800">リンクとグループの設定</h3>
+        <h3 className="text-sm font-bold text-slate-800">{t("リンクとグループの設定", "Link and group settings")}</h3>
         <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
-          招待リンクが知らない人に広まった場合は、メンバーを外したうえで、招待リンクを作り直してください。
+          {t("招待リンクが知らない人に広まった場合は、メンバーを外したうえで、招待リンクを作り直してください。", "If the invite link spreads to people you don't know, remove them and make a new invite link.")}
         </p>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button
@@ -619,7 +624,7 @@ function ManageModal({
             className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            リンクを作り直す
+            {t("リンクを作り直す", "Make a new link")}
           </button>
           <button
             type="button"
@@ -627,7 +632,7 @@ function ManageModal({
             className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            グループを削除
+            {t("グループを削除", "Delete group")}
           </button>
         </div>
       </section>
@@ -636,6 +641,7 @@ function ManageModal({
 }
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const t = useT();
   return (
     <div className="fixed inset-0 z-[450] flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <div
@@ -648,7 +654,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
         <div aria-hidden className="h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400" />
         <div className="flex items-center px-5 pt-4">
           <h2 className="flex-1 text-lg font-extrabold tracking-tight text-slate-900">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="閉じる" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} aria-label={t("閉じる", "Close")} className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -676,10 +682,11 @@ function JoinModal({
   const [name, setName] = useState(defaultName);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   const join = async () => {
     if (!name.trim()) {
-      setError("表示名を入力してください");
+      setError(t("表示名を入力してください", "Please enter a display name"));
       return;
     }
     setBusy(true);
@@ -696,7 +703,7 @@ function JoinModal({
         memberKey?: string;
         error?: string;
       };
-      if (!res.ok || !data.group || !data.member || !data.memberKey) throw new Error(data.error ?? "参加できませんでした");
+      if (!res.ok || !data.group || !data.member || !data.memberKey) throw new Error(data.error ?? t("参加できませんでした", "Couldn't join"));
       const session: GroupSession = {
         groupId: data.group.id,
         groupName: data.group.name,
@@ -710,21 +717,21 @@ function JoinModal({
       saveGroupSession(session);
       onJoined(session);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "参加できませんでした");
+      setError(e instanceof Error ? e.message : t("参加できませんでした", "Couldn't join"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <ModalShell title="グループに参加" onClose={onClose}>
+    <ModalShell title={t("グループに参加", "Join the group")} onClose={onClose}>
       <div className="rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-100">
         <p className="text-xs text-emerald-800/80">{info.appTitle}</p>
         <p className="mt-0.5 text-base font-extrabold text-emerald-950">{info.group.name}</p>
-        <p className="mt-0.5 text-xs text-emerald-800/80">メンバー {info.memberCount}人</p>
+        <p className="mt-0.5 text-xs text-emerald-800/80">{t(`メンバー ${info.memberCount}人`, `${info.memberCount} ${info.memberCount === 1 ? "member" : "members"}`)}</p>
       </div>
       <label htmlFor="group-join-name" className="mt-4 block text-sm font-bold text-slate-800">
-        表示名
+        {t("表示名", "Display name")}
       </label>
       <input
         id="group-join-name"
@@ -732,24 +739,24 @@ function JoinModal({
         onChange={(e) => setName(e.target.value)}
         maxLength={20}
         autoFocus
-        placeholder="例：たろう"
+        placeholder={t("例：たろう", "e.g. Sam")}
         className={INPUT}
         onKeyDown={(e) => {
           if (e.key === "Enter") void join();
         }}
       />
-      <p className="mt-1.5 text-xs text-slate-500">メンバーに表示される名前です。ログインは必要ありません。</p>
+      <p className="mt-1.5 text-xs text-slate-500">{t("メンバーに表示される名前です。ログインは必要ありません。", "This is the name members see. No sign-in needed.")}</p>
       {error && <p className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
       <button type="button" onClick={() => void join()} disabled={busy} className={cn(PRIMARY, "mt-4")}>
         <Users className="h-4 w-4" />
-        {busy ? "参加しています…" : "このグループに参加する"}
+        {busy ? t("参加しています…", "Joining…") : t("このグループに参加する", "Join this group")}
       </button>
       <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-400">
-        参加した情報はこの端末のブラウザに保存されます。参加すると
+        {t("参加した情報はこの端末のブラウザに保存されます。参加すると", "Your membership is saved in this browser. By joining, you agree to the")}
         <Link href="/terms#groups" target="_blank" rel="noopener noreferrer" className="mx-0.5 font-semibold text-emerald-700 underline underline-offset-2">
-          グループ共有の利用規約
+          {t("グループ共有の利用規約", "group sharing terms")}
         </Link>
-        に同意したものとみなします。
+        {t("に同意したものとみなします。", ".")}
       </p>
     </ModalShell>
   );
@@ -772,10 +779,11 @@ function CreateModal({
   const [name, setName] = useState(defaultName);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   const create = async () => {
     if (!groupName.trim() || !name.trim()) {
-      setError("グループ名と表示名を入力してください");
+      setError(t("グループ名と表示名を入力してください", "Please enter a group name and your display name"));
       return;
     }
     setBusy(true);
@@ -793,7 +801,7 @@ function CreateModal({
         memberKey?: string;
         error?: string;
       };
-      if (!res.ok || !data.group || !data.member || !data.memberKey) throw new Error(data.error ?? "作れませんでした");
+      if (!res.ok || !data.group || !data.member || !data.memberKey) throw new Error(data.error ?? t("作れませんでした", "Couldn't create the group"));
       const session: GroupSession = {
         groupId: data.group.id,
         groupName: data.group.name,
@@ -807,17 +815,17 @@ function CreateModal({
       saveGroupSession(session);
       onCreated(session);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "作れませんでした");
+      setError(e instanceof Error ? e.message : t("作れませんでした", "Couldn't create the group"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <ModalShell title="グループを作る" onClose={onClose}>
-      <p className="text-sm text-slate-500">「{appTitle}」を、招待したメンバーとデータを共有しながら使えます。</p>
+    <ModalShell title={t("グループを作る", "Create a group")} onClose={onClose}>
+      <p className="text-sm text-slate-500">{t(`「${appTitle}」を、招待したメンバーとデータを共有しながら使えます。`, `Use “${appTitle}” together, sharing data with the members you invite.`)}</p>
       <label htmlFor="group-create-name" className="mt-4 block text-sm font-bold text-slate-800">
-        グループ名
+        {t("グループ名", "Group name")}
       </label>
       <input
         id="group-create-name"
@@ -825,23 +833,23 @@ function CreateModal({
         onChange={(e) => setGroupName(e.target.value)}
         maxLength={40}
         autoFocus
-        placeholder="例：テニスサークル 2026"
+        placeholder={t("例：テニスサークル 2026", "e.g. Tennis club 2026")}
         className={INPUT}
       />
       <label htmlFor="group-create-me" className="mt-3 block text-sm font-bold text-slate-800">
-        あなたの表示名
+        {t("あなたの表示名", "Your display name")}
       </label>
-      <input id="group-create-me" value={name} onChange={(e) => setName(e.target.value)} maxLength={20} placeholder="例：部長" className={INPUT} />
+      <input id="group-create-me" value={name} onChange={(e) => setName(e.target.value)} maxLength={20} placeholder={t("例：部長", "e.g. Captain")} className={INPUT} />
       {error && <p className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
       <button type="button" onClick={() => void create()} disabled={busy} className={cn(PRIMARY, "mt-4")}>
-        {busy ? "作っています…" : "グループを作って招待リンクを出す"}
+        {busy ? t("作っています…", "Creating…") : t("グループを作って招待リンクを出す", "Create the group and get an invite link")}
       </button>
       <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-400">
-        作った人は、招待リンクの作り直しやグループの削除ができます。作成すると
+        {t("作った人は、招待リンクの作り直しやグループの削除ができます。作成すると", "The creator can make new invite links or delete the group. By creating one, you agree to the")}
         <Link href="/terms#groups" target="_blank" rel="noopener noreferrer" className="mx-0.5 font-semibold text-emerald-700 underline underline-offset-2">
-          グループ共有の利用規約
+          {t("グループ共有の利用規約", "group sharing terms")}
         </Link>
-        に同意したものとみなします。
+        {t("に同意したものとみなします。", ".")}
       </p>
     </ModalShell>
   );
@@ -858,9 +866,10 @@ function InviteModal({
   group: GroupSession;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
-    <ModalShell title="メンバーを招待" onClose={onClose}>
-      <p className="text-sm text-slate-500">このリンクを送ると、表示名を入れるだけで「{group.groupName}」に参加できます。</p>
+    <ModalShell title={t("メンバーを招待", "Invite members")} onClose={onClose}>
+      <p className="text-sm text-slate-500">{t(`このリンクを送ると、表示名を入れるだけで「${group.groupName}」に参加できます。`, `Anyone you send this link to can join “${group.groupName}” just by entering a display name.`)}</p>
       <InviteLinkSection appId={appId} appTitle={appTitle} group={group} />
     </ModalShell>
   );
@@ -868,8 +877,13 @@ function InviteModal({
 
 function InviteLinkSection({ appId, appTitle, group }: { appId: string; appTitle: string; group: GroupSession }) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
+  const locale = useLocale();
   const url = inviteUrl(appId, group.inviteToken ?? "");
-  const message = `「${group.groupName}」で「${appTitle}」を使おう。このリンクから参加できます（登録不要）\n`;
+  const message = t(
+    `「${group.groupName}」で「${appTitle}」を使おう。このリンクから参加できます（登録不要）\n`,
+    `Let's use “${appTitle}” together in “${group.groupName}”. Join with this link (no sign-up needed)\n`
+  );
 
   const copy = async () => {
     try {
@@ -887,19 +901,26 @@ function InviteLinkSection({ appId, appTitle, group }: { appId: string; appTitle
         <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 bg-transparent font-mono text-xs text-slate-600 outline-none" />
         <button type="button" onClick={() => void copy()} className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-white">
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? "コピー済み" : "コピー"}
+          {copied ? t("コピー済み", "Copied") : t("コピー", "Copy")}
         </button>
       </div>
       <a
-        href={`https://line.me/R/msg/text/?${encodeURIComponent(message + url)}`}
+        href={
+          locale === "en"
+            ? `https://wa.me/?text=${encodeURIComponent(message + url)}`
+            : `https://line.me/R/msg/text/?${encodeURIComponent(message + url)}`
+        }
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#06C755] px-4 py-3 text-sm font-bold text-white transition hover:brightness-95"
+        className={cn(
+          "mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:brightness-95",
+          locale === "en" ? "bg-[#25D366]" : "bg-[#06C755]"
+        )}
       >
-        LINEで送る
+        {t("LINEで送る", "Send on WhatsApp")}
       </a>
       <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-        リンクを知っている人は誰でも参加できます。グループ外に漏れたときは、作った人が「招待リンクを作り直す」で古いリンクを使えなくできます。
+        {t("リンクを知っている人は誰でも参加できます。グループ外に漏れたときは、作った人が「招待リンクを作り直す」で古いリンクを使えなくできます。", "Anyone with the link can join. If it leaks outside the group, the creator can make a new invite link so the old one stops working.")}
       </p>
     </>
   );

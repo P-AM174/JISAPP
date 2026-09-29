@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { Key, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { AttachType, SecretMeta } from "@/lib/secrets/constants";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { intlLocale, type Locale } from "@/lib/i18n/config";
 
 type Props = {
   open: boolean;
@@ -19,9 +21,9 @@ type FormMode = "add" | "edit";
 const secretValueInputClass =
   "w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm outline-none focus:border-emerald-400 [-webkit-text-security:disc]";
 
-function formatUpdatedAt(iso: string): string {
+function formatUpdatedAt(iso: string, locale: Locale): string {
   try {
-    return new Date(iso).toLocaleString("ja-JP", {
+    return new Date(iso).toLocaleString(intlLocale(locale), {
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
@@ -32,10 +34,11 @@ function formatUpdatedAt(iso: string): string {
   }
 }
 
-function attachLabel(s: SecretMeta): string {
+function attachLabel(s: SecretMeta, locale: Locale): string {
+  const en = locale === "en";
   return s.attach_type === "query"
-    ? `URLパラメータ: ${s.param_name ?? "api_key"}`
-    : `ヘッダー: ${s.header_name}`;
+    ? `${en ? "URL parameter" : "URLパラメータ"}: ${s.param_name ?? "api_key"}`
+    : `${en ? "Header" : "ヘッダー"}: ${s.header_name}`;
 }
 
 export function SecretsSettingsModal({
@@ -46,6 +49,8 @@ export function SecretsSettingsModal({
   mode = "app",
 }: Props) {
   const formId = useId();
+  const t = useT();
+  const locale = useLocale();
   const [appSecrets, setAppSecrets] = useState<SecretMeta[]>([]);
   const [appLoading, setAppLoading] = useState(false);
   const [appError, setAppError] = useState("");
@@ -76,10 +81,10 @@ export function SecretsSettingsModal({
     try {
       const res = await fetch(`/api/secrets/app?appId=${encodeURIComponent(appId)}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "読み込みに失敗しました");
+      if (!res.ok) throw new Error(data.error ?? t("読み込みに失敗しました", "Couldn't load"));
       setAppSecrets(data.secrets ?? []);
     } catch (e) {
-      setAppError(e instanceof Error ? e.message : "読み込みに失敗しました");
+      setAppError(e instanceof Error ? e.message : t("読み込みに失敗しました", "Couldn't load"));
     } finally {
       setAppLoading(false);
     }
@@ -119,11 +124,11 @@ export function SecretsSettingsModal({
     const isEdit = formMode === "edit";
     const nextValue = formValue.trim();
     if (!isEdit && !nextValue) {
-      setAppError("APIキーの値を入力してください");
+      setAppError(t("APIキーの値を入力してください", "Please enter the API key"));
       return;
     }
     if (isEdit && replaceValue && !nextValue) {
-      setAppError("新しいAPIキーを入力するか、「キーを差し替えない」に戻してください");
+      setAppError(t("新しいAPIキーを入力するか、「キーを差し替えない」に戻してください", "Enter a new API key, or go back to keeping the current one"));
       return;
     }
 
@@ -145,11 +150,11 @@ export function SecretsSettingsModal({
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "保存に失敗しました");
+      if (!res.ok) throw new Error(data.error ?? t("保存に失敗しました", "Couldn't save"));
       resetForm();
       await loadAppSecrets();
     } catch (e) {
-      setAppError(e instanceof Error ? e.message : "保存に失敗しました");
+      setAppError(e instanceof Error ? e.message : t("保存に失敗しました", "Couldn't save"));
     } finally {
       setSavingAppSecret(false);
     }
@@ -157,7 +162,7 @@ export function SecretsSettingsModal({
 
   const deleteAppSecret = async (name: string) => {
     if (!appId) return;
-    if (!window.confirm(`「${name}」を削除しますか？`)) return;
+    if (!window.confirm(t(`「${name}」を削除しますか？`, `Delete “${name}”?`))) return;
     setAppError("");
     try {
       const res = await fetch(
@@ -165,11 +170,11 @@ export function SecretsSettingsModal({
         { method: "DELETE" }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "削除に失敗しました");
+      if (!res.ok) throw new Error(data.error ?? t("削除に失敗しました", "Couldn't delete"));
       if (editingName === name) resetForm();
       await loadAppSecrets();
     } catch (e) {
-      setAppError(e instanceof Error ? e.message : "削除に失敗しました");
+      setAppError(e instanceof Error ? e.message : t("削除に失敗しました", "Couldn't delete"));
     }
   };
 
@@ -192,17 +197,18 @@ export function SecretsSettingsModal({
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-black text-gray-900">
-              {mode === "studio" ? "APIキー" : "シークレット管理"}
+              {mode === "studio" ? t("APIキー", "API keys") : t("シークレット管理", "Secrets")}
             </h2>
             <p className="text-xs text-gray-500">
               {mode === "studio"
-                ? "キーをコードに書かず、ここに貼り付けて保管"
-                : "APIキーをコードに書かず安全に保管"}
+                ? t("キーをコードに書かず、ここに貼り付けて保管", "Keep keys here instead of in your code")
+                : t("APIキーをコードに書かず安全に保管", "Store API keys safely, outside your code")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("閉じる", "Close")}
             className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100"
           >
             <X className="h-4 w-4" />
@@ -212,24 +218,27 @@ export function SecretsSettingsModal({
         <div className="overflow-y-auto p-6">
           {!appId ? (
             <div className="space-y-3">
-              <p className="text-sm leading-relaxed text-gray-600">読み込み中…</p>
+              <p className="text-sm leading-relaxed text-gray-600">{t("読み込み中…", "Loading…")}</p>
             </div>
           ) : (
             <div className="space-y-4">
               <p className="text-xs leading-relaxed text-gray-500">
                 {mode === "studio"
-                  ? "外部API・AI（OpenAI、天気API、地図APIなど）のキーを登録します。コードに書く secret 名と、ここで登録する名前を同じ大文字にしてください。"
-                  : `${appTitle ? `「${appTitle}」` : "このアプリ"} の公開版で使う外部APIキーです。コードでは secret: '名前' だけ指定します。`}
+                  ? t("外部API・AI（OpenAI、天気API、地図APIなど）のキーを登録します。コードに書く secret 名と、ここで登録する名前を同じ大文字にしてください。", "Register keys for external APIs and AI (OpenAI, weather, maps, etc.). Use the same UPPERCASE name here as the secret name in your code.")
+                  : t(
+                      `${appTitle ? `「${appTitle}」` : "このアプリ"} の公開版で使う外部APIキーです。コードでは secret: '名前' だけ指定します。`,
+                      `External API keys used by the published version of ${appTitle ? `“${appTitle}”` : "this app"}. In the code, only write secret: 'NAME'.`
+                    )}
               </p>
               <div className="rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2.5 text-[11px] leading-relaxed text-violet-900">
-                例:{" "}
-                <code>await Zisup.fetch(url, {"{ secret: 'WEATHER' }"})</code>
+                {t("例:", "Example:")}{" "}
+                <code>await Jisapp.fetch(url, {"{ secret: 'WEATHER' }"})</code>
               </div>
               {appError && (
                 <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{appError}</p>
               )}
               {appLoading ? (
-                <p className="text-xs text-gray-400">読み込み中…</p>
+                <p className="text-xs text-gray-400">{t("読み込み中…", "Loading…")}</p>
               ) : appSecrets.length > 0 ? (
                 <ul className="space-y-2">
                   {appSecrets.map((s) => (
@@ -239,16 +248,16 @@ export function SecretsSettingsModal({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-sm font-bold text-gray-800">{s.name}</p>
-                        <p className="text-[10px] text-gray-400">{attachLabel(s)}</p>
+                        <p className="text-[10px] text-gray-400">{attachLabel(s, locale)}</p>
                         <p className="mt-0.5 text-[10px] text-emerald-600">
-                          ●●●● 登録済み
-                          {s.updated_at ? ` · 更新 ${formatUpdatedAt(s.updated_at)}` : ""}
+                          {t("●●●● 登録済み", "●●●● Saved")}
+                          {s.updated_at ? t(` · 更新 ${formatUpdatedAt(s.updated_at, locale)}`, ` · updated ${formatUpdatedAt(s.updated_at, locale)}`) : ""}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => openEditForm(s)}
-                        title="編集"
+                        title={t("編集", "Edit")}
                         className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600"
                       >
                         <Pencil className="h-4 w-4" />
@@ -256,7 +265,7 @@ export function SecretsSettingsModal({
                       <button
                         type="button"
                         onClick={() => deleteAppSecret(s.name)}
-                        title="削除"
+                        title={t("削除", "Delete")}
                         className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-600"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -265,7 +274,7 @@ export function SecretsSettingsModal({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-gray-400">登録されたシークレットはありません</p>
+                <p className="text-xs text-gray-400">{t("登録されたシークレットはありません", "No secrets yet")}</p>
               )}
 
               {showForm ? (
@@ -279,16 +288,16 @@ export function SecretsSettingsModal({
                   className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4"
                 >
                   <p className="text-xs font-bold text-emerald-800">
-                    {formMode === "edit" ? `「${editingName}」を編集` : "新しいシークレット"}
+                    {formMode === "edit" ? t(`「${editingName}」を編集`, `Edit “${editingName}”`) : t("新しいシークレット", "New secret")}
                   </p>
                   <div>
-                    <label className="mb-1 block text-xs font-bold text-gray-700">名前（大文字）</label>
+                    <label className="mb-1 block text-xs font-bold text-gray-700">{t("名前（大文字）", "Name (UPPERCASE)")}</label>
                     <input
                       type="text"
                       name={`${formId}-secret-name`}
                       value={formName}
                       onChange={(e) => setFormName(e.target.value.toUpperCase())}
-                      placeholder="例: WEATHER, OPENAI, MAPS"
+                      placeholder={t("例: WEATHER, OPENAI, MAPS", "e.g. WEATHER, OPENAI, MAPS")}
                       maxLength={32}
                       readOnly={formMode === "edit"}
                       autoComplete="off"
@@ -302,20 +311,20 @@ export function SecretsSettingsModal({
                     />
                     {formMode === "edit" ? (
                       <p className="mt-1 text-[10px] text-gray-400">
-                        名前はコードの secret 名と一致するため変更できません
+                        {t("名前はコードの secret 名と一致するため変更できません", "The name matches the secret name in your code, so it can't be changed")}
                       </p>
                     ) : (
                       <p className="mt-1 text-[10px] text-gray-400">
-                        コード内の secret 名と同じ名前にしてください
+                        {t("コード内の secret 名と同じ名前にしてください", "Use the same name as the secret name in your code")}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-bold text-gray-700">APIキーの値</label>
+                    <label className="mb-1 block text-xs font-bold text-gray-700">{t("APIキーの値", "API key value")}</label>
                     {formMode === "edit" && !replaceValue ? (
                       <div className="space-y-2">
                         <div className="rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-emerald-800">
-                          ●●●● 登録済みのキーをそのまま引き継ぎます
+                          {t("●●●● 登録済みのキーをそのまま引き継ぎます", "●●●● Keep the saved key as is")}
                         </div>
                         <button
                           type="button"
@@ -325,7 +334,7 @@ export function SecretsSettingsModal({
                           }}
                           className="text-[11px] font-semibold text-gray-500 underline decoration-dotted underline-offset-2 hover:text-emerald-700"
                         >
-                          キーを差し替える
+                          {t("キーを差し替える", "Replace the key")}
                         </button>
                       </div>
                     ) : (
@@ -335,7 +344,7 @@ export function SecretsSettingsModal({
                           name={`${formId}-secret-token`}
                           value={formValue}
                           onChange={(e) => setFormValue(e.target.value)}
-                          placeholder="取得したAPIキーを貼り付け"
+                          placeholder={t("取得したAPIキーを貼り付け", "Paste your API key")}
                           autoComplete="off"
                           autoCorrect="off"
                           autoCapitalize="off"
@@ -355,33 +364,33 @@ export function SecretsSettingsModal({
                             }}
                             className="text-[11px] font-semibold text-gray-500 underline decoration-dotted underline-offset-2 hover:text-emerald-700"
                           >
-                            差し替えをやめて、登録済みキーを引き継ぐ
+                            {t("差し替えをやめて、登録済みキーを引き継ぐ", "Cancel and keep the saved key")}
                           </button>
                         )}
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-bold text-gray-700">付け方</label>
+                    <label className="mb-1 block text-xs font-bold text-gray-700">{t("付け方", "How it's attached")}</label>
                     <select
                       value={attachType}
                       onChange={(e) => setAttachType(e.target.value as AttachType)}
                       autoComplete="off"
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400"
                     >
-                      <option value="header">HTTPヘッダー（Authorization 等）</option>
-                      <option value="query">URLパラメータ（?key= 等）</option>
+                      <option value="header">{t("HTTPヘッダー（Authorization 等）", "HTTP header (Authorization, etc.)")}</option>
+                      <option value="query">{t("URLパラメータ（?key= 等）", "URL parameter (?key=, etc.)")}</option>
                     </select>
                   </div>
                   {attachType === "query" && (
                     <div>
-                      <label className="mb-1 block text-xs font-bold text-gray-700">パラメータ名</label>
+                      <label className="mb-1 block text-xs font-bold text-gray-700">{t("パラメータ名", "Parameter name")}</label>
                       <input
                         type="text"
                         name={`${formId}-secret-param`}
                         value={paramName}
                         onChange={(e) => setParamName(e.target.value)}
-                        placeholder="例: key, appid, api_key"
+                        placeholder={t("例: key, appid, api_key", "e.g. key, appid, api_key")}
                         autoComplete="off"
                         autoCorrect="off"
                         spellCheck={false}
@@ -397,7 +406,7 @@ export function SecretsSettingsModal({
                       onClick={resetForm}
                       className="flex-1 rounded-xl border border-gray-200 py-2 text-sm font-semibold text-gray-600"
                     >
-                      キャンセル
+                      {t("キャンセル", "Cancel")}
                     </button>
                     <button
                       type="submit"
@@ -410,10 +419,10 @@ export function SecretsSettingsModal({
                       className="flex-1 rounded-xl bg-emerald-600 py-2 text-sm font-bold text-white disabled:opacity-50"
                     >
                       {savingAppSecret
-                        ? "保存中…"
+                        ? t("保存中…", "Saving…")
                         : formMode === "edit"
-                          ? "更新する"
-                          : "追加する"}
+                          ? t("更新する", "Update")
+                          : t("追加する", "Add")}
                     </button>
                   </div>
                 </form>
@@ -424,7 +433,7 @@ export function SecretsSettingsModal({
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
                 >
                   <Plus className="h-4 w-4" />
-                  シークレットを追加
+                  {t("シークレットを追加", "Add a secret")}
                 </button>
               )}
             </div>

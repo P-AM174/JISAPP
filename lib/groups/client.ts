@@ -3,6 +3,8 @@
  * 参加したグループの鍵は、この端末のブラウザに保存する（メンバーはログイン不要のため）。
  */
 
+import { localeFromPath, localizePath } from "@/lib/i18n/config";
+
 export type GroupSession = {
   groupId: string;
   groupName: string;
@@ -59,9 +61,11 @@ export function leaveActiveGroup(appId: string, forget = false) {
   }
 }
 
+/** 招待リンク。英語ページで出したときは英語ページ（/en/apps/...）のリンクにする */
 export function inviteUrl(appId: string, inviteToken: string): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://jisapp.app";
-  return `${origin}/apps/${appId}?g=${encodeURIComponent(inviteToken)}`;
+  const locale = typeof window !== "undefined" ? localeFromPath(window.location.pathname) : null;
+  return `${origin}${localizePath(`/apps/${appId}`, locale ?? "ja")}?g=${encodeURIComponent(inviteToken)}`;
 }
 
 /** コードがグループ共有（Jisapp.shared／旧名 Zisup.shared）を使っているか */

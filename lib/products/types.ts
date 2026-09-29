@@ -63,6 +63,13 @@ export type Product = {
   productFiles?: Array<{ name: string; content: string }>;
 };
 
+export const PRODUCT_TYPE_LABELS_EN: Record<ProductType, string> = {
+  google: "Google (Sheets / Apps Script / Docs)",
+  notion: "Notion template",
+  replit: "Replit project",
+  generic: "Other link",
+};
+
 export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   google: "Google（スプレッドシート / GAS / ドキュメント）",
   notion: "Notion テンプレート",

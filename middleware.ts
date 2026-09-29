@@ -12,7 +12,18 @@ export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const pathLocale = localeFromPath(pathname);
 
-  if (pathLocale === "en") return NextResponse.next();
+  if (pathLocale === "en") {
+    // 旧来の有料出品フロー（/create）と、仮の取引チャット（/chat）は日本語のみ。
+    // 英語版では、今の公開の流れ（マイプロジェクト）と依頼掲示板へ案内する
+    const legacy = stripLocale(pathname);
+    if (/^\/create(\/|$)/.test(legacy) || /^\/chat(\/|$)/.test(legacy)) {
+      const url = req.nextUrl.clone();
+      url.pathname = legacy.startsWith("/create") ? "/en/projects" : "/en/requests";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
 
   if (pathLocale === DEFAULT_LOCALE) {
     const url = req.nextUrl.clone();

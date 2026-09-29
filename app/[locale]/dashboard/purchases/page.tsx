@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "@/lib/i18n/navigation";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { useT } from "@/lib/i18n/client";
 import {
   ShoppingBag,
   Search,
@@ -39,6 +40,7 @@ export default function PurchasesPage() {
   const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
   const [userListings, setUserListings] = useState<PurchasedApp[]>([]);
   const [mounted, setMounted] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     try {
@@ -51,10 +53,10 @@ export default function PurchasesPage() {
         setUserListings(
           listings.map((l: Record<string, unknown>) => ({
             id: l.id,
-            name: (l.name as string) ?? "無題のアプリ",
+            name: (l.name as string) ?? t("無題のアプリ", "Untitled app"),
             price: (l.priceNum as number) ?? 0,
-            category: (l.category as string) ?? "その他",
-            creator: (l.creator as string) ?? "クリエイター",
+            category: (l.category as string) ?? t("その他", "Other"),
+            creator: (l.creator as string) ?? t("クリエイター", "Creator"),
             gradient: (l.gradient as string) ?? "from-emerald-500 to-green-600",
             rating: (l.rating as number) ?? 5.0,
           }))
@@ -80,14 +82,14 @@ export default function PurchasesPage() {
           <BackButton hideLabelOnMobile />
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
-          <span className="text-sm font-semibold text-gray-700">購入した商品</span>
+          <span className="text-sm font-semibold text-gray-700">{t("購入した商品", "Your apps")}</span>
           <div className="ml-auto">
             <Link
               href="/search"
               className="flex items-center gap-1.5 rounded-full border border-emerald-200 px-4 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors"
             >
               <Search className="h-3.5 w-3.5" />
-              アプリを探す
+              {t("アプリを探す", "Browse apps")}
             </Link>
           </div>
         </div>
@@ -97,14 +99,14 @@ export default function PurchasesPage() {
         {/* サマリー */}
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-xs text-gray-400 font-medium mb-1">購入済み</p>
+            <p className="text-xs text-gray-400 font-medium mb-1">{t("購入済み", "Got")}</p>
             <p className="text-2xl font-black text-gray-900">
               {mounted ? purchasedApps.length : "—"}
-              <span className="text-sm font-medium text-gray-400 ml-1">件</span>
+              {t(<span className="text-sm font-medium text-gray-400 ml-1">件</span>, null)}
             </p>
           </div>
           <div className="rounded-2xl bg-teal-50 p-4 shadow-sm">
-            <p className="text-xs text-teal-600 font-medium mb-1">すべて</p>
+            <p className="text-xs text-teal-600 font-medium mb-1">{t("すべて", "All")}</p>
             <p className="text-2xl font-black text-teal-700">FREE</p>
           </div>
         </div>
@@ -112,7 +114,7 @@ export default function PurchasesPage() {
         {/* 一覧 */}
         {!mounted ? (
           <div className="flex items-center justify-center py-16">
-            <p className="text-sm text-gray-400">読み込み中...</p>
+            <p className="text-sm text-gray-400">{t("読み込み中...", "Loading...")}</p>
           </div>
         ) : purchasedApps.length === 0 ? (
           <div className="flex flex-col items-center gap-4 rounded-3xl bg-white py-16 text-center shadow-sm">
@@ -120,20 +122,20 @@ export default function PurchasesPage() {
               <ShoppingBag className="h-8 w-8 text-teal-300" />
             </div>
             <div>
-              <p className="font-bold text-gray-700 mb-1">購入履歴がありません</p>
-              <p className="text-xs text-gray-400">気になるアプリを探してみましょう</p>
+              <p className="font-bold text-gray-700 mb-1">{t("購入履歴がありません", "Nothing here yet")}</p>
+              <p className="text-xs text-gray-400">{t("気になるアプリを探してみましょう", "Find an app you like")}</p>
             </div>
             <Link
               href="/search"
               className="flex items-center gap-2 rounded-full bg-teal-600 px-5 py-2 text-sm font-bold text-white hover:bg-teal-700 transition-colors"
             >
               <Search className="h-4 w-4" />
-              アプリを探す
+              {t("アプリを探す", "Browse apps")}
             </Link>
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">購入一覧</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">{t("購入一覧", "Your apps")}</p>
             {purchasedApps.map((app) => {
               const priceLabel = "FREE";
               return (
@@ -158,7 +160,7 @@ export default function PurchasesPage() {
                       )}
                       {app.rating && (
                         <span className="text-[10px] text-gray-500 font-semibold">
-                          評価 {app.rating.toFixed(1)}
+                          {t("評価", "Rating")} {app.rating.toFixed(1)}
                         </span>
                       )}
                     </div>
@@ -168,7 +170,7 @@ export default function PurchasesPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-600">
-                      購入済み
+                      {t("購入済み", "Got")}
                     </span>
                     <ArrowUpRight className="h-4 w-4 text-gray-300 group-hover:text-teal-500 transition-colors" />
                   </div>

@@ -19,6 +19,7 @@ import {
   MessageSquare,
   ShieldCheck,
 } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 // ─── アプリのメタ情報（success ページで使う最小限のデータ） ───
 const APPS_META: Record<string, { name: string; creator: string; price: number; gradient: string; category: string }> = {
@@ -247,14 +248,15 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 export default function PurchaseSuccessPage() {
   const params    = useParams();
   const id        = String(params?.id ?? "");
+  const t         = useT();
   const defaultMeta = {
-    name: "ご購入のアプリ", creator: "クリエイター", price: 0,
-    gradient: "from-emerald-500 to-green-600", category: "アプリ",
+    name: t("ご購入のアプリ", "Your app"), creator: t("クリエイター", "Creator"), price: 0,
+    gradient: "from-emerald-500 to-green-600", category: t("アプリ", "App"),
   };
   const [meta, setMeta] = useState(
     () => APPS_META[id] ?? defaultMeta
   );
-  const priceLabel = meta.price === 0 ? "無料" : `¥${meta.price.toLocaleString()}`;
+  const priceLabel = meta.price === 0 ? t("無料", "Free") : `¥${meta.price.toLocaleString()}`;
   // デフォルトはダミーコードファイル。localStorage に出品データがあればそちらを優先する
   const [files, setFiles] = useState(() =>
     buildCodeFiles(
@@ -358,7 +360,7 @@ export default function PurchaseSuccessPage() {
           <BackButton fallbackHref={`/apps/${id}`} />
           <JisappLogo href="/" />
           <Link href="/mypage" className="text-sm font-medium text-gray-400 hover:text-emerald-600">
-            マイページ
+            {t("マイページ", "My page")}
           </Link>
         </div>
       </header>
@@ -373,27 +375,27 @@ export default function PurchaseSuccessPage() {
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
               <CheckCircle2 className="h-10 w-10 text-white" strokeWidth={2.5} />
             </div>
-            <h1 className="text-xl font-black text-white">ご購入ありがとうございました！</h1>
-            <p className="mt-1 text-sm text-white/80">「{meta.name}」の取引が完了しました</p>
+            <h1 className="text-xl font-black text-white">{t("ご購入ありがとうございました！", "Thanks for getting this app!")}</h1>
+            <p className="mt-1 text-sm text-white/80">{t(`「${meta.name}」の取引が完了しました`, `“${meta.name}” is yours`)}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm">
               <CheckCircle2 className="h-4 w-4" />
-              {priceLabel} の決済が完了
+              {t(`${priceLabel} の決済が完了`, `${priceLabel} — done`)}
             </div>
           </div>
         </section>
 
         {product?.is_playground_app && (
           <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-            <p className="text-sm font-bold text-gray-800">ブラウザでアプリを起動</p>
+            <p className="text-sm font-bold text-gray-800">{t("ブラウザでアプリを起動", "Launch the app in your browser")}</p>
             <p className="mt-1 text-xs text-gray-500">
-              サンドボックス環境で安全に実行します。ジサップ本体とは隔離されています。
+              {t("サンドボックス環境で安全に実行します。ジサップ本体とは隔離されています。", "It runs safely in a sandbox, isolated from Jisapp itself.")}
             </p>
             <Link
               href={`/apps/${id}/run`}
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700"
             >
               <ArrowRight className="h-4 w-4" />
-              アプリを起動する
+              {t("アプリを起動する", "Launch app")}
             </Link>
           </section>
         )}
@@ -408,10 +410,10 @@ export default function PurchaseSuccessPage() {
         ) : (
           <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
             <div className="mb-1 text-xs font-bold text-emerald-600">
-              クイック導入
+              {t("クイック導入", "Quick setup")}
             </div>
             <p className="text-sm text-gray-600">
-              下のソースコードをコピーして、Google Apps Script や HTML エディタに貼り付けてご利用ください。
+              {t("下のソースコードをコピーして、Google Apps Script や HTML エディタに貼り付けてご利用ください。", "Copy the source code below and paste it into Google Apps Script or an HTML editor.")}
             </p>
           </section>
         )}
@@ -448,7 +450,7 @@ export default function PurchaseSuccessPage() {
                 }`}
               >
                 {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied ? "コピーしました！" : "コードをコピー"}
+                {copied ? t("コピーしました！", "Copied!") : t("コードをコピー", "Copy code")}
               </button>
             </div>
           </div>
@@ -481,10 +483,9 @@ export default function PurchaseSuccessPage() {
 
         {/* ④ 受取・動作確認完了ボタン */}
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <h2 className="mb-1 text-sm font-bold text-gray-700">取引を完了する</h2>
+          <h2 className="mb-1 text-sm font-bold text-gray-700">{t("取引を完了する", "Complete the transaction")}</h2>
           <p className="mb-4 text-xs text-gray-500 leading-relaxed">
-            アプリの動作を確認したら「受取・動作確認完了」を押してください。
-            クリエイターへの売上が確定します。
+            {t("アプリの動作を確認したら「受取・動作確認完了」を押してください。クリエイターへの売上が確定します。", "Once you've checked the app works, press “Received & working”. This confirms the sale for the creator.")}
           </p>
           {!confirmed ? (
             <button
@@ -492,12 +493,12 @@ export default function PurchaseSuccessPage() {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-4 text-sm font-black text-white shadow-lg shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
             >
               <ShieldCheck className="h-5 w-5" />
-              受取・動作確認完了
+              {t("受取・動作確認完了", "Received & working")}
             </button>
           ) : (
             <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 py-4 text-sm font-bold text-emerald-700 ring-2 ring-emerald-200">
               <CheckCircle2 className="h-5 w-5" />
-              受取確認が完了しました！
+              {t("受取確認が完了しました！", "Confirmed!")}
             </div>
           )}
         </section>
@@ -506,19 +507,19 @@ export default function PurchaseSuccessPage() {
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
           <h2 className="mb-1 flex items-center gap-2 text-sm font-bold text-gray-700">
             <MessageSquare className="h-4 w-4 text-emerald-500" />
-            このアプリのレビューを投稿する
+            {t("このアプリのレビューを投稿する", "Review this app")}
           </h2>
-          <p className="mb-4 text-xs text-gray-400">他のユーザーの参考になるレビューをお願いします</p>
+          <p className="mb-4 text-xs text-gray-400">{t("他のユーザーの参考になるレビューをお願いします", "Help others with an honest review")}</p>
 
           {!reviewPosted ? (
             <form onSubmit={handleReviewSubmit} className="space-y-4">
               {/* 星評価 */}
               <div>
-                <p className="mb-2 text-xs font-semibold text-gray-600">総合評価</p>
+                <p className="mb-2 text-xs font-semibold text-gray-600">{t("総合評価", "Overall rating")}</p>
                 <StarPicker value={starRating} onChange={setStarRating} />
                 {starRating > 0 && (
                   <p className="mt-1 text-xs text-amber-600 font-medium">
-                    {["", "残念でした", "もう少しかな", "良かったです", "とても良かった！", "最高でした！"][starRating]}
+                    {(t(["", "残念でした", "もう少しかな", "良かったです", "とても良かった！", "最高でした！"], ["", "Disappointing", "Could be better", "Good", "Really good!", "Amazing!"]))[starRating]}
                   </p>
                 )}
               </div>
@@ -526,12 +527,12 @@ export default function PurchaseSuccessPage() {
               {/* コメント */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-gray-600">
-                  コメント（任意）
+                  {t("コメント（任意）", "Comment (optional)")}
                 </label>
                 <textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="使ってみた感想、導入のしやすさ、活用シーンなど何でも書いてください"
+                  placeholder={t("使ってみた感想、導入のしやすさ、活用シーンなど何でも書いてください", "How was it? Ease of setup, how you use it — anything goes")}
                   rows={4}
                   className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 placeholder-gray-300 outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                 />
@@ -543,7 +544,7 @@ export default function PurchaseSuccessPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
-                レビューを投稿する
+                {t("レビューを投稿する", "Post review")}
               </button>
             </form>
           ) : (
@@ -551,13 +552,13 @@ export default function PurchaseSuccessPage() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
                 <CheckCircle2 className="h-7 w-7 text-emerald-600" strokeWidth={2} />
               </div>
-              <p className="font-bold text-emerald-700">レビューを投稿しました！</p>
+              <p className="font-bold text-emerald-700">{t("レビューを投稿しました！", "Review posted!")}</p>
               <div className="flex gap-0.5">
                 {[1,2,3,4,5].map((s) => (
                   <Star key={s} className={`h-5 w-5 ${s <= starRating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
                 ))}
               </div>
-              {reviewText && <p className="text-xs text-gray-500 max-w-xs">「{reviewText}」</p>}
+              {reviewText && <p className="text-xs text-gray-500 max-w-xs">{t(`「${reviewText}」`, `“${reviewText}”`)}</p>}
             </div>
           )}
         </section>
@@ -568,14 +569,14 @@ export default function PurchaseSuccessPage() {
             href="/mypage"
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-700"
           >
-            マイページで購入済みを確認
+            {t("マイページで購入済みを確認", "See it on My page")}
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/"
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 py-3.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
           >
-            トップページに戻る
+            {t("トップページに戻る", "Back to home")}
           </Link>
         </div>
       </main>

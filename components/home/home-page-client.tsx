@@ -54,7 +54,7 @@ import { HeroCarousel } from "@/components/home/hero/hero-carousel";
 import type { HeroSlidePublic } from "@/lib/hero/types";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import type { ModalApp } from "@/components/app-catalog/types";
-import { getCreatorProfilePath } from "@/components/app-catalog/utils";
+import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 
 import { ContactFormModal } from "@/components/support/contact-form-modal";
 
@@ -1145,7 +1145,7 @@ export function HomePageClient({
                     <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${colors[colorIdx]} text-2xl font-black text-white shadow-md`}>
                       {initial}
                     </div>
-                    <p className="mt-2 text-sm font-black text-gray-900 truncate">{creator.name}</p>
+                    <p className="mt-2 text-sm font-black text-gray-900 truncate">{displayCreatorName(creator.name, locale)}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">{t(`アプリ ${creator.appCount}本`, `${creator.appCount} ${creator.appCount === 1 ? "app" : "apps"}`)}</p>
                     {creator.totalStamps > 0 && (
                       <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5">

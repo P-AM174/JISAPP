@@ -88,7 +88,7 @@ const LLMO_JA: LlmoContent = {
     {
       question: "英語でも使えますか？",
       answer:
-        "使えます。画面右上の言語ボタンで English に切り替えると、画面の表示も、AIが作るアプリの言語も英語になります。英語版のURLは https://jisapp.app/en です。",
+        "使えます。言語ボタン（English / 日本語）で English に切り替えると、画面の表示も、AIが作るアプリの言語も英語になります。英語版のURLは https://jisapp.app/en です。",
     },
   ],
   howToName: "ジサップでアプリを作って公開する",
@@ -179,7 +179,7 @@ const LLMO_EN: LlmoContent = {
     {
       question: "Is Jisapp available in Japanese?",
       answer:
-        "Yes. Jisapp started in Japan — switch the language button at the top right to 日本語 to see the Japanese site.",
+        "Yes. Jisapp started in Japan — use the language button (English / 日本語) to switch to the Japanese site.",
     },
   ],
   howToName: "Make and publish an app with Jisapp",

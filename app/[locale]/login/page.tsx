@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
 import Link from "@/lib/i18n/navigation";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { localizePath } from "@/lib/i18n/config";
 import {
@@ -336,9 +337,12 @@ function LoginContent() {
       <header className="border-b border-emerald-100 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <JisappLogo href="/" />
-          <Link href="/" className="text-sm text-gray-400 hover:text-emerald-600 transition-colors">
-            {t("トップに戻る", "Back to home")}
-          </Link>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link href="/" className="text-sm text-gray-400 hover:text-emerald-600 transition-colors">
+              {t("トップに戻る", "Back to home")}
+            </Link>
+          </div>
         </div>
       </header>
 

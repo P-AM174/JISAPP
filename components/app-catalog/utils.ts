@@ -7,6 +7,7 @@ export function displayCreatorName(name: string | null | undefined, locale: stri
   const value = name?.trim() || "匿名";
   if (locale !== "en") return value;
   if (value === "匿名") return "Anonymous";
+  if (value === "ゲスト") return "Guest";
   if (value === OFFICIAL_CREATOR_NAME) return "Jisapp Official";
   return value;
 }

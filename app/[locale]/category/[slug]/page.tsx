@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/lib/i18n/navigation";
 import { notFound } from "next/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { BackButton } from "@/components/back-button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
@@ -76,12 +77,15 @@ export default async function CategoryPage({ params }: PageProps) {
             <BackButton fallbackHref="/" />
             <JisappLogo href="/" />
           </div>
-          <Link
-            href="/playground"
-            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
-          >
-            {t("アプリ開発スタジオへ", "Open the Studio")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <Link
+              href="/playground"
+              className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            >
+              {t("アプリ開発スタジオへ", "Open the Studio")}
+            </Link>
+          </div>
         </div>
       </header>
 

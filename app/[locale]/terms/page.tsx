@@ -1,5 +1,6 @@
 import { SecurityNotice } from "@/components/security-notice";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import Link from "@/lib/i18n/navigation";
 import { getI18n } from "@/lib/i18n/server";
 
@@ -10,9 +11,12 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
       <header className="border-b border-gray-200 bg-white px-4 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <JisappLogo href="/" />
-          <Link href="/" className="text-sm text-gray-500 hover:text-emerald-600">
-            {t("トップへ", "Home")}
-          </Link>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link href="/" className="text-sm text-gray-500 hover:text-emerald-600">
+              {t("トップへ", "Home")}
+            </Link>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">

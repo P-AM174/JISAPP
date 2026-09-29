@@ -2,6 +2,7 @@ import Link from "@/lib/i18n/navigation";
 import { CircleHelp, ListOrdered } from "lucide-react";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { JsonLd } from "@/components/seo/json-ld";
 import { OfficialSocialLinks } from "@/components/seo/official-social-links";
 import { createPageMetadata } from "@/lib/seo/metadata";
@@ -38,6 +39,7 @@ export default async function FaqPage({ params }: PageProps) {
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
           <span className="text-sm font-semibold text-gray-700">{t("よくある質問", "FAQ")}</span>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 

@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/config";
+
 /** 開発スタジオの「サンプルを動かす」で読み込む、AIが作ったような1ファイルアプリ */
 export const SAMPLE_APP_TITLE = "反射神経タップ";
 
@@ -83,7 +85,7 @@ export const SAMPLE_APP_HTML = `<!DOCTYPE html>
 
   async function loadBest() {
     try {
-      if (window.Zisup) best = await window.Zisup.loadData("best_ms");
+      if (window.Jisapp) best = await window.Jisapp.loadData("best_ms");
     } catch (e) { best = null; }
     bestEl.textContent = best ? best + " ms" : "--";
   }
@@ -91,7 +93,7 @@ export const SAMPLE_APP_HTML = `<!DOCTYPE html>
   async function saveBest(ms) {
     best = ms;
     bestEl.textContent = ms + " ms";
-    try { if (window.Zisup) await window.Zisup.saveData("best_ms", ms); } catch (e) {}
+    try { if (window.Jisapp) await window.Jisapp.saveData("best_ms", ms); } catch (e) {}
   }
 
   function set(cls, b, m, h) {
@@ -136,3 +138,34 @@ export const SAMPLE_APP_HTML = `<!DOCTYPE html>
 </script>
 </body>
 </html>`;
+
+/** 英語版のサンプル（日本語版の文言だけを差し替える） */
+const SAMPLE_EN_REPLACEMENTS: [string, string][] = [
+  ['<html lang="ja">', '<html lang="en">'],
+  ["<title>反射神経タップ</title>", "<title>Reaction Tap</title>"],
+  ["<h1>反射神経タップ</h1>", "<h1>Reaction Tap</h1>"],
+  ["自己ベスト <span", "Best <span"],
+  [">自己ベスト更新<", ">New best!<"],
+  [">スタート<", ">Start<"],
+  [">タップして始める<", ">Tap to begin<"],
+  [">緑になった瞬間にタップ<", ">Tap the moment it turns green<"],
+  ['"まだ押さない", "緑になるまで待つ"', '"Not yet…", "Wait for green"'],
+  ['"今！", "タップ！"', '"Now!", "Tap!"'],
+  ['"フライング", "早すぎました", "タップしてやり直す"', '"Too soon", "You jumped the gun", "Tap to try again"'],
+  ['"すごい反応速度" : ms < 350 ? "なかなか速い" : "もう一回いける", "タップしてもう一回"', '"Lightning fast!" : ms < 350 ? "Pretty quick" : "You can do better", "Tap to go again"'],
+];
+
+export const SAMPLE_APP_HTML_EN = SAMPLE_EN_REPLACEMENTS.reduce(
+  (html, [ja, en]) => html.split(ja).join(en),
+  SAMPLE_APP_HTML
+);
+
+export function getSampleAppHtml(locale: Locale = "ja"): string {
+  return locale === "en" ? SAMPLE_APP_HTML_EN : SAMPLE_APP_HTML;
+}
+
+/** 貼られているコードがサンプルそのものか（日本語版・英語版のどちらでも） */
+export function isSampleAppHtml(code: string): boolean {
+  const trimmed = code.trim();
+  return trimmed === SAMPLE_APP_HTML.trim() || trimmed === SAMPLE_APP_HTML_EN.trim();
+}

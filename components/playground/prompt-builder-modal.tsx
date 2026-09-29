@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, CheckCircle2, Copy, FileText, Send, X } from "lucide-react";
-import { buildPromptFromTemplate, PROMPT_RULES_SHORT } from "@/lib/playground/prompt-template";
+import { buildPromptFromTemplate, getPromptRulesShort } from "@/lib/playground/prompt-template";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -16,6 +17,14 @@ type Props = {
 type ChatStep = 0 | 1 | 2 | 3 | "result";
 
 const APP_EXAMPLES = ["日記アプリ", "家計簿", "TODOリスト", "タイマー", "おこづかい帳"];
+const APP_EXAMPLES_EN = ["Diary", "Budget tracker", "To-do list", "Timer", "Allowance log"];
+
+const QUESTIONS_EN = [
+  "What app do you want to make?",
+  "Tell us about its details, specs, design, features or anything you care about. If there's nothing, send “None”.",
+  "Use Jisapp's original design?\nThis asks for a clear, frosted-glass look (the AI picks colors to suit your app). Choose “No” if you want to decide the design yourself.",
+  "Does it need to save data?\n“Yes” keeps your records on other devices when you're signed in. “No” keeps them only in this browser on this phone or computer.",
+] as const;
 
 const QUESTIONS = [
   "作りたいアプリは何ですか。",
@@ -42,6 +51,13 @@ export function PromptBuilderModal({
   const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const t = useT();
+  const locale = useLocale();
+  const en = locale === "en";
+  const none = t("なし", "None");
+  const questions = en ? QUESTIONS_EN : QUESTIONS;
+  const appExamples = en ? APP_EXAMPLES_EN : APP_EXAMPLES;
+  const rulesShort = getPromptRulesShort(locale);
 
   useEffect(() => {
     setMounted(true);
@@ -71,8 +87,8 @@ export function PromptBuilderModal({
   const answers: [string, string, string, string] = [
     appName,
     details,
-    useJisappDesign ? "はい" : "いいえ",
-    needSave ? "はい" : "いいえ",
+    useJisappDesign ? t("はい", "Yes") : t("いいえ", "No"),
+    needSave ? t("はい", "Yes") : t("いいえ", "No"),
   ];
 
   const visibleCount = step === "result" ? 4 : step;
@@ -80,6 +96,7 @@ export function PromptBuilderModal({
   const finishedPrompt = buildPromptFromTemplate(appName.trim(), details, {
     useJisappDesign,
     storage: needSave ? "zisup" : "local",
+    locale,
   });
 
   const goBack = () => {
@@ -92,14 +109,14 @@ export function PromptBuilderModal({
     if (step === 0) return;
     const prev = (step - 1) as 0 | 1 | 2 | 3;
     if (prev === 0) setDraft(appName);
-    if (prev === 1) setDraft(details === "なし" ? "" : details);
+    if (prev === 1) setDraft(details === "なし" || details === "None" ? "" : details);
     setStep(prev);
   };
 
   const submitAppName = (value: string) => {
     const name = value.trim();
     if (!name) {
-      setError("作りたいアプリを入力してください");
+      setError(t("作りたいアプリを入力してください", "Tell us what app you want to make"));
       return;
     }
     setError("");
@@ -109,7 +126,7 @@ export function PromptBuilderModal({
   };
 
   const submitDetails = (value: string) => {
-    const text = value.trim() || "なし";
+    const text = value.trim() || none;
     setError("");
     setDetails(text);
     setDraft("");
@@ -121,17 +138,17 @@ export function PromptBuilderModal({
       await navigator.clipboard.writeText(finishedPrompt);
       setCopied("template");
     } catch {
-      setError("コピーできませんでした。下の文を長押ししてコピーしてください");
+      setError(t("コピーできませんでした。下の文を長押ししてコピーしてください", "Couldn't copy. Long-press the text below to copy it"));
     }
   };
 
   const handleCopyRules = async () => {
     setError("");
     try {
-      await navigator.clipboard.writeText(PROMPT_RULES_SHORT);
+      await navigator.clipboard.writeText(rulesShort);
       setCopied("rules");
     } catch {
-      setError("コピーに失敗しました。もう一度お試しください");
+      setError(t("コピーに失敗しました。もう一度お試しください", "Copy failed. Please try again"));
     }
   };
 
@@ -149,15 +166,15 @@ export function PromptBuilderModal({
             <FileText className="h-5 w-5 shrink-0" strokeWidth={2.25} />
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
-            <h2 className="text-base font-black">AIに送るプロンプト</h2>
+            <h2 className="text-base font-black">{t("AIに送るプロンプト", "Prompt for your AI")}</h2>
             <p className="mt-0.5 text-xs text-emerald-50">
-              チャットで作成、または必須ルールだけコピー
+              {t("チャットで作成、または必須ルールだけコピー", "Build it in a chat, or copy just the required rules")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={t("閉じる", "Close")}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 shadow-md ring-1 ring-black/10 transition-colors hover:bg-slate-100 active:scale-95"
           >
             <X className="h-5 w-5" strokeWidth={2.5} />
@@ -178,7 +195,7 @@ export function PromptBuilderModal({
                 tab === "template" ? "bg-emerald-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
               )}
             >
-              チャットからプロンプトを作成
+              {t("チャットからプロンプトを作成", "Make a prompt with the chat")}
             </button>
             <button
               type="button"
@@ -193,7 +210,7 @@ export function PromptBuilderModal({
               )}
             >
               <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              必須ルールだけ
+              {t("必須ルールだけ", "Required rules only")}
             </button>
           </div>
         </div>
@@ -201,7 +218,7 @@ export function PromptBuilderModal({
         {tab === "template" && step !== "result" ? (
           <>
             <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
-              {QUESTIONS.map((question, index) => {
+              {questions.map((question, index) => {
                 if (index > visibleCount) return null;
                 const answered = index < visibleCount;
                 return (
@@ -233,14 +250,14 @@ export function PromptBuilderModal({
                   className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600"
                 >
                   <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                  ひとつ前に戻る
+                  {t("ひとつ前に戻る", "Back one step")}
                 </button>
               )}
 
               {step === 0 && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-1.5">
-                    {APP_EXAMPLES.map((ex) => (
+                    {appExamples.map((ex) => (
                       <button
                         key={ex}
                         type="button"
@@ -267,14 +284,14 @@ export function PromptBuilderModal({
                         setDraft(e.target.value);
                         if (error) setError("");
                       }}
-                      placeholder="例：日記アプリ"
+                      placeholder={t("例：日記アプリ", "e.g. Diary app")}
                       autoComplete="off"
                       className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
                     />
                     <button
                       type="submit"
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white"
-                      aria-label="送信"
+                      aria-label={t("送信", "Send")}
                     >
                       <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
                     </button>
@@ -286,10 +303,10 @@ export function PromptBuilderModal({
                 <div className="space-y-2">
                   <button
                     type="button"
-                    onClick={() => submitDetails("なし")}
+                    onClick={() => submitDetails(none)}
                     className="rounded-full bg-gray-100 px-3 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-200"
                   >
-                    なし
+                    {t("なし", "None")}
                   </button>
                   <form
                     className="flex gap-2"
@@ -305,13 +322,13 @@ export function PromptBuilderModal({
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       rows={2}
-                      placeholder="仕様・デザイン・こだわり"
+                      placeholder={t("仕様・デザイン・こだわり", "Specs, design, details")}
                       className="min-w-0 flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
                     />
                     <button
                       type="submit"
                       className="flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-xl bg-emerald-600 text-white"
-                      aria-label="送信"
+                      aria-label={t("送信", "Send")}
                     >
                       <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
                     </button>
@@ -329,7 +346,7 @@ export function PromptBuilderModal({
                     }}
                     className="rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white"
                   >
-                    はい
+                    {t("はい", "Yes")}
                   </button>
                   <button
                     type="button"
@@ -339,7 +356,7 @@ export function PromptBuilderModal({
                     }}
                     className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-700"
                   >
-                    いいえ
+                    {t("いいえ", "No")}
                   </button>
                 </div>
               )}
@@ -354,7 +371,7 @@ export function PromptBuilderModal({
                     }}
                     className="rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white"
                   >
-                    はい
+                    {t("はい", "Yes")}
                   </button>
                   <button
                     type="button"
@@ -364,7 +381,7 @@ export function PromptBuilderModal({
                     }}
                     className="rounded-xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-700"
                   >
-                    いいえ
+                    {t("いいえ", "No")}
                   </button>
                 </div>
               )}
@@ -378,21 +395,21 @@ export function PromptBuilderModal({
               className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              質問に戻る
+              {t("質問に戻る", "Back to the questions")}
             </button>
 
             <div className="rounded-2xl bg-emerald-50 px-4 py-3">
-              <p className="text-sm font-black text-emerald-950">以下のプロンプトをコピーしてAIに送ってください</p>
+              <p className="text-sm font-black text-emerald-950">{t("以下のプロンプトをコピーしてAIに送ってください", "Copy the prompt below and send it to your AI")}</p>
               <p className="mt-1 text-xs leading-relaxed text-emerald-800">
-                ChatGPT・Claude・Gemini などに貼り付けて送信します。返ってきたコードを、開発スタジオに貼り付けてください。
+                {t("ChatGPT・Claude・Gemini などに貼り付けて送信します。返ってきたコードを、開発スタジオに貼り付けてください。", "Paste it into ChatGPT, Claude, Gemini or similar and send it. Then paste the code you get back into the Studio.")}
               </p>
             </div>
 
             <ul className="space-y-1 text-xs text-gray-500">
-              <li>アプリ: {appName}</li>
-              <li>詳細: {details || "なし"}</li>
-              <li>オリジナルデザイン: {useJisappDesign ? "使う" : "使わない"}</li>
-              <li>保存: {needSave ? "ジサップの保存機能" : "この端末の localStorage"}</li>
+              <li>{t("アプリ", "App")}: {appName}</li>
+              <li>{t("詳細", "Details")}: {details || none}</li>
+              <li>{t("オリジナルデザイン", "Jisapp design")}: {useJisappDesign ? t("使う", "Yes") : t("使わない", "No")}</li>
+              <li>{t("保存", "Saving")}: {needSave ? t("ジサップの保存機能", "Jisapp's save feature") : t("この端末の localStorage", "localStorage on this device")}</li>
             </ul>
 
             <button
@@ -406,12 +423,12 @@ export function PromptBuilderModal({
               {copied === "template" ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                  コピーしました
+                  {t("コピーしました", "Copied")}
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  プロンプトをコピー
+                  {t("プロンプトをコピー", "Copy prompt")}
                 </>
               )}
             </button>
@@ -430,31 +447,32 @@ export function PromptBuilderModal({
               onClick={() => (onReturnToEditor ?? onClose)()}
               className="w-full rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50"
             >
-              エディタに戻る
+              {t("エディタに戻る", "Back to the editor")}
             </button>
           </div>
         ) : (
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-black text-amber-900">自分でプロンプトを書く人向け</p>
+              <p className="text-sm font-black text-amber-900">{t("自分でプロンプトを書く人向け", "If you write your own prompt")}</p>
               <p className="mt-1.5 text-xs leading-relaxed text-amber-800">
-                作りたいアプリの説明は自分で書いてOKです。その文の
-                <span className="font-bold">末尾</span>
-                に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。
+                {t(
+                  <>作りたいアプリの説明は自分で書いてOKです。その文の<span className="font-bold">末尾</span>に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。</>,
+                  <>Describe your app however you like. Paste the required rules below at the <span className="font-bold">end</span> of your message before sending it, so saving and API keys are handled correctly.</>
+                )}
               </p>
             </div>
 
             <div>
-              <p className="mb-1.5 text-xs font-bold text-gray-700">必須ルール（短縮版）</p>
+              <p className="mb-1.5 text-xs font-bold text-gray-700">{t("必須ルール（短縮版）", "Required rules (short version)")}</p>
               <pre className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 font-mono text-[11px] leading-relaxed text-slate-700">
-                {PROMPT_RULES_SHORT}
+                {rulesShort}
               </pre>
             </div>
 
             <ol className="space-y-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-xs leading-relaxed text-emerald-900">
-              <li>1. 自分の要望文をAIに書く（または貼る）</li>
-              <li>2. 「必須ルールだけコピー」を押す</li>
-              <li>3. 要望文のあとに貼り付けて送信</li>
+              <li>{t("1. 自分の要望文をAIに書く（または貼る）", "1. Write (or paste) your request to the AI")}</li>
+              <li>{t("2. 「必須ルールだけコピー」を押す", "2. Press “Copy just the required rules”")}</li>
+              <li>{t("3. 要望文のあとに貼り付けて送信", "3. Paste them after your request and send")}</li>
             </ol>
 
             {error && (
@@ -473,12 +491,12 @@ export function PromptBuilderModal({
               {copied === "rules" ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  コピーしました
+                  {t("コピーしました", "Copied")}
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  必須ルールだけコピー
+                  {t("必須ルールだけコピー", "Copy just the required rules")}
                 </>
               )}
             </button>

@@ -84,7 +84,7 @@ import {
   storageFixMessage,
 } from "@/lib/playground/code-cleanup";
 import { copyText, copyTextNow, findStudioAi, type StudioAi } from "@/lib/playground/ai-launch";
-import { SAMPLE_APP_HTML } from "@/lib/playground/sample-app";
+import { getSampleAppHtml, isSampleAppHtml } from "@/lib/playground/sample-app";
 import { usesSharedData } from "@/lib/groups/client";
 import { supabase } from "@/lib/supabase";
 import {
@@ -558,7 +558,7 @@ export default function PlaygroundPage() {
   const [searchQuery, setSearchQuery]   = useState("");
   const [showSearch, setShowSearch]     = useState(false);
   const [secretWarningOpen, setSecretWarningOpen] = useState(false);
-  const [secretFindings, setSecretFindings] = useState<{ label: string }[]>([]);
+  const [secretFindings, setSecretFindings] = useState<{ label: string; labelEn: string }[]>([]);
   const [storageWarningOpen, setStorageWarningOpen] = useState(false);
   const [storageFindings, setStorageFindings] = useState<StorageChangeFinding[]>([]);
   const storageWarningAckRef = useRef(false);
@@ -1136,7 +1136,7 @@ export default function PlaygroundPage() {
   };
 
   const runSample = () => {
-    applyIncomingCode(SAMPLE_APP_HTML);
+    applyIncomingCode(getSampleAppHtml(locale));
     showToast(t("サンプルを動かしました", "Running the sample"));
   };
 
@@ -1403,14 +1403,14 @@ export default function PlaygroundPage() {
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
   const showGuide = !previewHtml.trim();
-  const isDirty = code.trim() !== "" && code !== lastSavedCode && code.trim() !== SAMPLE_APP_HTML.trim();
+  const isDirty = code.trim() !== "" && code !== lastSavedCode && !isSampleAppHtml(code);
 
   const stage: StudioStage = code.trim() ? "ready" : awaitingCode ? "paste" : "idea";
   const localOnly = usesLocalStorageOnly(code);
   const codeIssue = detectCodeIssue(code);
   const needsKeys = usesStudioSecrets(code);
   const sharesData = usesSharedData(code);
-  const isSample = code.trim() === SAMPLE_APP_HTML.trim();
+  const isSample = isSampleAppHtml(code);
 
   // 作りたいもの・AI・進み具合を復元（URLの ?idea= / ?sample=1 を優先）
   useEffect(() => {
@@ -1434,7 +1434,7 @@ export default function PlaygroundPage() {
       setTemplateOpen(true);
     }
     if (params.get("sample") === "1") {
-      applyIncomingCode(SAMPLE_APP_HTML);
+      applyIncomingCode(getSampleAppHtml(locale));
     }
     setFlowRestored(true);
     // 初回だけ

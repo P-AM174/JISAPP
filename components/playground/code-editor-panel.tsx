@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   code: string;
@@ -40,6 +41,7 @@ export function CodeEditorPanel({
   className,
 }: Props) {
   const lineNumRef = useRef<HTMLDivElement>(null);
+  const t = useT();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const lines = code.split("\n");
@@ -83,7 +85,7 @@ export function CodeEditorPanel({
           )}
         >
           <Search className="h-3 w-3" />
-          検索
+          {t("検索", "Search")}
         </button>
         {showSearch && (
           <>
@@ -104,12 +106,12 @@ export function CodeEditorPanel({
                   textareaRef.current?.focus();
                 }
               }}
-              placeholder="コード内を検索..."
+              placeholder={t("コード内を検索...", "Search in code...")}
               className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs outline-none focus:border-emerald-400"
             />
             {searchQuery.trim() && (
               <span className="shrink-0 text-[10px] text-gray-400">
-                {matchCount > 0 ? `${currentMatch}/${matchCount}` : "0件"}
+                {matchCount > 0 ? `${currentMatch}/${matchCount}` : t("0件", "0")}
               </span>
             )}
             <button
@@ -117,7 +119,7 @@ export function CodeEditorPanel({
               onClick={() => onJumpMatch("prev")}
               disabled={matchCount === 0}
               className="rounded p-1 text-gray-400 hover:bg-gray-100 disabled:opacity-30"
-              title="前へ"
+              title={t("前へ", "Previous")}
             >
               <ChevronUp className="h-3.5 w-3.5" />
             </button>
@@ -126,7 +128,7 @@ export function CodeEditorPanel({
               onClick={() => onJumpMatch("next")}
               disabled={matchCount === 0}
               className="rounded p-1 text-gray-400 hover:bg-gray-100 disabled:opacity-30"
-              title="次へ"
+              title={t("次へ", "Next")}
             >
               <ChevronDown className="h-3.5 w-3.5" />
             </button>

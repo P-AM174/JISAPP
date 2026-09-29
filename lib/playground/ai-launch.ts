@@ -10,7 +10,7 @@ export const STUDIO_AIS: StudioAi[] = [
   { id: "chatgpt", name: "ChatGPT", url: "https://chatgpt.com/" },
   { id: "claude", name: "Claude", url: "https://claude.ai/new" },
   { id: "gemini", name: "Gemini", url: "https://gemini.google.com/app" },
-  { id: "other", name: "別のAI", url: null },
+  { id: "other", name: "AI", url: null },
 ];
 
 export function findStudioAi(id: string | null | undefined): StudioAi {

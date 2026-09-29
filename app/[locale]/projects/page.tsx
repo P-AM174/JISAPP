@@ -49,6 +49,9 @@ import { ShareButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { ProjectThumb } from "@/components/projects/project-thumb";
 import { supabase } from "@/lib/supabase";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { intlLocale, localizePath, makeT, type Locale } from "@/lib/i18n/config";
+import { categoryName } from "@/lib/categories";
 
 // ─── 型定義 ───
 type Project = {
@@ -75,8 +78,9 @@ function isPublishedProject(proj: Project) {
   return !!(proj.appId || proj.url || proj.status === "listed" || proj.status === "url_only");
 }
 
-function getPublishActionLabel(proj: Project) {
-  return isPublishedProject(proj) ? "出品情報" : "出品 / URL発行";
+function getPublishActionLabel(proj: Project, locale: Locale) {
+  const t = makeT(locale);
+  return isPublishedProject(proj) ? t("出品情報", "Listing info") : t("出品 / URL発行", "Publish / Get URL");
 }
 
 function getPlaygroundHref(proj: Project) {
@@ -84,7 +88,7 @@ function getPlaygroundHref(proj: Project) {
   return `/playground?project=${proj.id}`;
 }
 
-function mapServerProject(row: {
+function mapServerProject(locale: Locale, row: {
   id: string;
   title: string;
   description: string | null;
@@ -103,25 +107,26 @@ function mapServerProject(row: {
   const lineCount = row.code_lines ?? (row.html_code ? row.html_code.split("\n").length : 0);
   const charCount = row.code_chars ?? row.html_code?.length ?? 0;
   const status = row.status as Project["status"];
+  const t = makeT(locale);
   const meta = {
-    draft:    { tag: "作業中",   tagColor: "bg-sky-100 text-sky-700",        gradient: "from-sky-400 to-cyan-500" },
-    listed:   { tag: "公開中",   tagColor: "bg-emerald-100 text-emerald-700", gradient: "from-emerald-500 to-teal-600" },
-    url_only: { tag: "URL発行済", tagColor: "bg-teal-100 text-teal-700",     gradient: "from-teal-500 to-cyan-600" },
-  }[status ?? "draft"] ?? { tag: "作業中", tagColor: "bg-sky-100 text-sky-700", gradient: "from-sky-400 to-cyan-500" };
+    draft:    { tag: t("作業中", "Draft"),   tagColor: "bg-sky-100 text-sky-700",        gradient: "from-sky-400 to-cyan-500" },
+    listed:   { tag: t("公開中", "Live"),   tagColor: "bg-emerald-100 text-emerald-700", gradient: "from-emerald-500 to-teal-600" },
+    url_only: { tag: t("URL発行済", "URL only"), tagColor: "bg-teal-100 text-teal-700",     gradient: "from-teal-500 to-cyan-600" },
+  }[status ?? "draft"] ?? { tag: t("作業中", "Draft"), tagColor: "bg-sky-100 text-sky-700", gradient: "from-sky-400 to-cyan-500" };
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   return {
     id: row.id,
     title: row.title,
-    description: row.description ?? (status === "draft" ? "開発スタジオで保存したプロジェクトです。" : "出品・URL発行したアプリです。"),
-    updatedAt: new Date(row.updated_at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
+    description: row.description ?? (status === "draft" ? t("開発スタジオで保存したプロジェクトです。", "A project you saved in the Studio.") : t("出品・URL発行したアプリです。", "An app you published.")),
+    updatedAt: new Date(row.updated_at).toLocaleDateString(intlLocale(locale), { year: "numeric", month: "long", day: "numeric" }),
     lines: lineCount,
     chars: charCount,
     gradient: meta.gradient,
     tag: meta.tag,
     tagColor: meta.tagColor,
     appId: row.app_id ?? undefined,
-    url: row.app_id ? `${origin}/apps/${row.app_id}` : undefined,
+    url: row.app_id ? `${origin}${localizePath(`/apps/${row.app_id}`, locale)}` : undefined,
     status,
     category: row.category ?? undefined,
     libraryCount: row.library_count ?? 0,
@@ -154,6 +159,8 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
   onUnlist?: (proj: Project) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const t = useT();
+  const locale = useLocale();
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200">
@@ -174,7 +181,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
         <div className="absolute right-2 top-9 z-30">
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-            aria-label="メニュー"
+            aria-label={t("メニュー", "Menu")}
             className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-sm ring-1 ring-black/5 hover:bg-white transition-colors"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
@@ -189,14 +196,14 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                   className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 >
                   <Wrench className="h-3.5 w-3.5" />
-                  エディタで開く
+                  {t("エディタで開く", "Open in editor")}
                 </Link>
                 <button
                   onClick={() => { setMenuOpen(false); onPublish?.(proj); }}
                   className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  {getPublishActionLabel(proj)}
+                  {getPublishActionLabel(proj, locale)}
                 </button>
                 {proj.status === "listed" && onUnlist && (
                   <button
@@ -204,7 +211,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-amber-700 hover:bg-amber-50"
                   >
                     <X className="h-3.5 w-3.5" />
-                    出品を取り下げ
+                    {t("出品を取り下げ", "Unlist")}
                   </button>
                 )}
                 {onDelete && (
@@ -213,7 +220,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-rose-600 hover:bg-rose-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    削除
+                    {t("削除", "Delete")}
                   </button>
                 )}
               </div>
@@ -241,13 +248,13 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
           </span>
           <span className="flex items-center gap-1">
             <FileText className="h-3 w-3" />
-            {proj.lines} 行
+            {t(`${proj.lines} 行`, `${proj.lines} lines`)}
           </span>
-          <span>{proj.chars.toLocaleString()} 文字</span>
+          <span>{t(`${proj.chars.toLocaleString()} 文字`, `${proj.chars.toLocaleString()} chars`)}</span>
           {isPublishedProject(proj) && proj.libraryCount != null && (
             <span className="flex items-center gap-1 text-teal-600">
               <LibraryBig className="h-3 w-3" />
-              {proj.libraryCount}人がライブラリ登録
+              {t(`${proj.libraryCount}人がライブラリ登録`, `In ${proj.libraryCount} ${proj.libraryCount === 1 ? "library" : "libraries"}`)}
             </span>
           )}
         </div>
@@ -260,14 +267,14 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-emerald-100 hover:text-emerald-700 active:scale-[0.98]"
             >
               <Wrench className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              編集する
+              {t("編集する", "Edit")}
             </Link>
             <button
               onClick={() => onPublish?.(proj)}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98]"
             >
               <Upload className="h-3.5 w-3.5" />
-              {getPublishActionLabel(proj)}
+              {getPublishActionLabel(proj, locale)}
             </button>
           </div>
           {proj.appId && (
@@ -275,7 +282,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
               <ShareButton
                 url={proj.url ?? getAppShareUrl(String(proj.appId))}
                 title={proj.title}
-                text={`${proj.title} | ジサップで作った無料アプリ`}
+                text={t(`${proj.title} | ジサップで作った無料アプリ`, `${proj.title} | a free app made on Jisapp`)}
                 variant="outline"
                 className="flex-1"
               />
@@ -283,7 +290,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
                 href={`/apps/${proj.appId}`}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2.5 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98]"
               >
-                アプリを開く
+                {t("アプリを開く", "Open app")}
                 <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               </Link>
             </div>
@@ -296,6 +303,7 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
 
 // ─── GETしたアプリカード ───
 function AcquiredCard({ app }: { app: AcquiredApp }) {
+  const t = useT();
   return (
     <Link
       href={`/apps/${app.id}`}
@@ -314,12 +322,12 @@ function AcquiredCard({ app }: { app: AcquiredApp }) {
         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
           {app.category && <span>{app.category}</span>}
           {app.creator && <span>by {app.creator}</span>}
-          {app.rating && <span>評価 {app.rating}</span>}
+          {app.rating && <span>{t("評価", "Rating")} {app.rating}</span>}
         </div>
         {app.acquiredAt && (
           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-400">
             <Clock className="h-2.5 w-2.5" />
-            {app.acquiredAt} に取得
+            {t(`${app.acquiredAt} に取得`, `Got ${app.acquiredAt}`)}
           </p>
         )}
       </div>
@@ -330,6 +338,7 @@ function AcquiredCard({ app }: { app: AcquiredApp }) {
 
 // ─── 空状態 ───
 function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl bg-white py-16 text-center shadow-sm ring-1 ring-black/5">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50">
@@ -339,12 +348,12 @@ function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
       </div>
       <div>
         <p className="font-bold text-gray-700">
-          {tab === "mine" ? "まだプロジェクトがありません" : "まだGETしたアプリがありません"}
+          {tab === "mine" ? t("まだプロジェクトがありません", "No projects yet") : t("まだGETしたアプリがありません", "You haven't got any apps yet")}
         </p>
         <p className="mt-1 text-xs text-gray-400">
           {tab === "mine"
-            ? "開発スタジオでコードを作って保存してみよう"
-            : "トップページからアプリをGETしてライブラリに追加しよう"}
+            ? t("開発スタジオでコードを作って保存してみよう", "Make something in the Studio and save it")
+            : t("トップページからアプリをGETしてライブラリに追加しよう", "Get apps from the home page and add them to your library")}
         </p>
       </div>
       <Link
@@ -352,8 +361,8 @@ function EmptyState({ tab }: { tab: "mine" | "acquired" }) {
         className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700 transition-all active:scale-[0.97]"
       >
         {tab === "mine"
-          ? <><Terminal className="h-4 w-4" /> 開発スタジオを開く</>
-          : <><ShoppingBag className="h-4 w-4" /> アプリを探す</>}
+          ? <><Terminal className="h-4 w-4" /> {t("開発スタジオを開く", "Open the Studio")}</>
+          : <><ShoppingBag className="h-4 w-4" /> {t("アプリを探す", "Browse apps")}</>}
       </Link>
     </div>
   );
@@ -364,6 +373,8 @@ type PublishedInfo = { appId: string; url: string; title: string; description: s
 
 // ─── メインページ ───
 export default function ProjectsPage() {
+  const t = useT();
+  const locale = useLocale();
   const [tab, setTab] = useState<"mine" | "acquired">("mine");
   const [query, setQuery] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -386,7 +397,7 @@ export default function ProjectsPage() {
   const [publishResetUserData, setPublishResetUserData] = useState(false);
   const [showSecretsModal, setShowSecretsModal] = useState(false);
   const [secretWarningOpen, setSecretWarningOpen] = useState(false);
-  const [secretFindings, setSecretFindings] = useState<{ label: string }[]>([]);
+  const [secretFindings, setSecretFindings] = useState<{ label: string; labelEn: string }[]>([]);
   const [storageWarningOpen, setStorageWarningOpen] = useState(false);
   const [storageFindings, setStorageFindings] = useState<StorageChangeFinding[]>([]);
   const [pendingListed, setPendingListed] = useState<boolean | null>(null);
@@ -473,14 +484,14 @@ export default function ProjectsPage() {
       if (!res.ok) return;
       const data = await res.json();
       if (!data.logged_in) return;
-      const projects = (data.projects ?? []).map(mapServerProject);
+      const projects = (data.projects ?? []).map((row: Parameters<typeof mapServerProject>[1]) => mapServerProject(locale, row));
       setMyProjects(projects);
       const map: Record<string, PublishedInfo> = {};
       for (const row of data.projects ?? []) {
         if (row.app_id) {
           map[row.id] = {
             appId: row.app_id,
-            url: `${window.location.origin}/apps/${row.app_id}`,
+            url: `${window.location.origin}${localizePath(`/apps/${row.app_id}`, locale)}`,
             title: row.title,
             description: row.description ?? "",
             category: row.category ?? "",
@@ -495,8 +506,8 @@ export default function ProjectsPage() {
   const handlePublish = async (is_listed: boolean) => {
     if (!publishTarget || publishing) return;
     const title = publishTitle.trim();
-    if (!title) { setPublishError("アプリ名を入力してください"); return; }
-    if (is_listed && !publishCategory) { setPublishError("カテゴリを選択してください"); return; }
+    if (!title) { setPublishError(t("アプリ名を入力してください", "Please enter an app name")); return; }
+    if (is_listed && !publishCategory) { setPublishError(t("カテゴリを選択してください", "Please choose a category")); return; }
 
     let html_code = "";
     if (publishTarget.id === "saved_playground") {
@@ -511,7 +522,7 @@ export default function ProjectsPage() {
       } catch { /* noop */ }
     }
     if (!html_code.trim()) {
-      setPublishError("コードが見つかりません。開発スタジオでコードを保存してから出品してください。");
+      setPublishError(t("コードが見つかりません。開発スタジオでコードを保存してから出品してください。", "No code found. Save your code in the Studio before publishing."));
       return;
     }
 
@@ -532,7 +543,7 @@ export default function ProjectsPage() {
         const res = await fetch(`/api/apps/${existingAppId}/owner-code`);
         if (res.ok) {
           const data = (await res.json()) as { html_code?: string };
-          const storageDiff = compareStorageUsage(data.html_code ?? "", html_code);
+          const storageDiff = compareStorageUsage(data.html_code ?? "", html_code, locale);
           if (hasStorageWarnings(storageDiff)) {
             setStorageFindings(storageDiff);
             setPendingListed(is_listed);
@@ -575,8 +586,8 @@ export default function ProjectsPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "出品に失敗しました");
-      const url = `${window.location.origin}/apps/${json.id}`;
+      if (!res.ok) throw new Error(json.error ?? t("出品に失敗しました", "Couldn't publish the app"));
+      const url = `${window.location.origin}${localizePath(`/apps/${json.id}`, locale)}`;
       setPublishedUrl(url);
       savePublishedMap({
         ...publishedMap,
@@ -584,7 +595,7 @@ export default function ProjectsPage() {
       });
       await reloadProjects();
     } catch (e) {
-      setPublishError(e instanceof Error ? e.message : "出品に失敗しました");
+      setPublishError(e instanceof Error ? e.message : t("出品に失敗しました", "Couldn't publish the app"));
     } finally {
       setPublishing(false);
     }
@@ -592,7 +603,7 @@ export default function ProjectsPage() {
 
   const handleUnlist = async (proj: Project) => {
     if (!proj.appId) return;
-    if (!confirm(`「${proj.title}」の出品を取り下げますか？\nトップページの一覧から非表示になります（URLは引き続き使えます）。`)) return;
+    if (!confirm(t(`「${proj.title}」の出品を取り下げますか？\nトップページの一覧から非表示になります（URLは引き続き使えます）。`, `Unlist “${proj.title}”?\nIt will be hidden from the home page (the URL keeps working).`))) return;
 
     setUnlisting(true);
     try {
@@ -603,7 +614,7 @@ export default function ProjectsPage() {
       });
       if (!appRes.ok) {
         const d = await appRes.json().catch(() => ({}));
-        throw new Error((d as { error?: string }).error ?? "取り下げに失敗しました");
+        throw new Error((d as { error?: string }).error ?? t("取り下げに失敗しました", "Couldn't unlist the app"));
       }
 
       if (proj.id !== "saved_playground") {
@@ -617,7 +628,7 @@ export default function ProjectsPage() {
       if (publishTarget?.id === proj.id) setPublishTarget(null);
       await reloadProjects();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "取り下げに失敗しました");
+      alert(e instanceof Error ? e.message : t("取り下げに失敗しました", "Couldn't unlist the app"));
     } finally {
       setUnlisting(false);
     }
@@ -628,7 +639,7 @@ export default function ProjectsPage() {
     const info = publishedMap[publishTarget.id];
     if (!info) return;
     const title = publishTitle.trim();
-    if (!title) { setSaveError("アプリ名を入力してください"); return; }
+    if (!title) { setSaveError(t("アプリ名を入力してください", "Please enter an app name")); return; }
 
     setSaving(true);
     setSaveError(null);
@@ -646,7 +657,7 @@ export default function ProjectsPage() {
       });
       if (!res.ok) {
         const json = await res.json();
-        throw new Error(json.error ?? "更新に失敗しました");
+        throw new Error(json.error ?? t("更新に失敗しました", "Couldn't update"));
       }
       // ローカルも更新
       savePublishedMap({
@@ -656,7 +667,7 @@ export default function ProjectsPage() {
       setSaveSuccess(true);
       setEditMode(false);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "更新に失敗しました");
+      setSaveError(e instanceof Error ? e.message : t("更新に失敗しました", "Couldn't update"));
     } finally {
       setSaving(false);
     }
@@ -669,14 +680,14 @@ export default function ProjectsPage() {
         if (res.ok) {
           const data = await res.json();
           if (data.logged_in) {
-            const projects = (data.projects ?? []).map(mapServerProject);
+            const projects = (data.projects ?? []).map((row: Parameters<typeof mapServerProject>[1]) => mapServerProject(locale, row));
             setMyProjects(projects);
             const map: Record<string, PublishedInfo> = {};
             for (const row of data.projects ?? []) {
               if (row.app_id) {
                 map[row.id] = {
                   appId: row.app_id,
-                  url: `${window.location.origin}/apps/${row.app_id}`,
+                  url: `${window.location.origin}${localizePath(`/apps/${row.app_id}`, locale)}`,
                   title: row.title,
                   description: row.description ?? "",
                   category: row.category ?? "",
@@ -704,16 +715,16 @@ export default function ProjectsPage() {
         if (savedCode && savedCode.trim() && !deletedIds.includes("saved_playground")) {
           const lines = savedCode.split("\n").length;
           const chars = savedCode.length;
-          const savedTitle = localStorage.getItem("jisapp_playground_title") ?? "開発スタジオの作業中コード";
+          const savedTitle = localStorage.getItem("jisapp_playground_title") ?? t("開発スタジオの作業中コード", "Work in progress in the Studio");
           const savedProject: Project = {
             id: "saved_playground",
             title: savedTitle,
-            description: "開発スタジオで保存したコードです。「編集する」からそのまま続きを開発できます。",
-            updatedAt: new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" }),
+            description: t("開発スタジオで保存したコードです。「編集する」からそのまま続きを開発できます。", "Code you saved in the Studio. Press “Edit” to keep working on it."),
+            updatedAt: new Date().toLocaleDateString(intlLocale(locale), { year: "numeric", month: "long", day: "numeric" }),
             lines,
             chars,
             gradient: "from-sky-400 to-cyan-500",
-            tag: "作業中",
+            tag: t("作業中", "Draft"),
             tagColor: "bg-sky-100 text-sky-700",
             status: "draft",
           };
@@ -732,8 +743,8 @@ export default function ProjectsPage() {
     const proj = myProjects.find((p) => p.id === id);
     const confirmMsg =
       proj && isPublishedProject(proj)
-        ? `「${proj.title}」を削除しますか？\n出品も取り下げられ、トップページ・探すページから非表示になります。`
-        : "このプロジェクトを削除しますか？";
+        ? t(`「${proj.title}」を削除しますか？\n出品も取り下げられ、トップページ・探すページから非表示になります。`, `Delete “${proj.title}”?\nIt will also be unlisted and hidden from the home and search pages.`)
+        : t("このプロジェクトを削除しますか？", "Delete this project?");
 
     if (!confirm(confirmMsg)) return;
 
@@ -745,7 +756,7 @@ export default function ProjectsPage() {
           const res = await fetch(`/api/apps/${existing.appId}`, { method: "DELETE" });
           if (!res.ok) {
             const d = await res.json().catch(() => ({}));
-            alert((d as { error?: string }).error ?? "アプリの取り下げに失敗しました");
+            alert((d as { error?: string }).error ?? t("アプリの取り下げに失敗しました", "Couldn't unlist the app"));
             return;
           }
         }
@@ -753,7 +764,7 @@ export default function ProjectsPage() {
         delete map["saved_playground"];
         localStorage.setItem("jisapp_published_map", JSON.stringify(map));
       } catch {
-        alert("削除に失敗しました");
+        alert(t("削除に失敗しました", "Couldn't delete"));
         return;
       }
     } else {
@@ -761,11 +772,11 @@ export default function ProjectsPage() {
         const res = await fetch(`/api/my-projects/${id}`, { method: "DELETE" });
         if (!res.ok) {
           const d = await res.json().catch(() => ({}));
-          alert((d as { error?: string }).error ?? "削除に失敗しました");
+          alert((d as { error?: string }).error ?? t("削除に失敗しました", "Couldn't delete"));
           return;
         }
       } catch {
-        alert("削除に失敗しました");
+        alert(t("削除に失敗しました", "Couldn't delete"));
         return;
       }
     }
@@ -804,7 +815,7 @@ export default function ProjectsPage() {
 
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
-          <span className="text-sm font-semibold text-gray-700">マイプロジェクト</span>
+          <span className="text-sm font-semibold text-gray-700">{t("マイプロジェクト", "My projects")}</span>
 
           <div className="ml-auto flex items-center gap-2">
             <Link
@@ -812,8 +823,8 @@ export default function ProjectsPage() {
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:from-emerald-700 hover:to-teal-700"
             >
               <Plus className="h-4 w-4 shrink-0" strokeWidth={2} />
-              <span className="hidden sm:inline">新規プロジェクト</span>
-              <span className="sm:hidden">新規</span>
+              <span className="hidden sm:inline">{t("新規プロジェクト", "New project")}</span>
+              <span className="sm:hidden">{t("新規", "New")}</span>
             </Link>
           </div>
         </div>
@@ -826,10 +837,10 @@ export default function ProjectsPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs font-bold tracking-wide text-teal-700">
-                アプリ開発スタジオ
+                {t("アプリ開発スタジオ", "Jisapp Studio")}
               </p>
               <p className="mt-1.5 text-sm leading-relaxed text-gray-500">
-                保存したコードの一覧です。出品するとジサップで公開できます。
+                {t("保存したコードの一覧です。出品するとジサップで公開できます。", "All the code you've saved. Publish it to share it on Jisapp.")}
               </p>
             </div>
             <Link
@@ -837,18 +848,18 @@ export default function ProjectsPage() {
               className="flex shrink-0 items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-emerald-300 hover:text-emerald-700"
             >
               <Terminal className="h-4 w-4 shrink-0" strokeWidth={2} />
-              <span className="hidden sm:inline">エディタを開く</span>
-              <span className="sm:hidden">エディタ</span>
+              <span className="hidden sm:inline">{t("エディタを開く", "Open editor")}</span>
+              <span className="sm:hidden">{t("エディタ", "Editor")}</span>
             </Link>
           </div>
 
           {/* 統計 */}
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-4 text-center">
             {[
-              { label: "プロジェクト", value: mounted ? myProjects.length : "—" },
-              { label: "GETしたアプリ", value: mounted ? acquiredApps.length : "—" },
+              { label: t("プロジェクト", "Projects"), value: mounted ? myProjects.length : "—" },
+              { label: t("GETしたアプリ", "Apps you got"), value: mounted ? acquiredApps.length : "—" },
               {
-                label: "総コード行数",
+                label: t("総コード行数", "Total lines of code"),
                 value: mounted
                   ? myProjects.reduce((s, p) => s + p.lines, 0).toLocaleString()
                   : "—",
@@ -875,7 +886,7 @@ export default function ProjectsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="プロジェクト名やカテゴリで検索..."
+            placeholder={t("プロジェクト名やカテゴリで検索...", "Search by project name or category...")}
             className="h-11 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-gray-700 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
           />
         </div>
@@ -883,27 +894,27 @@ export default function ProjectsPage() {
         {/* ══════════ タブ ══════════ */}
         <div className="flex gap-1 rounded-2xl bg-white/60 p-1 ring-1 ring-white/80 backdrop-blur-sm">
           {([
-            { id: "mine",     label: "自分が作ったツール",     icon: Wrench,  count: myProjects.length    },
-            { id: "acquired", label: "ジサップでGETしたツール", icon: Package, count: acquiredApps.length  },
-          ] as { id: "mine" | "acquired"; label: string; icon: LucideIcon; count: number }[]).map((t) => (
+            { id: "mine",     label: t("自分が作ったツール", "Made by me"),     icon: Wrench,  count: myProjects.length    },
+            { id: "acquired", label: t("ジサップでGETしたツール", "Got on Jisapp"), icon: Package, count: acquiredApps.length  },
+          ] as { id: "mine" | "acquired"; label: string; icon: LucideIcon; count: number }[]).map((tb) => (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={tb.id}
+              onClick={() => setTab(tb.id)}
               className={cn(
                 "flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all",
-                tab === t.id
+                tab === tb.id
                   ? "bg-white text-emerald-700 shadow-sm ring-1 ring-black/5"
                   : "text-gray-500 hover:text-emerald-600"
               )}
             >
-              <t.icon className="h-4 w-4 shrink-0" strokeWidth={2} />
-              {t.label}
+              <tb.icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+              {tb.label}
               {mounted && (
                 <span className={cn(
                   "rounded-full px-1.5 py-0.5 text-[10px] font-black",
-                  tab === t.id ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-500"
+                  tab === tb.id ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-500"
                 )}>
-                  {t.count}
+                  {tb.count}
                 </span>
               )}
             </button>
@@ -925,7 +936,7 @@ export default function ProjectsPage() {
                 <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" strokeWidth={2} />
                   <p className="text-xs leading-relaxed text-gray-500">
-                    開発スタジオで保存したコードはここに表示されます。「出品する」を押すとジサップのマーケットに無料で公開できます。
+                    {t("開発スタジオで保存したコードはここに表示されます。「出品する」を押すとジサップのマーケットに無料で公開できます。", "Code you save in the Studio shows up here. Press “Publish” to list it in the Jisapp market for free.")}
                   </p>
                 </div>
 
@@ -943,8 +954,8 @@ export default function ProjectsPage() {
                       <Plus className="h-6 w-6 text-white" strokeWidth={2.25} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-700">新規プロジェクトを作成</p>
-                      <p className="mt-0.5 text-xs text-gray-400">開発スタジオが開きます</p>
+                      <p className="text-sm font-bold text-gray-700">{t("新規プロジェクトを作成", "Create a new project")}</p>
+                      <p className="mt-0.5 text-xs text-gray-400">{t("開発スタジオが開きます", "Opens the Studio")}</p>
                     </div>
                   </Link>
                 </div>
@@ -963,7 +974,7 @@ export default function ProjectsPage() {
                 <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
                   <Package className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" strokeWidth={2} />
                   <p className="text-xs leading-relaxed text-gray-500">
-                    ジサップでGETしたアプリの一覧です。カードをタップすると詳細ページでソースコードを確認できます。
+                    {t("ジサップでGETしたアプリの一覧です。カードをタップすると詳細ページでソースコードを確認できます。", "Apps you got on Jisapp. Tap a card to see its details and source code.")}
                   </p>
                 </div>
 
@@ -978,7 +989,7 @@ export default function ProjectsPage() {
                     href="/"
                     className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
-                    もっとアプリを探す
+                    {t("もっとアプリを探す", "Find more apps")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -1065,9 +1076,9 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                   <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
                     <ClipboardList className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                    出品情報
+                    {t("出品情報", "Listing info")}
                   </h3>
-                  <button onClick={() => setPublishTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setPublishTarget(null)} aria-label={t("閉じる", "Close")} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
                 </div>
@@ -1075,24 +1086,24 @@ export default function ProjectsPage() {
                   {saveSuccess && (
                     <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 ring-1 ring-emerald-200">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      <p className="text-xs font-bold text-emerald-700">更新しました</p>
+                      <p className="text-xs font-bold text-emerald-700">{t("更新しました", "Updated")}</p>
                     </div>
                   )}
                   <div>
-                    <p className="mb-1 text-[10px] font-bold text-gray-500">アプリ名</p>
+                    <p className="mb-1 text-[10px] font-bold text-gray-500">{t("アプリ名", "App name")}</p>
                     <p className="text-sm font-black text-gray-900">{publishTitle}</p>
                   </div>
                   {publishCategory && CATEGORY_MAP[publishCategory] && (
                     <div>
-                      <p className="mb-1 text-[10px] font-bold text-gray-500">カテゴリ</p>
+                      <p className="mb-1 text-[10px] font-bold text-gray-500">{t("カテゴリ", "Category")}</p>
                       <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", CATEGORY_MAP[publishCategory].tagColor)}>
                         <CategoryIcon categoryId={publishCategory} className="h-4 w-4 shrink-0" />
-                        {CATEGORY_MAP[publishCategory].name}
+                        {categoryName(publishCategory, locale)}
                       </span>
                     </div>
                   )}
                   <div>
-                    <p className="mb-1 text-[10px] font-bold text-gray-500">アプリURL</p>
+                    <p className="mb-1 text-[10px] font-bold text-gray-500">{t("アプリURL", "App URL")}</p>
                     <AppUrlCopyField url={publishedUrl} />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1103,7 +1114,7 @@ export default function ProjectsPage() {
                         className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100"
                       >
                         <Key className="h-3.5 w-3.5" />
-                        アプリ用シークレットを管理
+                        {t("アプリ用シークレットを管理", "Manage app secrets")}
                       </button>
                     )}
                     <button
@@ -1111,7 +1122,7 @@ export default function ProjectsPage() {
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all"
                     >
                       <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                      出品情報を編集
+                      {t("出品情報を編集", "Edit listing info")}
                     </button>
                     {publishTarget.groupSharing && publishTarget.appId && (
                       <Link
@@ -1119,7 +1130,7 @@ export default function ProjectsPage() {
                         className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all"
                       >
                         <Users className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                        グループ管理
+                        {t("グループ管理", "Manage group")}
                       </Link>
                     )}
                   </div>
@@ -1127,19 +1138,19 @@ export default function ProjectsPage() {
                     <div className="rounded-xl bg-teal-50 px-3 py-2.5 ring-1 ring-teal-200">
                       <p className="flex items-center gap-1 text-[10px] font-bold text-teal-700">
                         <LibraryBig className="h-3.5 w-3.5 shrink-0" />
-                        マイライブラリ登録者数
+                        {t("マイライブラリ登録者数", "People who added it")}
                       </p>
                       <p className="mt-0.5 text-lg font-black text-teal-900">
-                        {(publishTarget.libraryCount ?? 0).toLocaleString()}<span className="ml-0.5 text-xs font-bold">人</span>
+                        {(publishTarget.libraryCount ?? 0).toLocaleString()}{t(<span className="ml-0.5 text-xs font-bold">人</span>, null)}
                       </p>
                     </div>
                     <div className="rounded-xl bg-sky-50 px-3 py-2.5 ring-1 ring-sky-200">
                       <p className="flex items-center gap-1 text-[10px] font-bold text-sky-700">
                         <MousePointerClick className="h-3.5 w-3.5 shrink-0" />
-                        アプリが開かれた回数
+                        {t("アプリが開かれた回数", "Times opened")}
                       </p>
                       <p className="mt-0.5 text-lg font-black text-sky-900">
-                        {(publishTarget.openCount ?? 0).toLocaleString()}<span className="ml-0.5 text-xs font-bold">回</span>
+                        {(publishTarget.openCount ?? 0).toLocaleString()}{t(<span className="ml-0.5 text-xs font-bold">回</span>, null)}
                       </p>
                     </div>
                   </div>
@@ -1150,7 +1161,7 @@ export default function ProjectsPage() {
                         disabled={unlisting}
                         className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
                       >
-                        {unlisting ? "取り下げ中…" : <><EyeOff className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />出品を取り下げる</>}
+                        {unlisting ? t("取り下げ中…", "Unlisting…") : <><EyeOff className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />{t("出品を取り下げる", "Unlist")}</>}
                       </button>
                     )}
                     <button
@@ -1158,10 +1169,10 @@ export default function ProjectsPage() {
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all"
                     >
                       <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                      アプリを削除する
+                      {t("アプリを削除する", "Delete app")}
                     </button>
                   </div>
-                  <button onClick={() => setPublishTarget(null)} className="text-center text-[10px] text-gray-400 hover:text-gray-600 transition-colors">閉じる</button>
+                  <button onClick={() => setPublishTarget(null)} className="text-center text-[10px] text-gray-400 hover:text-gray-600 transition-colors">{t("閉じる", "Close")}</button>
                 </div>
               </>
 
@@ -1171,15 +1182,15 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                   <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
                     <PenLine className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                    出品情報を編集
+                    {t("出品情報を編集", "Edit listing info")}
                   </h3>
-                  <button onClick={() => setEditMode(false)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setEditMode(false)} aria-label={t("閉じる", "Close")} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
                 </div>
                 <div className="flex flex-col gap-4 p-6">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-700">アプリ名 <span className="text-rose-500">*</span></label>
+                    <label className="text-xs font-bold text-gray-700">{t("アプリ名", "App name")} <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       value={publishTitle}
@@ -1188,7 +1199,7 @@ export default function ProjectsPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-700">カテゴリ</label>
+                    <label className="text-xs font-bold text-gray-700">{t("カテゴリ", "Category")}</label>
                     <div className="flex flex-wrap gap-1.5">
                       {CATEGORIES.map((cat) => (
                         <button key={cat.id} type="button" onClick={() => setPublishCategory(cat.id)}
@@ -1196,13 +1207,13 @@ export default function ProjectsPage() {
                             publishCategory === cat.id ? "bg-emerald-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
                           )}>
                           <CategoryIcon categoryId={cat.id} className="h-4 w-4 shrink-0" />
-                          {cat.name}
+                          {categoryName(cat, locale)}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-700">説明（任意）</label>
+                    <label className="text-xs font-bold text-gray-700">{t("説明（任意）", "Description (optional)")}</label>
                     <textarea
                       value={publishDesc}
                       onChange={(e) => setPublishDesc(e.target.value)}
@@ -1219,9 +1230,9 @@ export default function ProjectsPage() {
                         className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-xs leading-relaxed text-violet-900">
-                        <span className="font-bold">ソースコードを公開する</span>
+                        <span className="font-bold">{t("ソースコードを公開する", "Make the source code public")}</span>
                         <br />
-                        マイライブラリに追加したユーザーだけが閲覧できます
+                        {t("マイライブラリに追加したユーザーだけが閲覧できます", "Only people who add it to their library can see it")}
                       </span>
                     </label>
                   </div>
@@ -1230,14 +1241,14 @@ export default function ProjectsPage() {
                   )}
                   <div className="flex gap-2">
                     <button onClick={() => setEditMode(false)} className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-                      キャンセル
+                      {t("キャンセル", "Cancel")}
                     </button>
                     <button
                       onClick={handleSaveEdit}
                       disabled={saving || !publishTitle.trim()}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] disabled:opacity-50"
                     >
-                      {saving ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />保存中…</> : "保存する"}
+                      {saving ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />{t("保存中…", "Saving…")}</> : t("保存する", "Save")}
                     </button>
                   </div>
                 </div>
@@ -1249,10 +1260,10 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                   <h3 className="flex items-center gap-1.5 text-base font-black text-gray-900">
                     {isRepublish
-                      ? <><RefreshCw className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを上書きする</>
-                      : <><Upload className="h-4 w-4 shrink-0" strokeWidth={2.5} />アプリを出品する</>}
+                      ? <><RefreshCw className="h-4 w-4 shrink-0" strokeWidth={2.5} />{t("アプリを上書きする", "Update your app")}</>
+                      : <><Upload className="h-4 w-4 shrink-0" strokeWidth={2.5} />{t("アプリを出品する", "Publish your app")}</>}
                   </h3>
-                  <button onClick={() => setPublishTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setPublishTarget(null)} aria-label={t("閉じる", "Close")} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                     <X className="h-4 w-4 text-gray-500" />
                   </button>
                 </div>
@@ -1261,17 +1272,17 @@ export default function ProjectsPage() {
                     <div className="rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
                       <p className="flex items-start gap-2 text-xs text-amber-700">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
-                        <span>このプロジェクトはデモデータです。開発スタジオで実際にコードを作成・保存してから出品してください。</span>
+                        <span>{t("このプロジェクトはデモデータです。開発スタジオで実際にコードを作成・保存してから出品してください。", "This project is demo data. Make and save real code in the Studio before publishing.")}</span>
                       </p>
                     </div>
                   )}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-700">アプリ名 <span className="text-rose-500">*</span></label>
-                    <input type="text" value={publishTitle} onChange={(e) => setPublishTitle(e.target.value)} placeholder="例：就活管理ツール"
+                    <label className="text-xs font-bold text-gray-700">{t("アプリ名", "App name")} <span className="text-rose-500">*</span></label>
+                    <input type="text" value={publishTitle} onChange={(e) => setPublishTitle(e.target.value)} placeholder={t("例：就活管理ツール", "e.g. Job hunt tracker")}
                       className="h-11 w-full rounded-xl border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-700">カテゴリ <span className="text-rose-500">*</span></label>
+                    <label className="text-xs font-bold text-gray-700">{t("カテゴリ", "Category")} <span className="text-rose-500">*</span></label>
                     <div className="flex flex-wrap gap-1.5">
                       {CATEGORIES.map((cat) => (
                         <button key={cat.id} type="button" onClick={() => setPublishCategory(cat.id)}
@@ -1279,14 +1290,14 @@ export default function ProjectsPage() {
                             publishCategory === cat.id ? "bg-emerald-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
                           )}>
                           <CategoryIcon categoryId={cat.id} className="h-4 w-4 shrink-0" />
-                          {cat.name}
+                          {categoryName(cat, locale)}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-gray-700">説明（任意）</label>
-                    <textarea value={publishDesc} onChange={(e) => setPublishDesc(e.target.value)} placeholder="アプリの使い方や特徴を簡単に説明..." rows={3}
+                    <label className="text-xs font-bold text-gray-700">{t("説明（任意）", "Description (optional)")}</label>
+                    <textarea value={publishDesc} onChange={(e) => setPublishDesc(e.target.value)} placeholder={t("アプリの使い方や特徴を簡単に説明...", "Briefly describe how to use it and what's special...")} rows={3}
                       className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20" />
                   </div>
                   <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
@@ -1298,9 +1309,9 @@ export default function ProjectsPage() {
                         className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-xs leading-relaxed text-violet-900">
-                        <span className="font-bold">ソースコードを公開する</span>
+                        <span className="font-bold">{t("ソースコードを公開する", "Make the source code public")}</span>
                         <br />
-                        マイライブラリに追加したユーザーだけが閲覧できます（アプリの実行自体は誰でも可能）
+                        {t("マイライブラリに追加したユーザーだけが閲覧できます（アプリの実行自体は誰でも可能）", "Only people who add it to their library can see it (anyone can still run the app)")}
                       </span>
                     </label>
                   </div>
@@ -1311,22 +1322,22 @@ export default function ProjectsPage() {
                       className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-800 hover:bg-violet-100"
                     >
                       <Key className="h-3.5 w-3.5" />
-                      アプリ用シークレットを管理
+                      {t("アプリ用シークレットを管理", "Manage app secrets")}
                     </button>
                   )}
                   {isRepublish && (
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                        マイライブラリ登録者への更新内容
-                        <span className="ml-1 text-[10px] font-normal text-gray-400">（任意・200字まで）</span>
+                        {t("マイライブラリ登録者への更新内容", "What's new (for people who added it to their library)")}
+                        <span className="ml-1 text-[10px] font-normal text-gray-400">{t("（任意・200字まで）", "(optional, up to 200 chars)")}</span>
                       </label>
                       <textarea
                         value={publishUpdateNotes}
                         onChange={(e) => setPublishUpdateNotes(e.target.value)}
                         placeholder={
                           publishResetUserData
-                            ? "例：UIを大幅に変更しました。保存データは互換性がないため、アップデート時にリセットされます。"
-                            : "例：ダークモードを追加しました。保存データはそのまま使えます。"
+                            ? t("例：UIを大幅に変更しました。保存データは互換性がないため、アップデート時にリセットされます。", "e.g. Big UI changes. Saved data isn't compatible, so it will be reset on update.")
+                            : t("例：ダークモードを追加しました。保存データはそのまま使えます。", "e.g. Added dark mode. Your saved data still works.")
                         }
                         rows={3}
                         maxLength={200}
@@ -1337,7 +1348,7 @@ export default function ProjectsPage() {
                   )}
                   {isRepublish && (
                     <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-4">
-                      <p className="mb-3 text-xs font-bold text-amber-900">マイライブラリ登録者の保存データ</p>
+                      <p className="mb-3 text-xs font-bold text-amber-900">{t("マイライブラリ登録者の保存データ", "Saved data of people who added it to their library")}</p>
                       <label className="flex cursor-pointer items-start gap-3">
                         <input
                           type="radio"
@@ -1347,9 +1358,9 @@ export default function ProjectsPage() {
                           className="mt-0.5 h-4 w-4 border-amber-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <span className="text-xs leading-relaxed text-amber-900">
-                          <span className="font-bold">データを引き継ぐ</span>
+                          <span className="font-bold">{t("データを引き継ぐ", "Keep their data")}</span>
                           <br />
-                          ユーザーはアップデートの確認後、保存データを維持したまま新しいコードを選べます
+                          {t("ユーザーはアップデートの確認後、保存データを維持したまま新しいコードを選べます", "After confirming the update, people can switch to the new code and keep their data")}
                         </span>
                       </label>
                       <label className="mt-3 flex cursor-pointer items-start gap-3">
@@ -1361,9 +1372,9 @@ export default function ProjectsPage() {
                           className="mt-0.5 h-4 w-4 border-amber-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <span className="text-xs leading-relaxed text-amber-900">
-                          <span className="font-bold">アップデート時にデータをリセット</span>
+                          <span className="font-bold">{t("アップデート時にデータをリセット", "Reset data on update")}</span>
                           <br />
-                          ユーザーがアップデートを選んだ場合、保存データが消える可能性があることを案内します
+                          {t("ユーザーがアップデートを選んだ場合、保存データが消える可能性があることを案内します", "People who choose to update are told their saved data may be erased")}
                         </span>
                       </label>
                     </div>
@@ -1373,13 +1384,13 @@ export default function ProjectsPage() {
                   )}
                   <button onClick={() => handlePublish(false)} disabled={publishing || publishTarget.isDemo || !publishTitle.trim()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white py-3 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />上書き中…</> : <><CheckCircle2 className="h-4 w-4 text-gray-500" />{isRepublish ? "上書きする" : "URLだけ発行する（非公開）"}</>}
+                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />{t("上書き中…", "Updating…")}</> : <><CheckCircle2 className="h-4 w-4 text-gray-500" />{isRepublish ? t("上書きする", "Update") : t("URLだけ発行する（非公開）", "Get a URL only (unlisted)")}</>}
                   </button>
                   <button onClick={() => handlePublish(true)} disabled={publishing || publishTarget.isDemo || !publishTitle.trim() || !publishCategory}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/25 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />上書き中…</> : <><Upload className="h-4 w-4" />{isRepublish ? "上書きする" : "出品する（トップに掲載）"}</>}
+                    {publishing ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />{t("上書き中…", "Updating…")}</> : <><Upload className="h-4 w-4" />{isRepublish ? t("上書きする", "Update") : t("出品する（トップに掲載）", "Publish (listed on home)")}</>}
                   </button>
-                  <p className="text-center text-[10px] text-gray-400">「URLだけ発行」はカテゴリ未選択でも利用できます</p>
+                  <p className="text-center text-[10px] text-gray-400">{t("「URLだけ発行」はカテゴリ未選択でも利用できます", "“URL only” works without choosing a category")}</p>
                 </div>
               </>
             )}
@@ -1392,7 +1403,7 @@ export default function ProjectsPage() {
         <div className="mb-2 flex justify-center">
           <JisappLogo href="/" />
         </div>
-        <p className="text-xs text-gray-400">個人開発ツールが集まるクリエイタープラットフォーム</p>
+        <p className="text-xs text-gray-400">{t("個人開発ツールが集まるクリエイタープラットフォーム", "A creator platform full of indie-made tools")}</p>
       </footer>
 
     </div>

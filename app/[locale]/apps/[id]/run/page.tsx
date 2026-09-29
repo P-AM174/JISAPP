@@ -9,6 +9,7 @@ import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { AppRunner } from "@/components/app-runner";
 import { Loader2, LogIn, AlertCircle } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 type RuntimeData = {
   id: string;
@@ -24,6 +25,7 @@ export default function AppRunPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { status } = useSession();
+  const t = useT();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function AppRunPage() {
             setError(
               typeof data.error === "string"
                 ? data.error
-                : "アプリの読み込みに失敗しました"
+                : t("アプリの読み込みに失敗しました", "Couldn't load the app")
             );
           }
           return;
@@ -62,7 +64,7 @@ export default function AppRunPage() {
           setRuntime(data);
         }
       } catch {
-        if (!cancelled) setError("ネットワークエラーが発生しました");
+        if (!cancelled) setError(t("ネットワークエラーが発生しました", "A network error occurred"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -90,7 +92,7 @@ export default function AppRunPage() {
             )}
           </div>
           <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-            サンドボックス実行
+            {t("サンドボックス実行", "Sandboxed run")}
           </span>
         </div>
       </header>
@@ -99,14 +101,14 @@ export default function AppRunPage() {
         {loading && (
           <div className="flex h-full items-center justify-center gap-2 text-sm text-gray-500">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
-            アプリを読み込み中…
+            {t("アプリを読み込み中…", "Loading app…")}
           </div>
         )}
 
         {!loading && error === "login" && (
           <div className="flex h-full flex-col items-center justify-center gap-4 px-4 text-center">
             <LogIn className="h-10 w-10 text-gray-300" />
-            <p className="text-sm text-gray-600">アプリを実行するにはログインが必要です</p>
+            <p className="text-sm text-gray-600">{t("アプリを実行するにはログインが必要です", "Please sign in to run this app")}</p>
             <button
               type="button"
               onClick={() => {
@@ -118,7 +120,7 @@ export default function AppRunPage() {
               }}
               className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
             >
-              ログインする
+              {t("ログインする", "Sign in")}
             </button>
           </div>
         )}
@@ -131,7 +133,7 @@ export default function AppRunPage() {
               href={`/apps/${id}`}
               className="text-xs font-semibold text-emerald-600 hover:underline"
             >
-              アプリ詳細に戻る
+              {t("アプリ詳細に戻る", "Back to app details")}
             </Link>
           </div>
         )}

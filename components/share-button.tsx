@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Share2, Link2, Mail, X, Copy, CheckCircle2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 import {
   copyShareUrl,
   getFacebookShareUrl,
@@ -56,6 +57,7 @@ function ShareSheet({
   shareText: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (!open) setCopied(false);
@@ -81,7 +83,7 @@ function ShareSheet({
     {
       id: "x",
       label: "X（Twitter）",
-      sub: "ポストする",
+      sub: t("ポストする", "Post"),
       icon: <XBrandIcon className="h-4 w-4" />,
       bg: "bg-gray-900 text-white",
       action: () => openShareWindow(getTwitterShareUrl(url, shareText)),
@@ -89,7 +91,7 @@ function ShareSheet({
     {
       id: "line",
       label: "LINE",
-      sub: "トーク・タイムライン",
+      sub: t("トーク・タイムライン", "Chats & timeline"),
       icon: <MessageCircle className="h-4 w-4" strokeWidth={2.5} />,
       bg: "bg-[#06C755] text-white",
       action: () => openShareWindow(getLineShareUrl(url, shareText)),
@@ -97,15 +99,15 @@ function ShareSheet({
     {
       id: "facebook",
       label: "Facebook",
-      sub: "シェアする",
+      sub: t("シェアする", "Share"),
       icon: <FacebookBrandIcon className="h-5 w-5" />,
       bg: "bg-[#1877F2] text-white",
       action: () => openShareWindow(getFacebookShareUrl(url)),
     },
     {
       id: "mail",
-      label: "メール",
-      sub: "メールアプリで送る",
+      label: t("メール", "Email"),
+      sub: t("メールアプリで送る", "Send with your mail app"),
       icon: null,
       bg: "bg-emerald-600 text-white",
       action: () => {
@@ -123,14 +125,14 @@ function ShareSheet({
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <div>
-            <p className="text-base font-black text-gray-900">SNS・メッセージで共有</p>
-            <p className="mt-0.5 text-xs text-gray-500">好きな媒体を選んでシェアできます</p>
+            <p className="text-base font-black text-gray-900">{t("SNS・メッセージで共有", "Share on social or in a message")}</p>
+            <p className="mt-0.5 text-xs text-gray-500">{t("好きな媒体を選んでシェアできます", "Pick where you'd like to share")}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
-            aria-label="閉じる"
+            aria-label={t("閉じる", "Close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -176,7 +178,7 @@ function ShareSheet({
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-bold text-gray-700 hover:bg-gray-50"
           >
             <Link2 className="h-4 w-4 text-emerald-600" />
-            {copied ? "URLをコピーしました！" : "URLをコピー"}
+            {copied ? t("URLをコピーしました！", "URL copied!") : t("URLをコピー", "Copy URL")}
           </button>
         </div>
       </div>
@@ -193,11 +195,13 @@ export function ShareButton({
   className,
   size = "sm",
   variant = "outline",
-  label = "共有する",
+  label,
 }: ShareButtonProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const shareText = text ?? title ?? "ジサップのアプリ";
+  const t = useT();
+  if (label === undefined) label = t("共有する", "Share");
+  const shareText = text ?? title ?? t("ジサップのアプリ", "A Jisapp app");
   const closeSheet = useCallback(() => setSheetOpen(false), []);
 
   const handleShare = async () => {
@@ -264,9 +268,11 @@ export function CopyUrlButton({
   className,
   size = "sm",
   variant = "outline",
-  label = "アプリURLをコピー",
+  label,
 }: CopyUrlButtonProps) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
+  if (label === undefined) label = t("アプリURLをコピー", "Copy app URL");
 
   const handleCopy = async () => {
     const ok = await copyShareUrl(url);
@@ -302,7 +308,7 @@ export function CopyUrlButton({
       {copied ? (
         <>
           <CheckCircle2 className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
-          コピーしました
+          {t("コピーしました", "Copied")}
         </>
       ) : (
         <>
@@ -323,6 +329,7 @@ export function AppUrlCopyField({
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
 
   const handleCopy = async () => {
     const ok = await copyShareUrl(url);
@@ -345,8 +352,8 @@ export function AppUrlCopyField({
       <button
         type="button"
         onClick={handleCopy}
-        title="URLをコピー"
-        aria-label={copied ? "コピーしました" : "URLをコピー"}
+        title={t("URLをコピー", "Copy URL")}
+        aria-label={copied ? t("コピーしました", "Copied") : t("URLをコピー", "Copy URL")}
         className={cn(
           "flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-bold transition-all active:scale-95 sm:text-xs",
           copied
@@ -357,12 +364,12 @@ export function AppUrlCopyField({
         {copied ? (
           <>
             <CheckCircle2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">コピー済</span>
+            <span className="hidden sm:inline">{t("コピー済", "Copied")}</span>
           </>
         ) : (
           <>
             <Copy className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">コピー</span>
+            <span className="hidden sm:inline">{t("コピー", "Copy")}</span>
           </>
         )}
       </button>
@@ -377,6 +384,7 @@ export function ShareButtonRow({
   text,
   className,
 }: Omit<ShareButtonProps, "size" | "variant" | "label">) {
+  const t = useT();
   return (
     <ShareButton
       url={url}
@@ -384,7 +392,7 @@ export function ShareButtonRow({
       text={text}
       size="md"
       variant="outline"
-      label="SNS・メッセージで共有"
+      label={t("SNS・メッセージで共有", "Share on social or in a message")}
       className={className}
     />
   );

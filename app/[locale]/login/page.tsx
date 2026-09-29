@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
 import Link from "@/lib/i18n/navigation";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
+import { useLocale, useT } from "@/lib/i18n/client";
 import {
   Eye, EyeOff, X, CheckCircle2, Mail, Lock, User,
   ArrowRight, AlertCircle, RefreshCw, ShieldCheck,
@@ -30,6 +31,8 @@ function LoginContent() {
   const { status } = useSession();
   const router      = useRouter();
   const params      = useSearchParams();
+  const t           = useT();
+  const locale      = useLocale();
   const [returnUrl, setReturnUrl] = useState("/");
 
   useEffect(() => {
@@ -93,25 +96,25 @@ function LoginContent() {
     e.preventDefault();
     setError("");
     if (!regName.trim() || !regEmail.trim() || !regPw.trim()) {
-      setError("すべての項目を入力してください"); return;
+      setError(t("すべての項目を入力してください", "Please fill in every field")); return;
     }
     if (regPw.length < 6) {
-      setError("パスワードは6文字以上にしてください"); return;
+      setError(t("パスワードは6文字以上にしてください", "Your password needs at least 6 characters")); return;
     }
     setLoading(true);
     try {
       const res  = await fetch("/api/auth/send-verification", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name: regName, email: regEmail, password: regPw }),
+        body:    JSON.stringify({ name: regName, email: regEmail, password: regPw, locale }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "送信に失敗しました"); return; }
+      if (!res.ok) { setError(data.error ?? t("送信に失敗しました", "Couldn't send. Please try again.")); return; }
       setStage("verify");
       setCodeDigits(["", "", "", "", "", ""]);
       setTimeout(() => codeRefs[0].current?.focus(), 100);
     } catch {
-      setError("ネットワークエラーが発生しました");
+      setError(t("ネットワークエラーが発生しました", "A network error occurred"));
     } finally {
       setLoading(false);
     }
@@ -146,7 +149,7 @@ function LoginContent() {
   // ─── コード検証 → アカウント作成 → サインイン ───
   const handleVerify = async () => {
     const code = codeDigits.join("");
-    if (code.length < 6) { setError("6桁のコードを入力してください"); return; }
+    if (code.length < 6) { setError(t("6桁のコードを入力してください", "Please enter the 6-digit code")); return; }
     setError("");
     setLoading(true);
     try {
@@ -156,7 +159,7 @@ function LoginContent() {
         body:    JSON.stringify({ email: regEmail, code }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "認証に失敗しました"); return; }
+      if (!res.ok) { setError(data.error ?? t("認証に失敗しました", "Verification failed")); return; }
 
       // 本登録完了 → 自動ログイン
       setStage("done");
@@ -165,7 +168,7 @@ function LoginContent() {
         callbackUrl: returnUrl, redirect: true,
       });
     } catch {
-      setError("ネットワークエラーが発生しました");
+      setError(t("ネットワークエラーが発生しました", "A network error occurred"));
     } finally {
       setLoading(false);
     }
@@ -179,10 +182,10 @@ function LoginContent() {
       const res  = await fetch("/api/auth/send-verification", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ name: regName, email: regEmail, password: regPw }),
+        body:    JSON.stringify({ name: regName, email: regEmail, password: regPw, locale }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error ?? "再送信に失敗しました");
+      if (!res.ok) setError(data.error ?? t("再送信に失敗しました", "Couldn't resend the code"));
       else {
         setCodeDigits(["", "", "", "", "", ""]);
         setTimeout(() => codeRefs[0].current?.focus(), 50);
@@ -201,7 +204,7 @@ function LoginContent() {
       const res = await signIn("credentials", {
         email: loginEmail, password: loginPw, redirect: false,
       });
-      if (res?.error) setError("メールアドレスまたはパスワードが正しくありません");
+      if (res?.error) setError(t("メールアドレスまたはパスワードが正しくありません", "Incorrect email or password"));
       else router.replace(returnUrl);
     } finally {
       setLoading(false);
@@ -239,10 +242,12 @@ function LoginContent() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
                 <Mail className="h-7 w-7 text-emerald-600" />
               </div>
-              <h1 className="text-2xl font-black text-gray-900">メールを確認してください</h1>
+              <h1 className="text-2xl font-black text-gray-900">{t("メールを確認してください", "Check your email")}</h1>
               <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
-                <span className="font-semibold text-emerald-700">{regEmail}</span> に<br />
-                6桁の認証コードを送信しました
+                {t(
+                  <><span className="font-semibold text-emerald-700">{regEmail}</span> に<br />6桁の認証コードを送信しました</>,
+                  <>We sent a 6-digit code to<br /><span className="font-semibold text-emerald-700">{regEmail}</span></>
+                )}
               </p>
             </div>
 
@@ -259,7 +264,7 @@ function LoginContent() {
               {/* 6桁入力 */}
               <div className="mb-6">
                 <label className="mb-3 block text-center text-sm font-semibold text-gray-600">
-                  認証コードを入力
+                  {t("認証コードを入力", "Enter the code")}
                 </label>
                 <div className="flex justify-center gap-2" onPaste={handleDigitPaste}>
                   {codeDigits.map((d, i) => (
@@ -289,7 +294,7 @@ function LoginContent() {
               >
                 {loading
                   ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  : <><ShieldCheck className="h-4 w-4" />認証して登録完了</>
+                  : <><ShieldCheck className="h-4 w-4" />{t("認証して登録完了", "Verify and finish")}</>
                 }
               </button>
 
@@ -298,19 +303,19 @@ function LoginContent() {
                   onClick={() => { setStage("form"); setError(""); }}
                   className="flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <X className="h-3.5 w-3.5" />戻る
+                  <X className="h-3.5 w-3.5" />{t("戻る", "Back")}
                 </button>
                 <button
                   onClick={handleResend}
                   disabled={loading}
                   className="flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-semibold transition-colors disabled:opacity-50"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />コードを再送信
+                  <RefreshCw className="h-3.5 w-3.5" />{t("コードを再送信", "Resend code")}
                 </button>
               </div>
 
               <p className="mt-5 rounded-2xl bg-amber-50 px-4 py-3 text-center text-xs text-amber-700 ring-1 ring-amber-200">
-                メールが届かない場合は迷惑メールフォルダもご確認ください
+                {t("メールが届かない場合は迷惑メールフォルダもご確認ください", "Didn't get it? Check your spam folder too.")}
               </p>
             </div>
           </div>
@@ -331,7 +336,7 @@ function LoginContent() {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <JisappLogo href="/" />
           <Link href="/" className="text-sm text-gray-400 hover:text-emerald-600 transition-colors">
-            トップに戻る
+            {t("トップに戻る", "Back to home")}
           </Link>
         </div>
       </header>
@@ -346,12 +351,12 @@ function LoginContent() {
               <JisappLogoIcon className="h-16 w-16" />
             </div>
             <h1 className="text-2xl font-black text-gray-900">
-              {mode === "login" ? "おかえりなさい" : "アカウントを作成"}
+              {mode === "login" ? t("おかえりなさい", "Welcome back") : t("アカウントを作成", "Create your account")}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
               {mode === "login"
-                ? "ジサップへログインしてください"
-                : "クリエイターとして参加しましょう"}
+                ? t("ジサップへログインしてください", "Sign in to Jisapp")
+                : t("クリエイターとして参加しましょう", "Join as a creator")}
             </p>
           </div>
 
@@ -369,7 +374,7 @@ function LoginContent() {
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {m === "login" ? "ログイン" : "新規登録"}
+                  {m === "login" ? t("ログイン", "Sign in") : t("新規登録", "Sign up")}
                 </button>
               ))}
             </div>
@@ -381,13 +386,13 @@ function LoginContent() {
               className="mb-5 flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-200 bg-white px-4 py-3.5 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <GoogleIcon />
-              Google でログイン
+              {t("Google でログイン", "Continue with Google")}
             </button>
 
             {/* 区切り */}
             <div className="mb-5 flex items-center gap-3">
               <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-xs text-gray-400 font-medium">または</span>
+              <span className="text-xs text-gray-400 font-medium">{t("または", "or")}</span>
               <div className="flex-1 h-px bg-gray-100" />
             </div>
 
@@ -403,7 +408,7 @@ function LoginContent() {
             {mode === "login" && (
               <form onSubmit={handleLogin} className="space-y-4">
                 <Field
-                  label="メールアドレス"
+                  label={t("メールアドレス", "Email")}
                   icon={<Mail className="h-4 w-4 text-gray-400" />}
                   type="email"
                   value={loginEmail}
@@ -411,14 +416,14 @@ function LoginContent() {
                   placeholder="your@email.com"
                 />
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">パスワード</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("パスワード", "Password")}</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type={showPw ? "text" : "password"}
                       value={loginPw}
                       onChange={e => setLoginPw(e.target.value)}
-                      placeholder="パスワードを入力"
+                      placeholder={t("パスワードを入力", "Enter your password")}
                       required
                       className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3 pl-10 pr-10 text-sm outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20 transition"
                     />
@@ -428,10 +433,10 @@ function LoginContent() {
                     </button>
                   </div>
                 </div>
-                <SubmitBtn loading={loading} label="ログイン" icon={<ArrowRight className="h-4 w-4" />} />
+                <SubmitBtn loading={loading} label={t("ログイン", "Sign in")} icon={<ArrowRight className="h-4 w-4" />} />
                 <div className="text-center">
                   <Link href="/forgot-password" className="text-xs text-gray-400 hover:text-emerald-600 transition-colors">
-                    パスワードをお忘れですか？
+                    {t("パスワードをお忘れですか？", "Forgot your password?")}
                   </Link>
                 </div>
               </form>
@@ -441,15 +446,15 @@ function LoginContent() {
             {mode === "register" && stage === "form" && (
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <Field
-                  label="ユーザーネーム"
+                  label={t("ユーザーネーム", "Username")}
                   icon={<User className="h-4 w-4 text-gray-400" />}
                   type="text"
                   value={regName}
                   onChange={setRegName}
-                  placeholder="あなたのニックネーム"
+                  placeholder={t("あなたのニックネーム", "Your nickname")}
                 />
                 <Field
-                  label="メールアドレス"
+                  label={t("メールアドレス", "Email")}
                   icon={<Mail className="h-4 w-4 text-gray-400" />}
                   type="email"
                   value={regEmail}
@@ -457,14 +462,14 @@ function LoginContent() {
                   placeholder="your@email.com"
                 />
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">パスワード（6文字以上）</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("パスワード（6文字以上）", "Password (6+ characters)")}</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type={showPw ? "text" : "password"}
                       value={regPw}
                       onChange={e => setRegPw(e.target.value)}
-                      placeholder="パスワードを設定"
+                      placeholder={t("パスワードを設定", "Choose a password")}
                       required
                       className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3 pl-10 pr-10 text-sm outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-400/20 transition"
                     />
@@ -474,15 +479,24 @@ function LoginContent() {
                     </button>
                   </div>
                 </div>
-                <SubmitBtn loading={loading} label="確認メールを送信" icon={<Mail className="h-4 w-4" />} />
+                <SubmitBtn loading={loading} label={t("確認メールを送信", "Send verification email")} icon={<Mail className="h-4 w-4" />} />
               </form>
             )}
 
             <p className="mt-5 text-center text-[11px] text-gray-400">
-              登録・ログインすることで
-              <Link href="/" className="text-emerald-600 hover:underline mx-1">利用規約</Link>および
-              <Link href="/" className="text-emerald-600 hover:underline mx-1">プライバシーポリシー</Link>
-              に同意したものとみなされます。
+              {t(
+                <>
+                  登録・ログインすることで
+                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">利用規約</Link>および
+                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">プライバシーポリシー</Link>
+                  に同意したものとみなされます。
+                </>,
+                <>
+                  By signing up or signing in, you agree to the
+                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">Terms of Service</Link>and
+                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">Privacy Policy</Link>.
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -495,8 +509,8 @@ function LoginContent() {
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle2 className="h-10 w-10 text-emerald-600" />
             </div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">登録完了！</h2>
-            <p className="text-sm text-gray-500">ジサップへようこそ。ログイン中...</p>
+            <h2 className="text-xl font-black text-gray-900 mb-2">{t("登録完了！", "You're all set!")}</h2>
+            <p className="text-sm text-gray-500">{t("ジサップへようこそ。ログイン中...", "Welcome to Jisapp. Signing you in...")}</p>
           </div>
         </div>
       )}

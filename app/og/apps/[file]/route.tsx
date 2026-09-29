@@ -6,14 +6,21 @@ import {
   loadNotoSansJP,
 } from "@/lib/seo/og-assets";
 import { getShareableAppSeo } from "@/lib/seo/public-apps";
-import { SITE_BRAND, SITE_OG_IMAGE, SITE_TAGLINE, absoluteUrl } from "@/lib/seo/site";
+import {
+  SITE_BRAND,
+  SITE_OG_IMAGE,
+  SITE_OG_IMAGE_EN,
+  SITE_TAGLINE,
+  SITE_TAGLINE_EN,
+  absoluteUrl,
+} from "@/lib/seo/site";
 
 export const runtime = "nodejs";
 
 /**
  * アプリ名を描き込んだ OGP 画像。
  * X は拡張子なしのURLをカード化しないことがあるため、必ず `.png` で終わるパスで配信する。
- * 例: /og/apps/<id>.png
+ * 例: /og/apps/<id>.png（英語版は /og/apps/<id>.en.png）
  */
 const CACHE_CONTROL = "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800";
 
@@ -37,15 +44,19 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const id = decodeURIComponent(file.slice(0, -4));
+  let name = decodeURIComponent(file.slice(0, -4));
+  const en = name.endsWith(".en");
+  if (en) name = name.slice(0, -3);
+  const id = name;
+  const fallbackImage = absoluteUrl(en ? SITE_OG_IMAGE_EN : SITE_OG_IMAGE);
   const app = await getShareableAppSeo(id);
 
   if (!app) {
     // アプリが見つからない場合は共通のOGP画像を返す
-    return Response.redirect(absoluteUrl(SITE_OG_IMAGE), 302);
+    return Response.redirect(fallbackImage, 302);
   }
 
-  const rawTitle = app.title.trim() || "ジサップのアプリ";
+  const rawTitle = app.title.trim() || (en ? "A Jisapp app" : "ジサップのアプリ");
   const title =
     rawTitle.length > MAX_TITLE_LENGTH
       ? `${rawTitle.slice(0, MAX_TITLE_LENGTH)}…`
@@ -110,10 +121,10 @@ export async function GET(
                   letterSpacing: -1,
                 }}
               >
-                {SITE_BRAND}
+                {en ? "Jisapp" : SITE_BRAND}
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: OG_THEME.mutedText }}>
-                {SITE_TAGLINE}
+                {en ? SITE_TAGLINE_EN : SITE_TAGLINE}
               </div>
             </div>
           </div>
@@ -154,7 +165,7 @@ export async function GET(
                 padding: "10px 24px",
               }}
             >
-              ブラウザでそのまま無料で使えます
+              {en ? "Free to use, right in your browser" : "ブラウザでそのまま無料で使えます"}
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, color: OG_THEME.mutedText }}>
               jisapp.app
@@ -170,6 +181,6 @@ export async function GET(
     );
   } catch {
     // フォント取得や描画に失敗しても、カードが空になるより共通画像を出す
-    return Response.redirect(absoluteUrl(SITE_OG_IMAGE), 302);
+    return Response.redirect(fallbackImage, 302);
   }
 }

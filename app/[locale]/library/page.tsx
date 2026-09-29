@@ -13,7 +13,9 @@ import {
   LogIn,
   ArrowRight,
 } from "lucide-react";
-import { CATEGORY_MAP } from "@/lib/categories";
+import { CATEGORY_MAP, categoryName } from "@/lib/categories";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/config";
 import { CategoryIcon } from "@/lib/category-icon";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -31,6 +33,8 @@ export default function LibraryPage() {
   const userId = (session?.user as { id?: string })?.id ?? null;
   const isLoggedIn = status === "authenticated" && !!userId;
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
 
   const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +57,7 @@ export default function LibraryPage() {
     setLibrary((prev) => prev.filter((e) => e.appId !== appId));
     try {
       const res = await fetch(`/api/library?appId=${encodeURIComponent(appId)}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("削除失敗");
+      if (!res.ok) throw new Error("delete failed");
     } catch {
       setLibrary(previous);
     }
@@ -84,7 +88,7 @@ export default function LibraryPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50">
               <LibraryBig className="h-4 w-4 text-teal-600" />
             </span>
-            <span className="text-sm font-black text-gray-900">マイライブラリ</span>
+            <span className="text-sm font-black text-gray-900">{t("マイライブラリ", "My library")}</span>
           </div>
         </div>
       </header>
@@ -97,10 +101,9 @@ export default function LibraryPage() {
               <LibraryBig className="h-10 w-10 text-teal-600" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-gray-900">マイライブラリ</h2>
+              <h2 className="text-xl font-black text-gray-900">{t("マイライブラリ", "My library")}</h2>
               <p className="mt-2 text-sm text-gray-500">
-                気に入ったアプリをここに追加して、いつでもすぐ起動できます。<br />
-                利用するにはログインが必要です。
+                {t(<>気に入ったアプリをここに追加して、いつでもすぐ起動できます。<br />利用するにはログインが必要です。</>, <>Add apps you like here and open them anytime.<br />Sign in to use your library.</>)}
               </p>
             </div>
             <Link
@@ -108,7 +111,7 @@ export default function LibraryPage() {
               className="flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-teal-700 transition-colors"
             >
               <LogIn className="h-4 w-4" />
-              ログインしてライブラリを使う
+              {t("ログインしてライブラリを使う", "Sign in to use your library")}
             </Link>
           </div>
         )}
@@ -127,9 +130,9 @@ export default function LibraryPage() {
               <LibraryBig className="h-10 w-10 text-teal-300" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-gray-900">まだアプリがありません</h2>
+              <h2 className="text-lg font-black text-gray-900">{t("まだアプリがありません", "No apps yet")}</h2>
               <p className="mt-2 text-sm text-gray-500">
-                ホームでアプリをタップして「マイライブラリに追加」を押してみよう！
+                {t("ホームでアプリをタップして「マイライブラリに追加」を押してみよう！", "Tap an app on the home page and choose “Add to my library”!")}
               </p>
             </div>
             <Link
@@ -137,7 +140,7 @@ export default function LibraryPage() {
               className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition-colors"
             >
               <JisappLogoIcon className="h-4 w-4" />
-              アプリを探す
+              {t("アプリを探す", "Browse apps")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -146,7 +149,7 @@ export default function LibraryPage() {
         {/* ライブラリ一覧 */}
         {isLoggedIn && !loading && library.length > 0 && (
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-gray-400">{library.length}件のアプリ</p>
+            <p className="text-xs font-semibold text-gray-400">{t(`${library.length}件のアプリ`, `${library.length} ${library.length === 1 ? "app" : "apps"}`)}</p>
             {library.map((entry) => (
               <div
                 key={entry.appId}
@@ -159,10 +162,13 @@ export default function LibraryPage() {
                   <CategoryIcon categoryId={entry.category} className="h-5 w-5 text-white" strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-gray-900 truncate">{entry.name ?? "アプリ"}</p>
+                  <p className="font-bold text-sm text-gray-900 truncate">{entry.name ?? t("アプリ", "App")}</p>
                   <p className="text-xs text-gray-400">
-                    {entry.category && <span>{CATEGORY_MAP[entry.category]?.name ?? entry.category} · </span>}
-                    {new Date(entry.addedAt).toLocaleDateString("ja-JP")}に追加
+                    {entry.category && <span>{categoryName(entry.category, locale)} · </span>}
+                    {t(
+                      `${new Date(entry.addedAt).toLocaleDateString(intlLocale(locale))}に追加`,
+                      `Added ${new Date(entry.addedAt).toLocaleDateString(intlLocale(locale))}`
+                    )}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -171,12 +177,12 @@ export default function LibraryPage() {
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    開く
+                    {t("開く", "Open")}
                   </button>
                   <button
                     onClick={() => setRemoveTarget(entry)}
                     className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-300 hover:bg-rose-50 hover:text-rose-400 transition-colors"
-                    title="ライブラリから削除"
+                    title={t("ライブラリから削除", "Remove from library")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -189,13 +195,13 @@ export default function LibraryPage() {
 
       <ConfirmDialog
         open={!!removeTarget}
-        title="ライブラリから削除"
+        title={t("ライブラリから削除", "Remove from library")}
         message={
           removeTarget
-            ? `「${removeTarget.name ?? "アプリ"}」をマイライブラリから削除しますか？`
+            ? t(`「${removeTarget.name ?? "アプリ"}」をマイライブラリから削除しますか？`, `Remove “${removeTarget.name ?? "this app"}” from your library?`)
             : ""
         }
-        confirmLabel="削除する"
+        confirmLabel={t("削除する", "Remove")}
         loading={removing}
         onConfirm={confirmRemove}
         onCancel={() => setRemoveTarget(null)}

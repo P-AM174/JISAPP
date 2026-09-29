@@ -19,6 +19,8 @@ import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
 import { getCreatorProfilePath, getCreatorApiPath } from "@/components/app-catalog/utils";
 import type { CatalogCardApp, ModalApp } from "@/components/app-catalog/types";
 import { CreatorFollowButton } from "@/components/creator-follow-button";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { displayCreatorName } from "@/components/app-catalog/utils";
 import {
   getCreatorFollowerCount,
   getFollowedCreatorNames,
@@ -39,6 +41,8 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
   const [selectedApp, setSelectedApp] = useState<ModalApp | null>(null);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCreators, setFollowingCreators] = useState<string[]>([]);
+  const t = useT();
+  const locale = useLocale();
 
   useEffect(() => {
     setLoading(true);
@@ -65,7 +69,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
       <div className="flex min-h-screen items-center justify-center bg-[#f3f6f4]">
         <div className="flex items-center gap-3 text-emerald-600">
           <span className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-          <span className="text-sm font-semibold">読み込み中...</span>
+          <span className="text-sm font-semibold">{t("読み込み中...", "Loading...")}</span>
         </div>
       </div>
     );
@@ -74,12 +78,12 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
   if (error || !profile) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#f3f6f4] px-4 text-center">
-        <p className="font-bold text-gray-700">クリエイターが見つかりませんでした</p>
+        <p className="font-bold text-gray-700">{t("クリエイターが見つかりませんでした", "Creator not found")}</p>
         <Link
           href="/search"
           className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
         >
-          アプリを探す
+          {t("アプリを探す", "Browse apps")}
         </Link>
       </div>
     );
@@ -104,7 +108,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
           <BackButton hideLabelOnMobile />
           <JisappLogo href="/" />
           <span className="ml-1 text-sm text-gray-400">/</span>
-          <span className="truncate text-sm font-semibold text-gray-700">{profile.name}</span>
+          <span className="truncate text-sm font-semibold text-gray-700">{displayCreatorName(profile.name, locale)}</span>
         </div>
       </header>
 
@@ -117,11 +121,11 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
               </div>
               <div className="text-center sm:text-left">
                 <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/80">
-                  クリエイター
+                  {t("クリエイター", "Creator")}
                 </p>
-                <h1 className="text-2xl font-black text-white sm:text-3xl">{profile.name}</h1>
+                <h1 className="text-2xl font-black text-white sm:text-3xl">{displayCreatorName(profile.name, locale)}</h1>
                 <p className="mt-1 text-sm font-semibold text-white/80">
-                  ジサップで {profile.appCount} 本のアプリを公開中
+                  {t(`ジサップで ${profile.appCount} 本のアプリを公開中`, `${profile.appCount} ${profile.appCount === 1 ? "app" : "apps"} published on Jisapp`)}
                 </p>
               </div>
             </div>
@@ -129,11 +133,11 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
 
           <div className="grid grid-cols-2 divide-x divide-gray-100 border-b border-gray-100 sm:grid-cols-4">
             {[
-              { label: "出品数", value: String(profile.appCount), unit: "本" },
-              { label: "フォロワー", value: String(followerCount), unit: "人" },
-              { label: "総応援", value: String(profile.totalStamps), unit: "" },
+              { label: t("出品数", "Apps"), value: String(profile.appCount), unit: t("本", "") },
+              { label: t("フォロワー", "Followers"), value: String(followerCount), unit: t("人", "") },
+              { label: t("総応援", "Cheers"), value: String(profile.totalStamps), unit: "" },
               {
-                label: "評価",
+                label: t("評価", "Rating"),
                 value: profile.rating > 0 ? String(profile.rating) : "—",
                 unit: profile.rating > 0 ? "" : "",
               },
@@ -154,7 +158,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
             <span className="text-sm font-black text-gray-900">
               {profile.rating > 0 ? profile.rating : "—"}
             </span>
-            <span className="text-xs text-gray-400">/ クリエイター評価（応援数ベース）</span>
+            <span className="text-xs text-gray-400">{t("/ クリエイター評価（応援数ベース）", "/ creator rating (based on cheers)")}</span>
           </div>
 
           <div className="px-6 py-5">
@@ -170,9 +174,9 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
           <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
             <div className="mb-4 flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-emerald-600" />
-              <h2 className="text-base font-black text-gray-900">フォロー中のクリエイター</h2>
+              <h2 className="text-base font-black text-gray-900">{t("フォロー中のクリエイター", "Creators you follow")}</h2>
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                {followingCreators.length}人
+                {t("{followingCreators.length}人", "{followingCreators.length}")}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -200,13 +204,13 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
                 <Package className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-base font-black text-gray-900">出品アプリ一覧</h2>
-                <p className="text-xs text-gray-400">{profile.apps.length}件</p>
+                <h2 className="text-base font-black text-gray-900">{t("出品アプリ一覧", "Published apps")}</h2>
+                <p className="text-xs text-gray-400">{t(`${profile.apps.length}件`, `${profile.apps.length} ${profile.apps.length === 1 ? "app" : "apps"}`)}</p>
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
               <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              タップで詳細
+              {t("タップで詳細", "Tap for details")}
             </div>
           </div>
 
@@ -225,31 +229,30 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
         <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
           <div className="mb-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-violet-600" />
-            <h2 className="text-base font-black text-gray-900">クリエイター評価について</h2>
+            <h2 className="text-base font-black text-gray-900">{t("クリエイター評価について", "About creator ratings")}</h2>
           </div>
           <p className="text-sm leading-relaxed text-gray-600">
-            評価は出品アプリへの応援バッジ（
+            {t("評価は出品アプリへの応援バッジ（", "The rating is based on the total cheer badges (")}
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
               <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              いいね
+              {t("いいね", "Love it")}
             </span>
-            ・
+            {t("・", " · ")}
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
               <Brain className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              天才
+              {t("天才", "Genius")}
             </span>
-            ・
+            {t("・", " · ")}
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
               <Wrench className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              便利
+              {t("便利", "Useful")}
             </span>
-            ・
+            {t("・", " · ")}
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
               <Palette className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              デザイン
+              {t("デザイン", "Design")}
             </span>
-            ）の合計から算出しています。
-            フォロワー数はフォロー操作と応援数をもとに表示されます。
+            {t("）の合計から算出しています。フォロワー数はフォロー操作と応援数をもとに表示されます。", ") the creator's apps have received. The follower count reflects follows and cheers.")}
           </p>
         </section>
       </main>

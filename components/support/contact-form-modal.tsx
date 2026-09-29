@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { X, Send, MessageSquare } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 type ContactFormModalProps = {
   open: boolean;
@@ -11,6 +12,7 @@ type ContactFormModalProps = {
 
 export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
   const { data: session } = useSession();
+  const t = useT();
   const sessionEmail = session?.user?.email ?? "";
   const sessionName = session?.user?.name ?? "";
 
@@ -41,14 +43,14 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "送信に失敗しました");
+        setError((data as { error?: string }).error ?? t("送信に失敗しました", "Couldn't send. Please try again."));
         return;
       }
       setDone(true);
       setSubject("");
       setBody("");
     } catch {
-      setError("送信に失敗しました");
+      setError(t("送信に失敗しました", "Couldn't send. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -75,8 +77,8 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
               <MessageSquare className="h-4 w-4 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-gray-900">運営への問い合わせ</h2>
-              <p className="text-[11px] text-gray-400">通常1〜3営業日以内に返信します</p>
+              <h2 className="text-sm font-black text-gray-900">{t("運営への問い合わせ", "Contact the Jisapp team")}</h2>
+              <p className="text-[11px] text-gray-400">{t("通常1〜3営業日以内に返信します", "We usually reply within 1–3 business days")}</p>
             </div>
           </div>
           <button
@@ -90,16 +92,16 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
 
         {done ? (
           <div className="px-5 py-10 text-center">
-            <p className="text-sm font-bold text-gray-900">お問い合わせを受け付けました</p>
+            <p className="text-sm font-bold text-gray-900">{t("お問い合わせを受け付けました", "Message received")}</p>
             <p className="mt-2 text-xs text-gray-500">
-              返信は登録メール、またはログイン中の場合はトップページの通知ベルから確認できます。
+              {t("返信は登録メール、またはログイン中の場合はトップページの通知ベルから確認できます。", "You'll get our reply by email, or in the notification bell on the home page if you're signed in.")}
             </p>
             <button
               type="button"
               onClick={handleClose}
               className="mt-6 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
             >
-              閉じる
+              {t("閉じる", "Close")}
             </button>
           </div>
         ) : (
@@ -107,17 +109,17 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
             {!sessionEmail && (
               <>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">お名前（任意）</label>
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">{t("お名前（任意）", "Name (optional)")}</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
-                    placeholder="山田 太郎"
+                    placeholder={t("山田 太郎", "Alex Smith")}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">メールアドレス</label>
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">{t("メールアドレス", "Email")}</label>
                   <input
                     type="email"
                     required
@@ -130,7 +132,7 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
               </>
             )}
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">件名</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">{t("件名", "Subject")}</label>
               <input
                 type="text"
                 required
@@ -138,11 +140,11 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
-                placeholder="問い合わせの件名"
+                placeholder={t("問い合わせの件名", "What's this about?")}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">内容</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">{t("内容", "Message")}</label>
               <textarea
                 required
                 rows={5}
@@ -150,7 +152,7 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
-                placeholder="お問い合わせ内容を入力してください"
+                placeholder={t("お問い合わせ内容を入力してください", "Write your message")}
               />
             </div>
             {error && <p className="text-xs font-semibold text-rose-500">{error}</p>}
@@ -160,7 +162,7 @@ export function ContactFormModal({ open, onClose }: ContactFormModalProps) {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
-              {loading ? "送信中..." : "送信する"}
+              {loading ? t("送信中...", "Sending...") : t("送信する", "Send")}
             </button>
           </form>
         )}

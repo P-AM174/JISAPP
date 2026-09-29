@@ -8,6 +8,7 @@ import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { readAppStorageSnapshot } from "@/lib/apps/app-storage";
 
@@ -36,6 +37,7 @@ export function SyncLoginButton({
   className?: string;
 }) {
   const router = useRouter();
+  const t = useT();
   return (
     <button
       type="button"
@@ -49,11 +51,11 @@ export function SyncLoginButton({
         "flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95",
         className
       )}
-      title="ログインしてデータをクラウドに保存する"
+      title={t("ログインしてデータをクラウドに保存する", "Sign in to save your data in the cloud")}
     >
       <Cloud className="h-3.5 w-3.5" />
       <LogIn className="h-3 w-3" />
-      <span>ログインして同期</span>
+      <span>{t("ログインして同期", "Sign in to sync")}</span>
     </button>
   );
 }
@@ -63,7 +65,7 @@ export function AppRunner({
   css,
   js,
   srcDoc,
-  title = "アプリプレビュー",
+  title,
   className,
   showToolbar = false,
   appId = "playground",
@@ -83,6 +85,8 @@ export function AppRunner({
   } = useLibrarySync(appId);
 
   const [iframeKey, setIframeKey] = useState(0);
+  const t = useT();
+  if (title === undefined) title = t("アプリプレビュー", "App preview");
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const syncKey = enableCloud ? `cloud-${userId}` : isLoggedIn ? "local-auth" : "guest";
@@ -118,7 +122,7 @@ export function AppRunner({
           className
         )}
       >
-        実行するコードがありません
+        {t("実行するコードがありません", "There's no code to run")}
       </div>
     );
   }
@@ -131,7 +135,7 @@ export function AppRunner({
           className
         )}
       >
-        読み込み中…
+        {t("読み込み中…", "Loading…")}
       </div>
     );
   }
@@ -151,7 +155,7 @@ export function AppRunner({
               type="button"
               onClick={() => setIframeKey((k) => k + 1)}
               className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-emerald-600"
-              title="再読み込み"
+              title={t("再読み込み", "Reload")}
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>

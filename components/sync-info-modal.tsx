@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "@/lib/i18n/navigation";
 import { Cloud, LibraryBig, LogIn, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 type SyncInfoModalProps = {
   open: boolean;
@@ -30,6 +31,7 @@ export function SyncInfoModal({
 }: SyncInfoModalProps) {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
 
   if (!open) return null;
 
@@ -47,11 +49,11 @@ export function SyncInfoModal({
           gradient: appGradient,
         }),
       });
-      if (!res.ok) throw new Error("追加に失敗しました");
+      if (!res.ok) throw new Error(t("追加に失敗しました", "Couldn't add it"));
       onAddedToLibrary?.();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "追加に失敗しました");
+      setError(e instanceof Error ? e.message : t("追加に失敗しました", "Couldn't add it"));
     } finally {
       setAdding(false);
     }
@@ -73,7 +75,7 @@ export function SyncInfoModal({
             type="button"
             onClick={onClose}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-gray-500 hover:bg-white"
-            aria-label="閉じる"
+            aria-label={t("閉じる", "Close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -86,20 +88,16 @@ export function SyncInfoModal({
             {isLogin ? <LogIn className="h-6 w-6" /> : <LibraryBig className="h-6 w-6" />}
           </div>
           <h2 className="text-center text-base font-black text-gray-900">
-            {isLogin ? "同期機能について" : "保存機能について"}
+            {isLogin ? t("同期機能について", "About syncing") : t("保存機能について", "About saving")}
           </h2>
           <p className="mt-2 text-center text-sm leading-relaxed text-gray-600">
             {isLogin ? (
               <>
-                ログインして、マイライブラリに登録すると
-                <span className="font-bold text-gray-800">端末をまたいでデータを同期</span>
-                できます。
+                {t(<>ログインして、マイライブラリに登録すると<span className="font-bold text-gray-800">端末をまたいでデータを同期</span>できます。</>, <>Sign in and add this app to your library to <span className="font-bold text-gray-800">sync your data across devices</span>.</>)}
               </>
             ) : (
               <>
-                マイライブラリに追加すると
-                <span className="font-bold text-gray-800">データの保存・同期機能</span>
-                が使えるようになります。
+                {t(<>マイライブラリに追加すると<span className="font-bold text-gray-800">データの保存・同期機能</span>が使えるようになります。</>, <>Add it to your library to <span className="font-bold text-gray-800">save and sync your data</span>.</>)}
               </>
             )}
           </p>
@@ -109,7 +107,7 @@ export function SyncInfoModal({
           <div className="flex items-start gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-xs leading-relaxed text-gray-600">
             <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
             <span>
-              追加しなくてもアプリはそのまま使えます。この端末だけの一時保存になります。
+              {t("追加しなくてもアプリはそのまま使えます。この端末だけの一時保存になります。", "You can use the app without adding it. Data will only be kept temporarily on this device.")}
             </span>
           </div>
 
@@ -121,7 +119,7 @@ export function SyncInfoModal({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700"
             >
               <LogIn className="h-4 w-4" />
-              ログインする
+              {t("ログインする", "Sign in")}
             </Link>
           ) : (
             <button
@@ -131,7 +129,7 @@ export function SyncInfoModal({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
               <LibraryBig className="h-4 w-4" />
-              {adding ? "追加中…" : "マイライブラリに追加"}
+              {adding ? t("追加中…", "Adding…") : t("マイライブラリに追加", "Add to my library")}
             </button>
           )}
 
@@ -140,7 +138,7 @@ export function SyncInfoModal({
             onClick={onClose}
             className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
           >
-            このまま使う
+            {t("このまま使う", "Continue without it")}
           </button>
         </div>
       </div>

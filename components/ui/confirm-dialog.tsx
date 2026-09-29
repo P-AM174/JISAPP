@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, X } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -17,13 +18,16 @@ export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = "削除",
-  cancelLabel = "キャンセル",
+  confirmLabel: confirmLabelProp,
+  cancelLabel: cancelLabelProp,
   loading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const t = useT();
   if (!open) return null;
+  const confirmLabel = confirmLabelProp ?? t("削除", "Delete");
+  const cancelLabel = cancelLabelProp ?? t("キャンセル", "Cancel");
 
   return (
     <div
@@ -45,6 +49,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
+            aria-label={t("閉じる", "Close")}
             className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
           >
             <X className="h-4 w-4" />
@@ -65,7 +70,7 @@ export function ConfirmDialog({
             disabled={loading}
             className="flex-1 rounded-xl bg-rose-600 py-2.5 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
           >
-            {loading ? "処理中..." : confirmLabel}
+            {loading ? t("処理中...", "Working...") : confirmLabel}
           </button>
         </div>
       </div>

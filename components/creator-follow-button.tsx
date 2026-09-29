@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UserPlus, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 import { isFollowingCreator, toggleFollowCreator } from "@/lib/follow-creators";
 
 export function CreatorFollowButton({
@@ -15,6 +16,7 @@ export function CreatorFollowButton({
   size?: "sm" | "md";
 }) {
   const [following, setFollowing] = useState(() => isFollowingCreator(creatorName));
+  const t = useT();
 
   if (!creatorName.trim() || creatorName === "匿名") return null;
 
@@ -34,12 +36,12 @@ export function CreatorFollowButton({
       {following ? (
         <>
           <UserCheck className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
-          フォロー中
+          {t("フォロー中", "Following")}
         </>
       ) : (
         <>
           <UserPlus className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
-          フォローする
+          {t("フォローする", "Follow")}
         </>
       )}
     </button>

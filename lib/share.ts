@@ -1,4 +1,5 @@
 import { getSiteUrl } from "@/lib/seo/site";
+import { localeFromPath, localizePath, type Locale } from "@/lib/i18n/config";
 
 export type ShareChannel = {
   id: string;
@@ -6,14 +7,17 @@ export type ShareChannel = {
   color?: string;
 };
 
-export function getAppSharePath(appId: string): string {
-  return `/apps/${appId}`;
+export function getAppSharePath(appId: string, locale?: Locale | null): string {
+  return localizePath(`/apps/${appId}`, locale ?? "ja");
 }
 
-export function getAppShareUrl(appId: string, origin?: string): string {
+/** 共有URL。英語ページで共有したときは英語ページ（/en/apps/...）のURLになる */
+export function getAppShareUrl(appId: string, origin?: string, locale?: Locale): string {
   const base =
     origin ?? (typeof window !== "undefined" ? window.location.origin : getSiteUrl());
-  return `${base}${getAppSharePath(appId)}`;
+  const current =
+    locale ?? (typeof window !== "undefined" ? localeFromPath(window.location.pathname) : null);
+  return `${base}${getAppSharePath(appId, current)}`;
 }
 
 export function getLineShareUrl(url: string, text?: string): string {
@@ -33,7 +37,7 @@ export function getFacebookShareUrl(url: string): string {
 }
 
 export function getMailShareUrl(url: string, title?: string, text?: string): string {
-  const subject = title?.trim() || "ジサップのアプリ";
+  const subject = title?.trim() || "Jisapp";
   const body = [text?.trim(), url].filter(Boolean).join("\n\n");
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

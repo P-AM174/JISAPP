@@ -49,6 +49,8 @@ import { ShareButton } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { AppGroupPanel } from "@/components/groups/app-group-panel";
 import { readActiveGroup, usesSharedData, type GroupSession } from "@/lib/groups/client";
+import { useT } from "@/lib/i18n/client";
+import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons";
 
 
 
@@ -73,6 +75,7 @@ function SupabaseAppPage({ id }: { id: string }) {
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdateInfo | null>(null);
   const [updateProcessing, setUpdateProcessing] = useState(false);
   const [adminRemoved, setAdminRemoved] = useState(false);
+  const t = useT();
 
   const loginCallbackUrl = `/apps/${id}`;
   const {
@@ -162,7 +165,7 @@ function SupabaseAppPage({ id }: { id: string }) {
         body: JSON.stringify({ appId: id, action }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "操作に失敗しました");
+      if (!res.ok) throw new Error(data.error ?? t("操作に失敗しました", "Something went wrong"));
       if (action === "accept") {
         await loadRuntime();
         setIframeKey((k) => k + 1);
@@ -185,7 +188,7 @@ function SupabaseAppPage({ id }: { id: string }) {
     try {
       const res = await fetch(`/api/apps/${id}/code`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "ソースコードを取得できませんでした");
+      if (!res.ok) throw new Error(data.error ?? t("ソースコードを取得できませんでした", "Couldn't load the source code"));
       setSourceCode({
         html: data.html_code ?? "",
         css: data.css_code ?? "",
@@ -193,7 +196,7 @@ function SupabaseAppPage({ id }: { id: string }) {
       });
       setCodePanelOpen(true);
     } catch (e) {
-      setCodeError(e instanceof Error ? e.message : "ソースコードを取得できませんでした");
+      setCodeError(e instanceof Error ? e.message : t("ソースコードを取得できませんでした", "Couldn't load the source code"));
       setCodePanelOpen(true);
     } finally {
       setCodeLoading(false);
@@ -204,7 +207,7 @@ function SupabaseAppPage({ id }: { id: string }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50">
         <div className="h-8 w-8 animate-spin rounded-full border-3 border-emerald-500 border-t-transparent" />
-        <p className="text-sm text-gray-400">アプリを読み込み中...</p>
+        <p className="text-sm text-gray-400">{t("アプリを読み込み中...", "Loading app...")}</p>
       </div>
     );
   }
@@ -216,13 +219,13 @@ function SupabaseAppPage({ id }: { id: string }) {
           <SearchX className="h-8 w-8 text-gray-400" strokeWidth={2} />
         </div>
         <p className="text-lg font-bold text-gray-700">
-          {adminRemoved ? "このアプリは運営により削除されました" : "アプリが見つかりませんでした"}
+          {adminRemoved ? t("このアプリは運営により削除されました", "This app was removed by the Jisapp team") : t("アプリが見つかりませんでした", "App not found")}
         </p>
         <p className="text-sm text-gray-400">
-          {adminRemoved ? "マイライブラリからも利用できません" : "URLが正しいか確認してください"}
+          {adminRemoved ? t("マイライブラリからも利用できません", "It's no longer available from your library either") : t("URLが正しいか確認してください", "Please check that the URL is correct")}
         </p>
         <Link href="/" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-700">
-          トップに戻る
+          {t("トップに戻る", "Back to home")}
         </Link>
       </div>
     );
@@ -244,7 +247,7 @@ function SupabaseAppPage({ id }: { id: string }) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="hidden sm:inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-              スタジオアプリ
+              {t("スタジオアプリ", "Studio app")}
             </span>
             {sessionStatus !== "loading" && !isLoggedIn && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
@@ -257,25 +260,25 @@ function SupabaseAppPage({ id }: { id: string }) {
                 className="hidden sm:flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50"
               >
                 <Code2 className="h-3.5 w-3.5" />
-                {codeLoading ? "読込中…" : codePanelOpen ? "コードを閉じる" : "コード"}
+                {codeLoading ? t("読込中…", "Loading…") : codePanelOpen ? t("コードを閉じる", "Hide code") : t("コード", "Code")}
               </button>
             )}
             {group?.isOwner && (
               <button
                 type="button"
                 onClick={() => setGroupManageOpen(true)}
-                title="グループを作った人だけの管理メニュー"
+                title={t("グループを作った人だけの管理メニュー", "Menu only for the person who created the group")}
                 className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 transition hover:from-emerald-700 hover:to-teal-700"
               >
                 <Users className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">グループ管理</span>
-                <span className="sm:hidden">管理</span>
+                <span className="hidden sm:inline">{t("グループ管理", "Manage group")}</span>
+                <span className="sm:hidden">{t("管理", "Manage")}</span>
               </button>
             )}
             <ShareButton
               url={getAppShareUrl(id)}
               title={app.title}
-              text={`${app.title} | ジサップで作った無料アプリ`}
+              text={t(`${app.title} | ジサップで作った無料アプリ`, `${app.title} | a free app made on Jisapp`)}
               variant="outline"
               className="w-auto"
             />
@@ -285,7 +288,7 @@ function SupabaseAppPage({ id }: { id: string }) {
 
       {creatorRemoved && (
         <div className="shrink-0 border-b border-amber-100 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
-          出品者がアプリを削除しました。マイライブラリに保存しているため、引き続きご利用いただけます。
+          {t("出品者がアプリを削除しました。マイライブラリに保存しているため、引き続きご利用いただけます。", "The creator deleted this app. Because it's saved in your library, you can keep using it.")}
         </div>
       )}
 
@@ -322,14 +325,14 @@ ${app.js_code ?? ""}`)}
                 </button>
               ))}
               <span className="ml-auto text-[10px] text-gray-500">
-                マイライブラリ登録者のみ閲覧可
+                {t("マイライブラリ登録者のみ閲覧可", "Visible only to people who added it to their library")}
               </span>
             </div>
             {codeError ? (
               <div className="px-4 pb-4 text-sm text-amber-300">{codeError}</div>
             ) : sourceCode ? (
               <pre className="max-h-64 overflow-auto px-4 pb-4 text-xs leading-relaxed text-emerald-100">
-                <code>{sourceCode[codeTab] || "（空）"}</code>
+                <code>{sourceCode[codeTab] || t("（空）", "(empty)")}</code>
               </pre>
             ) : null}
           </div>
@@ -348,7 +351,7 @@ ${app.js_code ?? ""}`)}
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
-            読み込み中…
+            {t("読み込み中…", "Loading…")}
           </div>
         )}
       </main>
@@ -378,9 +381,18 @@ ${app.js_code ?? ""}`)}
       {/* フッター（最小限。スマホでは画面を広く使うため隠す） */}
       <div className="hidden shrink-0 border-t border-gray-100 bg-gray-50 py-2 text-center sm:block">
         <p className="text-[10px] text-gray-400">
-          <Link href="/playground" className="hover:text-emerald-600">ジサップ 開発スタジオ</Link>
-          {" "}で作成されました ·{" "}
-          <Link href="/" className="hover:text-emerald-600">jisapp.vercel.app</Link>
+          {t(
+            <>
+              <Link href="/playground" className="hover:text-emerald-600">ジサップ 開発スタジオ</Link>
+              {" "}で作成されました ·{" "}
+            </>,
+            <>
+              Made with{" "}
+              <Link href="/playground" className="hover:text-emerald-600">Jisapp Studio</Link>
+              {" "}·{" "}
+            </>
+          )}
+          <Link href="/" className="hover:text-emerald-600">jisapp.app</Link>
         </p>
       </div>
     </div>
@@ -401,6 +413,7 @@ export default function AppDetailPage() {
 
 function MarketplaceAppPage({ id }: { id: string }) {
   const router = useRouter();
+  const t = useT();
   const { data: session } = useSession();
 
   type AppDetail = {
@@ -458,14 +471,14 @@ function MarketplaceAppPage({ id }: { id: string }) {
               id: p.id,
               name: p.title,
               description: p.description ?? "",
-              creator: p.creator?.name ?? "出品者",
+              creator: p.creator?.name ?? t("出品者", "Creator"),
               creatorScore: 5,
               price: p.price ?? 0,
               rating: 5,
               reviews: 0,
-              tag: p.status === "active" ? "公開中" : "審査中",
+              tag: p.status === "active" ? t("公開中", "Live") : t("審査中", "In review"),
               gradient: p.gradient ?? "from-emerald-600 via-green-600 to-teal-700",
-              category: p.category ?? "その他",
+              category: p.category ?? t("その他", "Other"),
               icon: LayoutGrid,
               demoHtml,
               type: p.listingType ?? "file",
@@ -511,7 +524,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-sm text-gray-500">読み込み中...</p>
+        <p className="text-sm text-gray-500">{t("読み込み中...", "Loading...")}</p>
       </div>
     );
   }
@@ -519,8 +532,8 @@ function MarketplaceAppPage({ id }: { id: string }) {
   if (!app) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 text-center">
-        <p className="text-lg font-bold text-gray-700">アプリが見つかりませんでした</p>
-        <Link href="/" className="text-sm text-emerald-600 hover:underline">トップに戻る</Link>
+        <p className="text-lg font-bold text-gray-700">{t("アプリが見つかりませんでした", "App not found")}</p>
+        <Link href="/" className="text-sm text-emerald-600 hover:underline">{t("トップに戻る", "Back to home")}</Link>
       </div>
     );
   }
@@ -530,10 +543,10 @@ function MarketplaceAppPage({ id }: { id: string }) {
   // アプリごとのダミーソースコード（購入後モーダルで表示）
   // ダミービジュアルのグリッドセル（実際の画像がないためグラデーションで代替）
   const dummyScreenshots = [
-    { label: "ダッシュボード", sub: "メイン画面", accent: "from-emerald-400 to-teal-500" },
-    { label: "設定・カスタマイズ", sub: "オプション画面", accent: "from-green-400 to-emerald-500" },
-    { label: "レポート出力", sub: "データ画面", accent: "from-teal-400 to-cyan-500" },
-    { label: "通知・アラート", sub: "お知らせ画面", accent: "from-cyan-400 to-sky-500" },
+    { label: t("ダッシュボード", "Dashboard"), sub: t("メイン画面", "Main screen"), accent: "from-emerald-400 to-teal-500" },
+    { label: t("設定・カスタマイズ", "Settings"), sub: t("オプション画面", "Options"), accent: "from-green-400 to-emerald-500" },
+    { label: t("レポート出力", "Reports"), sub: t("データ画面", "Data"), accent: "from-teal-400 to-cyan-500" },
+    { label: t("通知・アラート", "Alerts"), sub: t("お知らせ画面", "Notifications"), accent: "from-cyan-400 to-sky-500" },
   ];
 
   return (
@@ -544,7 +557,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
           <BackButton />
           <JisappLogo href="/" />
           <Link href="/mypage" className="text-sm font-medium text-gray-400 hover:text-emerald-600">
-            マイページ
+            {t("マイページ", "My page")}
           </Link>
         </div>
       </header>
@@ -601,7 +614,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 </span>
               </div>
               <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-snug">{app.name}</h1>
-              <p className="mt-1 text-sm text-gray-500">{app.creator} が開発</p>
+              <p className="mt-1 text-sm text-gray-500">{t(`${app.creator} が開発`, `By ${app.creator}`)}</p>
               {/* 評価 */}
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex gap-0.5">
@@ -610,7 +623,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                   ))}
                 </div>
                 <span className="text-sm font-bold text-gray-800">{app.rating}</span>
-                <span className="text-xs text-gray-400">{app.reviews.toLocaleString()}件のレビュー</span>
+                <span className="text-xs text-gray-400">{t(`${app.reviews.toLocaleString()}件のレビュー`, `${app.reviews.toLocaleString()} reviews`)}</span>
               </div>
             </div>
             {/* お気に入りボタン */}
@@ -622,7 +635,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                     ? "border-rose-300 bg-rose-50 text-rose-500"
                     : "border-gray-200 bg-white text-gray-400 hover:border-rose-300 hover:text-rose-400"
                 }`}
-                title={isSaved ? "お気に入りから削除" : "お気に入りに追加"}
+                title={isSaved ? t("お気に入りから削除", "Remove from favorites") : t("お気に入りに追加", "Add to favorites")}
               >
                 <Heart className={`h-4 w-4 ${isSaved ? "fill-rose-500" : ""}`} />
               </button>
@@ -632,11 +645,11 @@ function MarketplaceAppPage({ id }: { id: string }) {
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Gemini AI 安全スキャン済
+              {t("Gemini AI 安全スキャン済", "Safety-scanned by Gemini AI")}
             </span>
             <span className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              動作確認済
+              {t("動作確認済", "Tested")}
             </span>
           </div>
         </section>
@@ -645,16 +658,16 @@ function MarketplaceAppPage({ id }: { id: string }) {
         <section className="rounded-2xl bg-gradient-to-r from-emerald-50 to-green-50 p-5 ring-1 ring-emerald-200">
           <div className="flex items-center gap-3 mb-3">
             <span className="rounded-xl bg-emerald-600 px-5 py-1.5 text-2xl font-black tracking-widest text-white shadow-md">FREE</span>
-            <span className="text-sm font-semibold text-emerald-700">完全無料 · 全機能利用可</span>
+            <span className="text-sm font-semibold text-emerald-700">{t("完全無料 · 全機能利用可", "Completely free · all features")}</span>
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-emerald-800">
             <p className="flex items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5" />
-              セキュリティ審査済み
+              {t("セキュリティ審査済み", "Security reviewed")}
             </p>
             <p className="flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              マイページにすぐ追加
+              {t("マイページにすぐ追加", "Add to My page instantly")}
             </p>
           </div>
         </section>
@@ -665,7 +678,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <Check className="h-3 w-3" strokeWidth={2.5} />
             </span>
-            このアプリで解決できること
+            {t("このアプリで解決できること", "What this app does")}
           </h2>
           <p className="text-sm leading-relaxed text-gray-600">{app.description}</p>
         </section>
@@ -675,7 +688,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
           <div className="mb-3 flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
               <Gamepad2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              購入前に無料で仮体験できます
+              {t("購入前に無料で仮体験できます", "Try it free before you get it")}
             </span>
           </div>
           <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/60">
@@ -689,7 +702,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
               <div className="flex flex-1 items-center gap-2 rounded-lg bg-white px-3 py-1.5 ring-1 ring-gray-200">
                 <div className="h-3 w-3 shrink-0 rounded-full bg-emerald-400" />
                 <span className="truncate font-mono text-xs text-gray-400">
-                  jisapp.vercel.app/apps/{id}/demo
+                  jisapp.app/apps/{id}/demo
                 </span>
               </div>
             </div>
@@ -697,14 +710,14 @@ function MarketplaceAppPage({ id }: { id: string }) {
               srcDoc={previewSrc ? injectZisupShim(previewSrc) : ""}
               sandbox={APP_IFRAME_SANDBOX}
               className="h-[440px] w-full border-0 bg-white"
-              title={`${app.name} デモ`}
+              title={t(`${app.name} デモ`, `${app.name} demo`)}
             />
           </div>
         </section>
 
         {/* ⑥ 出品者情報 */}
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <h2 className="mb-4 text-sm font-bold text-gray-700">出品者情報</h2>
+          <h2 className="mb-4 text-sm font-bold text-gray-700">{t("出品者情報", "About the creator")}</h2>
           <div className="flex items-center gap-4">
             <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${app.gradient} text-base font-black text-white shadow-md`}>
               {app.creator.slice(0, 2).toUpperCase()}
@@ -714,11 +727,11 @@ function MarketplaceAppPage({ id }: { id: string }) {
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                 <span className="flex items-center gap-1">
                   <span className="font-semibold text-gray-700">{app.creatorScore}</span>
-                  <span>/ 信頼スコア</span>
+                  <span>{t("/ 信頼スコア", "/ trust score")}</span>
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="h-3 w-3 text-emerald-500" />
-                  <span className="text-emerald-600 font-semibold">認証済みクリエイター</span>
+                  <span className="text-emerald-600 font-semibold">{t("認証済みクリエイター", "Verified creator")}</span>
                 </span>
               </div>
             </div>
@@ -732,7 +745,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-rose-500 transition-colors"
           >
             <Flag className="h-3.5 w-3.5" />
-            このアプリを報告する
+            {t("このアプリを報告する", "Report this app")}
           </button>
         </div>
 
@@ -749,7 +762,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100">
                   <Flag className="h-4 w-4 text-rose-500" />
                 </div>
-                <span className="text-sm font-black text-gray-900">アプリを報告</span>
+                <span className="text-sm font-black text-gray-900">{t("アプリを報告", "Report app")}</span>
               </div>
               <button onClick={() => setReportOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="h-4 w-4" />
@@ -760,41 +773,41 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
                   <CheckCircle2 className="h-7 w-7 text-emerald-600" />
                 </div>
-                <p className="font-bold text-gray-900 mb-1">報告を受け付けました</p>
-                <p className="text-xs text-gray-500 mb-5">内容を確認後、適切に対処いたします。</p>
+                <p className="font-bold text-gray-900 mb-1">{t("報告を受け付けました", "Report received")}</p>
+                <p className="text-xs text-gray-500 mb-5">{t("内容を確認後、適切に対処いたします。", "We'll review it and take appropriate action.")}</p>
                 <button onClick={() => setReportOpen(false)}
                   className="w-full rounded-2xl bg-gray-100 py-3 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors">
-                  閉じる
+                  {t("閉じる", "Close")}
                 </button>
               </div>
             ) : (
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="mb-2 block text-xs font-semibold text-gray-600">報告理由 *</label>
+                  <label className="mb-2 block text-xs font-semibold text-gray-600">{t("報告理由 *", "Reason *")}</label>
                   <div className="space-y-2">
-                    {["不適切なコンテンツ", "スパム・詐欺", "悪意のあるコード", "著作権侵害", "その他"].map(r => (
+                    {APP_REPORT_REASONS.map(r => (
                       <label key={r} className="flex items-center gap-2.5 cursor-pointer">
                         <input type="radio" name="reason" value={r} checked={reportReason === r}
                           onChange={e => setReportReason(e.target.value)}
                           className="h-4 w-4 accent-rose-500" />
-                        <span className="text-sm text-gray-700">{r}</span>
+                        <span className="text-sm text-gray-700">{t(r, APP_REPORT_REASON_EN[r])}</span>
                       </label>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">詳細 *</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("詳細 *", "Details *")}</label>
                   <textarea
                     value={reportDetail}
                     onChange={e => setReportDetail(e.target.value)}
-                    placeholder="具体的な問題点を入力してください（5文字以上）"
+                    placeholder={t("具体的な問題点を入力してください（5文字以上）", "Describe the problem (at least 5 characters)")}
                     rows={3}
                     className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-rose-400 focus:bg-white transition resize-none"
                   />
                 </div>
                 {(!reportReason || reportDetail.trim().length < 5) && (
                   <p className="flex items-center gap-1 text-xs text-amber-600">
-                    <AlertCircle className="h-3.5 w-3.5" />理由の選択と詳細（5文字以上）が必要です
+                    <AlertCircle className="h-3.5 w-3.5" />{t("理由の選択と詳細（5文字以上）が必要です", "Choose a reason and write at least 5 characters of detail")}
                   </p>
                 )}
                 <button
@@ -817,7 +830,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 >
                   {reportLoading
                     ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    : "報告を送信"
+                    : t("報告を送信", "Send report")
                   }
                 </button>
               </div>
@@ -840,7 +853,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-100 px-5 py-3.5 text-sm font-bold text-emerald-700 shadow-sm transition-all hover:bg-emerald-200 active:scale-[0.97]"
               >
                 <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
-                取得済み · ライブラリへ
+                {t("取得済み · ライブラリへ", "Got it · Go to library")}
               </button>
             ) : (
               <button
@@ -850,7 +863,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 }}
                 className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-300/50 transition-all hover:bg-emerald-700 hover:shadow-emerald-400/50 active:scale-[0.97]"
               >
-                GET する
+                {t("GET する", "Get")}
                 <ArrowRight className="h-4 w-4" />
               </button>
             )
@@ -871,23 +884,22 @@ function MarketplaceAppPage({ id }: { id: string }) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
               <Lock className="h-8 w-8 text-emerald-600" />
             </div>
-            <h2 className="text-lg font-black text-gray-900 mb-1">ログインが必要です</h2>
+            <h2 className="text-lg font-black text-gray-900 mb-1">{t("ログインが必要です", "Please sign in")}</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">
-              安全な取引のためにログインが必要です。<br />
-              ログイン画面へ移動しますか？
+              {t(<>安全な取引のためにログインが必要です。<br />ログイン画面へ移動しますか？</>, <>You need to sign in for a safe transaction.<br />Go to the sign-in page?</>)}
             </p>
             <div className="flex flex-col gap-2.5">
               <Link
                 href={`/login?callbackUrl=${encodeURIComponent(`/apps/${id}`)}`}
                 className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 py-3 text-sm font-bold text-white shadow-md hover:from-emerald-700 hover:to-green-600 transition-all"
               >
-                ログイン・新規登録へ
+                {t("ログイン・新規登録へ", "Sign in or create an account")}
               </Link>
               <button
                 onClick={() => setAuthModalOpen(false)}
                 className="rounded-2xl border border-gray-200 py-2.5 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
               >
-                閉じる
+                {t("閉じる", "Close")}
               </button>
             </div>
           </div>
@@ -910,34 +922,34 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 <Link2 className="h-5 w-5 text-amber-600" strokeWidth={2.5} />
               </div>
               <div>
-                <h2 className="text-base font-black text-amber-900">外部サイトへ移動します</h2>
-                <p className="text-xs text-amber-600 mt-0.5">ご利用の前に確認してください</p>
+                <h2 className="text-base font-black text-amber-900">{t("外部サイトへ移動します", "You're leaving Jisapp")}</h2>
+                <p className="text-xs text-amber-600 mt-0.5">{t("ご利用の前に確認してください", "Please check before you continue")}</p>
               </div>
             </div>
 
             {/* 本文 */}
             <div className="px-6 py-5 space-y-4">
               <p className="text-sm leading-relaxed text-gray-700">
-                ここから先は<span className="font-bold">外部サイト（Googleドライブ等）</span>へ移動します。
+                {t(<>ここから先は<span className="font-bold">外部サイト（Googleドライブ等）</span>へ移動します。</>, <>The next page is an <span className="font-bold">external site (Google Drive, etc.)</span>.</>)}
               </p>
               <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 space-y-2.5">
                 <p className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
                   <Lightbulb className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                  安全にコピーする方法
+                  {t("安全にコピーする方法", "How to make a safe copy")}
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
                     <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
-                    <span><span className="font-semibold">Googleスプレッドシートの場合</span>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。</span>
+                    <span>{t(<><span className="font-semibold">Googleスプレッドシートの場合</span>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。</>, <><span className="font-semibold">Google Sheets</span>: choose “File” → “Make a copy” to copy it to your own Google Drive.</>)}</span>
                   </li>
                   <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
                     <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
-                    <span><span className="font-semibold">Notionの場合</span>：ページ右上の「・・・」→「複製」を押して、ご自身のワークスペースにコピーしてください。</span>
+                    <span>{t(<><span className="font-semibold">Notionの場合</span>：ページ右上の「・・・」→「複製」を押して、ご自身のワークスペースにコピーしてください。</>, <><span className="font-semibold">Notion</span>: choose “•••” → “Duplicate” at the top right to copy it to your own workspace.</>)}</span>
                   </li>
                 </ul>
               </div>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                ※ コンテンツの閲覧は無料です。外部サービスのアカウントが別途必要な場合があります。
+                {t("※ コンテンツの閲覧は無料です。外部サービスのアカウントが別途必要な場合があります。", "* Viewing the content is free. You may need an account for the external service.")}
               </p>
             </div>
 
@@ -947,7 +959,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 onClick={() => setUrlSafetyOpen(false)}
                 className="flex-1 rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                戻る
+                {t("戻る", "Back")}
               </button>
               <button
                 onClick={() => {
@@ -958,7 +970,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white shadow-md shadow-amber-200 hover:bg-amber-600 active:scale-[0.98] transition-all"
               >
                 <ArrowRight className="h-4 w-4" />
-                同意して進む（外部リンクを開く）
+                {t("同意して進む（外部リンクを開く）", "Agree and continue (open link)")}
               </button>
             </div>
           </div>
@@ -979,7 +991,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600">
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-sm font-black text-gray-900">ライブラリに追加</span>
+                <span className="text-sm font-black text-gray-900">{t("ライブラリに追加", "Add to library")}</span>
               </div>
               <button
                 onClick={() => setCheckoutOpen(false)}
@@ -1004,7 +1016,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                     {(app as { type?: string }).type === "url" && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-0.5 text-xs font-bold text-blue-700">
                         <Link2 className="h-3 w-3 shrink-0" strokeWidth={2} />
-                        URLリンク
+                        {t("URLリンク", "URL link")}
                       </span>
                     )}
                   </div>
@@ -1013,10 +1025,10 @@ function MarketplaceAppPage({ id }: { id: string }) {
 
               {/* 確認メッセージ */}
               <div className="rounded-2xl bg-emerald-50 p-5 ring-1 ring-emerald-100 text-center space-y-1">
-                <p className="text-base font-black text-gray-800">このアプリをマイページに追加しますか？</p>
+                <p className="text-base font-black text-gray-800">{t("このアプリをマイページに追加しますか？", "Add this app to My page?")}</p>
                 <p className="flex items-center justify-center gap-1.5 text-sm text-emerald-700">
                   <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  取得後すぐにソースコードを確認できます
+                  {t("取得後すぐにソースコードを確認できます", "You can see the source code right after")}
                 </p>
               </div>
 
@@ -1026,7 +1038,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                   onClick={() => setCheckoutOpen(false)}
                   className="flex-1 rounded-xl border border-gray-200 py-3.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
                 >
-                  キャンセル
+                  {t("キャンセル", "Cancel")}
                 </button>
                 <button
                   onClick={async () => {
@@ -1048,7 +1060,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-sm font-black text-white shadow-md shadow-emerald-200 transition-all hover:bg-emerald-700 active:scale-[0.98]"
                 >
                   <ArrowRight className="h-4 w-4" />
-                  GET する
+                  {t("GET する", "Get")}
                 </button>
               </div>
 

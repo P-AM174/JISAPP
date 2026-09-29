@@ -7,6 +7,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 import Link from "@/lib/i18n/navigation";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { localizePath } from "@/lib/i18n/config";
 import {
   Eye, EyeOff, X, CheckCircle2, Mail, Lock, User,
   ArrowRight, AlertCircle, RefreshCw, ShieldCheck,
@@ -88,7 +89,7 @@ function LoginContent() {
   // ─── Google ログイン ───
   const handleGoogle = () => {
     setLoading(true);
-    signIn("google", { callbackUrl: returnUrl });
+    signIn("google", { callbackUrl: localizePath(returnUrl, locale) });
   };
 
   // ─── 新規登録フォーム送信 → Resend でメール送信 ───
@@ -165,7 +166,7 @@ function LoginContent() {
       setStage("done");
       await signIn("credentials", {
         email: regEmail, password: regPw,
-        callbackUrl: returnUrl, redirect: true,
+        callbackUrl: localizePath(returnUrl, locale), redirect: true,
       });
     } catch {
       setError(t("ネットワークエラーが発生しました", "A network error occurred"));

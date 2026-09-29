@@ -3,6 +3,16 @@
 import { useEffect, useCallback, useRef, type RefObject } from "react";
 import type { GroupSession } from "@/lib/groups/client";
 import { applyAppStorageMessage } from "@/lib/apps/app-storage";
+import { localeFromPath } from "@/lib/i18n/config";
+
+/** 英語ページで開いているか（アプリに返すエラー文の言語に使う） */
+function isEnglishPage(): boolean {
+  return typeof window !== "undefined" && localeFromPath(window.location.pathname) === "en";
+}
+
+function tx(ja: string, en: string): string {
+  return isEnglishPage() ? en : ja;
+}
 
 type SharedMessage = { op?: string; key?: string; value?: string; itemId?: string };
 
@@ -20,8 +30,13 @@ async function callGroupData(group: GroupSession, body: Record<string, unknown>)
     body: JSON.stringify({ memberKey: group.memberKey, ...body }),
   });
   const json = (await res.json().catch(() => ({}))) as { result?: unknown; error?: string };
-  if (!res.ok) throw new Error(json.error ?? "共有データの通信に失敗しました");
-  return json.result ?? null;
+  if (!res.ok) throw new Error(json.error ?? tx("共有データの通信に失敗しました", "Couldn't reach the shared data"));
+  const result = json.result ?? null;
+  // 抜けたメンバーの名前はサーバーが日本語で入れるので、英語ページでは英語にする
+  if (result && isEnglishPage()) {
+    return JSON.parse(JSON.stringify(result).split('"退出したメンバー"').join('"Former member"'));
+  }
+  return result;
 }
 
 /**
@@ -47,7 +62,7 @@ function localShared(appId: string, msg: SharedMessage): unknown {
       return raw;
     }
   };
-  const me = { id: "local", name: "あなた（テスト）", isOwner: true };
+  const me = { id: "local", name: tx("あなた（テスト）", "You (test)"), isOwner: true };
   const toItem = (item: LocalItem) => ({
     id: item.id,
     value: parse(item.value),
@@ -85,7 +100,7 @@ function localShared(appId: string, msg: SharedMessage): unknown {
       return next.length !== items.length;
     }
     default:
-      throw new Error("不明な操作です");
+      throw new Error(tx("不明な操作です", "Unknown operation"));
   }
 }
 
@@ -117,7 +132,7 @@ async function saveToCloud(appId: string, key: string, value: string) {
   });
   if (!res.ok) {
     const json = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(json.error ?? "クラウド保存に失敗");
+    throw new Error(json.error ?? tx("クラウド保存に失敗", "Couldn't save to the cloud"));
   }
 }
 
@@ -125,7 +140,7 @@ async function loadFromCloud(appId: string, key: string): Promise<string | null>
   const res = await fetch(
     `/api/app-data?key=${encodeURIComponent(key)}&appId=${encodeURIComponent(appId)}`
   );
-  if (!res.ok) throw new Error("クラウド読み込みに失敗");
+  if (!res.ok) throw new Error(tx("クラウド読み込みに失敗", "Couldn't load from the cloud"));
   const json = (await res.json()) as { value?: string | null };
   return json.value ?? null;
 }
@@ -150,7 +165,7 @@ async function proxyFetchFromApp(input: {
     error?: string;
   };
   if (!res.ok) {
-    throw new Error(json.error ?? "外部APIへの接続に失敗しました");
+    throw new Error(json.error ?? tx("外部APIへの接続に失敗しました", "Couldn't connect to the external API"));
   }
   return {
     ok: !!json.ok,
@@ -267,7 +282,7 @@ export function useZisupBridge(
           // 自分が書き込んだら、他のメンバーの返事も来やすいので確認の間隔を短く戻す
           if (msg.op === "set" || msg.op === "add" || msg.op === "remove") pollNowRef.current?.();
         } catch (err) {
-          send(id, null, err instanceof Error ? err.message : "共有データのエラー");
+          send(id, null, err instanceof Error ? err.message : tx("共有データのエラー", "Shared data error"));
         }
         return;
       }
@@ -281,7 +296,7 @@ export function useZisupBridge(
           secret?: string;
         };
         if (!fetchPayload.url) {
-          send(id, null, "URLが必要です");
+          send(id, null, tx("URLが必要です", "A URL is required"));
           return;
         }
         try {
@@ -295,7 +310,7 @@ export function useZisupBridge(
           });
           send(id, JSON.stringify(result));
         } catch (err) {
-          send(id, null, err instanceof Error ? err.message : "外部APIエラー");
+          send(id, null, err instanceof Error ? err.message : tx("外部APIエラー", "External API error"));
         }
         return;
       }
@@ -310,14 +325,14 @@ export function useZisupBridge(
             removeLocalValue(appId, key);
             send(id, value ?? null);
           } catch (err) {
-            send(id, null, err instanceof Error ? err.message : "保存エラー");
+            send(id, null, err instanceof Error ? err.message : tx("保存エラー", "Save error"));
           }
         } else {
           try {
             localStorage.setItem(localStorageKey(appId, key), value ?? "");
             send(id, value ?? null);
           } catch (err) {
-            send(id, null, err instanceof Error ? err.message : "保存エラー");
+            send(id, null, err instanceof Error ? err.message : tx("保存エラー", "Save error"));
           }
         }
       } else {
@@ -334,13 +349,13 @@ export function useZisupBridge(
             }
             send(id, cloudValue);
           } catch (err) {
-            send(id, null, err instanceof Error ? err.message : "読み込みエラー");
+            send(id, null, err instanceof Error ? err.message : tx("読み込みエラー", "Load error"));
           }
         } else {
           try {
             send(id, readLocalValue(appId, key));
           } catch (err) {
-            send(id, null, err instanceof Error ? err.message : "読み込みエラー");
+            send(id, null, err instanceof Error ? err.message : tx("読み込みエラー", "Load error"));
           }
         }
       }

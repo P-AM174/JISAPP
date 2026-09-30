@@ -148,7 +148,12 @@ function SupabaseAppPage({ id }: { id: string }) {
         counted = sessionStorage.getItem(`jisapp_opened:${id}`) === "1";
         sessionStorage.setItem(`jisapp_opened:${id}`, "1");
       } catch { /* 記録できなくても開く処理は続ける */ }
-      if (!counted) fetch(`/api/apps/${id}/touch`, { method: "POST" }).catch(() => {});
+      // 開き直したときも、自分の「最後に開いた日時」は更新する（ライブラリの並び順に使う）
+      fetch(`/api/apps/${id}/touch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count: !counted }),
+      }).catch(() => {});
     }
     return true;
   };

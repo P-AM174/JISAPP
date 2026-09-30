@@ -148,6 +148,8 @@ const EXACT: Record<string, string> = {
     "Couldn't save on this device. The browser's storage may be full",
   保存容量がもうすぐいっぱいです: "Your storage is almost full",
   保存容量がいっぱいです: "Your storage is full",
+  ライブラリに入っているアプリだけピン留めできます: "Only apps in your library can be pinned",
+  ピン留めを保存できませんでした: "Couldn't save the pin",
 };
 
 /** 一部だけ変わる文（アプリ名などが入る） */

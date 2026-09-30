@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { snapshotFromAppRow, upsertLibrarySnapshot, deleteLibrarySnapshot } from "@/lib/library/snapshots";
+import { getUserAppOpens, setUserAppPinned } from "@/lib/apps/user-opens";
 
 const supabase = createServerSupabaseClient();
 
@@ -35,13 +36,24 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 開いた回数・最後に開いた日時・ピン留め（まだ記録がなければ 0 / null）
+  const opens = await getUserAppOpens(userId, (data ?? []).map((r) => r.app_id));
+
   return NextResponse.json({
     library: (data ?? []).map((r) => {
       let extra: Record<string, unknown> = {};
       if (r.data_value) {
         try { extra = JSON.parse(r.data_value); } catch { /* noop */ }
       }
-      return { appId: r.app_id, addedAt: r.updated_at, ...extra };
+      const open = opens.get(r.app_id);
+      return {
+        appId: r.app_id,
+        addedAt: r.updated_at,
+        ...extra,
+        openCount: open?.openCount ?? 0,
+        lastOpenedAt: open?.lastOpenedAt ?? null,
+        pinnedAt: open?.pinnedAt ?? null,
+      };
     }),
   });
 }
@@ -131,6 +143,8 @@ export async function DELETE(req: Request) {
   }
 
   await deleteLibrarySnapshot(supabase, userId, appId);
+  // ライブラリから外したら、ピン留めも外す（開いた記録は残す）
+  await setUserAppPinned(userId, appId, false).catch(() => false);
   await supabase
     .from("library_pending_updates")
     .delete()

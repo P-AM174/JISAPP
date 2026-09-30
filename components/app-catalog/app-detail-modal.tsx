@@ -27,6 +27,7 @@ import { ShareButtonRow } from "@/components/share-button";
 import { CreatorFollowButton } from "@/components/creator-follow-button";
 import { getAppShareUrl } from "@/lib/share";
 import { MiniPreview } from "./mini-preview";
+import { GroupAppNotice } from "./group-app-badge";
 import { displayCreatorName, getCreatorProfilePath } from "./utils";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { ModalApp } from "./types";
@@ -198,6 +199,8 @@ export function AppDetailModal({
               <p className="mt-2 text-sm text-gray-600 leading-relaxed line-clamp-3">{app.description}</p>
             )}
           </div>
+
+          {app.groupSharing && <GroupAppNotice />}
 
           {showCreator && (
             <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 shadow-sm">

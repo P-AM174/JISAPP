@@ -6,6 +6,7 @@ import { OFFICIAL_CREATOR_NAME } from "@/lib/agent/official-creator";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { CategoryIcon } from "@/lib/category-icon";
 import { MiniPreview } from "./mini-preview";
+import { GroupAppBadge } from "./group-app-badge";
 import { catalogToModalApp, displayCreatorName } from "./utils";
 import type { CatalogCardApp, ModalApp } from "./types";
 
@@ -32,7 +33,10 @@ export function CatalogAppCard({
         onClick={() => onSelect(modalApp)}
         className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.06] transition-all hover:shadow-md hover:ring-emerald-300 text-left w-full"
       >
-        <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} />
+        <div className="relative">
+          <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} />
+          {app.group_sharing && <GroupAppBadge />}
+        </div>
         <div className="flex flex-1 flex-col gap-1 p-3">
           <p className="font-bold text-sm text-gray-900 leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
             {app.title}
@@ -62,7 +66,10 @@ export function CatalogAppCard({
       onClick={() => onSelect(modalApp)}
       className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-100/60 hover:ring-emerald-200 text-left w-full"
     >
-      <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} height={140} />
+      <div className="relative">
+        <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} height={140} />
+        {app.group_sharing && <GroupAppBadge className="right-2.5 px-2.5 text-[11px]" />}
+      </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <span className="w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
           {cat ? categoryName(cat, locale) : app.category ?? t("その他", "Other")}

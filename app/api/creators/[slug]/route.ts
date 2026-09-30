@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getStampCounts } from "@/lib/stamp-counts";
+import { resolveGroupSharing } from "@/lib/groups/detect";
 
 function decodeCreatorSlug(slug: string): string {
   try {
@@ -31,7 +32,7 @@ export async function GET(
 
   let query = supabase
     .from("apps")
-    .select("id, title, description, category, creator_name, created_at")
+    .select("id, title, description, category, creator_name, created_at, group_sharing")
     .eq("status", "active")
     .eq("creator_name", creatorName)
     .order("created_at", { ascending: false });
@@ -52,10 +53,14 @@ export async function GET(
     return NextResponse.json({ error: "クリエイターが見つかりません" }, { status: 404 });
   }
 
-  const stampCounts = await getStampCounts(apps.map((a) => a.id));
+  const [stampCounts, sharing] = await Promise.all([
+    getStampCounts(apps.map((a) => a.id)),
+    resolveGroupSharing(supabase, apps),
+  ]);
   const appsWithStamps = apps.map((app) => ({
     ...app,
     stamp_count: stampCounts[app.id] ?? 0,
+    group_sharing: sharing[app.id] ?? false,
   }));
   const totalStamps = appsWithStamps.reduce((sum, a) => sum + (a.stamp_count ?? 0), 0);
 

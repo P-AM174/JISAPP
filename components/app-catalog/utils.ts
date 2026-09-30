@@ -24,6 +24,7 @@ export function catalogToModalApp(app: CatalogCardApp, locale = "ja"): ModalApp 
     category: cat ? categoryName(cat, locale) : app.category ?? "",
     gradient: cat?.gradient ?? "from-emerald-500 to-teal-600",
     categoryId: app.category ?? null,
+    groupSharing: !!app.group_sharing,
   };
 }
 

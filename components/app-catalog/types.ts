@@ -9,6 +9,8 @@ export type ModalApp = {
   gradient: string;
   /** カテゴリアイコン（SVG）表示用のカテゴリID */
   categoryId?: string | null;
+  /** グループ共有アプリか */
+  groupSharing?: boolean;
 };
 
 export type CatalogCardApp = {
@@ -19,4 +21,6 @@ export type CatalogCardApp = {
   creator_name: string | null;
   created_at?: string;
   stamp_count?: number;
+  /** グループ共有アプリか */
+  group_sharing?: boolean;
 };

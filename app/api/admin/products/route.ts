@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { listProductsForAdmin, countUsers, countPendingReports } from "@/lib/services/store";
 import { countPendingSupabaseReports } from "@/lib/reports/supabase-reports";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { resolveGroupSharing } from "@/lib/groups/detect";
 
 function isUUID(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -33,11 +34,13 @@ export async function GET() {
   const { data: playgroundApps } = await supabase
     .from("apps")
     .select(
-      "id, title, description, category, status, is_listed, is_playground_app, creator_name, creator_id, created_at, app_number, admin_flags, is_featured"
+      "id, title, description, category, status, is_listed, is_playground_app, creator_name, creator_id, created_at, app_number, admin_flags, is_featured, group_sharing"
     )
     .eq("is_playground_app", true)
     .neq("status", "deleted")
     .order("created_at", { ascending: false });
+
+  const groupSharing = await resolveGroupSharing(supabase, playgroundApps ?? []);
 
   const playgroundAsProducts = (playgroundApps ?? []).map((app) => ({
     id: app.id,
@@ -51,6 +54,7 @@ export async function GET() {
     isDemo: false,
     isListed: !!app.is_listed,
     isFeatured: !!app.is_featured,
+    groupSharing: groupSharing[app.id] ?? false,
     adminFlags: (app.admin_flags as string[] | null) ?? [],
     listingType: app.is_listed ? "playground" : "external",
     productType: "playground",
@@ -76,6 +80,7 @@ export async function GET() {
     isDemo: p.isDemo,
     isListed: prismaIsListed(p),
     isFeatured: false,
+    groupSharing: false,
     adminFlags: [] as string[],
     listingType: p.listingType,
     productType: p.productType,

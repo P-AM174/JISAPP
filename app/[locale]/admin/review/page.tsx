@@ -33,6 +33,8 @@ type Product = {
   isDemo: boolean;
   isListed: boolean;
   isFeatured: boolean;
+  /** グループ共有アプリか（一覧では水色で目立たせる） */
+  groupSharing?: boolean;
   adminFlags: string[];
   listingType: string;
   productType: string;
@@ -94,6 +96,8 @@ const REPORT_STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 const CARD = "rounded-2xl bg-white shadow-sm ring-1 ring-black/5";
+/** グループ共有アプリの印（アプリ一覧・最近のアプリで使う。ユーザー側のバッジと同じ水色） */
+const GROUP_PILL = "bg-sky-500 text-white ring-sky-500";
 
 function AppNum({ n }: { n: number }) {
   return (
@@ -362,6 +366,7 @@ export default function AdminDashboard() {
     }
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [products]);
+  const groupAppCount = useMemo(() => products.filter((p) => p.groupSharing).length, [products]);
   const maxCatCount = useMemo(() => Math.max(1, ...categoryStats.map(c => c[1])), [categoryStats]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -840,7 +845,7 @@ export default function AdminDashboard() {
                     {recentProducts.map((p) => {
                       const st = STATUS_LABEL[p.status] ?? { label: p.status, cls: "bg-gray-100 text-gray-500 ring-gray-200" };
                       return (
-                        <li key={p.id} className="flex items-center gap-2.5 py-2.5">
+                        <li key={p.id} className={cn("flex items-center gap-2.5 py-2.5", p.groupSharing && "-mx-2 rounded-lg border-l-4 border-sky-400 bg-sky-50 px-2")}>
                           <AppNum n={p.appNumber} />
                           <div className="min-w-0 flex-1">
                             <Link href={`/apps/${p.id}`} target="_blank" className="block truncate text-sm font-bold text-gray-800 hover:text-emerald-700">
@@ -848,6 +853,9 @@ export default function AdminDashboard() {
                             </Link>
                             <p className="truncate text-[11px] text-gray-400">{p.creator.name ?? p.creator.email} · {p.createdAt}</p>
                           </div>
+                          {p.groupSharing && (
+                            <Pill cls={GROUP_PILL}><Users className="mr-0.5 h-3 w-3" />グループ</Pill>
+                          )}
                           <Pill cls={p.isListed ? "bg-teal-50 text-teal-700 ring-teal-200" : "bg-violet-50 text-violet-700 ring-violet-200"}>
                             {p.isListed ? "出品" : "URL"}
                           </Pill>
@@ -882,6 +890,13 @@ export default function AdminDashboard() {
                         <p className="mt-0.5 text-xl font-black text-gray-900">{mounted ? s.value : "—"}</p>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between rounded-xl border-l-4 border-sky-400 bg-sky-50 px-3 py-2.5">
+                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-sky-700">
+                      <Users className="h-3.5 w-3.5" />
+                      グループ共有アプリ
+                    </p>
+                    <p className="text-lg font-black text-gray-900">{mounted ? groupAppCount : "—"}</p>
                   </div>
                 </section>
 
@@ -923,7 +938,13 @@ export default function AdminDashboard() {
               />
               <SearchBox value={appSearch} onChange={setAppSearch} placeholder="管理番号・タイトル・出品者で検索" />
             </div>
-            <p className="-mt-2 text-xs text-gray-400">{filteredProducts.length} 件を表示中</p>
+            <p className="-mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+              {filteredProducts.length} 件を表示中
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-bold text-sky-700 ring-1 ring-sky-200">
+                <Users className="h-3 w-3" />
+                水色 = グループ共有アプリ（{filteredProducts.filter((p) => p.groupSharing).length} 件）
+              </span>
+            </p>
 
             {filteredProducts.length === 0 ? (
               <EmptyState icon={ShieldCheck} text={appSearch ? "該当するアプリが見つかりません" : appSubTab === "listed" ? "出品済みアプリはありません" : "URL発行のみのアプリはありません"} />
@@ -933,13 +954,16 @@ export default function AdminDashboard() {
                   const st = STATUS_LABEL[p.status] ?? { label: p.status, cls: "bg-gray-100 text-gray-500 ring-gray-200" };
                   const flagged = p.adminFlags.length > 0;
                   return (
-                    <li key={p.id} className={cn(CARD, "p-4 transition hover:ring-emerald-200", flagged && "ring-amber-200")}>
+                    <li key={p.id} className={cn(CARD, "p-4 transition hover:ring-emerald-200", flagged && "ring-amber-200", p.groupSharing && "border-l-4 border-sky-400 bg-sky-50/70 ring-sky-200")}>
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                         {/* 基本情報 */}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <AppNum n={p.appNumber} />
                             <Pill cls={st.cls}>{st.label}</Pill>
+                            {p.groupSharing && (
+                              <Pill cls={GROUP_PILL}><Users className="mr-0.5 h-3 w-3" />グループ共有</Pill>
+                            )}
                             {p.category && <Pill cls="bg-slate-50 text-slate-500 ring-slate-200">{p.category}</Pill>}
                           </div>
                           <Link href={`/apps/${p.id}`} target="_blank"

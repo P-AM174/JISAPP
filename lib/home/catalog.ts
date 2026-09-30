@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { getStampCounts } from "@/lib/stamp-counts";
+import { resolveGroupSharing } from "@/lib/groups/detect";
 
 export type PopularCreator = {
   name: string;
@@ -17,14 +18,24 @@ export type CatalogApp = {
   creator_name: string | null;
   created_at: string;
   stamp_count?: number;
+  /** グループ共有アプリか */
+  group_sharing?: boolean;
 };
+
+type CatalogRow = Omit<CatalogApp, "group_sharing"> & { group_sharing?: boolean | null };
+
+/** 一覧の各アプリにグループ共有アプリかどうかを付ける */
+async function withGroupSharing(rows: CatalogRow[]): Promise<CatalogApp[]> {
+  const sharing = await resolveGroupSharing(supabase, rows);
+  return rows.map((row) => ({ ...row, group_sharing: sharing[row.id] ?? false }));
+}
 
 async function fetchActiveApps(limit = 200): Promise<CatalogApp[]> {
   noStore();
   try {
     let query = supabase
       .from("apps")
-      .select("id, title, description, category, creator_name, creator_id, created_at")
+      .select("id, title, description, category, creator_name, creator_id, created_at, group_sharing")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -43,9 +54,9 @@ async function fetchActiveApps(limit = 200): Promise<CatalogApp[]> {
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(Math.min(limit, 50));
-      return fallback ?? [];
+      return withGroupSharing(fallback ?? []);
     }
-    return data ?? [];
+    return withGroupSharing(data ?? []);
   } catch {
     return [];
   }
@@ -157,7 +168,7 @@ export async function getFeaturedApps(limit = 8): Promise<CatalogApp[]> {
   try {
     const { data, error } = await supabase
       .from("apps")
-      .select("id, title, description, category, creator_name, creator_id, created_at")
+      .select("id, title, description, category, creator_name, creator_id, created_at, group_sharing")
       .eq("status", "active")
       .eq("is_featured", true)
       .order("created_at", { ascending: false })
@@ -165,8 +176,11 @@ export async function getFeaturedApps(limit = 8): Promise<CatalogApp[]> {
 
     if (error || !data?.length) return [];
 
-    const stampCounts = await getStampCounts(data.map((a) => a.id));
-    return data.map((app) => ({ ...app, stamp_count: stampCounts[app.id] ?? 0 }));
+    const [apps, stampCounts] = await Promise.all([
+      withGroupSharing(data),
+      getStampCounts(data.map((a) => a.id)),
+    ]);
+    return apps.map((app) => ({ ...app, stamp_count: stampCounts[app.id] ?? 0 }));
   } catch {
     return [];
   }

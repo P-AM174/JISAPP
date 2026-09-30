@@ -10,6 +10,7 @@ import {
   User,
   SlidersHorizontal,
   X,
+  Users,
 } from "lucide-react";
 import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
 import { useLocale, useT } from "@/lib/i18n/client";
@@ -51,9 +52,12 @@ export function SearchPageClient({
   const initSort     = (searchParams.get("sort") as SortMethod) ?? "default";
   const initCategory = resolveCategory(searchParams.get("category"));
   const initQuery    = searchParams.get("q") ?? "";
+  const initGroup    = searchParams.get("group") === "1";
 
   const [query,          setQuery]          = useState(initQuery);
   const [activeCategory, setActiveCategory] = useState(initCategory);
+  // グループ共有アプリだけに絞る（カテゴリとは別の絞り込み。組み合わせて使える）
+  const [groupOnly,      setGroupOnly]      = useState(initGroup);
   const [sortMethod,     setSortMethod]     = useState<SortMethod>(
     SORT_OPTIONS.some(o => o.value === initSort) ? initSort : "default"
   );
@@ -64,6 +68,9 @@ export function SearchPageClient({
 
   const categoryKeys = useMemo(() => [ALL, ...CATEGORIES.map(c => c.id)], []);
   const categoryLabel = (key: string) => (key === ALL ? t("すべて", "All") : categoryName(key, locale));
+  const groupAppCount = useMemo(() => allApps.filter((a) => a.group_sharing).length, [allApps]);
+  /** カテゴリの件数は、グループの絞り込みをかけた後の数で出す */
+  const countBase = useMemo(() => (groupOnly ? allApps.filter((a) => a.group_sharing) : allApps), [allApps, groupOnly]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -72,12 +79,14 @@ export function SearchPageClient({
       const cat = app.category ? CATEGORY_MAP[app.category] : null;
       const appCatName = cat ? `${cat.name} ${cat.nameEn}` : app.category ?? "";
       const matchCat = activeCategory === ALL || app.category === activeCategory;
+      const matchGroup = !groupOnly || !!app.group_sharing;
       const matchQ   = !q
         || app.title.toLowerCase().includes(q)
         || (app.description ?? "").toLowerCase().includes(q)
         || (app.creator_name ?? "").toLowerCase().includes(q)
-        || appCatName.toLowerCase().includes(q);
-      return matchCat && matchQ;
+        || appCatName.toLowerCase().includes(q)
+        || (!!app.group_sharing && ["グループ", "group"].some((word) => (q.length >= 2 && word.includes(q)) || q.includes(word)));
+      return matchCat && matchGroup && matchQ;
     });
 
     switch (sortMethod) {
@@ -89,10 +98,10 @@ export function SearchPageClient({
         new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
       );
     }
-  }, [allApps, query, activeCategory, sortMethod]);
+  }, [allApps, query, activeCategory, groupOnly, sortMethod]);
 
-  const hasFilter = !!(query || activeCategory !== ALL || sortMethod !== "default");
-  const resetAll  = () => { setQuery(""); setActiveCategory(ALL); setSortMethod("default"); };
+  const hasFilter = !!(query || activeCategory !== ALL || groupOnly || sortMethod !== "default");
+  const resetAll  = () => { setQuery(""); setActiveCategory(ALL); setGroupOnly(false); setSortMethod("default"); };
 
   return (
     <div className="min-h-screen bg-[#f3f6f4]">
@@ -142,14 +151,38 @@ export function SearchPageClient({
           <aside className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-20 space-y-5">
 
+              {/* 絞り込み（グループ共有アプリ） */}
+              <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+                <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-gray-500">{t("絞り込み", "Filter")}</h3>
+                <button
+                  type="button"
+                  onClick={() => setGroupOnly((v) => !v)}
+                  aria-pressed={groupOnly}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
+                    groupOnly
+                      ? "bg-sky-500 font-bold text-white"
+                      : "text-gray-600 ring-1 ring-sky-100 hover:bg-sky-50 hover:text-sky-700"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    {t("グループで使う", "For groups")}
+                  </span>
+                  <span className={`text-[11px] ${groupOnly ? "text-sky-100" : "text-gray-400"}`}>{groupAppCount}</span>
+                </button>
+                <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
+                  {t("メンバーと同じデータを使えるアプリ", "Apps that share data with your members")}
+                </p>
+              </div>
+
               {/* カテゴリ */}
               <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
                 <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-gray-500">{t("カテゴリ", "Category")}</h3>
                 <div className="space-y-0.5">
                   {categoryKeys.map((cat) => {
                     const count = cat === ALL
-                      ? allApps.length
-                      : allApps.filter(a => a.category === cat).length;
+                      ? countBase.length
+                      : countBase.filter(a => a.category === cat).length;
                     return (
                       <button
                         key={cat}
@@ -200,6 +233,14 @@ export function SearchPageClient({
             <div className="mb-4 lg:hidden">
               {/* カテゴリタブ */}
               <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button type="button" onClick={() => setGroupOnly((v) => !v)} aria-pressed={groupOnly}
+                  className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                    groupOnly ? "bg-sky-500 text-white" : "bg-sky-50 text-sky-700 ring-1 ring-sky-200 hover:ring-sky-300"
+                  }`}>
+                  <Users className="h-3.5 w-3.5" />
+                  {t("グループで使う", "For groups")}
+                </button>
+                <span className="my-1 w-px shrink-0 bg-gray-200" aria-hidden />
                 {categoryKeys.map((cat) => (
                   <button key={cat} type="button" onClick={() => setActiveCategory(cat)}
                     className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
@@ -232,6 +273,11 @@ export function SearchPageClient({
                     {activeCategory !== ALL && (
                       <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
                         {categoryLabel(activeCategory)}<button onClick={() => setActiveCategory(ALL)} aria-label={t("カテゴリの絞り込みを外す", "Remove category filter")}><X className="h-3 w-3" /></button>
+                      </span>
+                    )}
+                    {groupOnly && (
+                      <span className="flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">
+                        <Users className="h-3 w-3" />{t("グループで使う", "For groups")}<button onClick={() => setGroupOnly(false)} aria-label={t("グループの絞り込みを外す", "Remove group filter")}><X className="h-3 w-3" /></button>
                       </span>
                     )}
                     {query && (

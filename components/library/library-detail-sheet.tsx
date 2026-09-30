@@ -9,7 +9,7 @@ import { categoryName } from "@/lib/categories";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { intlLocale } from "@/lib/i18n/config";
 import { lastOpenedLabel, type LibraryEntry } from "@/lib/library/sort";
-import { formatBytes } from "@/lib/app-data-limits";
+import { AppStorageBar } from "@/components/app-storage-bar";
 
 type Detail = {
   title: string;
@@ -26,7 +26,8 @@ export function LibraryDetailSheet({
   entry,
   gradient,
   storageBytes,
-  storageLimitBytes,
+  maxKeyBytes,
+  onDeleteData,
   onClose,
   onOpen,
   onTogglePin,
@@ -36,8 +37,10 @@ export function LibraryDetailSheet({
   gradient: string;
   /** このアプリに自分が保存しているデータの量（取得できないときは undefined） */
   storageBytes?: number;
-  /** 全アプリ合計の上限 */
-  storageLimitBytes?: number;
+  /** いちばん大きい保存データ（1回に保存できる量と比べる） */
+  maxKeyBytes?: number;
+  /** 保存データを消す（確認は呼び出し側で行う） */
+  onDeleteData?: () => void;
   onClose: () => void;
   onOpen: () => void;
   onTogglePin: () => void;
@@ -161,21 +164,15 @@ export function LibraryDetailSheet({
               </div>
             ))}
           </div>
-          {storageBytes !== undefined && (
-            <div className="flex items-center gap-2 rounded-xl bg-emerald-50/60 px-3 py-2.5 text-xs text-gray-600">
-              <Database className="h-4 w-4 shrink-0 text-emerald-600" />
-              <span className="flex-1">
-                {storageBytes > 0
-                  ? t(`このアプリに保存したあなたのデータ：${formatBytes(storageBytes)}`, `Your data saved in this app: ${formatBytes(storageBytes)}`)
-                  : t("このアプリには、まだデータを保存していません", "You haven't saved any data in this app yet")}
-              </span>
-              {storageLimitBytes && (
-                <span className="shrink-0 text-[10px] text-gray-400">
-                  {t(`全アプリで${formatBytes(storageLimitBytes)}まで`, `${formatBytes(storageLimitBytes)} across all apps`)}
-                </span>
-              )}
-            </div>
-          )}
+          {storageBytes !== undefined &&
+            (storageBytes > 0 ? (
+              <AppStorageBar bytes={storageBytes} maxKeyBytes={maxKeyBytes ?? storageBytes} onDelete={onDeleteData} />
+            ) : (
+              <p className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-xs text-gray-500">
+                <Database className="h-4 w-4 shrink-0 text-emerald-600" />
+                {t("このアプリには、まだデータを保存していません", "You haven't saved any data in this app yet")}
+              </p>
+            ))}
           {failed && (
             <p className="text-center text-xs text-gray-400">{t("詳しい情報を読み込めませんでした", "Couldn't load the details")}</p>
           )}

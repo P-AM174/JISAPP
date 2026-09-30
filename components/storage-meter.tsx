@@ -12,10 +12,13 @@ export type AppDataUsage = {
   warnRatio?: number;
   /** アプリごとの内訳（byApp を付けて取得したとき） */
   apps?: Record<string, number>;
+  /** アプリごとの、いちばん大きい保存データ（1回に保存できる量と比べる） */
+  appsMaxKey?: Record<string, number>;
+  valueLimitBytes?: number;
 };
 
-/** 自分の保存容量を取得する。byApp なら、アプリごとの内訳も取る */
-export function useAppDataUsage(enabled = true, byApp = false): AppDataUsage | null {
+/** 自分の保存容量を取得する。byApp なら、アプリごとの内訳も取る。version を変えると取り直す */
+export function useAppDataUsage(enabled = true, byApp = false, version = 0): AppDataUsage | null {
   const [usage, setUsage] = useState<AppDataUsage | null>(null);
   useEffect(() => {
     if (!enabled) return;
@@ -29,7 +32,7 @@ export function useAppDataUsage(enabled = true, byApp = false): AppDataUsage | n
     return () => {
       cancelled = true;
     };
-  }, [enabled, byApp]);
+  }, [enabled, byApp, version]);
   return usage;
 }
 

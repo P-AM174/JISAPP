@@ -13,6 +13,8 @@ import {
   ArrowRight,
   Pin,
   MoreHorizontal,
+  Users,
+  ChevronRight,
 } from "lucide-react";
 import { CATEGORY_MAP } from "@/lib/categories";
 import { useLocale, useT } from "@/lib/i18n/client";
@@ -21,7 +23,9 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { LibraryDetailSheet } from "@/components/library/library-detail-sheet";
-import { useAppDataUsage } from "@/components/storage-meter";
+import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
+import { FollowedCreatorsModal } from "@/components/library/followed-creators-modal";
+import { getFollowedCreatorNames } from "@/lib/follow-creators";
 import { formatBytes } from "@/lib/app-data-limits";
 import {
   LIBRARY_SORT_MODES,
@@ -59,8 +63,31 @@ export default function LibraryPage() {
   const [removing, setRemoving] = useState(false);
   const [sortMode, setSortMode] = useState<LibrarySortMode>("recent");
   const [selected, setSelected] = useState<LibraryEntry | null>(null);
-  // アプリごとに自分が保存しているデータの量
-  const usage = useAppDataUsage(isLoggedIn, true);
+  // アプリごとに自分が保存しているデータの量。データを消したら取り直す
+  const [usageVersion, setUsageVersion] = useState(0);
+  const usage = useAppDataUsage(isLoggedIn, true, usageVersion);
+  const [dataDeleteTarget, setDataDeleteTarget] = useState<LibraryEntry | null>(null);
+  const [deletingData, setDeletingData] = useState(false);
+  // フォローしている作者（今はこの端末に保存している）
+  const [followed, setFollowed] = useState<string[]>([]);
+  const [showFollowed, setShowFollowed] = useState(false);
+
+  useEffect(() => {
+    setFollowed(getFollowedCreatorNames());
+  }, []);
+
+  const confirmDeleteData = async () => {
+    if (!dataDeleteTarget) return;
+    setDeletingData(true);
+    try {
+      await fetch(`/api/app-data?appId=${encodeURIComponent(dataDeleteTarget.appId)}`, { method: "DELETE" });
+    } catch {
+      /* 失敗しても取り直した数字でわかる */
+    }
+    setDeletingData(false);
+    setDataDeleteTarget(null);
+    setUsageVersion((v) => v + 1);
+  };
 
   useEffect(() => {
     setSortMode(readSavedSort());
@@ -181,6 +208,40 @@ export default function LibraryPage() {
           </div>
         )}
 
+        {/* 概要：登録したアプリの数・フォロー中の作者・保存容量 */}
+        {isLoggedIn && !loading && (
+          <div className="mb-6 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                  <LibraryBig className="h-4 w-4 text-teal-600" />
+                  {t("登録したアプリ", "Apps in library")}
+                </p>
+                <p className="mt-1 text-2xl font-black text-gray-900">
+                  {library.length}
+                  <span className="ml-1 text-sm font-bold text-gray-400">{t("個", library.length === 1 ? "app" : "apps")}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFollowed(true)}
+                className="rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-black/5 transition-all hover:ring-teal-300"
+              >
+                <p className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                  <Users className="h-4 w-4 text-teal-600" />
+                  {t("フォロー中", "Following")}
+                  <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
+                </p>
+                <p className="mt-1 text-2xl font-black text-gray-900">
+                  {followed.length}
+                  <span className="ml-1 text-sm font-bold text-gray-400">{t("人", followed.length === 1 ? "creator" : "creators")}</span>
+                </p>
+              </button>
+            </div>
+            <StorageMeter usage={usage} />
+          </div>
+        )}
+
         {/* ライブラリが空 */}
         {isLoggedIn && !loading && library.length === 0 && (
           <div className="flex flex-col items-center gap-6 py-20 text-center">
@@ -207,8 +268,7 @@ export default function LibraryPage() {
         {/* ライブラリ一覧 */}
         {isLoggedIn && !loading && library.length > 0 && (
           <div className="space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-semibold text-gray-400">{t(`${library.length}件のアプリ`, `${library.length} ${library.length === 1 ? "app" : "apps"}`)}</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0" role="radiogroup" aria-label={t("並べ替え", "Sort")}>
                 {LIBRARY_SORT_MODES.map((mode) => (
                   <button
@@ -294,13 +354,33 @@ export default function LibraryPage() {
           entry={selected}
           gradient={getGradient(selected)}
           storageBytes={usage?.apps ? (usage.apps[selected.appId] ?? 0) : undefined}
-          storageLimitBytes={usage?.limitBytes}
+          maxKeyBytes={usage?.appsMaxKey?.[selected.appId]}
+          onDeleteData={() => setDataDeleteTarget(selected)}
           onClose={() => setSelected(null)}
           onOpen={() => router.push(`/apps/${selected.appId}`)}
           onTogglePin={() => togglePin(selected)}
           onRemove={() => setRemoveTarget(selected)}
         />
       )}
+
+      {showFollowed && <FollowedCreatorsModal names={followed} onClose={() => setShowFollowed(false)} />}
+
+      <ConfirmDialog
+        open={!!dataDeleteTarget}
+        title={t("保存データを消す", "Delete saved data")}
+        message={
+          dataDeleteTarget
+            ? t(
+                `「${dataDeleteTarget.name ?? "アプリ"}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリはライブラリに残ります。`,
+                `Delete all the data you've saved in “${dataDeleteTarget.name ?? "this app"}”? This can't be undone. The app stays in your library.`
+              )
+            : ""
+        }
+        confirmLabel={t("消す", "Delete")}
+        loading={deletingData}
+        onConfirm={confirmDeleteData}
+        onCancel={() => setDataDeleteTarget(null)}
+      />
 
       <ConfirmDialog
         open={!!removeTarget}

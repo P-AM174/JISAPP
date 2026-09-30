@@ -183,3 +183,41 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, logged_in: true, in_library: true, warning });
 }
+
+/**
+ * 自分がこのアプリに保存したデータを全部消す: DELETE /api/app-data?appId=xxx
+ * スタンプ・ライブラリ登録など、ジサップ自身の記録（__ で始まるキー）は消さない
+ */
+export async function DELETE(req: Request) {
+  const userId = await getUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
+  const appId = new URL(req.url).searchParams.get("appId");
+  if (!appId) {
+    return NextResponse.json({ error: "appId が必要です" }, { status: 400 });
+  }
+
+  const { data: rows, error: selectError } = await supabase
+    .from("app_user_data")
+    .select("data_key")
+    .eq("user_id", userId)
+    .eq("app_id", appId);
+  if (selectError) {
+    return NextResponse.json({ error: "保存データを消せませんでした" }, { status: 500 });
+  }
+
+  const keys = (rows ?? []).map((r) => r.data_key).filter((key) => !isReservedDataKey(key));
+  if (keys.length > 0) {
+    const { error } = await supabase
+      .from("app_user_data")
+      .delete()
+      .eq("user_id", userId)
+      .eq("app_id", appId)
+      .in("data_key", keys);
+    if (error) {
+      return NextResponse.json({ error: "保存データを消せませんでした" }, { status: 500 });
+    }
+  }
+  return NextResponse.json({ ok: true, deleted: keys.length });
+}

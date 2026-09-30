@@ -6,7 +6,8 @@ import { APP_DATA_LIMITS, isReservedDataKey } from "@/lib/app-data-limits";
 
 /**
  * 自分の保存容量（全アプリ分・圧縮後）: GET /api/app-data/usage
- * ?byApp=1 のときは、アプリごとの内訳（apps: { アプリID: バイト数 }）も返す。
+ * ?byApp=1 のときは、アプリごとの内訳（apps: { アプリID: バイト数 }）と、
+ * アプリごとのいちばん大きい保存データ（appsMaxKey。1回に保存できる量 2MB と比べる）も返す。
  * 内訳はアプリが保存したデータだけを数える（スタンプ・ライブラリ登録などジサップ自身の記録は除く）
  */
 export async function GET(req: Request) {
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
   }
 
   let apps: Record<string, number> | undefined;
+  let appsMaxKey: Record<string, number> | undefined;
   if (new URL(req.url).searchParams.get("byApp") === "1") {
     const { data: rows, error: rowsError } = await supabase
       .from("app_user_data")
@@ -34,9 +36,12 @@ export async function GET(req: Request) {
       .eq("user_id", userId);
     if (!rowsError) {
       apps = {};
+      appsMaxKey = {};
       for (const row of rows ?? []) {
         if (isReservedDataKey(row.data_key)) continue;
-        apps[row.app_id] = (apps[row.app_id] ?? 0) + (row.data_bytes ?? 0);
+        const bytes = row.data_bytes ?? 0;
+        apps[row.app_id] = (apps[row.app_id] ?? 0) + bytes;
+        appsMaxKey[row.app_id] = Math.max(appsMaxKey[row.app_id] ?? 0, bytes);
       }
     }
   }
@@ -47,5 +52,7 @@ export async function GET(req: Request) {
     limitBytes: APP_DATA_LIMITS.userBytes,
     warnRatio: APP_DATA_LIMITS.warnRatio,
     apps,
+    appsMaxKey,
+    valueLimitBytes: APP_DATA_LIMITS.valueBytes,
   });
 }

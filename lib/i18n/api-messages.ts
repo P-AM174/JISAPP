@@ -150,6 +150,7 @@ const EXACT: Record<string, string> = {
   保存容量がいっぱいです: "Your storage is full",
   ライブラリに入っているアプリだけピン留めできます: "Only apps in your library can be pinned",
   ピン留めを保存できませんでした: "Couldn't save the pin",
+  保存データを消せませんでした: "Couldn't delete the saved data",
 };
 
 /** 一部だけ変わる文（アプリ名などが入る） */

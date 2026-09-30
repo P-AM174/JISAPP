@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   X,
   LibraryBig,
-  Database,
   Key,
   ClipboardList,
   Lightbulb,
@@ -55,6 +54,8 @@ import { intlLocale, localizePath, makeT, type Locale } from "@/lib/i18n/config"
 import { categoryName } from "@/lib/categories";
 import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
 import { formatBytes } from "@/lib/app-data-limits";
+import { AppStorageBar } from "@/components/app-storage-bar";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // ─── 型定義 ───
 type Project = {
@@ -155,10 +156,13 @@ const DEMO_PROJECTS: Project[] = [];
 const STATIC_ACQUIRED: AcquiredApp[] = [];
 
 // ─── プロジェクトカード ───
-function ProjectCard({ proj, storageBytes, onDelete, onPublish, onUnlist }: {
+function ProjectCard({ proj, storageBytes, maxKeyBytes, onDeleteData, onDelete, onPublish, onUnlist }: {
   proj: Project;
   /** このアプリに自分が保存しているデータの量（公開したアプリだけ） */
   storageBytes?: number;
+  /** いちばん大きい保存データ（1回に保存できる量と比べる） */
+  maxKeyBytes?: number;
+  onDeleteData?: (proj: Project) => void;
   onDelete?: (id: string) => void;
   onPublish?: (proj: Project) => void;
   onUnlist?: (proj: Project) => void;
@@ -262,13 +266,16 @@ function ProjectCard({ proj, storageBytes, onDelete, onPublish, onUnlist }: {
               {t(`${proj.libraryCount}人がライブラリ登録`, `In ${proj.libraryCount} ${proj.libraryCount === 1 ? "library" : "libraries"}`)}
             </span>
           )}
-          {!!storageBytes && (
-            <span className="flex items-center gap-1 text-emerald-700" title={t("このアプリに自分が保存しているデータ", "Data you've saved in this app")}>
-              <Database className="h-3 w-3" />
-              {t(`保存データ ${formatBytes(storageBytes)}`, `${formatBytes(storageBytes)} saved`)}
-            </span>
-          )}
         </div>
+
+        {/* このアプリに自分が保存しているデータ（1回に保存できる量 2MB に対して） */}
+        {!!storageBytes && (
+          <AppStorageBar
+            bytes={storageBytes}
+            maxKeyBytes={maxKeyBytes ?? storageBytes}
+            onDelete={onDeleteData ? () => onDeleteData(proj) : undefined}
+          />
+        )}
 
         {/* アクションボタン */}
         <div className="mt-auto flex flex-col gap-2 pt-1">
@@ -391,8 +398,24 @@ export default function ProjectsPage() {
   const [mounted, setMounted] = useState(false);
   const [acquiredApps, setAcquiredApps] = useState<AcquiredApp[]>([]);
   const [myProjects, setMyProjects] = useState<Project[]>(DEMO_PROJECTS);
-  // 保存容量（全アプリの合計と、アプリごとの内訳）
-  const usage = useAppDataUsage(mounted, true);
+  // 保存容量（全アプリの合計と、アプリごとの内訳）。データを消したら取り直す
+  const [usageVersion, setUsageVersion] = useState(0);
+  const usage = useAppDataUsage(mounted, true, usageVersion);
+  const [dataDeleteTarget, setDataDeleteTarget] = useState<Project | null>(null);
+  const [deletingData, setDeletingData] = useState(false);
+
+  const confirmDeleteData = async () => {
+    if (!dataDeleteTarget?.appId) return;
+    setDeletingData(true);
+    try {
+      await fetch(`/api/app-data?appId=${encodeURIComponent(dataDeleteTarget.appId)}`, { method: "DELETE" });
+    } catch {
+      /* 失敗しても取り直した数字でわかる */
+    }
+    setDeletingData(false);
+    setDataDeleteTarget(null);
+    setUsageVersion((v) => v + 1);
+  };
   const playgroundBytes = usage?.apps?.playground ?? 0;
 
   // 出品済みマップ: projectId → PublishedInfo
@@ -968,7 +991,7 @@ export default function ProjectsPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredProjects.map((proj) => (
-                    <ProjectCard key={proj.id} proj={proj} storageBytes={proj.appId ? usage?.apps?.[proj.appId] : undefined} onDelete={handleDeleteProject} onPublish={openPublishModal} onUnlist={handleUnlist} />
+                    <ProjectCard key={proj.id} proj={proj} storageBytes={proj.appId ? usage?.apps?.[proj.appId] : undefined} maxKeyBytes={proj.appId ? usage?.appsMaxKey?.[proj.appId] : undefined} onDeleteData={setDataDeleteTarget} onDelete={handleDeleteProject} onPublish={openPublishModal} onUnlist={handleUnlist} />
                   ))}
 
                   {/* 新規作成カード */}
@@ -1027,6 +1050,23 @@ export default function ProjectsPage() {
         )}
 
       </main>
+
+      <ConfirmDialog
+        open={!!dataDeleteTarget}
+        title={t("保存データを消す", "Delete saved data")}
+        message={
+          dataDeleteTarget
+            ? t(
+                `「${dataDeleteTarget.title}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリ自体は消えません。`,
+                `Delete all the data you've saved in “${dataDeleteTarget.title}”? This can't be undone. The app itself stays.`
+              )
+            : ""
+        }
+        confirmLabel={t("消す", "Delete")}
+        loading={deletingData}
+        onConfirm={confirmDeleteData}
+        onCancel={() => setDataDeleteTarget(null)}
+      />
 
       {/* ══════════ 出品モーダル ══════════ */}
       <EmbeddedSecretWarningModal

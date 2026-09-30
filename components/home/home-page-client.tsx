@@ -35,6 +35,7 @@ import {
   CircleHelp,
   Gamepad2,
   LibraryBig,
+  Pin,
   ChevronRight,
   ChevronLeft,
   Terminal,
@@ -46,6 +47,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
+import { sortLibrary, type LibraryEntry } from "@/lib/library/sort";
 import { CategoryIcon } from "@/lib/category-icon";
 import type { HomeCatalogData } from "@/lib/home/catalog";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
@@ -827,14 +829,10 @@ function HomeQuickActions() {
   );
 }
 
-type LibraryEntry = {
-  appId: string;
-  addedAt: string;
-  name?: string;
-  category?: string;
-  gradient?: string;
-};
-
+/**
+ * トップページのマイライブラリ（1行）。ピン留めを先に、残りは最近開いた順。
+ * スマホは横にスクロールして全件、PC は1行に入る分だけ出して「すべて見る」でマイライブラリへ
+ */
 function HomeLibrarySection() {
   const { data: session, status } = useSession();
   const userId = (session?.user as { id?: string })?.id ?? null;
@@ -858,6 +856,8 @@ function HomeLibrarySection() {
       .finally(() => setLoading(false));
   }, [isLoggedIn, status]);
 
+  const ordered = useMemo(() => sortLibrary(library, "recent"), [library]);
+
   if (!isLoggedIn || loading || library.length === 0) return null;
 
   const getGradient = (entry: LibraryEntry) => {
@@ -867,30 +867,36 @@ function HomeLibrarySection() {
   };
 
   return (
-    <section className="border-b border-emerald-100/80 bg-emerald-50/50 px-4 py-10">
+    <section className="border-b border-emerald-100/80 bg-emerald-50/50 px-4 py-6">
       <div className="mx-auto max-w-6xl">
         <SectionHeader
           icon={<LibraryBig className="h-5 w-5 text-teal-600" />}
           title={t("マイライブラリ", "My library")}
-          sub={t("追加したアプリをすぐに開けます", "Open the apps you've added")}
+          sub={t("ピン留めと、最近開いたアプリ", "Pinned and recently opened apps")}
           href="/library"
         />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {library.map((entry) => {
+        {/* スマホ：横スクロール。PC：1行目だけ見せ、入りきらない分は隠す（2行目以降の高さを0にする） */}
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:auto-rows-[0] sm:grid-cols-4 sm:grid-rows-[auto] sm:gap-x-3 sm:gap-y-0 sm:overflow-hidden sm:px-0 sm:pb-0 md:grid-cols-5 lg:grid-cols-6">
+          {ordered.map((entry) => {
             const gradient = getGradient(entry);
             return (
               <Link
                 key={entry.appId}
                 href={`/apps/${entry.appId}`}
-                className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.06] transition-all hover:shadow-md hover:ring-emerald-300"
+                className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.06] transition-all hover:shadow-md hover:ring-emerald-300 sm:w-auto"
               >
                 <MiniPreview
                   id={entry.appId}
                   fallbackGradient={gradient}
                   fallbackCategoryId={entry.category}
-                  height={96}
+                  height={88}
                 />
-                <div className="flex flex-1 flex-col gap-1 p-3">
+                {entry.pinnedAt && (
+                  <span className="absolute left-1.5 top-7 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow" title={t("ピン留め中", "Pinned")}>
+                    <Pin className="h-3 w-3" />
+                  </span>
+                )}
+                <div className="flex flex-1 flex-col gap-0.5 p-2.5">
                   <p className="line-clamp-2 text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700">
                     {entry.name ?? t("アプリ", "App")}
                   </p>
@@ -967,6 +973,7 @@ export function HomePageClient({
 
       <HeroCarousel slides={heroSlides} />
       <HomeQuickActions />
+      <HomeLibrarySection />
       {aboutIntro}
 
       {/* ─── 3ステップ ─── */}
@@ -1031,8 +1038,6 @@ export function HomePageClient({
           </div>
         </div>
       </div>
-
-      <HomeLibrarySection />
 
       <main id="browse" className="mx-auto max-w-6xl space-y-12 px-4 py-10">
 

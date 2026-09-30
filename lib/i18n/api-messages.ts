@@ -151,7 +151,18 @@ const EXACT: Record<string, string> = {
   ライブラリに入っているアプリだけピン留めできます: "Only apps in your library can be pinned",
   ピン留めを保存できませんでした: "Couldn't save the pin",
   保存データを消せませんでした: "Couldn't delete the saved data",
+  "運営がアプリのコードを修正しました。マイプロジェクトのコードも同じ内容になっています。":
+    "Jisapp fixed your app's code. The code in My projects has been updated to match.",
+  運営がコードを修正しました: "Jisapp fixed the code",
 };
+
+const STAMP_EN: Record<string, string> = {
+  "いいね！": "Love it!",
+  "天才！": "Genius!",
+  "便利！": "So useful!",
+  "デザインが好き！": "Great design!",
+};
+const stampEn = (label: string) => STAMP_EN[label] ?? label;
 
 /** 一部だけ変わる文（アプリ名などが入る） */
 const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
@@ -167,6 +178,12 @@ const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^「([\s\S]+)」に返信がありました$/, (m) => `New reply to “${m[1]}”`],
   [/^([\s\S]+) さんが「作ってみました」と報告しました$/, (m) => `${m[1]} says they made it`],
   [/^「([\s\S]+)」のコードが更新されました$/, (m) => `“${m[1]}” was updated`],
+  [/^「([\s\S]+)」のコードを運営が修正しました$/, (m) => `Jisapp fixed the code of “${m[1]}”`],
+  // スタンプのお知らせ（lib/notifications/stamp-notices.ts）
+  [/^「([\s\S]+)」にスタンプが届きました$/, (m) => `“${m[1]}” got a stamp`],
+  [/^「([\s\S]+)」にスタンプが(\d+)件届きました$/, (m) => `“${m[1]}” got ${m[2]} stamps`],
+  [/^([\s\S]+) さんが「([\s\S]+)」を押しました。$/, (m) => `${m[1]} sent “${stampEn(m[2])}”.`],
+  [/^最新は ([\s\S]+) さんの「([\s\S]+)」です。$/, (m) => `Latest: “${stampEn(m[2])}” from ${m[1]}.`],
   // 保存容量のお知らせ（lib/notifications/storage-notices.ts）
   [/^「([\s\S]+)」の共有データがもうすぐいっぱいです$/, (m) => `“${m[1]}” shared data is almost full`],
   [/^「([\s\S]+)」の共有データがいっぱいです$/, (m) => `“${m[1]}” shared data is full`],

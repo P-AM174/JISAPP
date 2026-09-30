@@ -718,6 +718,8 @@ export default function PlaygroundPage() {
   const [promptCopied, setPromptCopied]   = useState(true);
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
   const [menuOpen, setMenuOpen]           = useState(false);
+  // 「localStorage で保存しています」の注意を閉じたか（プレビューの邪魔にならないように）
+  const [localNoticeClosed, setLocalNoticeClosed] = useState(false);
   /** 貼り付けた直後に見つかった問題（AIの出力が終わる前にコピーした可能性） */
   const [pasteIssue, setPasteIssue]       = useState<CodeIssue | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -1518,6 +1520,8 @@ export default function PlaygroundPage() {
 
   const stage: StudioStage = code.trim() ? "ready" : awaitingCode ? "paste" : "idea";
   const localOnly = usesLocalStorageOnly(code);
+  // 別のアプリ（localStorage を使わないコード）に変わったら、次に出るときはまた表示する
+  if (!localOnly && localNoticeClosed) setLocalNoticeClosed(false);
   const codeIssue = detectCodeIssue(code);
   const needsKeys = usesStudioSecrets(code);
   const sharesData = usesSharedData(code);
@@ -1712,7 +1716,7 @@ export default function PlaygroundPage() {
           </p>
         </div>
       )}
-      {localOnly && !isSample && (
+      {localOnly && !isSample && !localNoticeClosed && (
         <div className="flex shrink-0 items-start gap-2.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
           <Database className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
           <p className="min-w-0 flex-1 leading-relaxed">
@@ -1729,6 +1733,15 @@ export default function PlaygroundPage() {
             className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
           >
             {t("依頼文をコピー", "Copy the request")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocalNoticeClosed(true)}
+            aria-label={t("この注意を閉じる", "Close this note")}
+            title={t("閉じる", "Close")}
+            className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/60 hover:text-slate-600"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}

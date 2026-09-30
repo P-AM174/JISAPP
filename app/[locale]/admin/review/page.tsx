@@ -11,6 +11,8 @@ import {
   Smartphone, Copy, Download, LogOut, ClipboardCheck, LayoutTemplate, Link2,
   ArrowRight, Inbox, Clock, type LucideIcon,
 } from "lucide-react";
+import { Pencil, Save, Infinity as InfinityIcon } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ADMIN_FLAG_OPTIONS, adminFlagLabel } from "@/lib/support/admin-flags";
 import { copyText } from "@/lib/playground/ai-launch";
 import { codeFileName, combineAppCode, saveTextFile } from "@/lib/admin/code-file";
@@ -210,12 +212,63 @@ export default function AdminDashboard() {
     js_code: string;
   } | null>(null);
   const [codeTab,            setCodeTab]            = useState<CodeTab>("html");
+  // コードの書き換え（運営）
+  const [codeEditing,        setCodeEditing]        = useState(false);
+  const [codeDraft,          setCodeDraft]          = useState<{ html_code: string; css_code: string; js_code: string } | null>(null);
+  const [codeNotes,          setCodeNotes]          = useState("");
+  const [savingCode,         setSavingCode]         = useState(false);
+  // 確認画面（ブラウザの confirm() はアプリ内ブラウザなどで出ずに「キャンセル」扱いになるため、画面の中に出す）
+  const [confirmState,       setConfirmState]       = useState<{ title: string; message: string; label: string; resolve: (ok: boolean) => void } | null>(null);
+  const askConfirm = (message: string, label = "OK", title = "確認") =>
+    new Promise<boolean>((resolve) => setConfirmState({ title, message, label, resolve }));
+  const answerConfirm = (ok: boolean) => {
+    confirmState?.resolve(ok);
+    setConfirmState(null);
+  };
+  // 保存容量の上限をかけないアプリ・ユーザー
+  const [exemptions,         setExemptions]         = useState<{ available: boolean; users: string[]; apps: string[] }>({ available: false, users: [], apps: [] });
 
   // 検索
   const [appSearch,  setAppSearch]  = useState("");
   const [userSearch, setUserSearch] = useState("");
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); loadExemptions(); }, []);
+
+  const loadExemptions = async () => {
+    try {
+      const res = await fetch("/api/admin/storage-exemptions");
+      if (res.ok) setExemptions(await res.json());
+    } catch {
+      /* 読めなければ設定ボタンを出さない */
+    }
+  };
+
+  /** 保存容量の上限をかけない・戻す */
+  const handleToggleExemption = async (kind: "user" | "app", targetId: string, label: string) => {
+    const list = kind === "user" ? exemptions.users : exemptions.apps;
+    const exempt = !list.includes(targetId);
+    const msg = exempt
+      ? `「${label}」の保存容量の上限を外しますか？\n（1回 2MB・合計 10MB の上限がかからなくなります。画像・動画の禁止はそのままです）`
+      : `「${label}」の保存容量の上限を元に戻しますか？`;
+    if (!(await askConfirm(msg, exempt ? "上限を外す" : "元に戻す"))) return;
+    setLoadingId(`${kind}-exempt-${targetId}`);
+    const res = await fetch("/api/admin/storage-exemptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, targetId, exempt }),
+    });
+    setLoadingId(null);
+    if (!res.ok) {
+      notify("設定を保存できませんでした");
+      return;
+    }
+    setExemptions((prev) => {
+      const key = kind === "user" ? "users" : "apps";
+      const next = exempt ? [...prev[key], targetId] : prev[key].filter((id) => id !== targetId);
+      return { ...prev, [key]: next };
+    });
+    notify(exempt ? `「${label}」の保存容量の上限を外しました` : `「${label}」の保存容量の上限を戻しました`);
+  };
 
   const loadAll = async () => {
     try {
@@ -333,7 +386,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProduct = async (product: Product) => {
-    if (!confirm(`「${product.title}」（#${String(product.appNumber).padStart(4,"0")}）を完全に削除しますか？この操作は取り消せません。`)) return;
+    if (!(await askConfirm(`「${product.title}」（#${String(product.appNumber).padStart(4,"0")}）を完全に削除しますか？この操作は取り消せません。`))) return;
     setLoadingId(product.id);
     try {
       const res = await fetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
@@ -352,7 +405,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = async (user: UserRecord) => {
-    if (!confirm(`「${user.name ?? user.email}」を強制退会させますか？このユーザーのデータはすべて削除されます。`)) return;
+    if (!(await askConfirm(`「${user.name ?? user.email}」を強制退会させますか？このユーザーのデータはすべて削除されます。`))) return;
     setLoadingId(user.id);
     try {
       const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
@@ -387,7 +440,7 @@ export default function AdminDashboard() {
   };
 
   const handleForceDeleteReported = async (r: Report) => {
-    if (!confirm(`「${r.product.title}」を削除しますか？`)) return;
+    if (!(await askConfirm(`「${r.product.title}」を削除しますか？`))) return;
     setLoadingId(r.product.id);
     try {
       const res = await fetch(`/api/admin/products/${r.product.id}`, { method: "DELETE" });
@@ -486,6 +539,9 @@ export default function AdminDashboard() {
     setCodeTarget(product);
     setCodeData(null);
     setCodeTab("html");
+    setCodeEditing(false);
+    setCodeDraft(null);
+    setCodeNotes("");
     setLoadingId(product.id);
     const res = await fetch(`/api/admin/apps/${product.id}/code`);
     if (res.ok) {
@@ -503,7 +559,42 @@ export default function AdminDashboard() {
     setLoadingId(null);
   };
 
-  const closeCode = () => { setCodeTarget(null); setCodeData(null); };
+  const closeCode = async () => {
+    if (codeEditing && !await askConfirm("書き換え中のコードを保存せずに閉じますか？")) return;
+    setCodeTarget(null);
+    setCodeData(null);
+    setCodeEditing(false);
+    setCodeDraft(null);
+  };
+
+  const startCodeEdit = () => {
+    if (!codeData) return;
+    setCodeDraft({ html_code: codeData.html_code, css_code: codeData.css_code, js_code: codeData.js_code });
+    setCodeNotes("");
+    setCodeEditing(true);
+  };
+
+  /** 運営がコードを書き換えて保存する（作者・ライブラリに入れている人に知らせる） */
+  const handleSaveEditedCode = async () => {
+    if (!codeTarget || !codeDraft) return;
+    if (!(await askConfirm(`「${codeData?.title ?? codeTarget.title}」のコードを書き換えて公開しますか？\n作者と、ライブラリに入れている人に更新のお知らせが届きます。`))) return;
+    setSavingCode(true);
+    const res = await fetch(`/api/admin/apps/${codeTarget.id}/code`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...codeDraft, notes: codeNotes }),
+    });
+    setSavingCode(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      notify(data.error ?? "保存できませんでした");
+      return;
+    }
+    setCodeData((prev) => (prev ? { ...prev, ...codeDraft } : prev));
+    setCodeEditing(false);
+    setCodeDraft(null);
+    notify("コードを書き換えました");
+  };
 
   const fullCode = codeData ? combineAppCode(codeData.html_code, codeData.css_code, codeData.js_code) : "";
 
@@ -894,6 +985,24 @@ export default function AdminDashboard() {
                                 <Star className={cn("h-3 w-3", p.isFeatured && "fill-violet-500")} />
                                 {p.isFeatured ? "注目中" : "注目に設定"}
                               </button>
+                              {exemptions.available && (() => {
+                                const exempt = exemptions.apps.includes(p.id);
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleExemption("app", p.id, p.title)}
+                                    disabled={loadingId === `app-exempt-${p.id}`}
+                                    title="保存容量の上限（1回 2MB・合計 10MB）をかけない"
+                                    className={cn(
+                                      "flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 transition-colors disabled:opacity-50",
+                                      exempt ? "bg-sky-50 text-sky-700 ring-sky-300" : "bg-white text-gray-400 ring-gray-200 hover:bg-sky-50 hover:text-sky-600"
+                                    )}
+                                  >
+                                    <InfinityIcon className="h-3 w-3" />
+                                    {exempt ? "容量上限なし" : "容量上限を外す"}
+                                  </button>
+                                );
+                              })()}
                             </>
                           ) : null}
                           {p.adminFlags.filter((f) => !ADMIN_FLAG_OPTIONS.some((o) => o.id === f)).map((f) => (
@@ -1145,6 +1254,24 @@ export default function AdminDashboard() {
                           <Send className="h-3.5 w-3.5" />
                           メッセージ
                         </button>
+                        {exemptions.available && (() => {
+                          const exempt = exemptions.users.includes(u.id);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleExemption("user", u.id, u.name ?? u.email)}
+                              disabled={loadingId === `user-exempt-${u.id}`}
+                              title="保存容量の上限（1回 2MB・合計 10MB）をかけない"
+                              className={cn(
+                                "flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold ring-1 transition-colors disabled:opacity-50 md:flex-none",
+                                exempt ? "bg-sky-50 text-sky-700 ring-sky-300" : "bg-white text-gray-500 ring-gray-200 hover:bg-sky-50 hover:text-sky-700"
+                              )}
+                            >
+                              <InfinityIcon className="h-3.5 w-3.5" />
+                              {exempt ? "容量上限なし" : "容量上限を外す"}
+                            </button>
+                          );
+                        })()}
                         <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
                           className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-bold text-rose-600 ring-1 ring-rose-200 transition-colors hover:bg-rose-50 disabled:opacity-50 md:flex-none">
                           {loadingId === u.id
@@ -1246,6 +1373,15 @@ export default function AdminDashboard() {
                 </div>
                 <p className="mt-0.5 truncate text-sm font-black text-gray-900">{codeData?.title ?? codeTarget.title}</p>
               </div>
+              {codeData && codeTarget.source === "supabase" && !codeEditing && (
+                <button
+                  type="button"
+                  onClick={startCodeEdit}
+                  className="flex h-8 items-center gap-1 rounded-lg bg-amber-50 px-2.5 text-xs font-bold text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100"
+                >
+                  <Pencil className="h-3 w-3" /> 書き換える
+                </button>
+              )}
               <Link href={`/apps/${codeTarget.id}`} target="_blank" title="アプリを開く"
                 className="hidden h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-gray-500 ring-1 ring-gray-200 hover:bg-gray-50 sm:flex">
                 アプリを開く <ExternalLink className="h-3 w-3" />
@@ -1289,10 +1425,11 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {(codeData.css_code.trim() || codeData.js_code.trim()) && (
+                {(codeEditing || codeData.css_code.trim() || codeData.js_code.trim()) && (
                   <div className="flex gap-1 px-5 pt-3">
                     {(["html", "css", "js"] as const).map((t) => {
-                      const src = t === "html" ? codeData.html_code : t === "css" ? codeData.css_code : codeData.js_code;
+                      const shown = codeEditing && codeDraft ? codeDraft : codeData;
+                      const src = t === "html" ? shown.html_code : t === "css" ? shown.css_code : shown.js_code;
                       return (
                         <button
                           key={t}
@@ -1310,14 +1447,71 @@ export default function AdminDashboard() {
                     })}
                   </div>
                 )}
-                <pre className="min-h-[240px] flex-1 overflow-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-100">
-                  <code>{(codeTab === "html" ? codeData.html_code : codeTab === "css" ? codeData.css_code : codeData.js_code) || "（空）"}</code>
-                </pre>
+                {codeEditing && codeDraft ? (
+                  <>
+                    <textarea
+                      value={codeTab === "html" ? codeDraft.html_code : codeTab === "css" ? codeDraft.css_code : codeDraft.js_code}
+                      onChange={(e) => {
+                        const key = codeTab === "html" ? "html_code" : codeTab === "css" ? "css_code" : "js_code";
+                        setCodeDraft((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
+                      }}
+                      spellCheck={false}
+                      aria-label={`${codeTab.toUpperCase()} を書き換える`}
+                      className="min-h-[240px] flex-1 resize-none bg-slate-950 p-4 font-mono text-xs leading-relaxed text-amber-100 outline-none"
+                    />
+                    <div className="flex flex-col gap-2 border-t border-gray-100 bg-amber-50/60 px-5 py-3 sm:flex-row sm:items-center">
+                      <input
+                        type="text"
+                        value={codeNotes}
+                        onChange={(e) => setCodeNotes(e.target.value)}
+                        maxLength={200}
+                        placeholder="作者・利用者へのお知らせに書く内容（例：保存できない不具合を修正しました）"
+                        className="h-9 flex-1 rounded-lg border border-amber-200 bg-white px-3 text-xs outline-none focus:border-amber-400"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setCodeEditing(false); setCodeDraft(null); }}
+                          disabled={savingCode}
+                          className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          やめる
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveEditedCode}
+                          disabled={savingCode || !codeDraft.html_code.trim()}
+                          className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-50"
+                        >
+                          {savingCode
+                            ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            : <Save className="h-3.5 w-3.5" />}
+                          書き換えて公開
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <pre className="min-h-[240px] flex-1 overflow-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-100">
+                    <code>{(codeTab === "html" ? codeData.html_code : codeTab === "css" ? codeData.css_code : codeData.js_code) || "（空）"}</code>
+                  </pre>
+                )}
               </>
             )}
           </div>
         </div>
       )}
+      {/* 確認画面（コードの画面より手前に出す） */}
+      <div className="relative z-[700]">
+        <ConfirmDialog
+          open={!!confirmState}
+          title={confirmState?.title ?? ""}
+          message={confirmState?.message ?? ""}
+          confirmLabel={confirmState?.label}
+          onConfirm={() => answerConfirm(true)}
+          onCancel={() => answerConfirm(false)}
+        />
+      </div>
     </div>
   );
 }

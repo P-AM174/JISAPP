@@ -12,6 +12,7 @@ import {
   type AppDataWarning,
 } from "@/lib/app-data-limits";
 import { decodeAppDataValue } from "@/lib/app-data-codec-server";
+import { isStorageLimitExempt } from "@/lib/app-data-exemptions";
 import { notifyStorageAlmostFull, notifyStorageFull } from "@/lib/notifications/storage-notices";
 
 const supabase = createServerSupabaseClient();
@@ -121,13 +122,16 @@ export async function POST(req: Request) {
   // ジサップ自身の管理用のキー（スタンプ・ライブラリ登録など）は、アプリからは書き換えさせない
   if (isReservedDataKey(key)) return limitError("reserved_key");
 
+  // 運営画面で「容量の上限なし」にしたユーザー・アプリは、大きさと合計の上限をかけない（画像・動画の禁止はそのまま）
+  const exempt = await isStorageLimitExempt({ userId, appId });
+
   // 1回の大きさ（圧縮したなら圧縮後）と、画像・動画でないか（圧縮を元に戻して）を確かめる
   const stored = value ?? "";
   const storedBytes = utf8Bytes(stored);
   const raw = decodeAppDataValue(stored);
   if (raw === null) return limitError(storedBytes > APP_DATA_LIMITS.valueBytes ? "too_large" : "bad_data");
   const problem = checkAppDataValue(raw, storedBytes);
-  if (problem) return limitError(problem);
+  if (problem && !(exempt && problem === "too_large")) return limitError(problem);
 
   const inLibrary = await isAppInLibrary(userId, appId);
   if (!inLibrary) {
@@ -147,8 +151,10 @@ export async function POST(req: Request) {
     p_app_id: appId,
     p_data_key: key,
   });
-  const userTotal = usageError ? null : Number(usedBytes ?? 0) + storedBytes;
-  if (usageError) {
+  const userTotal = usageError || exempt ? null : Number(usedBytes ?? 0) + storedBytes;
+  if (exempt) {
+    // 上限なし：合計は数えない
+  } else if (usageError) {
     // 集計用の SQL（scripts/add-app-data-limits.sql）がまだ無いときは、保存は止めずに記録だけ残す
     console.error("[app-data POST] usage", usageError.message);
   } else if (userTotal !== null && userTotal > APP_DATA_LIMITS.userBytes) {
@@ -176,8 +182,13 @@ export async function POST(req: Request) {
 
   // 上限の手前（8割）まで来ていたら、画面で知らせるための合図を返す
   const userAlmostFull = userTotal !== null && userTotal > APP_DATA_LIMITS.userBytes * APP_DATA_LIMITS.warnRatio;
-  const warning: AppDataWarning | null =
-    storedBytes > APP_DATA_LIMITS.valueBytes * APP_DATA_LIMITS.warnRatio ? "value" : userAlmostFull ? "user" : null;
+  const warning: AppDataWarning | null = exempt
+    ? null
+    : storedBytes > APP_DATA_LIMITS.valueBytes * APP_DATA_LIMITS.warnRatio
+      ? "value"
+      : userAlmostFull
+        ? "user"
+        : null;
   // 合計がもうすぐいっぱいなら、アプリを開いていなくても気づけるようベルマークにも届ける（30日に1回）
   if (userAlmostFull && userTotal !== null) await notifyStorageAlmostFull(userId, userTotal);
 

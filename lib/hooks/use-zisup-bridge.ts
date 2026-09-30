@@ -36,9 +36,10 @@ function notifyAppDataError(message: string) {
  * アプリから届いた保存データを確かめる。問題があれば知らせて、そのメッセージを返す。
  * storedBytes：実際に保存する大きさ（圧縮するなら圧縮後）。省略すると元の大きさで数える
  */
-function rejectValue(value: string | undefined, storedBytes?: number): string | null {
+function rejectValue(value: string | undefined, storedBytes?: number, mediaOnly = false): string | null {
   const problem = checkAppDataValue(value ?? "", storedBytes);
-  if (!problem) return null;
+  // サーバーに送るときは、大きさはサーバーが決める（運営画面で上限なしにしたアプリ・ユーザーがあるため）
+  if (!problem || (mediaOnly && problem !== "media_not_allowed")) return null;
   const message = localizeMessage(APP_DATA_LIMIT_MESSAGES[problem]);
   notifyAppDataError(message);
   return message;
@@ -170,13 +171,14 @@ function removeLocalValue(appId: string, key: string) {
 }
 
 /**
- * クラウドに保存する。送る前に圧縮し（上限は圧縮後の大きさで数える）、画像・動画と大きさを確かめる。
+ * クラウドに保存する。送る前に圧縮し、画像・動画でないかを確かめる。
+ * 大きさの上限はサーバーが確かめる（運営画面で上限なしにしたアプリ・ユーザーがあるため）。
  * 断られたときは、そのメッセージで Error を投げる（画面への知らせは呼び出し側で行う）
  */
 async function saveToCloud(appId: string, key: string, value: string) {
   const packed = await compressAppData(value);
   const problem = checkAppDataValue(value, utf8Bytes(packed));
-  if (problem) throw new Error(localizeMessage(APP_DATA_LIMIT_MESSAGES[problem]));
+  if (problem === "media_not_allowed") throw new Error(localizeMessage(APP_DATA_LIMIT_MESSAGES[problem]));
   const res = await fetch("/api/app-data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -326,7 +328,7 @@ export function useZisupBridge(
       if (d.__zisup_type === "shared") {
         const msg = d as SharedMessage;
         if (msg.op === "set" || msg.op === "add") {
-          const rejected = rejectValue(msg.value);
+          const rejected = rejectValue(msg.value, undefined, !!group);
           if (rejected) {
             send(id, null, rejected);
             return;

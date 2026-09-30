@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { APP_DATA_LIMITS, isReservedDataKey } from "@/lib/app-data-limits";
+import { isStorageLimitExempt } from "@/lib/app-data-exemptions";
 
 /**
  * 自分の保存容量（全アプリ分・圧縮後）: GET /api/app-data/usage
@@ -54,5 +55,7 @@ export async function GET(req: Request) {
     apps,
     appsMaxKey,
     valueLimitBytes: APP_DATA_LIMITS.valueBytes,
+    // 運営画面で「容量の上限なし」にしたユーザー
+    exempt: await isStorageLimitExempt({ userId }),
   });
 }

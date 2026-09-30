@@ -2,21 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { notifyStampReceived } from "@/lib/notifications/stamp-notices";
 
 const supabase = createServerSupabaseClient();
 
 const STAMP_KEY_PREFIX = "__stamp__";
 const STAMP_IDS = ["like", "genius", "useful", "design"] as const;
 type StampId = typeof STAMP_IDS[number];
-
-async function getUserId(): Promise<string | null> {
-  try {
-    const session = await getServerSession(authOptions);
-    return (session?.user as { id?: string })?.id ?? null;
-  } catch {
-    return null;
-  }
-}
 
 /** スタンプ集計取得: GET /api/apps/[id]/stamps */
 export async function GET(
@@ -54,7 +46,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: appId } = await params;
-  const userId = await getUserId();
+  const session = await getServerSession(authOptions).catch(() => null);
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
   if (!userId) {
     // 未ログインは 200 で無視（localStorage側で管理）
@@ -83,6 +76,14 @@ export async function POST(
       .eq("app_id", appId)
       .eq("data_key", dataKey);
   } else {
+    // 新しく押したときだけ作者に知らせる（押し直しでは知らせない）
+    const { data: already } = await supabase
+      .from("app_user_data")
+      .select("data_key")
+      .eq("user_id", userId)
+      .eq("app_id", appId)
+      .eq("data_key", dataKey)
+      .maybeSingle();
     await supabase.from("app_user_data").upsert(
       {
         user_id: userId,
@@ -93,6 +94,14 @@ export async function POST(
       },
       { onConflict: "user_id,app_id,data_key" }
     );
+    if (!already) {
+      await notifyStampReceived({
+        appId,
+        stamperId: userId,
+        stamperName: session?.user?.name ?? null,
+        stampId,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -15,6 +15,8 @@ export type AppDataUsage = {
   /** アプリごとの、いちばん大きい保存データ（1回に保存できる量と比べる） */
   appsMaxKey?: Record<string, number>;
   valueLimitBytes?: number;
+  /** 運営の設定で上限がかからないユーザー */
+  exempt?: boolean;
 };
 
 /** 自分の保存容量を取得する。byApp なら、アプリごとの内訳も取る。version を変えると取り直す */
@@ -50,8 +52,8 @@ export function StorageMeter({ usage: given, children }: { usage?: AppDataUsage 
   if (!usage?.available || usage.usedBytes === undefined) return null;
 
   const ratio = Math.min(1, usage.usedBytes / usage.limitBytes);
-  const warn = ratio > (usage.warnRatio ?? 0.8);
-  const full = ratio >= 1;
+  const warn = !usage.exempt && ratio > (usage.warnRatio ?? 0.8);
+  const full = !usage.exempt && ratio >= 1;
 
   return (
     <div id="storage" className="scroll-mt-20 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
@@ -62,7 +64,10 @@ export function StorageMeter({ usage: given, children }: { usage?: AppDataUsage 
         </div>
         <p className="text-sm font-bold text-gray-900">
           {formatBytes(usage.usedBytes)}
-          <span className="font-medium text-gray-400"> / {formatBytes(usage.limitBytes)}</span>
+          <span className="font-medium text-gray-400">
+            {" / "}
+            {usage.exempt ? t("上限なし", "No limit") : formatBytes(usage.limitBytes)}
+          </span>
         </p>
       </div>
       <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-gray-100">
@@ -72,7 +77,9 @@ export function StorageMeter({ usage: given, children }: { usage?: AppDataUsage 
         />
       </div>
       <p className={full ? "mt-2 text-xs font-semibold text-rose-600" : warn ? "mt-2 text-xs font-semibold text-amber-700" : "mt-2 text-xs text-gray-400"}>
-        {full
+        {usage.exempt
+          ? t("運営の設定により、保存容量の上限はかかりません。", "Jisapp has removed the storage limit for your account.")
+          : full
           ? t("容量がいっぱいです。使っていないアプリのデータを消すと、また保存できます。", "Your storage is full. Delete data from apps you no longer use to save again.")
           : warn
             ? t("もうすぐいっぱいです。使っていないアプリのデータを消しておくと安心です。", "Almost full. It's safer to delete data from apps you no longer use.")

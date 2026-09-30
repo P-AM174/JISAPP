@@ -15,6 +15,7 @@ import {
 } from "@/lib/groups/server";
 import { APP_DATA_LIMITS, APP_DATA_LIMIT_MESSAGES, GROUP_QUOTA_MESSAGE, checkAppDataValue, utf8Bytes } from "@/lib/app-data-limits";
 import { notifyGroupStorageAlmostFull, notifyGroupStorageFull } from "@/lib/notifications/storage-notices";
+import { isStorageLimitExempt } from "@/lib/app-data-exemptions";
 
 type Ctx = { params: Promise<{ groupId: string }> };
 
@@ -53,8 +54,13 @@ async function checkGroupValue(
   value: string,
   replacingKey: string | null
 ): Promise<{ rejected: NextResponse | null; almostFull: boolean }> {
+  // 運営画面で「容量の上限なし」にしたアプリ・グループを作った人は、大きさと合計の上限をかけない（画像・動画の禁止はそのまま）
+  const exempt = await isStorageLimitExempt({ userId: group.owner_id, appId: group.app_id });
   const problem = checkAppDataValue(value);
-  if (problem) return { rejected: fail(APP_DATA_LIMIT_MESSAGES[problem], problem === "media_not_allowed" ? 415 : 413), almostFull: false };
+  if (problem && !(exempt && problem === "too_large")) {
+    return { rejected: fail(APP_DATA_LIMIT_MESSAGES[problem], problem === "media_not_allowed" ? 415 : 413), almostFull: false };
+  }
+  if (exempt) return { rejected: null, almostFull: false };
   const { data: used, error } = await client.rpc("app_group_data_bytes", { p_group_id: group.id, p_data_key: replacingKey });
   if (error) {
     // 集計用の SQL（scripts/add-app-data-limits.sql）がまだ無いときは、保存は止めずに記録だけ残す

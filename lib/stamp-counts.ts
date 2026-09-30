@@ -1,4 +1,7 @@
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+
+// app_user_data は anon から読めないようにしているので、サーバー用のクライアントで集計する
+const supabase = createServerSupabaseClient();
 
 /** アプリIDリストに対してスタンプ数を集計して返す */
 export async function getStampCounts(appIds: string[]): Promise<Record<string, number>> {

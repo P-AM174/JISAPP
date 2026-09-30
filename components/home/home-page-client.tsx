@@ -974,71 +974,6 @@ export function HomePageClient({
       <HeroCarousel slides={heroSlides} />
       <HomeQuickActions />
       <HomeLibrarySection />
-      {aboutIntro}
-
-      {/* ─── 3ステップ ─── */}
-      <div className="bg-white px-4 py-12 shadow-sm">
-        <div className="mx-auto max-w-4xl">
-          <p className="mb-8 text-center text-sm font-bold uppercase tracking-widest text-emerald-600">How it works</p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {[
-              {
-                step: "01",
-                icon: <JisappLogoIcon className="h-6 w-6" />,
-                title: t("AIにアイデアを伝える", "Tell AI your idea"),
-                desc: t("ChatGPT・Claude・Geminiなど、使い慣れたAIに「こんなアプリを作って」と送るだけ。コードが自動で生成されます。", "Just ask ChatGPT, Claude, Gemini or any AI you like: “make me an app that…”. It writes the code for you."),
-                color: "bg-emerald-50 border-emerald-100",
-              },
-              {
-                step: "02",
-                icon: <Code2 className="h-6 w-6 text-teal-600" />,
-                title: t("コードをコピーして貼る", "Copy and paste the code"),
-                desc: t("生成されたコードをコピーして、ジサップの開発スタジオに貼り付けるだけ。サーバーもDBも設定不要です。", "Copy the code and paste it into the Jisapp Studio. No server or database to set up."),
-                color: "bg-teal-50 border-teal-100",
-              },
-              {
-                step: "03",
-                icon: <Globe className="h-6 w-6 text-cyan-600" />,
-                title: t("即公開・シェア", "Publish & share instantly"),
-                desc: t("コードを貼り付けたらすぐ公開。URLを発行してSNSやメッセージで友だちに共有できます。", "Publish right after pasting. Get a URL and share it with friends on social media or in messages."),
-                color: "bg-cyan-50 border-cyan-100",
-              },
-            ].map(({ step, icon, title, desc, color }) => (
-              <div key={step} className={`relative rounded-2xl border p-6 ${color}`}>
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="text-4xl font-black text-gray-300 select-none leading-none">{step}</span>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
-                    {icon}
-                  </div>
-                </div>
-                <h3 className="mb-2 text-base font-bold text-gray-900">{title}</h3>
-                <p className="text-sm leading-relaxed text-gray-600">{desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/playground"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 hover:shadow-xl active:scale-95"
-            >
-              <Terminal className="h-5 w-5" />
-              {t("アプリ開発スタジオへ", "Open the Studio")}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/projects"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-white px-8 py-4 text-base font-black text-emerald-700 shadow-sm transition-all hover:bg-emerald-50 active:scale-95"
-            >
-              <FolderOpen className="h-5 w-5" />
-              <span className="flex flex-col items-start leading-tight">
-                <span>{t("自分が作ったアプリを見る", "Apps you made")}</span>
-                <span className="text-[11px] font-semibold text-emerald-600/70">{t("マイプロジェクト", "My projects")}</span>
-              </span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
       <main id="browse" className="mx-auto max-w-6xl space-y-12 px-4 py-10">
 
         {/* ─── 注目のアプリ（管理者選定） ─── */}
@@ -1430,6 +1365,70 @@ export function HomePageClient({
           </div>
         </section>
       </main>
+
+      {/* ─── 3ステップ ─── */}
+      <div className="bg-white px-4 py-12 shadow-sm">
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-8 text-center text-sm font-bold uppercase tracking-widest text-emerald-600">How it works</p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {[
+              {
+                step: "01",
+                icon: <JisappLogoIcon className="h-6 w-6" />,
+                title: t("AIにアイデアを伝える", "Tell AI your idea"),
+                desc: t("ChatGPT・Claude・Geminiなど、使い慣れたAIに「こんなアプリを作って」と送るだけ。コードが自動で生成されます。", "Just ask ChatGPT, Claude, Gemini or any AI you like: “make me an app that…”. It writes the code for you."),
+                color: "bg-emerald-50 border-emerald-100",
+              },
+              {
+                step: "02",
+                icon: <Code2 className="h-6 w-6 text-teal-600" />,
+                title: t("コードをコピーして貼る", "Copy and paste the code"),
+                desc: t("生成されたコードをコピーして、ジサップの開発スタジオに貼り付けるだけ。サーバーもDBも設定不要です。", "Copy the code and paste it into the Jisapp Studio. No server or database to set up."),
+                color: "bg-teal-50 border-teal-100",
+              },
+              {
+                step: "03",
+                icon: <Globe className="h-6 w-6 text-cyan-600" />,
+                title: t("即公開・シェア", "Publish & share instantly"),
+                desc: t("コードを貼り付けたらすぐ公開。URLを発行してSNSやメッセージで友だちに共有できます。", "Publish right after pasting. Get a URL and share it with friends on social media or in messages."),
+                color: "bg-cyan-50 border-cyan-100",
+              },
+            ].map(({ step, icon, title, desc, color }) => (
+              <div key={step} className={`relative rounded-2xl border p-6 ${color}`}>
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="text-4xl font-black text-gray-300 select-none leading-none">{step}</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+                    {icon}
+                  </div>
+                </div>
+                <h3 className="mb-2 text-base font-bold text-gray-900">{title}</h3>
+                <p className="text-sm leading-relaxed text-gray-600">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/playground"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-emerald-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-emerald-200/50 transition-all hover:from-violet-700 hover:to-emerald-700 hover:shadow-xl active:scale-95"
+            >
+              <Terminal className="h-5 w-5" />
+              {t("アプリ開発スタジオへ", "Open the Studio")}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/projects"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-emerald-200 bg-white px-8 py-4 text-base font-black text-emerald-700 shadow-sm transition-all hover:bg-emerald-50 active:scale-95"
+            >
+              <FolderOpen className="h-5 w-5" />
+              <span className="flex flex-col items-start leading-tight">
+                <span>{t("自分が作ったアプリを見る", "Apps you made")}</span>
+                <span className="text-[11px] font-semibold text-emerald-600/70">{t("マイプロジェクト", "My projects")}</span>
+              </span>
+            </Link>
+          </div>
+        </div>
+      </div>
+      {aboutIntro}
 
       {/* ─── フッター ─── */}
       <footer className="mt-4 border-t border-gray-200 bg-white px-4 py-8">

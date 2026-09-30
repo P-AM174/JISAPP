@@ -25,7 +25,7 @@ import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { LibraryDetailSheet } from "@/components/library/library-detail-sheet";
 import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
 import { FollowedCreatorsModal } from "@/components/library/followed-creators-modal";
-import { getFollowedCreatorNames } from "@/lib/follow-creators";
+import { FOLLOWS_CHANGED_EVENT, getFollowedCreatorNames, syncFollowsFromServer } from "@/lib/follow-creators";
 import { formatBytes } from "@/lib/app-data-limits";
 import {
   LIBRARY_SORT_MODES,
@@ -68,12 +68,16 @@ export default function LibraryPage() {
   const usage = useAppDataUsage(isLoggedIn, true, usageVersion);
   const [dataDeleteTarget, setDataDeleteTarget] = useState<LibraryEntry | null>(null);
   const [deletingData, setDeletingData] = useState(false);
-  // フォローしている作者（今はこの端末に保存している）
+  // フォローしている作者（ログインしていればサーバーから。どの端末でも同じになる）
   const [followed, setFollowed] = useState<string[]>([]);
   const [showFollowed, setShowFollowed] = useState(false);
 
   useEffect(() => {
-    setFollowed(getFollowedCreatorNames());
+    const update = () => setFollowed(getFollowedCreatorNames());
+    update();
+    window.addEventListener(FOLLOWS_CHANGED_EVENT, update);
+    void syncFollowsFromServer().then(update);
+    return () => window.removeEventListener(FOLLOWS_CHANGED_EVENT, update);
   }, []);
 
   const confirmDeleteData = async () => {

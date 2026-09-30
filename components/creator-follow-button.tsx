@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserPlus, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
-import { isFollowingCreator, toggleFollowCreator } from "@/lib/follow-creators";
+import { FOLLOWS_CHANGED_EVENT, isFollowingCreator, syncFollowsFromServer, toggleFollowCreator } from "@/lib/follow-creators";
 
 export function CreatorFollowButton({
   creatorName,
@@ -17,6 +17,14 @@ export function CreatorFollowButton({
 }) {
   const [following, setFollowing] = useState(() => isFollowingCreator(creatorName));
   const t = useT();
+
+  // サーバーのフォロー（ほかの端末でフォローした分）に合わせる。ほかのボタンで変わったときも合わせる
+  useEffect(() => {
+    const update = () => setFollowing(isFollowingCreator(creatorName));
+    window.addEventListener(FOLLOWS_CHANGED_EVENT, update);
+    void syncFollowsFromServer().then(update);
+    return () => window.removeEventListener(FOLLOWS_CHANGED_EVENT, update);
+  }, [creatorName]);
 
   if (!creatorName.trim() || creatorName === "匿名") return null;
 

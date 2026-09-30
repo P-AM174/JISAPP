@@ -22,8 +22,11 @@ import { CreatorFollowButton } from "@/components/creator-follow-button";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { displayCreatorName } from "@/components/app-catalog/utils";
 import {
+  FOLLOWS_CHANGED_EVENT,
+  fetchFollowerCount,
   getCreatorFollowerCount,
   getFollowedCreatorNames,
+  syncFollowsFromServer,
 } from "@/lib/follow-creators";
 
 type CreatorProfile = {
@@ -54,8 +57,12 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
       })
       .then((data: CreatorProfile) => {
         setProfile(data);
+        // サーバーで数えられないとき（表がまだない）は、これまでどおりの目安を出す
         const stored = getCreatorFollowerCount(data.name);
         setFollowerCount(Math.max(stored, Math.floor(data.totalStamps / 2)));
+        void fetchFollowerCount(data.name).then((count) => {
+          if (count !== null) setFollowerCount(count);
+        });
         setFollowingCreators(
           getFollowedCreatorNames().filter((n) => n !== data.name)
         );
@@ -63,6 +70,21 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  // フォローが変わったら、フォロワー数とフォロー中の一覧を読み直す
+  useEffect(() => {
+    if (!profile) return;
+    const name = profile.name;
+    const update = () => {
+      setFollowingCreators(getFollowedCreatorNames().filter((n) => n !== name));
+      void fetchFollowerCount(name).then((count) => {
+        if (count !== null) setFollowerCount(count);
+      });
+    };
+    window.addEventListener(FOLLOWS_CHANGED_EVENT, update);
+    void syncFollowsFromServer().then(() => setFollowingCreators(getFollowedCreatorNames().filter((n) => n !== name)));
+    return () => window.removeEventListener(FOLLOWS_CHANGED_EVENT, update);
+  }, [profile]);
 
   if (loading) {
     return (
@@ -176,7 +198,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
               <UserPlus className="h-4 w-4 text-emerald-600" />
               <h2 className="text-base font-black text-gray-900">{t("フォロー中のクリエイター", "Creators you follow")}</h2>
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                {t("{followingCreators.length}人", "{followingCreators.length}")}
+                {t(`${followingCreators.length}人`, String(followingCreators.length))}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -252,7 +274,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
               <Palette className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
               {t("デザイン", "Design")}
             </span>
-            {t("）の合計から算出しています。フォロワー数はフォロー操作と応援数をもとに表示されます。", ") the creator's apps have received. The follower count reflects follows and cheers.")}
+            {t("）の合計から算出しています。フォロワー数は、この作者をフォローしている人の数です。", ") the creator's apps have received. The follower count is the number of people following this creator.")}
           </p>
         </section>
       </main>

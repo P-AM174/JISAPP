@@ -154,6 +154,8 @@ const EXACT: Record<string, string> = {
   "運営がアプリのコードを修正しました。マイプロジェクトのコードも同じ内容になっています。":
     "Jisapp fixed your app's code. The code in My projects has been updated to match.",
   運営がコードを修正しました: "Jisapp fixed the code",
+  フォローを保存できませんでした: "Couldn't save the follow",
+  新しくフォローされました: "You have a new follower",
 };
 
 const STAMP_EN: Record<string, string> = {
@@ -179,6 +181,10 @@ const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^([\s\S]+) さんが「作ってみました」と報告しました$/, (m) => `${m[1]} says they made it`],
   [/^「([\s\S]+)」のコードが更新されました$/, (m) => `“${m[1]}” was updated`],
   [/^「([\s\S]+)」のコードを運営が修正しました$/, (m) => `Jisapp fixed the code of “${m[1]}”`],
+  // フォローのお知らせ（lib/notifications/follow-notices.ts）
+  [/^新しく(\d+)人にフォローされました$/, (m) => `${m[1]} new followers`],
+  [/^([\s\S]+) さんがあなたをフォローしました。$/, (m) => `${m[1]} followed you.`],
+  [/^最新は ([\s\S]+) さんです。$/, (m) => `Latest: ${m[1]}.`],
   // スタンプのお知らせ（lib/notifications/stamp-notices.ts）
   [/^「([\s\S]+)」にスタンプが届きました$/, (m) => `“${m[1]}” got a stamp`],
   [/^「([\s\S]+)」にスタンプが(\d+)件届きました$/, (m) => `“${m[1]}” got ${m[2]} stamps`],

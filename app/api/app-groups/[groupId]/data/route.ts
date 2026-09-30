@@ -12,6 +12,7 @@ import {
   toPublicMember,
   type MemberRow,
 } from "@/lib/groups/server";
+import { APP_DATA_LIMITS, APP_DATA_LIMIT_MESSAGES, GROUP_QUOTA_MESSAGE, checkAppDataValue, utf8Bytes } from "@/lib/app-data-limits";
 
 type Ctx = { params: Promise<{ groupId: string }> };
 
@@ -37,6 +38,23 @@ function parseValue(raw: string): unknown {
 
 function fail(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+/**
+ * 保存する値を確かめる（画像・動画でないか、グループの合計容量を超えないか）。問題があればエラーの応答を返す。
+ * replacingKey：save で上書きするキー（その分は合計から除く）。add のときは null
+ */
+async function checkGroupValue(client: ReturnType<typeof db>, groupId: string, value: string, replacingKey: string | null) {
+  const problem = checkAppDataValue(value);
+  if (problem) return fail(APP_DATA_LIMIT_MESSAGES[problem], problem === "media_not_allowed" ? 415 : 413);
+  const { data: used, error } = await client.rpc("app_group_data_bytes", { p_group_id: groupId, p_data_key: replacingKey });
+  if (error) {
+    // 集計用の SQL（scripts/add-app-data-limits.sql）がまだ無いときは、保存は止めずに記録だけ残す
+    console.error("[app-groups data] usage", error.message);
+    return null;
+  }
+  if (Number(used ?? 0) + utf8Bytes(value) > APP_DATA_LIMITS.groupBytes) return fail(GROUP_QUOTA_MESSAGE, 507);
+  return null;
 }
 
 /**
@@ -92,6 +110,8 @@ export async function POST(req: Request, ctx: Ctx) {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
       const value = typeof body.value === "string" ? body.value : "null";
       if (value.length > GROUP_LIMITS.valueChars) return fail("データが大きすぎます");
+      const rejected = await checkGroupValue(client, groupId, value, body.key);
+      if (rejected) return rejected;
       const { error } = await client.from("app_group_values").upsert(
         {
           group_id: groupId,
@@ -129,6 +149,8 @@ export async function POST(req: Request, ctx: Ctx) {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
       const value = typeof body.value === "string" ? body.value : "null";
       if (value.length > GROUP_LIMITS.valueChars) return fail("データが大きすぎます");
+      const rejected = await checkGroupValue(client, groupId, value, null);
+      if (rejected) return rejected;
       const { count } = await client
         .from("app_group_items")
         .select("id", { count: "exact", head: true })

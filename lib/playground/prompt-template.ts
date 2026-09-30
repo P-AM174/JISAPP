@@ -11,7 +11,10 @@ export const PROMPT_STORAGE_ZISUP = `【データ保存（ジサップの保存�
   ・読込: await window.Zisup.loadData('識別名')
 ・識別名は英数字で、アプリ内で一度決めたら変えない。
 ・画面を出す前に、必ず await で読み込みを完了させる。
-・ログインしていると別の端末でも同じデータが読める。`;
+・ログインしていると別の端末でも同じデータが読める。
+・保存できるのは文字のデータだけ。画像・動画・音声は保存できない（画面に表示するだけならよい。写真を残したいときは、題名やメモなど文字だけを保存する）。
+・1つの識別名に保存できるのは1MBまで。日記や記録のように増え続けるデータは、年ごとに識別名を分けて保存する（例: diary_2026, diary_2027）。表示するときは必要な年の分だけ読み込む。
+・saveData が失敗したとき（容量オーバーなど）は、画面に「保存できませんでした」と表示する。`;
 
 /** 同じ端末のブラウザ内だけ残す */
 export const PROMPT_STORAGE_LOCAL = `【データ保存（この端末のブラウザ内だけ）】
@@ -39,6 +42,7 @@ export const PROMPT_STORAGE_SHARED = `【みんなで共有するデータ（ジ
 ・自分の表示名: const me = await window.Zisup.me()（{ id, name }）
 ・項目には「誰が書いたか」（item.author.name）と日時を表示する。削除ボタンは item.mine の項目にだけ出す。
 ・キー名は英数字（例: attendance, posts）で、アプリ内で一度決めたら変えない。
+・共有できるのは文字のデータだけ。画像・動画・音声は保存できない（画面に表示するだけならよい）。
 ・グループの作成・招待・参加はジサップの画面が行うので、アプリの中には作らない。`;
 
 /**
@@ -227,6 +231,7 @@ export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守っ
 ・別の端末でも残したいデータがある場合は window.Zisup.saveData / loadData を使う（localStorageは使わない）
   保存: await window.Zisup.saveData('識別名', データ)
   読込: await window.Zisup.loadData('識別名')
+  保存できるのは文字のデータだけ（画像・動画は不可）。1つの識別名は1MBまでなので、増え続けるデータは年ごとに識別名を分ける
 ・同じ端末だけでよければ localStorage を使う（Zisup の保存APIは使わない）
 ・APIキー・トークンをコードに絶対に書かない。外部APIは window.Zisup.fetch(url, { secret: 'NAME' }) を使う
 ・secret 名は大文字英字（例: GEMINI, OPENAI, WEATHER）。キーの値はユーザーがジサップの「APIキー」画面で登録する

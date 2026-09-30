@@ -7,6 +7,7 @@ import { buildSrcDoc, injectZisupShim } from "@/lib/products/build-srcdoc";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncInfoModal } from "@/components/sync-info-modal";
+import { AppDataNotice } from "@/components/app-data-notice";
 import { cn } from "@/lib/utils";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { readAppStorageSnapshot } from "@/lib/apps/app-storage";
@@ -169,6 +170,8 @@ export function AppRunner({
           title={title}
         />
       </div>
+
+      <AppDataNotice />
 
       <SyncInfoModal
         open={syncModalOpen}

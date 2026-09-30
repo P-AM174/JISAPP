@@ -9,6 +9,7 @@ import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { localizePath } from "@/lib/i18n/config";
+import { StorageMeter } from "@/components/storage-meter";
 import {
   Package,
   ShieldCheck,
@@ -299,6 +300,9 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+
+        {/* ─── 保存容量 ─── */}
+        {mounted && <StorageMeter />}
 
         {/* ─── マイプロジェクト ─── */}
         <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">

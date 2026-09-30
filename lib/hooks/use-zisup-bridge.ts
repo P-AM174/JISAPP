@@ -4,6 +4,9 @@ import { useEffect, useCallback, useRef, type RefObject } from "react";
 import type { GroupSession } from "@/lib/groups/client";
 import { applyAppStorageMessage } from "@/lib/apps/app-storage";
 import { localeFromPath } from "@/lib/i18n/config";
+import { translateApiMessage } from "@/lib/i18n/api-messages";
+import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, checkAppDataValue, isReservedDataKey, utf8Bytes, type AppDataWarning } from "@/lib/app-data-limits";
+import { compressAppData, decompressAppData } from "@/lib/app-data-codec";
 
 /** 英語ページで開いているか（アプリに返すエラー文の言語に使う） */
 function isEnglishPage(): boolean {
@@ -12,6 +15,46 @@ function isEnglishPage(): boolean {
 
 function tx(ja: string, en: string): string {
   return isEnglishPage() ? en : ja;
+}
+
+/** ブラウザ側で作る日本語のメッセージ（容量の上限など）を、英語ページでは英語にする */
+function localizeMessage(message: string): string {
+  return isEnglishPage() ? translateApiMessage(message) : message;
+}
+
+/** 保存を断ったとき、ジサップの画面に知らせる（AppDataNotice が受け取って表示する） */
+export const APP_DATA_ERROR_EVENT = "jisapp:app-data-error";
+function notifyAppDataError(message: string) {
+  try {
+    window.dispatchEvent(new CustomEvent(APP_DATA_ERROR_EVENT, { detail: { message: localizeMessage(message) } }));
+  } catch {
+    /* noop */
+  }
+}
+
+/**
+ * アプリから届いた保存データを確かめる。問題があれば知らせて、そのメッセージを返す。
+ * storedBytes：実際に保存する大きさ（圧縮するなら圧縮後）。省略すると元の大きさで数える
+ */
+function rejectValue(value: string | undefined, storedBytes?: number): string | null {
+  const problem = checkAppDataValue(value ?? "", storedBytes);
+  if (!problem) return null;
+  const message = localizeMessage(APP_DATA_LIMIT_MESSAGES[problem]);
+  notifyAppDataError(message);
+  return message;
+}
+
+/** 「もうすぐいっぱい」の知らせは、同じ画面で同じ種類を1回だけにする */
+const warnedOnce = new Set<string>();
+function notifyAppDataWarning(appId: string, warning: AppDataWarning) {
+  const id = `${appId}:${warning}`;
+  if (warnedOnce.has(id)) return;
+  warnedOnce.add(id);
+  try {
+    window.dispatchEvent(new CustomEvent(APP_DATA_ERROR_EVENT, { detail: { message: localizeMessage(APP_DATA_WARNINGS[warning]), level: "warning" } }));
+  } catch {
+    /* noop */
+  }
 }
 
 type SharedMessage = { op?: string; key?: string; value?: string; itemId?: string };
@@ -29,8 +72,10 @@ async function callGroupData(group: GroupSession, body: Record<string, unknown>)
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ memberKey: group.memberKey, ...body }),
   });
-  const json = (await res.json().catch(() => ({}))) as { result?: unknown; error?: string };
+  const json = (await res.json().catch(() => ({}))) as { result?: unknown; error?: string; warning?: AppDataWarning | null };
   if (!res.ok) throw new Error(json.error ?? tx("共有データの通信に失敗しました", "Couldn't reach the shared data"));
+  // グループの共有データがもうすぐいっぱいなら、書き込んだ人の画面にも知らせる
+  if (json.warning) notifyAppDataWarning(group.appId, json.warning);
   const result = json.result ?? null;
   // 抜けたメンバーの名前はサーバーが日本語で入れるので、英語ページでは英語にする
   if (result && isEnglishPage()) {
@@ -124,16 +169,22 @@ function removeLocalValue(appId: string, key: string) {
   }
 }
 
+/**
+ * クラウドに保存する。送る前に圧縮し（上限は圧縮後の大きさで数える）、画像・動画と大きさを確かめる。
+ * 断られたときは、そのメッセージで Error を投げる（画面への知らせは呼び出し側で行う）
+ */
 async function saveToCloud(appId: string, key: string, value: string) {
+  const packed = await compressAppData(value);
+  const problem = checkAppDataValue(value, utf8Bytes(packed));
+  if (problem) throw new Error(localizeMessage(APP_DATA_LIMIT_MESSAGES[problem]));
   const res = await fetch("/api/app-data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, value, appId }),
+    body: JSON.stringify({ key, value: packed, appId }),
   });
-  if (!res.ok) {
-    const json = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(json.error ?? tx("クラウド保存に失敗", "Couldn't save to the cloud"));
-  }
+  const json = (await res.json().catch(() => ({}))) as { error?: string; warning?: AppDataWarning | null };
+  if (!res.ok) throw new Error(json.error ?? tx("クラウド保存に失敗", "Couldn't save to the cloud"));
+  if (json.warning) notifyAppDataWarning(appId, json.warning);
 }
 
 async function loadFromCloud(appId: string, key: string): Promise<string | null> {
@@ -142,7 +193,7 @@ async function loadFromCloud(appId: string, key: string): Promise<string | null>
   );
   if (!res.ok) throw new Error(tx("クラウド読み込みに失敗", "Couldn't load from the cloud"));
   const json = (await res.json()) as { value?: string | null };
-  return json.value ?? null;
+  return decompressAppData(json.value ?? null);
 }
 
 async function proxyFetchFromApp(input: {
@@ -274,6 +325,13 @@ export function useZisupBridge(
 
       if (d.__zisup_type === "shared") {
         const msg = d as SharedMessage;
+        if (msg.op === "set" || msg.op === "add") {
+          const rejected = rejectValue(msg.value);
+          if (rejected) {
+            send(id, null, rejected);
+            return;
+          }
+        }
         try {
           const result = group
             ? await callGroupData(group, { op: msg.op, key: msg.key, value: msg.value, itemId: msg.itemId })
@@ -282,7 +340,9 @@ export function useZisupBridge(
           // 自分が書き込んだら、他のメンバーの返事も来やすいので確認の間隔を短く戻す
           if (msg.op === "set" || msg.op === "add" || msg.op === "remove") pollNowRef.current?.();
         } catch (err) {
-          send(id, null, err instanceof Error ? err.message : tx("共有データのエラー", "Shared data error"));
+          const message = err instanceof Error ? err.message : tx("共有データのエラー", "Shared data error");
+          if (msg.op === "set" || msg.op === "add") notifyAppDataError(message);
+          send(id, null, message);
         }
         return;
       }
@@ -319,20 +379,37 @@ export function useZisupBridge(
       if (!key) return;
 
       if (d.__zisup_type === "save") {
+        if (isReservedDataKey(key)) {
+          const message = localizeMessage(APP_DATA_LIMIT_MESSAGES.reserved_key);
+          notifyAppDataError(message);
+          send(id, null, message);
+          return;
+        }
         if (cloudUserId) {
           try {
             await saveToCloud(appId, key, value ?? "");
             removeLocalValue(appId, key);
             send(id, value ?? null);
           } catch (err) {
-            send(id, null, err instanceof Error ? err.message : tx("保存エラー", "Save error"));
+            const message = err instanceof Error ? err.message : tx("保存エラー", "Save error");
+            notifyAppDataError(message);
+            send(id, null, message);
           }
         } else {
+          // ログインしていないときも、画像・動画と大きすぎるデータは同じく断る
+          // （ログインしたときにクラウドへ移せないデータを、ブラウザ内にためないため）
+          const rejected = rejectValue(value, utf8Bytes(await compressAppData(value ?? "")));
+          if (rejected) {
+            send(id, null, rejected);
+            return;
+          }
           try {
             localStorage.setItem(localStorageKey(appId, key), value ?? "");
             send(id, value ?? null);
           } catch (err) {
-            send(id, null, err instanceof Error ? err.message : tx("保存エラー", "Save error"));
+            const message = err instanceof Error ? err.message : tx("保存エラー", "Save error");
+            notifyAppDataError("この端末に保存できませんでした。ブラウザの保存領域がいっぱいの可能性があります");
+            send(id, null, message);
           }
         }
       } else {

@@ -3,6 +3,8 @@
  * API は日本語で返し、英語ページで表示するときだけここで置き換える（辞書にない文はそのまま出る）。
  * サーバーのメッセージを増やしたら、ここにも英語を足す。
  */
+import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, GROUP_QUOTA_MESSAGE } from "@/lib/app-data-limits";
+
 const EXACT: Record<string, string> = {
   ログインが必要です: "Please sign in",
   AI審査機能が設定されていません: "AI review isn't set up",
@@ -128,6 +130,24 @@ const EXACT: Record<string, string> = {
   下書きアプリ: "Draft app",
   ゲスト: "Guest",
   匿名: "Anonymous",
+  // アプリの保存データの上限（lib/app-data-limits.ts）
+  [APP_DATA_LIMIT_MESSAGES.too_large]:
+    "This app's data is over the amount that can be saved at once (2MB). Ask the app's creator to split the data, for example by year",
+  [APP_DATA_LIMIT_MESSAGES.media_not_allowed]: "Images and videos can't be saved (only text data can be saved)",
+  [APP_DATA_LIMIT_MESSAGES.quota_exceeded]: "Your storage (10MB across all apps) is full. Delete data you no longer need",
+  [APP_DATA_LIMIT_MESSAGES.reserved_key]: "Names starting with __ can't be used for saving",
+  [APP_DATA_LIMIT_MESSAGES.bad_data]: "The data to save isn't in a valid format",
+  [APP_DATA_WARNINGS.value]:
+    "This app's data is almost at the amount that can be saved at once (2MB). It's safer to ask the app's creator to split the data, for example by year",
+  [APP_DATA_WARNINGS.user]: "Your saved data is almost at the limit (10MB across all apps)",
+  [APP_DATA_WARNINGS.group]: "This group's shared data is almost at the limit (10MB). It's safer to delete items you no longer need",
+  [GROUP_QUOTA_MESSAGE]: "This group's shared data storage (10MB) is full. Delete items you no longer need",
+  保存データを読み込めませんでした: "Couldn't load the saved data",
+  不正なデータです: "Invalid data",
+  "この端末に保存できませんでした。ブラウザの保存領域がいっぱいの可能性があります":
+    "Couldn't save on this device. The browser's storage may be full",
+  保存容量がもうすぐいっぱいです: "Your storage is almost full",
+  保存容量がいっぱいです: "Your storage is full",
 };
 
 /** 一部だけ変わる文（アプリ名などが入る） */
@@ -144,6 +164,25 @@ const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^「([\s\S]+)」に返信がありました$/, (m) => `New reply to “${m[1]}”`],
   [/^([\s\S]+) さんが「作ってみました」と報告しました$/, (m) => `${m[1]} says they made it`],
   [/^「([\s\S]+)」のコードが更新されました$/, (m) => `“${m[1]}” was updated`],
+  // 保存容量のお知らせ（lib/notifications/storage-notices.ts）
+  [/^「([\s\S]+)」の共有データがもうすぐいっぱいです$/, (m) => `“${m[1]}” shared data is almost full`],
+  [/^「([\s\S]+)」の共有データがいっぱいです$/, (m) => `“${m[1]}” shared data is full`],
+  [
+    /^アプリに保存しているデータが (\S+) \/ (\S+) になりました。/,
+    (m) => `Your saved app data is now ${m[1]} / ${m[2]}. Once it's full, nothing new can be saved. It's safer to delete data from apps you no longer use.`,
+  ],
+  [
+    /^アプリに保存できるデータ（全アプリで (\S+)）がいっぱいになったため、/,
+    (m) => `Your app data storage (${m[1]} across all apps) is full, so it couldn't be saved. Delete data from apps you no longer use to save again.`,
+  ],
+  [
+    /^グループの共有データが (\S+) \/ (\S+) になりました。/,
+    (m) => `The group's shared data is now ${m[1]} / ${m[2]}. Once it's full, members can't add anything new. It's safer to delete items you no longer need.`,
+  ],
+  [
+    /^グループの共有データ（(\S+)）がいっぱいになったため、/,
+    (m) => `The group's shared data (${m[1]}) is full, so members' writes were refused. Delete items you no longer need to write again.`,
+  ],
 ];
 
 export function translateApiMessage(message: string): string {

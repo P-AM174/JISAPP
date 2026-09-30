@@ -45,6 +45,7 @@ import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncLoginButton } from "@/components/app-runner";
 import { SyncInfoModal } from "@/components/sync-info-modal";
+import { AppDataNotice } from "@/components/app-data-notice";
 import { ShareButton } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { AppGroupPanel } from "@/components/groups/app-group-panel";
@@ -355,6 +356,8 @@ ${app.js_code ?? ""}`)}
           </div>
         )}
       </main>
+
+      <AppDataNotice />
 
       <SyncInfoModal
         open={syncModalOpen}

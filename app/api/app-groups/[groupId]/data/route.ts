@@ -10,8 +10,11 @@ import {
   isValidDataKey,
   toPublicGroup,
   toPublicMember,
+  type GroupRow,
   type MemberRow,
 } from "@/lib/groups/server";
+import { APP_DATA_LIMITS, APP_DATA_LIMIT_MESSAGES, GROUP_QUOTA_MESSAGE, checkAppDataValue, utf8Bytes } from "@/lib/app-data-limits";
+import { notifyGroupStorageAlmostFull, notifyGroupStorageFull } from "@/lib/notifications/storage-notices";
 
 type Ctx = { params: Promise<{ groupId: string }> };
 
@@ -37,6 +40,36 @@ function parseValue(raw: string): unknown {
 
 function fail(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+/**
+ * 保存する値を確かめる（画像・動画でないか、グループの合計容量を超えないか）。
+ * 問題があれば rejected にエラーの応答を入れて返す。almostFull は、保存後の合計が上限の8割を超えるとき true。
+ * replacingKey：save で上書きするキー（その分は合計から除く）。add のときは null
+ */
+async function checkGroupValue(
+  client: ReturnType<typeof db>,
+  group: GroupRow,
+  value: string,
+  replacingKey: string | null
+): Promise<{ rejected: NextResponse | null; almostFull: boolean }> {
+  const problem = checkAppDataValue(value);
+  if (problem) return { rejected: fail(APP_DATA_LIMIT_MESSAGES[problem], problem === "media_not_allowed" ? 415 : 413), almostFull: false };
+  const { data: used, error } = await client.rpc("app_group_data_bytes", { p_group_id: group.id, p_data_key: replacingKey });
+  if (error) {
+    // 集計用の SQL（scripts/add-app-data-limits.sql）がまだ無いときは、保存は止めずに記録だけ残す
+    console.error("[app-groups data] usage", error.message);
+    return { rejected: null, almostFull: false };
+  }
+  const total = Number(used ?? 0) + utf8Bytes(value);
+  if (total > APP_DATA_LIMITS.groupBytes) {
+    await notifyGroupStorageFull(group.owner_id, group.app_id, group.id, group.name);
+    return { rejected: fail(GROUP_QUOTA_MESSAGE, 507), almostFull: false };
+  }
+  const almostFull = total > APP_DATA_LIMITS.groupBytes * APP_DATA_LIMITS.warnRatio;
+  // もうすぐいっぱいなら、グループを作った人のベルマークに届ける（30日に1回）
+  if (almostFull) await notifyGroupStorageAlmostFull(group.owner_id, group.app_id, group.id, group.name, total);
+  return { rejected: null, almostFull };
 }
 
 /**
@@ -92,6 +125,8 @@ export async function POST(req: Request, ctx: Ctx) {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
       const value = typeof body.value === "string" ? body.value : "null";
       if (value.length > GROUP_LIMITS.valueChars) return fail("データが大きすぎます");
+      const { rejected, almostFull } = await checkGroupValue(client, group, value, body.key);
+      if (rejected) return rejected;
       const { error } = await client.from("app_group_values").upsert(
         {
           group_id: groupId,
@@ -103,7 +138,7 @@ export async function POST(req: Request, ctx: Ctx) {
         { onConflict: "group_id,data_key" }
       );
       if (error) return fail("保存できませんでした", 500);
-      return NextResponse.json({ result: parseValue(value) });
+      return NextResponse.json({ result: parseValue(value), warning: almostFull ? "group" : null });
     }
 
     case "list": {
@@ -129,6 +164,8 @@ export async function POST(req: Request, ctx: Ctx) {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
       const value = typeof body.value === "string" ? body.value : "null";
       if (value.length > GROUP_LIMITS.valueChars) return fail("データが大きすぎます");
+      const { rejected, almostFull } = await checkGroupValue(client, group, value, null);
+      if (rejected) return rejected;
       const { count } = await client
         .from("app_group_items")
         .select("id", { count: "exact", head: true })
@@ -158,6 +195,7 @@ export async function POST(req: Request, ctx: Ctx) {
       if (error || !data) return fail("追加できませんでした", 500);
       return NextResponse.json({
         result: toItem(data as ItemRow, member, new Map([[member.id, member.display_name]])),
+        warning: almostFull ? "group" : null,
       });
     }
 

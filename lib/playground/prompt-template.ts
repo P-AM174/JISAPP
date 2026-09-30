@@ -20,7 +20,10 @@ export const PROMPT_STORAGE_ZISUP = `【データ保存（ジサップの保存�
   ・読込: await window.Jisapp.loadData('識別名')
 ・識別名は英数字で、アプリ内で一度決めたら変えない。
 ・画面を出す前に、必ず await で読み込みを完了させる。
-・ログインしていると別の端末でも同じデータが読める。`;
+・ログインしていると別の端末でも同じデータが読める。
+・保存できるのは文字のデータだけ。画像・動画・音声は保存できない（画面に表示するだけならよい。写真を残したいときは、題名やメモなど文字だけを保存する）。
+・1つの識別名に保存できるのは1MBまで。日記や記録のように増え続けるデータは、年ごとに識別名を分けて保存する（例: diary_2026, diary_2027）。表示するときは必要な年の分だけ読み込む。
+・saveData が失敗したとき（容量オーバーなど）は、画面に「保存できませんでした」と表示する。`;
 
 export const PROMPT_STORAGE_ZISUP_EN = `[Saving data (use Jisapp's save feature)]
 - Whatever the user enters or records must still be there the next time they open the app.
@@ -29,7 +32,10 @@ export const PROMPT_STORAGE_ZISUP_EN = `[Saving data (use Jisapp's save feature)
   - Load: await window.Jisapp.loadData('keyName')
 - Key names use letters and numbers only, and never change once chosen.
 - Always finish loading with await before showing the screen.
-- When the user is signed in, the same data can be read on other devices.`;
+- When the user is signed in, the same data can be read on other devices.
+- Only text data can be saved. Images, video and audio cannot be saved (showing them on screen is fine; to keep a photo, save only text such as its title or notes).
+- Each key can hold up to 1MB. For data that keeps growing, like a diary or log, use a separate key per year (e.g. diary_2026, diary_2027) and load only the years you need.
+- If saveData fails (for example, the storage is full), show "Could not save" on screen.`;
 
 /** 同じ端末のブラウザ内だけ残す */
 export const PROMPT_STORAGE_LOCAL = `【データ保存（この端末のブラウザ内だけ）】
@@ -65,6 +71,7 @@ export const PROMPT_STORAGE_SHARED = `【みんなで共有するデータ（ジ
 ・自分の表示名: const me = await window.Jisapp.me()（{ id, name }）
 ・項目には「誰が書いたか」（item.author.name）と日時を表示する。削除ボタンは item.mine の項目にだけ出す。
 ・キー名は英数字（例: attendance, posts）で、アプリ内で一度決めたら変えない。
+・共有できるのは文字のデータだけ。画像・動画・音声は保存できない（画面に表示するだけならよい）。
 ・グループの作成・招待・参加はジサップの画面が行うので、アプリの中には作らない。`;
 
 export const PROMPT_STORAGE_SHARED_EN = `[Data shared with the whole group (use Jisapp's group sharing)]
@@ -83,6 +90,7 @@ export const PROMPT_STORAGE_SHARED_EN = `[Data shared with the whole group (use 
 - Your display name: const me = await window.Jisapp.me() ({ id, name })
 - Show who wrote each item (item.author.name) and when. Only show a delete button on items where item.mine is true.
 - Key names use letters and numbers (e.g. attendance, posts) and never change once chosen.
+- Only text data can be shared. Images, video and audio cannot be saved (showing them on screen is fine).
 - Creating, inviting to and joining groups is handled by Jisapp's own screens, so do not build that into the app.`;
 
 /** 表示言語に合わせた保存の指示文 */
@@ -407,6 +415,7 @@ export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守っ
 ・別の端末でも残したいデータがある場合は window.Jisapp.saveData / loadData を使う（localStorageは使わない）
   保存: await window.Jisapp.saveData('識別名', データ)
   読込: await window.Jisapp.loadData('識別名')
+  保存できるのは文字のデータだけ（画像・動画は不可）。1つの識別名は1MBまでなので、増え続けるデータは年ごとに識別名を分ける
 ・同じ端末だけでよければ localStorage を使う（Jisapp の保存APIは使わない）
 ・APIキー・トークンをコードに絶対に書かない。外部APIは window.Jisapp.fetch(url, { secret: 'NAME' }) を使う
 ・secret 名は大文字英字（例: GEMINI, OPENAI, WEATHER）。キーの値はユーザーがジサップの「APIキー」画面で登録する
@@ -420,6 +429,7 @@ export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
 - If data should stay across devices, use window.Jisapp.saveData / loadData (not localStorage)
   Save: await window.Jisapp.saveData('keyName', data)
   Load: await window.Jisapp.loadData('keyName')
+  Only text data can be saved (no images or video). Each key holds up to 1MB, so split growing data into one key per year
 - If the same device is enough, use localStorage (don't use Jisapp's save API)
 - Never write API keys or tokens in the code. Call external APIs with window.Jisapp.fetch(url, { secret: 'NAME' })
 - Secret names are uppercase (e.g. GEMINI, OPENAI, WEATHER). Users register the key's value on Jisapp's "API keys" screen

@@ -36,12 +36,28 @@ export function normalizePastedCode(raw: string): string {
   return text.trim();
 }
 
-export type CodeIssue = "not_html" | "truncated";
+export type CodeIssue = "prompt" | "not_html" | "truncated";
+
+/**
+ * ジサップが作ったプロンプト（AIへの指示文）に必ず入っている目印。
+ * AIの返事を待たずにコピーすると、クリップボードに指示文が残ったまま貼られてしまう
+ */
+const PROMPT_MARKERS = [
+  "あなたはジサップ（Jisapp）向けの優秀なフロントエンドエンジニアです",
+  "【コードを書くときのルール】",
+  "【ジサップ必須ルール",
+  "You are an excellent front-end engineer building apps for Jisapp",
+  "[Rules for writing the code]",
+  "[Jisapp rules",
+];
 
 /** 貼り付けたコードで、初心者がつまずきやすい状態を見つける */
 export function detectCodeIssue(code: string): CodeIssue | null {
   const trimmed = code.trim();
   if (!trimmed) return null;
+  if (PROMPT_MARKERS.some((m) => trimmed.includes(m)) && !/<!doctype html|<html[\s>]/i.test(trimmed)) {
+    return "prompt";
+  }
   if (!/<[a-zA-Z!]/.test(trimmed)) return "not_html";
   const startsDocument = /<!doctype html|<html[\s>]/i.test(trimmed);
   if (startsDocument && !/<\/html>\s*$/i.test(trimmed)) return "truncated";

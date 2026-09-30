@@ -1,24 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Database } from "lucide-react";
 import { formatBytes } from "@/lib/app-data-limits";
 import { useT } from "@/lib/i18n/client";
 
-type Usage = { available: boolean; usedBytes?: number; limitBytes: number; warnRatio?: number };
+export type AppDataUsage = {
+  available: boolean;
+  usedBytes?: number;
+  limitBytes: number;
+  warnRatio?: number;
+  /** アプリごとの内訳（byApp を付けて取得したとき） */
+  apps?: Record<string, number>;
+};
 
-/**
- * マイページの保存容量メーター。アプリが window.Zisup で保存したデータの合計（全アプリ分・圧縮後）を表示する。
- * 将来の有料プランでは、ここに「容量を増やす」への案内を置く想定。
- */
-export function StorageMeter() {
-  const t = useT();
-  const [usage, setUsage] = useState<Usage | null>(null);
-
+/** 自分の保存容量を取得する。byApp なら、アプリごとの内訳も取る */
+export function useAppDataUsage(enabled = true, byApp = false): AppDataUsage | null {
+  const [usage, setUsage] = useState<AppDataUsage | null>(null);
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
-    fetch("/api/app-data/usage")
-      .then((res) => (res.ok ? (res.json() as Promise<Usage>) : null))
+    fetch(byApp ? "/api/app-data/usage?byApp=1" : "/api/app-data/usage")
+      .then((res) => (res.ok ? (res.json() as Promise<AppDataUsage>) : null))
       .then((data) => {
         if (!cancelled) setUsage(data);
       })
@@ -26,7 +29,19 @@ export function StorageMeter() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled, byApp]);
+  return usage;
+}
+
+/**
+ * 保存容量メーター（マイページ・マイプロジェクト）。アプリが window.Jisapp で保存したデータの合計（全アプリ分・圧縮後）を表示する。
+ * usage を渡すとそれを使い、渡さなければ自分で取得する。
+ * 将来の有料プランでは、ここに「容量を増やす」への案内を置く想定。
+ */
+export function StorageMeter({ usage: given, children }: { usage?: AppDataUsage | null; children?: ReactNode } = {}) {
+  const t = useT();
+  const fetched = useAppDataUsage(given === undefined);
+  const usage = given === undefined ? fetched : given;
 
   // 集計の準備ができていない・取得できないときは出さない
   if (!usage?.available || usage.usedBytes === undefined) return null;
@@ -60,6 +75,7 @@ export function StorageMeter() {
             ? t("もうすぐいっぱいです。使っていないアプリのデータを消しておくと安心です。", "Almost full. It's safer to delete data from apps you no longer use.")
             : t("ログインして保存したアプリのデータ（全アプリ分）です。文字のデータだけ保存でき、画像・動画は保存できません。", "Data your apps saved while you were signed in (all apps). Only text can be saved — no images or videos.")}
       </p>
+      {children}
     </div>
   );
 }

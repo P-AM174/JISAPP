@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { LibraryDetailSheet } from "@/components/library/library-detail-sheet";
+import { useAppDataUsage } from "@/components/storage-meter";
+import { formatBytes } from "@/lib/app-data-limits";
 import {
   LIBRARY_SORT_MODES,
   lastOpenedLabel,
@@ -57,6 +59,8 @@ export default function LibraryPage() {
   const [removing, setRemoving] = useState(false);
   const [sortMode, setSortMode] = useState<LibrarySortMode>("recent");
   const [selected, setSelected] = useState<LibraryEntry | null>(null);
+  // アプリごとに自分が保存しているデータの量
+  const usage = useAppDataUsage(isLoggedIn, true);
 
   useEffect(() => {
     setSortMode(readSavedSort());
@@ -254,7 +258,12 @@ export default function LibraryPage() {
                       <p className="line-clamp-2 text-sm font-bold leading-snug text-gray-900 group-hover:text-teal-700">
                         {entry.name ?? t("アプリ", "App")}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-gray-400">{lastOpenedLabel(entry, t, intlLocale(locale))}</p>
+                      <p className="mt-0.5 text-[11px] text-gray-400">
+                        {lastOpenedLabel(entry, t, intlLocale(locale))}
+                        {!!usage?.apps?.[entry.appId] && (
+                          <span className="text-emerald-700"> · {formatBytes(usage.apps[entry.appId])}</span>
+                        )}
+                      </p>
                     </button>
                     <div className="mt-auto flex items-center gap-1.5">
                       <button
@@ -284,6 +293,8 @@ export default function LibraryPage() {
         <LibraryDetailSheet
           entry={selected}
           gradient={getGradient(selected)}
+          storageBytes={usage?.apps ? (usage.apps[selected.appId] ?? 0) : undefined}
+          storageLimitBytes={usage?.limitBytes}
           onClose={() => setSelected(null)}
           onOpen={() => router.push(`/apps/${selected.appId}`)}
           onTogglePin={() => togglePin(selected)}

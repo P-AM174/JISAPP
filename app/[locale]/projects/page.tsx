@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   X,
   LibraryBig,
+  Database,
   Key,
   ClipboardList,
   Lightbulb,
@@ -52,6 +53,8 @@ import { supabase } from "@/lib/supabase";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { intlLocale, localizePath, makeT, type Locale } from "@/lib/i18n/config";
 import { categoryName } from "@/lib/categories";
+import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
+import { formatBytes } from "@/lib/app-data-limits";
 
 // ─── 型定義 ───
 type Project = {
@@ -152,8 +155,10 @@ const DEMO_PROJECTS: Project[] = [];
 const STATIC_ACQUIRED: AcquiredApp[] = [];
 
 // ─── プロジェクトカード ───
-function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
+function ProjectCard({ proj, storageBytes, onDelete, onPublish, onUnlist }: {
   proj: Project;
+  /** このアプリに自分が保存しているデータの量（公開したアプリだけ） */
+  storageBytes?: number;
   onDelete?: (id: string) => void;
   onPublish?: (proj: Project) => void;
   onUnlist?: (proj: Project) => void;
@@ -255,6 +260,12 @@ function ProjectCard({ proj, onDelete, onPublish, onUnlist }: {
             <span className="flex items-center gap-1 text-teal-600">
               <LibraryBig className="h-3 w-3" />
               {t(`${proj.libraryCount}人がライブラリ登録`, `In ${proj.libraryCount} ${proj.libraryCount === 1 ? "library" : "libraries"}`)}
+            </span>
+          )}
+          {!!storageBytes && (
+            <span className="flex items-center gap-1 text-emerald-700" title={t("このアプリに自分が保存しているデータ", "Data you've saved in this app")}>
+              <Database className="h-3 w-3" />
+              {t(`保存データ ${formatBytes(storageBytes)}`, `${formatBytes(storageBytes)} saved`)}
             </span>
           )}
         </div>
@@ -380,6 +391,9 @@ export default function ProjectsPage() {
   const [mounted, setMounted] = useState(false);
   const [acquiredApps, setAcquiredApps] = useState<AcquiredApp[]>([]);
   const [myProjects, setMyProjects] = useState<Project[]>(DEMO_PROJECTS);
+  // 保存容量（全アプリの合計と、アプリごとの内訳）
+  const usage = useAppDataUsage(mounted, true);
+  const playgroundBytes = usage?.apps?.playground ?? 0;
 
   // 出品済みマップ: projectId → PublishedInfo
   const [publishedMap, setPublishedMap] = useState<Record<string, PublishedInfo>>({});
@@ -879,6 +893,18 @@ export default function ProjectsPage() {
           </div>
         </div>
 
+        {/* ══════════ 保存容量 ══════════ */}
+        <StorageMeter usage={usage}>
+          {playgroundBytes > 0 && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t(
+                `うち、開発スタジオで試したときの保存データ：${formatBytes(playgroundBytes)}`,
+                `Including ${formatBytes(playgroundBytes)} saved while testing in the Studio`
+              )}
+            </p>
+          )}
+        </StorageMeter>
+
         {/* ══════════ 検索バー ══════════ */}
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -942,7 +968,7 @@ export default function ProjectsPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredProjects.map((proj) => (
-                    <ProjectCard key={proj.id} proj={proj} onDelete={handleDeleteProject} onPublish={openPublishModal} onUnlist={handleUnlist} />
+                    <ProjectCard key={proj.id} proj={proj} storageBytes={proj.appId ? usage?.apps?.[proj.appId] : undefined} onDelete={handleDeleteProject} onPublish={openPublishModal} onUnlist={handleUnlist} />
                   ))}
 
                   {/* 新規作成カード */}

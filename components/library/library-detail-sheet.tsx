@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "@/lib/i18n/navigation";
-import { ChevronRight, ExternalLink, Pin, PinOff, Trash2, X } from "lucide-react";
+import { ChevronRight, Database, ExternalLink, Pin, PinOff, Trash2, X } from "lucide-react";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 import { categoryName } from "@/lib/categories";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { intlLocale } from "@/lib/i18n/config";
 import { lastOpenedLabel, type LibraryEntry } from "@/lib/library/sort";
+import { formatBytes } from "@/lib/app-data-limits";
 
 type Detail = {
   title: string;
@@ -24,6 +25,8 @@ type Detail = {
 export function LibraryDetailSheet({
   entry,
   gradient,
+  storageBytes,
+  storageLimitBytes,
   onClose,
   onOpen,
   onTogglePin,
@@ -31,6 +34,10 @@ export function LibraryDetailSheet({
 }: {
   entry: LibraryEntry;
   gradient: string;
+  /** このアプリに自分が保存しているデータの量（取得できないときは undefined） */
+  storageBytes?: number;
+  /** 全アプリ合計の上限 */
+  storageLimitBytes?: number;
   onClose: () => void;
   onOpen: () => void;
   onTogglePin: () => void;
@@ -154,6 +161,21 @@ export function LibraryDetailSheet({
               </div>
             ))}
           </div>
+          {storageBytes !== undefined && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50/60 px-3 py-2.5 text-xs text-gray-600">
+              <Database className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span className="flex-1">
+                {storageBytes > 0
+                  ? t(`このアプリに保存したあなたのデータ：${formatBytes(storageBytes)}`, `Your data saved in this app: ${formatBytes(storageBytes)}`)
+                  : t("このアプリには、まだデータを保存していません", "You haven't saved any data in this app yet")}
+              </span>
+              {storageLimitBytes && (
+                <span className="shrink-0 text-[10px] text-gray-400">
+                  {t(`全アプリで${formatBytes(storageLimitBytes)}まで`, `${formatBytes(storageLimitBytes)} across all apps`)}
+                </span>
+              )}
+            </div>
+          )}
           {failed && (
             <p className="text-center text-xs text-gray-400">{t("詳しい情報を読み込めませんでした", "Couldn't load the details")}</p>
           )}

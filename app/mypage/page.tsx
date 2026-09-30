@@ -7,6 +7,7 @@ import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { StorageMeter } from "@/components/storage-meter";
 import {
   Package,
   ShieldCheck,
@@ -295,6 +296,9 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+
+        {/* ─── 保存容量 ─── */}
+        {mounted && <StorageMeter />}
 
         {/* ─── マイプロジェクト ─── */}
         <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">

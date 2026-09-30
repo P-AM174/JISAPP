@@ -33,7 +33,14 @@ export const APP_DATA_LIMIT_MESSAGES: Record<AppDataLimitCode, string> = {
 export const APP_DATA_WARNINGS = {
   value: "このアプリのデータが、もうすぐ1回に保存できる量（2MB）に届きます。アプリの作者に、データを年ごとなどに分けて保存する形に直してもらうと安心です",
   user: "保存しているデータの合計が、もうすぐ上限（全アプリで10MB）に届きます",
+  group: "このグループの共有データが、もうすぐ上限（10MB）に届きます。不要な項目を消しておくと安心です",
 } as const;
+
+/** バイト数を「3.2MB」「512KB」のように表す */
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
 export type AppDataWarning = keyof typeof APP_DATA_WARNINGS;
 
 export const GROUP_QUOTA_MESSAGE = "このグループの共有データの容量（10MB）がいっぱいです。不要な項目を消してください";

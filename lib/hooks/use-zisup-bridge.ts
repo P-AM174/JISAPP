@@ -56,8 +56,10 @@ async function callGroupData(group: GroupSession, body: Record<string, unknown>)
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ memberKey: group.memberKey, ...body }),
   });
-  const json = (await res.json().catch(() => ({}))) as { result?: unknown; error?: string };
+  const json = (await res.json().catch(() => ({}))) as { result?: unknown; error?: string; warning?: AppDataWarning | null };
   if (!res.ok) throw new Error(json.error ?? "共有データの通信に失敗しました");
+  // グループの共有データがもうすぐいっぱいなら、書き込んだ人の画面にも知らせる
+  if (json.warning) notifyAppDataWarning(group.appId, json.warning);
   return json.result ?? null;
 }
 

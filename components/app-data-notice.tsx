@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, X } from "lucide-react";
 import { APP_DATA_ERROR_EVENT } from "@/lib/hooks/use-zisup-bridge";
 
@@ -28,8 +29,10 @@ export function AppDataNotice() {
   }, []);
 
   if (!notice) return null;
-  return (
-    <div role="alert" className="pointer-events-none fixed inset-x-0 bottom-4 z-[500] flex justify-center px-4">
+  // アプリの枠の中に置くと、枠の重なり順に閉じ込められて下のボタンに隠れるので、画面全体の一番上に出す。
+  // スマホでは画面下の「公開してURLを発行」などのボタンを避けるため、開発スタジオの通知と同じ高さにする
+  return createPortal(
+    <div role="alert" className="pointer-events-none fixed inset-x-0 bottom-24 z-[600] flex justify-center px-4 md:bottom-6">
       <div className="pointer-events-auto flex max-w-md items-start gap-3 rounded-2xl bg-slate-900/95 px-4 py-3 text-sm text-white shadow-2xl">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
         <p className="flex-1 leading-relaxed">
@@ -40,6 +43,7 @@ export function AppDataNotice() {
           <X className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

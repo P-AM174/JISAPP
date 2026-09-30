@@ -12,6 +12,7 @@ import {
   type AppDataWarning,
 } from "@/lib/app-data-limits";
 import { decodeAppDataValue } from "@/lib/app-data-codec-server";
+import { notifyStorageAlmostFull, notifyStorageFull } from "@/lib/notifications/storage-notices";
 
 const supabase = createServerSupabaseClient();
 
@@ -151,6 +152,7 @@ export async function POST(req: Request) {
     // 集計用の SQL（scripts/add-app-data-limits.sql）がまだ無いときは、保存は止めずに記録だけ残す
     console.error("[app-data POST] usage", usageError.message);
   } else if (userTotal !== null && userTotal > APP_DATA_LIMITS.userBytes) {
+    await notifyStorageFull(userId);
     return limitError("quota_exceeded");
   }
 
@@ -173,12 +175,11 @@ export async function POST(req: Request) {
   }
 
   // 上限の手前（8割）まで来ていたら、画面で知らせるための合図を返す
+  const userAlmostFull = userTotal !== null && userTotal > APP_DATA_LIMITS.userBytes * APP_DATA_LIMITS.warnRatio;
   const warning: AppDataWarning | null =
-    storedBytes > APP_DATA_LIMITS.valueBytes * APP_DATA_LIMITS.warnRatio
-      ? "value"
-      : userTotal !== null && userTotal > APP_DATA_LIMITS.userBytes * APP_DATA_LIMITS.warnRatio
-        ? "user"
-        : null;
+    storedBytes > APP_DATA_LIMITS.valueBytes * APP_DATA_LIMITS.warnRatio ? "value" : userAlmostFull ? "user" : null;
+  // 合計がもうすぐいっぱいなら、アプリを開いていなくても気づけるようベルマークにも届ける（30日に1回）
+  if (userAlmostFull && userTotal !== null) await notifyStorageAlmostFull(userId, userTotal);
 
   return NextResponse.json({ ok: true, logged_in: true, in_library: true, warning });
 }

@@ -152,6 +152,18 @@ for (const file of SCAN_DIRS.flatMap((d) => walk(path.join(ROOT, d)))) {
     const e = literal(en);
     if (j !== null && e !== null) return add(j, e, `${rel}:${lineOf(ja)}`);
     if (ts.isArrayLiteralExpression(ja) && ts.isArrayLiteralExpression(en)) {
+      // { id: "x" } と { id: "x-en" } のように id があれば、並び順ではなく id で組にする
+      const idOf = (el) => {
+        if (!ts.isObjectLiteralExpression(el)) return null;
+        const p = el.properties.find((q) => ts.isPropertyAssignment(q) && q.name && q.name.text === "id");
+        const v = p ? literal(p.initializer) : null;
+        return v === null ? null : v.replace(/-en$/, "");
+      };
+      if (ja.elements.length && ja.elements.every((el) => idOf(el) !== null)) {
+        const byId = new Map(en.elements.map((el) => [idOf(el), el]));
+        ja.elements.forEach((el) => pairDeep(el, byId.get(idOf(el))));
+        return;
+      }
       ja.elements.forEach((el, i) => pairDeep(el, en.elements[i]));
     } else if (ts.isObjectLiteralExpression(ja) && ts.isObjectLiteralExpression(en)) {
       const jp = new Map();

@@ -1865,7 +1865,7 @@ export default function PlaygroundPage() {
       <div className="flex shrink-0 items-center gap-2 border-b border-slate-200/80 bg-white px-3 py-1.5">
         <span className={cn("h-2 w-2 shrink-0 rounded-full", showGuide ? "bg-slate-300" : "bg-emerald-500")} />
         <span className="truncate text-xs font-semibold text-slate-600">
-          {showGuide ? t("プレビュー", "Preview") : isSample ? t("サンプル：反射神経タップ", "Sample: Reaction Tap") : t("あなたのアプリ", "Your app")}
+          {showGuide ? t("プレビュー", "Preview") : isSample ? (locale === "vi" ? t("サンプル：割り勘の計算", "Sample: Split the bill") : t("サンプル：反射神経タップ", "Sample: Reaction Tap")) : t("あなたのアプリ", "Your app")}
         </span>
         <div className="ml-auto flex items-center gap-1">
           {variant === "desktop" && (

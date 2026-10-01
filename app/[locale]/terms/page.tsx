@@ -21,7 +21,15 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
       </header>
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">
         <h1 className="text-2xl font-black text-gray-900">{t("利用規約", "Terms of Service")}</h1>
-        {locale === "en" && (
+        {locale === "vi" && (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+            {t(
+              "利用規約のベトナム語版は、内容の確認が済むまで公開しません。それまでは下の英語版をご覧ください。英語版と日本語版で内容が異なる場合は、日本語版が優先されます。",
+              "The Vietnamese version of these terms is being reviewed and isn't available yet. Until then, please read the English version below. If the English and Japanese versions differ, the Japanese version prevails."
+            )}
+          </p>
+        )}
+        {locale !== "ja" && (
           <p className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs leading-relaxed text-gray-600">
             This is an English translation provided for convenience. If there is any difference between this translation
             and the{" "}
@@ -33,7 +41,8 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
           </p>
         )}
         <SecurityNotice />
-        {locale === "en" ? <TermsEn /> : <TermsJa />}
+        {/* ベトナム語の規約は弁護士の確認が済むまで出さず、英語版を表示する */}
+        {locale === "ja" ? <TermsJa /> : <TermsEn />}
       </main>
     </div>
   );

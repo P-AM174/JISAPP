@@ -18,7 +18,7 @@ import {
   Package,
 } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, type Locale, format, plural } from "@/lib/i18n/config";
+import { intlLocale, type Locale, format, plural, pick } from "@/lib/i18n/config";
 
 type AppRequest = {
   id: string;
@@ -177,7 +177,7 @@ export default function RequestDetailPage() {
           <div className="space-y-5 lg:col-span-2">
             <section className="rounded-3xl bg-white p-7 shadow-sm ring-1 ring-black/5">
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">{locale === "en" ? CATEGORY_EN[request.category] ?? request.category : request.category}</span>
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">{pick(locale, request.category, CATEGORY_EN[request.category] ?? request.category)}</span>
                 <span className="flex items-center gap-1 text-xs text-gray-400">
                   <Tag className="h-3 w-3" /> {request.authorName}
                 </span>

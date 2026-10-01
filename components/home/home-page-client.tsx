@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "@/lib/i18n/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, format, plural } from "@/lib/i18n/config";
+import { intlLocale, format, plural, pick } from "@/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSession } from "next-auth/react";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
@@ -59,6 +59,9 @@ import type { ModalApp } from "@/components/app-catalog/types";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 
 import { ContactFormModal } from "@/components/support/contact-form-modal";
+
+/** 依頼のステータスは日本語のまま保存するので、表示だけ訳す */
+const REQUEST_STATUS_EN: Record<string, string> = { 完了: "Done", 納品済み: "Delivered", 開発中: "In progress", 相談中: "Discussing" };
 
 type ChatRoom = {
   id: string;
@@ -243,8 +246,8 @@ function SiteHeader({
 
   const statusLabel = (s?: string) => {
     const v = s ?? "相談中";
-    if (locale !== "en") return v;
-    return ({ 完了: "Done", 納品済み: "Delivered", 開発中: "In progress", 相談中: "Discussing" } as Record<string, string>)[v] ?? v;
+    const en = REQUEST_STATUS_EN[v];
+    return en ? pick(locale, v, en) : v;
   };
 
   const statusColor = (s?: string) => {

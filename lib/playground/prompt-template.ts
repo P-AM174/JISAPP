@@ -1,7 +1,7 @@
-import type { Locale } from "@/lib/i18n/config";
+import { pick, type Locale } from "@/lib/i18n/config";
 
 /*
- * AI に渡す指示文。日本語版と英語版がある。
+ * AI に渡す指示文。日本語版・英語版・ベトナム語版（英語の指示文＋画面はベトナム語）がある。
  * 英語で使っている人には英語の指示文を渡し、画面の文字も英語のアプリを作ってもらう。
  * アプリ内APIの正式名は window.Jisapp（旧名 window.Zisup も動く）。
  */
@@ -95,7 +95,7 @@ export const PROMPT_STORAGE_SHARED_EN = `[Data shared with the whole group (use 
 
 /** 表示言語に合わせた保存の指示文 */
 export function getPromptStorage(locale: Locale = "ja") {
-  const en = locale === "en";
+  const en = locale !== "ja";
   return {
     cloud: en ? PROMPT_STORAGE_ZISUP_EN : PROMPT_STORAGE_ZISUP,
     local: en ? PROMPT_STORAGE_LOCAL_EN : PROMPT_STORAGE_LOCAL,
@@ -108,7 +108,7 @@ export function getPromptStorage(locale: Locale = "ja") {
  * コードを渡すと末尾に付ける（AIに1回貼るだけで済むように）。
  */
 export function buildSharedConvertMessage(code?: string, locale: Locale = "ja"): string {
-  if (locale === "en") {
+  if (locale !== "ja") {
     const current = code?.trim()
       ? `[Current code]\n${code.trim()}`
       : "[Current code]\n(Paste your app's current code here)";
@@ -353,10 +353,12 @@ export function buildPromptFromTemplate(
   details?: string,
   options?: BuildPromptOptions
 ): string {
-  const en = options?.locale === "en";
-  const placeholder = en ? PROMPT_APP_NAME_PLACEHOLDER_EN : PROMPT_APP_NAME_PLACEHOLDER;
+  const vi = options?.locale === "vi";
+  // ベトナム語は英語の指示文をもとにする（画面はベトナム語にしてもらう）
+  const en = options?.locale === "en" || vi;
+  const placeholder = vi ? PROMPT_APP_NAME_PLACEHOLDER_VI : en ? PROMPT_APP_NAME_PLACEHOLDER_EN : PROMPT_APP_NAME_PLACEHOLDER;
   const name = appName.trim() || placeholder;
-  let prompt = (en ? PROMPT_TEMPLATE_EN : PROMPT_TEMPLATE).split(placeholder).join(name);
+  let prompt = (vi ? PROMPT_TEMPLATE_VI : en ? PROMPT_TEMPLATE_EN : PROMPT_TEMPLATE).split(placeholder).join(name);
 
   const storage = getPromptStorage(options?.locale);
   const personalBlock = options?.storage === "local" ? storage.local : storage.cloud;
@@ -371,7 +373,7 @@ export function buildPromptFromTemplate(
     : `${prompt}\n\n${storageBlock}`;
 
   if (options?.useJisappDesign) {
-    const design = en ? PROMPT_JISAPP_DESIGN_EN : PROMPT_JISAPP_DESIGN;
+    const design = vi ? PROMPT_JISAPP_DESIGN_VI : en ? PROMPT_JISAPP_DESIGN_EN : PROMPT_JISAPP_DESIGN;
     const designBlock = `${design}\n\n`;
     prompt = prompt.includes(storageBlock)
       ? prompt.replace(storageBlock, `${designBlock}${storageBlock}`)
@@ -379,7 +381,7 @@ export function buildPromptFromTemplate(
   }
 
   const extra = details?.trim();
-  if (extra && extra !== "なし" && extra.toLowerCase() !== "none") {
+  if (extra && extra !== "なし" && extra.toLowerCase() !== "none" && extra.toLowerCase() !== "không") {
     const insert = en
       ? `
 
@@ -436,18 +438,16 @@ export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
 - After the code, if an API key is needed, briefly explain how to register it`;
 
 export function getPromptRulesShort(locale: Locale = "ja"): string {
+  if (locale === "vi") return PROMPT_RULES_SHORT_VI;
   return locale === "en" ? PROMPT_RULES_SHORT_EN : PROMPT_RULES_SHORT;
 }
 
 /** 開発スタジオUI用の短い説明文 */
-export const SECRETS_STUDIO_GUIDE =
-  "外部API・AI（OpenAI、天気API、地図APIなど）を使うときは、右上の「…」メニューの「APIキーの登録」からキーを登録してください。コードには secret: 'API_NAME' のように名前だけ書き、値は書きません（API_NAME は登録名と同じ大文字）。";
-
-export const SECRETS_STUDIO_GUIDE_EN =
-  "To use external APIs or AI (OpenAI, weather or map APIs, etc.), register your key from “Register API key” in the “…” menu at the top right. In the code, write only the name, like secret: 'API_NAME' — never the value (API_NAME is the same UPPERCASE name you registered).";
+export { SECRETS_STUDIO_GUIDE, SECRETS_STUDIO_GUIDE_EN } from "./studio-guides";
+import { SECRETS_STUDIO_GUIDE, SECRETS_STUDIO_GUIDE_EN } from "./studio-guides";
 
 export function getSecretsStudioGuide(locale: Locale = "ja"): string {
-  return locale === "en" ? SECRETS_STUDIO_GUIDE_EN : SECRETS_STUDIO_GUIDE;
+  return pick(locale, SECRETS_STUDIO_GUIDE, SECRETS_STUDIO_GUIDE_EN);
 }
 
 export const REPORT_TEMPLATE = `【研究テーマ】
@@ -470,3 +470,44 @@ export const REPORT_TEMPLATE = `【研究テーマ】
 
 【提出物】
 アプリのURL：________________`;
+
+/*
+ * ベトナム語版の AI 指示文。
+ * AI が最も正確に従える英語の指示文をもとにし、作るアプリの画面はベトナム語にしてもらう。
+ * ユーザーが入れる「作りたいもの」はベトナム語のままでよい（AI は理解できる）。
+ * ジサップのルール（1ファイル・CDN 禁止・外部通信は Jisapp.fetch・保存はジサップの API）は英語版と同じ。
+ */
+export const PROMPT_APP_NAME_PLACEHOLDER_VI = "[GHI APP BẠN MUỐN TẠO VÀO ĐÂY]";
+
+/** 画面をベトナム語にするための指定（英語版の「画面は英語で」の代わりに入れる） */
+export const PROMPT_VIETNAMESE_UI = `Write all text in the app's screens (labels, buttons, messages, placeholders, alerts) in natural, friendly Vietnamese with correct diacritics (e.g. "Lưu", "Xóa", "Thêm mới"). Keep it short and casual, suitable for young users.
+The user may describe the app in Vietnamese. Understand it and build exactly that. Write your explanations to the user (outside the code) in Vietnamese as well.
+
+[Vietnamese display rules (required)]
+- Set <html lang="vi"> and <meta charset="UTF-8">.
+- Don't load any web fonts (no Google Fonts, no CDN). Use only system fonts that can display Vietnamese diacritics:
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+- Use line-height around 1.5 so diacritics above and below letters aren't cut off. Don't set fixed heights that clip text on buttons or tags.
+- Vietnamese words are separated by spaces. Never use word-break: break-all.
+- Show dates as dd/mm/yyyy and numbers with "." as the thousands separator, using Intl.DateTimeFormat('vi-VN') and Intl.NumberFormat('vi-VN') (e.g. 1.000.000). Use Vietnamese đồng (₫) for money unless the user asks otherwise.
+- Normalize text the user types with .normalize('NFC') before saving or comparing it.
+- If the app has a search box, also match words typed without diacritics (e.g. "quan ly" finds "quản lý"): compare after removing combining marks (normalize('NFD') and remove /[\\u0300-\\u036f]/g) and replacing đ/Đ with d/D.
+- Vietnamese is typed with input methods (Telex/VNI). Don't submit or search on Enter while text is still being composed (check event.isComposing).`;
+
+const EN_UI_LINE = "Write all text in the app's screens (labels, buttons, messages) in natural English.";
+
+export const PROMPT_TEMPLATE_VI = PROMPT_TEMPLATE_EN.split(PROMPT_APP_NAME_PLACEHOLDER_EN)
+  .join(PROMPT_APP_NAME_PLACEHOLDER_VI)
+  .replace(EN_UI_LINE, PROMPT_VIETNAMESE_UI);
+
+export const PROMPT_JISAPP_DESIGN_VI = PROMPT_JISAPP_DESIGN_EN.replace(
+  '- Font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+  '- Font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif (system fonts only, they must display Vietnamese diacritics)'
+);
+
+export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(
+  "- Write all text in the app's screens in English",
+  `- Write all text in the app's screens in natural Vietnamese with correct diacritics, and set <html lang="vi">
+- Use only system fonts that display Vietnamese (system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif), line-height about 1.5
+- Format dates and numbers with Intl (vi-VN): dd/mm/yyyy, 1.000`
+);

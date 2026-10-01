@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ArrowLeft, CheckCircle2, Copy, FileText, Send, X } from "lucide-react";
 import { buildPromptFromTemplate, getPromptRulesShort } from "@/lib/playground/prompt-template";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { pickDeep } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,6 +19,11 @@ type ChatStep = 0 | 1 | 2 | 3 | "result";
 
 const APP_EXAMPLES = ["日記アプリ", "家計簿", "TODOリスト", "タイマー", "おこづかい帳"];
 const APP_EXAMPLES_EN = ["Diary", "Budget tracker", "To-do list", "Timer", "Allowance log"];
+/**
+ * ベトナム語版の例。生活・学習・仕事のミニアプリにし、ゲームは入れない（lib/features.ts）。
+ * 日本語版とは中身が違うので辞書ではなくここに書く（機械翻訳・ネイティブ未確認）
+ */
+const APP_EXAMPLES_VI = ["Sổ chi tiêu", "Danh sách việc cần làm", "Thẻ học từ vựng", "Hẹn giờ Pomodoro", "Chia tiền nhóm"];
 
 const QUESTIONS_EN = [
   "What app do you want to make?",
@@ -53,10 +59,9 @@ export function PromptBuilderModal({
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const t = useT();
   const locale = useLocale();
-  const en = locale === "en";
   const none = t("なし", "None");
-  const questions = en ? QUESTIONS_EN : QUESTIONS;
-  const appExamples = en ? APP_EXAMPLES_EN : APP_EXAMPLES;
+  const questions = pickDeep<readonly string[]>(locale, QUESTIONS, QUESTIONS_EN);
+  const appExamples = locale === "vi" ? APP_EXAMPLES_VI : locale === "en" ? APP_EXAMPLES_EN : APP_EXAMPLES;
   const rulesShort = getPromptRulesShort(locale);
 
   useEffect(() => {
@@ -109,7 +114,7 @@ export function PromptBuilderModal({
     if (step === 0) return;
     const prev = (step - 1) as 0 | 1 | 2 | 3;
     if (prev === 0) setDraft(appName);
-    if (prev === 1) setDraft(details === "なし" || details === "None" ? "" : details);
+    if (prev === 1) setDraft(details === "なし" || details === "None" || details === none ? "" : details);
     setStep(prev);
   };
 

@@ -1,14 +1,16 @@
 import { CATEGORY_MAP, categoryName } from "@/lib/categories";
 import { OFFICIAL_CREATOR_NAME } from "@/lib/agent/official-creator";
 import type { CatalogCardApp, ModalApp } from "./types";
+import { pick, toLocale } from "@/lib/i18n/config";
 
-/** 作者名の表示。「匿名」「ジサップ公式」はデータ上の名前なので、英語表示のときだけ訳す */
+/** 作者名の表示。「匿名」「ジサップ公式」はデータ上の名前なので、英語・ベトナム語表示のときだけ訳す */
 export function displayCreatorName(name: string | null | undefined, locale: string): string {
   const value = name?.trim() || "匿名";
-  if (locale !== "en") return value;
-  if (value === "匿名") return "Anonymous";
-  if (value === "ゲスト") return "Guest";
-  if (value === OFFICIAL_CREATOR_NAME) return "Jisapp Official";
+  const l = toLocale(locale);
+  if (l === "ja") return value;
+  if (value === "匿名") return pick(l, "匿名", "Anonymous");
+  if (value === "ゲスト") return pick(l, "ゲスト", "Guest");
+  if (value === OFFICIAL_CREATOR_NAME) return pick(l, "ジサップ公式", "Jisapp Official");
   return value;
 }
 

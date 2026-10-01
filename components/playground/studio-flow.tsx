@@ -23,7 +23,7 @@ import { STUDIO_AIS, copyText, type StudioAi } from "@/lib/playground/ai-launch"
 import { buildSharedConvertMessage, getPromptStorage } from "@/lib/playground/prompt-template";
 import { storageFixMessage } from "@/lib/playground/code-cleanup";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { format } from "@/lib/i18n/config";
+import { format, pick, toLocale } from "@/lib/i18n/config";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
 
@@ -148,14 +148,10 @@ export function LaunchAiLink({
 
 /** 主ボタンの下の一言 */
 export function launchCaption(ai: StudioAi, locale = "ja"): string {
-  if (locale === "en") {
-    return ai.url
-      ? `Copies the instructions and opens ${ai.name}`
-      : "Paste the copied instructions into the AI you use";
-  }
+  const l = toLocale(locale);
   return ai.url
-    ? `指示文をコピーして${ai.name}を開きます`
-    : "コピーした指示文を、使っているAIに貼り付けてください";
+    ? format(pick(l, "指示文をコピーして{ai}を開きます", "Copies the instructions and opens {ai}"), { ai: ai.name })
+    : pick(l, "コピーした指示文を、使っているAIに貼り付けてください", "Paste the copied instructions into the AI you use");
 }
 
 // ─── データ保存の指定（コードを直接貼る人向け） ───

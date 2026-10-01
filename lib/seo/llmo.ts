@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, localizePath, type Locale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, localizePath, pickDeep, type Locale } from "@/lib/i18n/config";
 import {
   SITE_BRAND,
   SITE_SAME_AS,
@@ -213,8 +213,8 @@ const LLMO_EN: LlmoContent = {
 };
 
 export function getLlmo(locale: Locale = DEFAULT_LOCALE): LlmoContent {
-  // ベトナム語は、AI 向けの説明文は英語のものを使う
-  return locale === "ja" ? LLMO_JA : LLMO_EN;
+  // ベトナム語は英語版の文を辞書で訳したもの（辞書にない文は英語）
+  return pickDeep(locale, LLMO_JA, LLMO_EN);
 }
 
 function inLanguage(locale: Locale) {

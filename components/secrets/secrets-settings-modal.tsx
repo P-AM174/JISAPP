@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { Key, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { AttachType, SecretMeta } from "@/lib/secrets/constants";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, type Locale, format } from "@/lib/i18n/config";
+import { intlLocale, type Locale, format, pick } from "@/lib/i18n/config";
 
 type Props = {
   open: boolean;
@@ -35,10 +35,9 @@ function formatUpdatedAt(iso: string, locale: Locale): string {
 }
 
 function attachLabel(s: SecretMeta, locale: Locale): string {
-  const en = locale === "en";
   return s.attach_type === "query"
-    ? `${en ? "URL parameter" : "URLパラメータ"}: ${s.param_name ?? "api_key"}`
-    : `${en ? "Header" : "ヘッダー"}: ${s.header_name}`;
+    ? `${pick(locale, "URLパラメータ", "URL parameter")}: ${s.param_name ?? "api_key"}`
+    : `${pick(locale, "ヘッダー", "Header")}: ${s.header_name}`;
 }
 
 export function SecretsSettingsModal({

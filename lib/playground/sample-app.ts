@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n/config";
+import { SAMPLE_APP_HTML_VI } from "./sample-app-vi";
 
 /** 開発スタジオの「サンプルを動かす」で読み込む、AIが作ったような1ファイルアプリ */
 export const SAMPLE_APP_TITLE = "反射神経タップ";
@@ -161,11 +162,16 @@ export const SAMPLE_APP_HTML_EN = SAMPLE_EN_REPLACEMENTS.reduce(
 );
 
 export function getSampleAppHtml(locale: Locale = "ja"): string {
+  if (locale === "vi") return SAMPLE_APP_HTML_VI;
   return locale === "en" ? SAMPLE_APP_HTML_EN : SAMPLE_APP_HTML;
 }
 
 /** 貼られているコードがサンプルそのものか（日本語版・英語版のどちらでも） */
 export function isSampleAppHtml(code: string): boolean {
   const trimmed = code.trim();
-  return trimmed === SAMPLE_APP_HTML.trim() || trimmed === SAMPLE_APP_HTML_EN.trim();
+  return (
+    trimmed === SAMPLE_APP_HTML.trim() ||
+    trimmed === SAMPLE_APP_HTML_EN.trim() ||
+    trimmed === SAMPLE_APP_HTML_VI.trim()
+  );
 }

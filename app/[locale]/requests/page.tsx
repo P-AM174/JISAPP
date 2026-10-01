@@ -18,7 +18,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, type Locale, format, plural } from "@/lib/i18n/config";
+import { intlLocale, type Locale, format, plural, pick } from "@/lib/i18n/config";
+import { showGames } from "@/lib/features";
 
 type AppRequest = {
   id: string;
@@ -44,7 +45,7 @@ const CATEGORY_EN: Record<string, string> = {
 };
 
 function categoryLabel(value: string, locale: Locale) {
-  return locale === "en" ? CATEGORY_EN[value] ?? value : value;
+  return pick(locale, value, CATEGORY_EN[value] ?? value);
 }
 
 function formatDate(iso: string, locale: Locale = "ja") {
@@ -156,7 +157,7 @@ function PostModal({
               onChange={(e) => setCategory(e.target.value)}
               className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
             >
-              {CATEGORIES.filter((c) => c !== "すべて").map((c) => (
+              {CATEGORIES.filter((c) => c !== "すべて" && (c !== "ゲーム" || showGames(locale))).map((c) => (
                 <option key={c} value={c}>{categoryLabel(c, locale)}</option>
               ))}
             </select>
@@ -362,7 +363,7 @@ export default function RequestsPage() {
           </div>
           <div className="flex items-center gap-2">
             <div className="flex flex-1 gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {CATEGORIES.map((cat) => (
+              {CATEGORIES.filter((c) => c !== "ゲーム" || showGames(locale)).map((cat) => (
                 <button
                   key={cat}
                   type="button"

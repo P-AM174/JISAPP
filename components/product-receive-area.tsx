@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { ProductType } from "@/lib/products/types";
 import { PRODUCT_TYPE_LABELS, PRODUCT_TYPE_LABELS_EN } from "@/lib/products/types";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { pick } from "@/lib/i18n/config";
 
 type ProductReceiveAreaProps = {
   productType: ProductType;
@@ -84,7 +85,7 @@ export function ProductReceiveArea({
     <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-          {locale === "en" ? PRODUCT_TYPE_LABELS_EN[productType] : PRODUCT_TYPE_LABELS[productType]}
+          {pick(locale, PRODUCT_TYPE_LABELS[productType], PRODUCT_TYPE_LABELS_EN[productType])}
         </span>
         {title && (
           <span className="text-xs text-gray-500 truncate max-w-[200px]">{title}</span>

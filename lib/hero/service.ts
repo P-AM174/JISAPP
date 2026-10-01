@@ -1,7 +1,8 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getPopularApps } from "@/lib/home/catalog";
 import { DEFAULT_HERO_SLIDES, DEFAULT_HERO_SLIDES_EN } from "./defaults";
-import type { Locale } from "@/lib/i18n/config";
+import { pickDeep, type Locale } from "@/lib/i18n/config";
+import "@/lib/i18n/dictionaries";
 import type {
   HeroFeaturedApp,
   HeroSlide,
@@ -113,8 +114,14 @@ export async function getHeroSlidesFromDb(includeDisabled = false): Promise<Hero
 }
 
 export async function getPublicHeroSlides(locale: Locale = "ja"): Promise<HeroSlidePublic[]> {
-  // 運営が編集するスライドは日本語なので、英語版は英語の既定スライドを出す
-  if (locale === "en") return DEFAULT_HERO_SLIDES_EN.filter((s) => s.enabled);
+  // 運営が編集するスライドは日本語なので、英語版は英語の既定スライドを出す。
+  // ベトナム語版は英語の既定スライドと同じ並びで、文言を辞書から引く
+  if (locale !== "ja") {
+    return DEFAULT_HERO_SLIDES_EN.filter((s) => s.enabled).map((en) => {
+      const ja = DEFAULT_HERO_SLIDES.find((s) => s.id === en.id.replace(/-en$/, ""));
+      return ja ? pickDeep(locale, ja, en) : en;
+    });
+  }
   try {
     const slides = await getHeroSlidesFromDb(false);
     if (slides.length === 0) {

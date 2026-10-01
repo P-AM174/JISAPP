@@ -26,7 +26,7 @@ import {
   type GroupSession,
 } from "@/lib/groups/client";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale } from "@/lib/i18n/config";
+import { intlLocale, format, plural } from "@/lib/i18n/config";
 
 type InviteInfo = { group: { id: string; name: string; appId: string }; appTitle: string; memberCount: number };
 
@@ -120,8 +120,8 @@ export function AppGroupPanel({
         onGroupChange(null);
         setInviteError(
           r.status === 404
-            ? t(`グループ「${group.groupName}」は削除されました`, `The group “${group.groupName}” was deleted`)
-            : t(`グループ「${group.groupName}」から外れました。参加するには招待リンクが必要です`, `You're no longer in “${group.groupName}”. You need an invite link to join again`)
+            ? format(t("グループ「{groupName}」は削除されました", "The group “{groupName}” was deleted"), { groupName: group.groupName })
+            : format(t("グループ「{groupName}」から外れました。参加するには招待リンクが必要です", "You're no longer in “{groupName}”. You need an invite link to join again"), { groupName: group.groupName })
         );
       })
       .catch(() => {});
@@ -288,7 +288,7 @@ export function AppGroupPanel({
   const removeGroup = async () => {
     if (!group) return;
     setMenuOpen(false);
-    if (!window.confirm(t(`グループ「${group.groupName}」を削除しますか？\nメンバー全員の共有データも消え、元に戻せません。`, `Delete the group “${group.groupName}”?\nAll members' shared data will be erased too. This can't be undone.`))) return;
+    if (!window.confirm(format(t("グループ「{groupName}」を削除しますか？\nメンバー全員の共有データも消え、元に戻せません。", "Delete the group “{groupName}”?\nAll members' shared data will be erased too. This can't be undone."), { groupName: group.groupName }))) return;
     const res = await fetch(`/api/app-groups/${group.groupId}`, { method: "DELETE" });
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -327,7 +327,7 @@ export function AppGroupPanel({
             <>
               <p className="min-w-0 flex-1 truncate text-emerald-950">
                 <span className="font-bold">{group.groupName}</span>
-                <span className="text-emerald-800/70">{t(` ・ ${group.displayName}として参加中`, ` · joined as ${group.displayName}`)}</span>
+                <span className="text-emerald-800/70">{format(t(" ・ {displayName}として参加中", " · joined as {displayName}"), { displayName: group.displayName })}</span>
               </p>
               {group.inviteToken && (
                 <button
@@ -385,7 +385,7 @@ export function AppGroupPanel({
                   onClick={() => setChoosing(true)}
                   className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
                 >
-                  {t(`自分のグループ（${myGroups.length}）`, `My groups (${myGroups.length})`)}
+                  {format(t("自分のグループ（{count}）", "My groups ({count})"), { count: myGroups.length })}
                 </button>
               )}
               <button
@@ -546,7 +546,7 @@ function ManageModal({
   }, []);
 
   const remove = async (m: MemberInfo) => {
-    if (!window.confirm(t(`「${m.name}」をグループから外しますか？\nこの人はグループのデータを見たり書き込んだりできなくなります。`, `Remove “${m.name}” from the group?\nThey won't be able to see or write the group's data anymore.`))) return;
+    if (!window.confirm(format(t("「{name}」をグループから外しますか？\nこの人はグループのデータを見たり書き込んだりできなくなります。", "Remove “{name}” from the group?\nThey won't be able to see or write the group's data anymore."), { name: m.name }))) return;
     const res = await fetch(`/api/app-groups/${group.groupId}/members?memberId=${encodeURIComponent(m.id)}`, { method: "DELETE" });
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -576,7 +576,7 @@ function ManageModal({
       <section className="mt-5">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
           <Users className="h-4 w-4 text-emerald-600" />
-          {t(`メンバー（${members?.length ?? "…"}人）`, `Members (${members?.length ?? "…"})`)}
+          {format(t("メンバー（{count}人）", "Members ({count})"), { count: members?.length ?? "…" })}
         </h3>
         <div className="mt-2">
       {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
@@ -683,6 +683,7 @@ function JoinModal({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const t = useT();
+  const locale = useLocale();
 
   const join = async () => {
     if (!name.trim()) {
@@ -728,7 +729,7 @@ function JoinModal({
       <div className="rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-100">
         <p className="text-xs text-emerald-800/80">{info.appTitle}</p>
         <p className="mt-0.5 text-base font-extrabold text-emerald-950">{info.group.name}</p>
-        <p className="mt-0.5 text-xs text-emerald-800/80">{t(`メンバー ${info.memberCount}人`, `${info.memberCount} ${info.memberCount === 1 ? "member" : "members"}`)}</p>
+        <p className="mt-0.5 text-xs text-emerald-800/80">{format(t("メンバー {n}人", plural(locale, info.memberCount, "{n} member", "{n} members")), { n: info.memberCount })}</p>
       </div>
       <label htmlFor="group-join-name" className="mt-4 block text-sm font-bold text-slate-800">
         {t("表示名", "Display name")}
@@ -823,7 +824,7 @@ function CreateModal({
 
   return (
     <ModalShell title={t("グループを作る", "Create a group")} onClose={onClose}>
-      <p className="text-sm text-slate-500">{t(`「${appTitle}」を、招待したメンバーとデータを共有しながら使えます。`, `Use “${appTitle}” together, sharing data with the members you invite.`)}</p>
+      <p className="text-sm text-slate-500">{format(t("「{appTitle}」を、招待したメンバーとデータを共有しながら使えます。", "Use “{appTitle}” together, sharing data with the members you invite."), { appTitle })}</p>
       <label htmlFor="group-create-name" className="mt-4 block text-sm font-bold text-slate-800">
         {t("グループ名", "Group name")}
       </label>
@@ -869,7 +870,7 @@ function InviteModal({
   const t = useT();
   return (
     <ModalShell title={t("メンバーを招待", "Invite members")} onClose={onClose}>
-      <p className="text-sm text-slate-500">{t(`このリンクを送ると、表示名を入れるだけで「${group.groupName}」に参加できます。`, `Anyone you send this link to can join “${group.groupName}” just by entering a display name.`)}</p>
+      <p className="text-sm text-slate-500">{format(t("このリンクを送ると、表示名を入れるだけで「{groupName}」に参加できます。", "Anyone you send this link to can join “{groupName}” just by entering a display name."), { groupName: group.groupName })}</p>
       <InviteLinkSection appId={appId} appTitle={appTitle} group={group} />
     </ModalShell>
   );
@@ -880,10 +881,7 @@ function InviteLinkSection({ appId, appTitle, group }: { appId: string; appTitle
   const t = useT();
   const locale = useLocale();
   const url = inviteUrl(appId, group.inviteToken ?? "");
-  const message = t(
-    `「${group.groupName}」で「${appTitle}」を使おう。このリンクから参加できます（登録不要）\n`,
-    `Let's use “${appTitle}” together in “${group.groupName}”. Join with this link (no sign-up needed)\n`
-  );
+  const message = format(t("「{groupName}」で「{appTitle}」を使おう。このリンクから参加できます（登録不要）\n", "Let's use “{appTitle}” together in “{groupName}”. Join with this link (no sign-up needed)\n"), { groupName: group.groupName, appTitle });
 
   const copy = async () => {
     try {

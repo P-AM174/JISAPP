@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Geist, Geist_Mono, Noto_Sans_JP } from "next/font/google";
+import { Be_Vietnam_Pro, Geist, Geist_Mono, Noto_Sans_JP } from "next/font/google";
 import "../globals.css";
 import { Providers } from "./providers";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -10,6 +10,7 @@ import {
   createPlatformSoftwareJsonLd,
 } from "@/lib/seo/llmo";
 import { LOCALES, isLocale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +26,16 @@ const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   preload: false,
   weight: ["400", "500", "700", "900"],
+  display: "swap",
+});
+
+// ベトナム語ページ用。Geist にはベトナム語の声調記号の字形がないため、vi ではこちらを使う（globals.css）。
+// 使われる文字のぶんだけ読み込まれるので、日本語・英語ページの表示は重くならない
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam-pro",
+  subsets: ["vietnamese", "latin"],
+  preload: false,
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -75,12 +86,12 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} min-h-screen antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} ${beVietnamPro.variable} min-h-screen antialiased`}
       >
         <JsonLd data={createWebsiteJsonLd(locale)} />
         <JsonLd data={createOrganizationJsonLd(locale)} />
         <JsonLd data={createPlatformSoftwareJsonLd(locale)} />
-        <Providers locale={locale}>{children}</Providers>
+        <Providers locale={locale} dict={getDictionary(locale)}>{children}</Providers>
       </body>
     </html>
   );

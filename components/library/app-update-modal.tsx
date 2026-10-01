@@ -2,6 +2,7 @@
 
 import { AlertCircle, Database, Download, X } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
+import { format } from "@/lib/i18n/config";
 
 export type PendingUpdateInfo = {
   code_version: number;
@@ -51,7 +52,7 @@ export function AppUpdateModal({
           <div className="flex items-start gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" strokeWidth={2.5} />
             <div className="text-xs leading-relaxed text-amber-900">
-              <p className="font-bold">{t(`「${appTitle || pending.app_title}」のコードが変更されました`, `The code of “${appTitle || pending.app_title}” has changed`)}</p>
+              <p className="font-bold">{format(t("「{appTitle}」のコードが変更されました", "The code of “{appTitle}” has changed"), { appTitle: appTitle || pending.app_title })}</p>
               <p className="mt-1">
                 {t("アップデートすると新しいコードでアプリが動作します。", "If you update, the app will run on the new code.")}
                 {pending.reset_user_data

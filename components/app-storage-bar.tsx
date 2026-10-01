@@ -4,6 +4,7 @@ import { Database, Trash2 } from "lucide-react";
 import { APP_DATA_LIMITS, formatBytes } from "@/lib/app-data-limits";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
+import { format } from "@/lib/i18n/config";
 
 /**
  * アプリ1つ分の保存データの横棒グラフ（マイプロジェクトのカード・マイライブラリの詳細シート）。
@@ -57,7 +58,7 @@ export function AppStorageBar({
               ? t("もうすぐ1回に保存できる量に届きます", "Almost at the amount that can be saved at once")
               : t("1回に保存できる量（2MB）に対して", "Compared with the amount that can be saved at once (2MB)")}
           {bytes !== maxKeyBytes && (
-            <span className="text-gray-400">{t(`・合計 ${formatBytes(bytes)}`, ` · ${formatBytes(bytes)} in total`)}</span>
+            <span className="text-gray-400">{format(t("・合計 {bytes}", " · {bytes} in total"), { bytes: formatBytes(bytes) })}</span>
           )}
         </p>
         {onDelete && (

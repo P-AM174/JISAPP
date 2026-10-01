@@ -71,7 +71,7 @@ export const TRUNCATED_RETRY_MESSAGE_EN =
   "The code was cut off partway. Please output the whole index.html again, from start to finish, without leaving anything out.";
 
 export function truncatedRetryMessage(locale: Locale = "ja"): string {
-  return locale === "en" ? TRUNCATED_RETRY_MESSAGE_EN : TRUNCATED_RETRY_MESSAGE;
+  return locale === "ja" ? TRUNCATED_RETRY_MESSAGE : TRUNCATED_RETRY_MESSAGE_EN;
 }
 
 /** コードが外部APIのキー（ジサップのシークレット）を使うか */
@@ -91,5 +91,5 @@ export const STORAGE_FIX_MESSAGE_EN =
   "Please change how this app saves data from localStorage to Jisapp's save feature. Save with await window.Jisapp.saveData('keyName', data) and load with await window.Jisapp.loadData('keyName'), and finish loading with await before showing the screen. Output the whole index.html from start to finish without leaving anything out.";
 
 export function storageFixMessage(locale: Locale = "ja"): string {
-  return locale === "en" ? STORAGE_FIX_MESSAGE_EN : STORAGE_FIX_MESSAGE;
+  return locale === "ja" ? STORAGE_FIX_MESSAGE : STORAGE_FIX_MESSAGE_EN;
 }

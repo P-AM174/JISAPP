@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DEFAULT_LOCALE, LOCALES, localizePath, type Locale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, localizePath, ogLocale, type Locale } from "@/lib/i18n/config";
+import { indexedLocales } from "@/lib/features";
 import {
   siteName,
   siteTitle,
@@ -59,7 +60,8 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
   const basePath = path ?? "/";
   const canonical = absoluteUrl(localizePath(basePath, locale));
   const languages: Record<string, string> = {};
-  for (const l of LOCALES) languages[l] = absoluteUrl(localizePath(basePath, l));
+  const listed = indexedLocales();
+  for (const l of listed) languages[l] = absoluteUrl(localizePath(basePath, l));
   languages["x-default"] = absoluteUrl(localizePath(basePath, DEFAULT_LOCALE));
   const imageUrl = ogImage.startsWith("http") ? ogImage : absoluteUrl(ogImage);
   const imageMeta = {
@@ -77,8 +79,8 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
     alternates: { canonical, languages },
     openGraph: {
       type: "website",
-      locale: locale === "en" ? "en_US" : "ja_JP",
-      alternateLocale: locale === "en" ? ["ja_JP"] : ["en_US"],
+      locale: ogLocale(locale),
+      alternateLocale: listed.filter((l) => l !== locale).map(ogLocale),
       siteName: name,
       title: shareTitle,
       description: shareDescription,
@@ -92,7 +94,8 @@ export function createPageMetadata(options: PageMetadataOptions = {}): Metadata 
       // 絶対URLの文字列を明示（X カード取得用）
       images: [imageUrl],
     },
-    ...(noIndex ? { robots: { index: false, follow: false } } : {}),
+    // 正式公開前の言語（ベトナム語）は検索エンジンに載せない
+    ...(noIndex || !listed.includes(locale) ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -115,10 +118,10 @@ export function createWebsiteJsonLd(locale: Locale = DEFAULT_LOCALE) {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: siteName(locale),
-    alternateName: locale === "en" ? ["ジサップ", "ジサップ（Jisapp）"] : ["Jisapp", "ジサップ（Jisapp）"],
+    alternateName: locale === "ja" ? ["Jisapp", "ジサップ（Jisapp）"] : ["ジサップ", "ジサップ（Jisapp）"],
     url: absoluteUrl(localizePath("/", locale)),
     description: siteDescription(locale),
-    inLanguage: locale === "en" ? "en" : "ja-JP",
+    inLanguage: locale === "ja" ? "ja-JP" : locale,
     publisher: {
       "@type": "Organization",
       name: siteName(locale),
@@ -150,9 +153,11 @@ export function createSoftwareApplicationJsonLd(app: {
     name: app.title,
     description:
       app.description ||
-      (locale === "en"
-        ? `${app.title} — an app published on ${siteName(locale)}`
-        : `${app.title} - ${siteName(locale)}で公開中のアプリ`),
+      (locale === "ja"
+        ? `${app.title} - ${siteName(locale)}で公開中のアプリ`
+        : locale === "vi"
+          ? `${app.title} — app đăng trên ${siteName(locale)}`
+          : `${app.title} — an app published on ${siteName(locale)}`),
     url: absoluteUrl(localizePath(`/apps/${app.id}`, locale)),
     applicationCategory: app.category ?? "UtilitiesApplication",
     operatingSystem: "Web Browser",

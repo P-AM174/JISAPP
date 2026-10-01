@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "@/lib/i18n/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale } from "@/lib/i18n/config";
+import { intlLocale, format, plural } from "@/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSession } from "next-auth/react";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
@@ -148,8 +148,8 @@ function SiteHeader({
       const d = new Date(iso);
       const diff = Date.now() - d.getTime();
       if (diff < 60000) return t("たった今", "just now");
-      if (diff < 3600000) return t(`${Math.floor(diff / 60000)}分前`, `${Math.floor(diff / 60000)}m ago`);
-      if (diff < 86400000) return t(`${Math.floor(diff / 3600000)}時間前`, `${Math.floor(diff / 3600000)}h ago`);
+      if (diff < 3600000) return format(t("{floor}分前", "{floor}m ago"), { floor: Math.floor(diff / 60000) });
+      if (diff < 86400000) return format(t("{floor}時間前", "{floor}h ago"), { floor: Math.floor(diff / 3600000) });
       return d.toLocaleDateString(intlLocale(locale));
     } catch {
       return "";
@@ -1086,7 +1086,7 @@ export function HomePageClient({
                       {initial}
                     </div>
                     <p className="mt-2 text-sm font-black text-gray-900 truncate">{displayCreatorName(creator.name, locale)}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{t(`アプリ ${creator.appCount}本`, `${creator.appCount} ${creator.appCount === 1 ? "app" : "apps"}`)}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{format(t("アプリ {n}本", plural(locale, creator.appCount, "{n} app", "{n} apps")), { n: creator.appCount })}</p>
                     {creator.totalStamps > 0 && (
                       <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5">
                         <TrendingUp className="h-3 w-3 text-emerald-500" />
@@ -1184,7 +1184,7 @@ export function HomePageClient({
           ) : (
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
               <p className="text-sm font-semibold text-gray-500">
-                {query ? t(`「${query}」に一致するアプリはありません`, `No apps match “${query}”`) : t("このカテゴリのアプリはまだありません", "No apps in this category yet")}
+                {query ? format(t("「{query}」に一致するアプリはありません", "No apps match “{query}”"), { query }) : t("このカテゴリのアプリはまだありません", "No apps in this category yet")}
               </p>
             </div>
           )}
@@ -1212,7 +1212,7 @@ export function HomePageClient({
           ) : (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
               <p className="text-sm font-semibold text-gray-500">
-                {query ? t(`「${query}」に一致するアプリはありません`, `No apps match “${query}”`) : t("まだアプリが登録されていません", "No apps yet")}
+                {query ? format(t("「{query}」に一致するアプリはありません", "No apps match “{query}”"), { query }) : t("まだアプリが登録されていません", "No apps yet")}
               </p>
               <p className="mt-2 text-xs text-gray-400">{t("開発スタジオでアプリを作って公開してみましょう！", "Make an app in the Studio and publish it!")}</p>
               <Link href="/playground" className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-700">

@@ -1,4 +1,5 @@
 import type { Translate } from "@/lib/i18n/config";
+import { format } from "@/lib/i18n/config";
 
 /** GET /api/library が返すライブラリの1件 */
 export type LibraryEntry = {
@@ -72,9 +73,6 @@ export function lastOpenedLabel(entry: LibraryEntry, t: Translate, intlLocale: s
   const days = Math.round((startOfDay(new Date()) - startOfDay(opened)) / 86_400_000);
   if (days <= 0) return t("今日開いた", "Opened today");
   if (days === 1) return t("きのう開いた", "Opened yesterday");
-  if (days < 7) return t(`${days}日前に開いた`, `Opened ${days} days ago`);
-  return t(
-    `${opened.toLocaleDateString(intlLocale)}に開いた`,
-    `Opened ${opened.toLocaleDateString(intlLocale)}`
-  );
+  if (days < 7) return format(t("{days}日前に開いた", "Opened {days} days ago"), { days });
+  return format(t("{opened}に開いた", "Opened {opened}"), { opened: opened.toLocaleDateString(intlLocale) });
 }

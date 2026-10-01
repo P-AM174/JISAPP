@@ -8,7 +8,7 @@ import Image from "next/image";
 import { BackButton } from "@/components/back-button";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { localizePath } from "@/lib/i18n/config";
+import { localizePath, format } from "@/lib/i18n/config";
 import { StorageMeter } from "@/components/storage-meter";
 import {
   Package,
@@ -340,7 +340,7 @@ export default function MyPage() {
                       <p className="font-bold text-gray-900 text-sm">{t("開発スタジオの作業中コード", "Work in progress in the Studio")}</p>
                       <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {t(`${playgroundLines} 行 · ${playgroundCode.length.toLocaleString()} 文字`, `${playgroundLines} lines · ${playgroundCode.length.toLocaleString()} characters`)}
+                        {format(t("{playgroundLines} 行 · {count} 文字", "{playgroundLines} lines · {count} characters"), { playgroundLines, count: playgroundCode.length.toLocaleString() })}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
@@ -543,7 +543,7 @@ export default function MyPage() {
                       <div key={req.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-slate-50/80 px-4 py-3">
                         <p className="flex-1 truncate text-sm text-gray-800">{req.title}</p>
                         <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                          {req.proposalCount ? t(`${req.proposalCount}名と相談中`, `Talking with ${req.proposalCount}`) : t("提案待ち", "Waiting for offers")}
+                          {req.proposalCount ? format(t("{proposalCount}名と相談中", "Talking with {proposalCount}"), { proposalCount: req.proposalCount }) : t("提案待ち", "Waiting for offers")}
                         </span>
                       </div>
                     ))}

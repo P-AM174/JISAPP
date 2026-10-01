@@ -7,7 +7,7 @@ import { BackButton } from "@/components/back-button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
 import { getI18n } from "@/lib/i18n/server";
-import { localizePath } from "@/lib/i18n/config";
+import { localizePath, format } from "@/lib/i18n/config";
 import { CategoryIcon } from "@/lib/category-icon";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { absoluteUrl } from "@/lib/seo/site";
@@ -32,11 +32,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return createPageMetadata({
     locale,
-    title: t(`${name}のアプリ`, `${name} apps`),
-    description: t(
-      `ジサップで公開されている${name}カテゴリのWebアプリ・ツール一覧。無料で使えるアプリを探せます。`,
-      `Web apps and tools in the ${name} category on Jisapp. Find free apps to try.`
-    ),
+    title: format(t("{name}のアプリ", "{name} apps"), { name }),
+    description: format(t("ジサップで公開されている{name}カテゴリのWebアプリ・ツール一覧。無料で使えるアプリを探せます。", "Web apps and tools in the {name} category on Jisapp. Find free apps to try."), { name }),
     path: `/category/${slug}`,
   });
 }
@@ -53,8 +50,8 @@ export default async function CategoryPage({ params }: PageProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: t(`${name}のアプリ | ジサップ`, `${name} apps | Jisapp`),
-    description: t(`${name}カテゴリのWebアプリ一覧`, `Web apps in the ${name} category`),
+    name: format(t("{name}のアプリ | ジサップ", "{name} apps | Jisapp"), { name }),
+    description: format(t("{name}カテゴリのWebアプリ一覧", "Web apps in the {name} category"), { name }),
     url: absoluteUrl(localizePath(`/category/${slug}`, locale)),
     mainEntity: {
       "@type": "ItemList",
@@ -94,13 +91,10 @@ export default async function CategoryPage({ params }: PageProps) {
           <p className="text-sm font-semibold text-emerald-600">{t("カテゴリ", "Category")}</p>
           <h1 className="mt-1 flex items-center gap-2 text-3xl font-black text-gray-900">
             <CategoryIcon categoryId={category.id} className="h-7 w-7 text-emerald-600" strokeWidth={2.5} />
-            {t(`${name}のアプリ`, `${name} apps`)}
+            {format(t("{name}のアプリ", "{name} apps"), { name })}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-gray-600">
-            {t(
-              `ジサップで公開されている${name}カテゴリのWebアプリ一覧です。気になるアプリを選んで、すぐにブラウザで試せます。`,
-              `Web apps in the ${name} category on Jisapp. Pick one and try it right away in your browser.`
-            )}
+            {format(t("ジサップで公開されている{name}カテゴリのWebアプリ一覧です。気になるアプリを選んで、すぐにブラウザで試せます。", "Web apps in the {name} category on Jisapp. Pick one and try it right away in your browser."), { name })}
           </p>
         </div>
 

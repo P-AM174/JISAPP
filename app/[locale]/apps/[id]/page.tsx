@@ -52,6 +52,7 @@ import { AppGroupPanel } from "@/components/groups/app-group-panel";
 import { readActiveGroup, usesSharedData, type GroupSession } from "@/lib/groups/client";
 import { useT } from "@/lib/i18n/client";
 import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons";
+import { format } from "@/lib/i18n/config";
 
 
 
@@ -284,7 +285,7 @@ function SupabaseAppPage({ id }: { id: string }) {
             <ShareButton
               url={getAppShareUrl(id)}
               title={app.title}
-              text={t(`${app.title} | ジサップで作った無料アプリ`, `${app.title} | a free app made on Jisapp`)}
+              text={format(t("{title} | ジサップで作った無料アプリ", "{title} | a free app made on Jisapp"), { title: app.title })}
               variant="outline"
               className="w-auto"
             />
@@ -622,7 +623,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 </span>
               </div>
               <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-snug">{app.name}</h1>
-              <p className="mt-1 text-sm text-gray-500">{t(`${app.creator} が開発`, `By ${app.creator}`)}</p>
+              <p className="mt-1 text-sm text-gray-500">{format(t("{creator} が開発", "By {creator}"), { creator: app.creator })}</p>
               {/* 評価 */}
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex gap-0.5">
@@ -631,7 +632,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
                   ))}
                 </div>
                 <span className="text-sm font-bold text-gray-800">{app.rating}</span>
-                <span className="text-xs text-gray-400">{t(`${app.reviews.toLocaleString()}件のレビュー`, `${app.reviews.toLocaleString()} reviews`)}</span>
+                <span className="text-xs text-gray-400">{format(t("{reviews}件のレビュー", "{reviews} reviews"), { reviews: app.reviews.toLocaleString() })}</span>
               </div>
             </div>
             {/* お気に入りボタン */}
@@ -718,7 +719,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
               srcDoc={previewSrc ? injectZisupShim(previewSrc) : ""}
               sandbox={APP_IFRAME_SANDBOX}
               className="h-[440px] w-full border-0 bg-white"
-              title={t(`${app.name} デモ`, `${app.name} demo`)}
+              title={format(t("{name} デモ", "{name} demo"), { name: app.name })}
             />
           </div>
         </section>

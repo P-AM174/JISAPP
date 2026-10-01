@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
+import { format } from "@/lib/i18n/config";
 
 // ─── アプリのメタ情報（success ページで使う最小限のデータ） ───
 const APPS_META: Record<string, { name: string; creator: string; price: number; gradient: string; category: string }> = {
@@ -376,10 +377,10 @@ export default function PurchaseSuccessPage() {
               <CheckCircle2 className="h-10 w-10 text-white" strokeWidth={2.5} />
             </div>
             <h1 className="text-xl font-black text-white">{t("ご購入ありがとうございました！", "Thanks for getting this app!")}</h1>
-            <p className="mt-1 text-sm text-white/80">{t(`「${meta.name}」の取引が完了しました`, `“${meta.name}” is yours`)}</p>
+            <p className="mt-1 text-sm text-white/80">{format(t("「{name}」の取引が完了しました", "“{name}” is yours"), { name: meta.name })}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm">
               <CheckCircle2 className="h-4 w-4" />
-              {t(`${priceLabel} の決済が完了`, `${priceLabel} — done`)}
+              {format(t("{priceLabel} の決済が完了", "{priceLabel} — done"), { priceLabel })}
             </div>
           </div>
         </section>
@@ -558,7 +559,7 @@ export default function PurchaseSuccessPage() {
                   <Star key={s} className={`h-5 w-5 ${s <= starRating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
                 ))}
               </div>
-              {reviewText && <p className="text-xs text-gray-500 max-w-xs">{t(`「${reviewText}」`, `“${reviewText}”`)}</p>}
+              {reviewText && <p className="text-xs text-gray-500 max-w-xs">{format(t("「{reviewText}」", "“{reviewText}”"), { reviewText })}</p>}
             </div>
           )}
         </section>

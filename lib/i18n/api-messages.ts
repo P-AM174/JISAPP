@@ -1,8 +1,9 @@
 /**
- * サーバー（/api）が返す日本語のメッセージを英語にする辞書。
- * API は日本語で返し、英語ページで表示するときだけここで置き換える（辞書にない文はそのまま出る）。
- * サーバーのメッセージを増やしたら、ここにも英語を足す。
+ * サーバー（/api）が返す日本語のメッセージを英語・ベトナム語にする辞書。
+ * API は日本語で返し、英語・ベトナム語ページで表示するときだけここで置き換える（辞書にない文はそのまま出る）。
+ * サーバーのメッセージを増やしたら、ここにも英語を足す（ベトナム語は vi.json。scripts/i18n-extract.mjs で洗い出せる）。
  */
+import type { Dictionary, Locale } from "./config";
 import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, GROUP_QUOTA_MESSAGE } from "@/lib/app-data-limits";
 
 const EXACT: Record<string, string> = {
@@ -164,67 +165,99 @@ const STAMP_EN: Record<string, string> = {
   "便利！": "So useful!",
   "デザインが好き！": "Great design!",
 };
-const stampEn = (label: string) => STAMP_EN[label] ?? label;
 
-/** 一部だけ変わる文（アプリ名などが入る） */
-const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
-  [
-    /^まったく同じコードのアプリ「(.+)」をすでに公開しています。/,
-    (m) =>
-      `You've already published an app with exactly the same code: “${m[1]}”. You can't publish the same app twice. To change it, update that app from My projects.`,
-  ],
-  [/^上書きに失敗しました: ([\s\S]*)$/, (m) => `Couldn't update: ${m[1]}`],
-  [/^保存に失敗しました: ([\s\S]*)$/, (m) => `Couldn't save: ${m[1]}`],
-  [/^アプリの準備に失敗しました: ([\s\S]*)$/, (m) => `Couldn't prepare the app: ${m[1]}`],
+/**
+ * 一部だけ変わる文（アプリ名などが入る）。{1} {2} に正規表現の () の中身が入る。
+ * ja はベトナム語の辞書を引くためのキー（辞書には {1} のまま訳を入れる）。
+ * stamp に書いた番号は、スタンプ名なので訳してから入れる。
+ */
+type Pattern = { re: RegExp; ja: string; en: string; stamp?: number[] };
+
+const PATTERNS: Pattern[] = [
+  {
+    re: /^まったく同じコードのアプリ「(.+)」をすでに公開しています。/,
+    ja: "まったく同じコードのアプリ「{1}」をすでに公開しています。",
+    en: "You've already published an app with exactly the same code: “{1}”. You can't publish the same app twice. To change it, update that app from My projects.",
+  },
+  { re: /^上書きに失敗しました: ([\s\S]*)$/, ja: "上書きに失敗しました: {1}", en: "Couldn't update: {1}" },
+  { re: /^保存に失敗しました: ([\s\S]*)$/, ja: "保存に失敗しました: {1}", en: "Couldn't save: {1}" },
+  { re: /^アプリの準備に失敗しました: ([\s\S]*)$/, ja: "アプリの準備に失敗しました: {1}", en: "Couldn't prepare the app: {1}" },
   // お知らせ（DB には日本語で保存されている）
-  [/^「([\s\S]+)」に返信がありました$/, (m) => `New reply to “${m[1]}”`],
-  [/^([\s\S]+) さんが「作ってみました」と報告しました$/, (m) => `${m[1]} says they made it`],
-  [/^「([\s\S]+)」のコードが更新されました$/, (m) => `“${m[1]}” was updated`],
-  [/^「([\s\S]+)」のコードを運営が修正しました$/, (m) => `Jisapp fixed the code of “${m[1]}”`],
+  { re: /^「([\s\S]+)」に返信がありました$/, ja: "「{1}」に返信がありました", en: "New reply to “{1}”" },
+  { re: /^([\s\S]+) さんが「作ってみました」と報告しました$/, ja: "{1} さんが「作ってみました」と報告しました", en: "{1} says they made it" },
+  { re: /^「([\s\S]+)」のコードが更新されました$/, ja: "「{1}」のコードが更新されました", en: "“{1}” was updated" },
+  { re: /^「([\s\S]+)」のコードを運営が修正しました$/, ja: "「{1}」のコードを運営が修正しました", en: "Jisapp fixed the code of “{1}”" },
   // フォローのお知らせ（lib/notifications/follow-notices.ts）
-  [/^新しく(\d+)人にフォローされました$/, (m) => `${m[1]} new followers`],
-  [/^([\s\S]+) さんがあなたをフォローしました。$/, (m) => `${m[1]} followed you.`],
-  [/^最新は ([\s\S]+) さんです。$/, (m) => `Latest: ${m[1]}.`],
+  { re: /^新しく(\d+)人にフォローされました$/, ja: "新しく{1}人にフォローされました", en: "{1} new followers" },
+  { re: /^([\s\S]+) さんがあなたをフォローしました。$/, ja: "{1} さんがあなたをフォローしました。", en: "{1} followed you." },
+  { re: /^最新は ([\s\S]+) さんです。$/, ja: "最新は {1} さんです。", en: "Latest: {1}." },
   // スタンプのお知らせ（lib/notifications/stamp-notices.ts）
-  [/^「([\s\S]+)」にスタンプが届きました$/, (m) => `“${m[1]}” got a stamp`],
-  [/^「([\s\S]+)」にスタンプが(\d+)件届きました$/, (m) => `“${m[1]}” got ${m[2]} stamps`],
-  [/^([\s\S]+) さんが「([\s\S]+)」を押しました。$/, (m) => `${m[1]} sent “${stampEn(m[2])}”.`],
-  [/^最新は ([\s\S]+) さんの「([\s\S]+)」です。$/, (m) => `Latest: “${stampEn(m[2])}” from ${m[1]}.`],
+  { re: /^「([\s\S]+)」にスタンプが届きました$/, ja: "「{1}」にスタンプが届きました", en: "“{1}” got a stamp" },
+  { re: /^「([\s\S]+)」にスタンプが(\d+)件届きました$/, ja: "「{1}」にスタンプが{2}件届きました", en: "“{1}” got {2} stamps" },
+  { re: /^([\s\S]+) さんが「([\s\S]+)」を押しました。$/, ja: "{1} さんが「{2}」を押しました。", en: "{1} sent “{2}”.", stamp: [2] },
+  { re: /^最新は ([\s\S]+) さんの「([\s\S]+)」です。$/, ja: "最新は {1} さんの「{2}」です。", en: "Latest: “{2}” from {1}.", stamp: [2] },
   // 保存容量のお知らせ（lib/notifications/storage-notices.ts）
-  [/^「([\s\S]+)」の共有データがもうすぐいっぱいです$/, (m) => `“${m[1]}” shared data is almost full`],
-  [/^「([\s\S]+)」の共有データがいっぱいです$/, (m) => `“${m[1]}” shared data is full`],
-  [
-    /^アプリに保存しているデータが (\S+) \/ (\S+) になりました。/,
-    (m) => `Your saved app data is now ${m[1]} / ${m[2]}. Once it's full, nothing new can be saved. It's safer to delete data from apps you no longer use.`,
-  ],
-  [
-    /^アプリに保存できるデータ（全アプリで (\S+)）がいっぱいになったため、/,
-    (m) => `Your app data storage (${m[1]} across all apps) is full, so it couldn't be saved. Delete data from apps you no longer use to save again.`,
-  ],
-  [
-    /^グループの共有データが (\S+) \/ (\S+) になりました。/,
-    (m) => `The group's shared data is now ${m[1]} / ${m[2]}. Once it's full, members can't add anything new. It's safer to delete items you no longer need.`,
-  ],
-  [
-    /^グループの共有データ（(\S+)）がいっぱいになったため、/,
-    (m) => `The group's shared data (${m[1]}) is full, so members' writes were refused. Delete items you no longer need to write again.`,
-  ],
+  { re: /^「([\s\S]+)」の共有データがもうすぐいっぱいです$/, ja: "「{1}」の共有データがもうすぐいっぱいです", en: "“{1}” shared data is almost full" },
+  { re: /^「([\s\S]+)」の共有データがいっぱいです$/, ja: "「{1}」の共有データがいっぱいです", en: "“{1}” shared data is full" },
+  {
+    re: /^アプリに保存しているデータが (\S+) \/ (\S+) になりました。/,
+    ja: "アプリに保存しているデータが {1} / {2} になりました。",
+    en: "Your saved app data is now {1} / {2}. Once it's full, nothing new can be saved. It's safer to delete data from apps you no longer use.",
+  },
+  {
+    re: /^アプリに保存できるデータ（全アプリで (\S+)）がいっぱいになったため、/,
+    ja: "アプリに保存できるデータ（全アプリで {1}）がいっぱいになったため、",
+    en: "Your app data storage ({1} across all apps) is full, so it couldn't be saved. Delete data from apps you no longer use to save again.",
+  },
+  {
+    re: /^グループの共有データが (\S+) \/ (\S+) になりました。/,
+    ja: "グループの共有データが {1} / {2} になりました。",
+    en: "The group's shared data is now {1} / {2}. Once it's full, members can't add anything new. It's safer to delete items you no longer need.",
+  },
+  {
+    re: /^グループの共有データ（(\S+)）がいっぱいになったため、/,
+    ja: "グループの共有データ（{1}）がいっぱいになったため、",
+    en: "The group's shared data ({1}) is full, so members' writes were refused. Delete items you no longer need to write again.",
+  },
 ];
 
-export function translateApiMessage(message: string): string {
+/** 翻訳の洗い出し用（scripts/i18n-extract.mjs）。日本語と英語の組をすべて返す */
+export function apiMessagePairs(): [string, string][] {
+  return [
+    ...Object.entries(EXACT),
+    ...Object.entries(STAMP_EN),
+    ...PATTERNS.map((p): [string, string] => [p.ja, p.en]),
+  ];
+}
+
+type Target = { locale: Locale; dict?: Dictionary | null };
+
+function word(ja: string, en: string, target: Target): string {
+  if (target.locale === "vi") return target.dict?.[ja] ?? en;
+  return en;
+}
+
+export function translateApiMessage(message: string, target: Target = { locale: "en" }): string {
   const exact = EXACT[message];
-  if (exact) return exact;
-  for (const [re, fn] of PATTERNS) {
-    const m = message.match(re);
-    if (m) return fn(m);
+  if (exact) return word(message, exact, target);
+  for (const p of PATTERNS) {
+    const m = message.match(p.re);
+    if (!m) continue;
+    const template = word(p.ja, p.en, target);
+    return template.replace(/\{(\d)\}/g, (_, n: string) => {
+      const i = Number(n);
+      const value = m[i] ?? "";
+      if (p.stamp?.includes(i)) return word(value, STAMP_EN[value] ?? value, target);
+      return value;
+    });
   }
   return message;
 }
 
 const MESSAGE_FIELDS = ["error", "message", "reason"] as const;
 
-/** JSON の error / message / reason だけを英語にする。変えるものがなければ null */
-export function translateApiJson(text: string): string | null {
+/** JSON の error / message / reason だけを訳す。変えるものがなければ null */
+export function translateApiJson(text: string, target: Target = { locale: "en" }): string | null {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -234,13 +267,13 @@ export function translateApiJson(text: string): string | null {
   if (!data || typeof data !== "object" || Array.isArray(data)) return null;
   const obj = data as Record<string, unknown>;
   let changed = false;
-  const translateFields = (target: Record<string, unknown>, keys: readonly string[]) => {
+  const translateFields = (target_: Record<string, unknown>, keys: readonly string[]) => {
     for (const key of keys) {
-      const value = target[key];
+      const value = target_[key];
       if (typeof value === "string") {
-        const next = translateApiMessage(value);
+        const next = translateApiMessage(value, target);
         if (next !== value) {
-          target[key] = next;
+          target_[key] = next;
           changed = true;
         }
       }
@@ -259,10 +292,10 @@ export function translateApiJson(text: string): string | null {
 let installed = false;
 
 /**
- * 英語ページで、/api から返ってきたエラー文を英語にして受け取る。
+ * 英語・ベトナム語ページで、/api から返ってきたエラー文を訳して受け取る。
  * 画面ごとにエラーの出し方が違うため、fetch の入口で一度だけ置き換える。
  */
-export function installApiMessageTranslation() {
+export function installApiMessageTranslation(target: Target) {
   if (installed || typeof window === "undefined") return;
   installed = true;
   const originalFetch = window.fetch.bind(window);
@@ -274,7 +307,7 @@ export function installApiMessageTranslation() {
       if (url.origin !== window.location.origin || !url.pathname.startsWith("/api/")) return res;
       if (url.pathname.startsWith("/api/auth/session") || url.pathname.startsWith("/api/auth/csrf")) return res;
       if (!(res.headers.get("content-type") ?? "").includes("application/json")) return res;
-      const translated = translateApiJson(await res.clone().text());
+      const translated = translateApiJson(await res.clone().text(), target);
       if (translated === null) return res;
       return new Response(translated, { status: res.status, statusText: res.statusText, headers: res.headers });
     } catch {

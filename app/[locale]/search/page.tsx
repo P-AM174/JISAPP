@@ -3,6 +3,7 @@ import SearchPageClientRoot from "@/components/search/search-page-client";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { getCatalogApps } from "@/lib/home/catalog";
 import { getI18n } from "@/lib/i18n/server";
+import { format } from "@/lib/i18n/config";
 
 type PageProps = {
   searchParams: Promise<{ q?: string; category?: string }>;
@@ -20,11 +21,8 @@ export async function generateMetadata({
   if (query) {
     return createPageMetadata({
       locale,
-      title: t(`「${query}」の検索結果`, `Results for “${query}”`),
-      description: t(
-        `「${query}」に関連するWebアプリ・ツールをジサップで検索。無料アプリをすぐ試せます。`,
-        `Search Jisapp for web apps and tools related to “${query}”. Try free apps right away.`
-      ),
+      title: format(t("「{query}」の検索結果", "Results for “{query}”"), { query }),
+      description: format(t("「{query}」に関連するWebアプリ・ツールをジサップで検索。無料アプリをすぐ試せます。", "Search Jisapp for web apps and tools related to “{query}”. Try free apps right away."), { query }),
       path: `/search?q=${encodeURIComponent(query)}`,
     });
   }

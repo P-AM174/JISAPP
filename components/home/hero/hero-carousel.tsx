@@ -6,6 +6,7 @@ import type { HeroSlidePublic } from "@/lib/hero/types";
 import { cn } from "@/lib/utils";
 import { HeroSlideRenderer } from "./hero-slide-renderer";
 import { useT } from "@/lib/i18n/client";
+import { format } from "@/lib/i18n/config";
 
 export function HeroCarousel({ slides }: { slides: HeroSlidePublic[] }) {
   const [index, setIndex] = useState(0);
@@ -70,7 +71,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlidePublic[] }) {
                   "h-1.5 rounded-full transition-all duration-300",
                   i === index ? "w-6 bg-emerald-500" : "w-1.5 bg-gray-300 hover:bg-gray-400"
                 )}
-                aria-label={t(`スライド ${i + 1}`, `Slide ${i + 1}`)}
+                aria-label={format(t("スライド {n}", "Slide {n}"), { n: i + 1 })}
                 aria-current={i === index ? "true" : undefined}
               />
             ))}

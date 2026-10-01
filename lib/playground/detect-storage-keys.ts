@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/config";
+import { pick, type Locale, format } from "@/lib/i18n/config";
 
 export type StorageUsage = {
   /** window.Jisapp.saveData / loadData（旧名 window.Zisup）で使っている名前 */
@@ -97,7 +97,7 @@ export function extractStorageUsage(source: string): StorageUsage {
 }
 
 function formatKeys(keys: string[], locale: Locale = "ja"): string {
-  if (locale === "en") {
+  if (locale !== "ja") {
     if (keys.length === 0) return "(couldn't read the name)";
     return keys.map((k) => `“${k}”`).join(", ");
   }
@@ -114,7 +114,7 @@ export function compareStorageUsage(
   next: string,
   locale: Locale = "ja"
 ): StorageChangeFinding[] {
-  const tx = (ja: string, en: string) => (locale === "en" ? en : ja);
+  const tx = (ja: string, en: string) => pick(locale, ja, en);
   const fk = (keys: string[]) => formatKeys(keys, locale);
   const prev = extractStorageUsage(previous);
   const curr = extractStorageUsage(next);
@@ -201,10 +201,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_renamed",
         title: tx("データにつけた名前が変わっています", "The names given to saved data have changed"),
-        detail: tx(
-          `アプリは、データに名前をつけて保存しています。前は${fk(removed)}でしたが、今回は${fk(added)}になっています。名前が変わると、前のデータは残っていてもアプリが見つけられないため、利用者の画面では入力した内容がすべて消えた状態で表示されます。`,
-          `The app saves data under names. They used to be ${fk(removed)}, but now they're ${fk(added)}. When the names change, the app can't find the old data even though it still exists, so people will see everything they entered as gone.`
-        ),
+        detail: format(tx("アプリは、データに名前をつけて保存しています。前は{removed}でしたが、今回は{added}になっています。名前が変わると、前のデータは残っていてもアプリが見つけられないため、利用者の画面では入力した内容がすべて消えた状態で表示されます。", "The app saves data under names. They used to be {removed}, but now they're {added}. When the names change, the app can't find the old data even though it still exists, so people will see everything they entered as gone."), { removed: fk(removed), added: fk(added) }),
         severity: "warn",
         removedKeys: removed,
         addedKeys: added,
@@ -213,10 +210,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_removed",
         title: tx("前まで使っていたデータの名前が、新しいコードにありません", "A data name used before is missing from the new code"),
-        detail: tx(
-          `前は${fk(removed)}という名前でデータを保存していましたが、新しいコードではその名前が使われていません。その名前で保存されていた内容は、アプリを開いても表示されなくなります。`,
-          `Data used to be saved under ${fk(removed)}, but the new code doesn't use that name. Anything saved under it won't show up when the app is opened.`
-        ),
+        detail: format(tx("前は{removed}という名前でデータを保存していましたが、新しいコードではその名前が使われていません。その名前で保存されていた内容は、アプリを開いても表示されなくなります。", "Data used to be saved under {removed}, but the new code doesn't use that name. Anything saved under it won't show up when the app is opened."), { removed: fk(removed) }),
         severity: "warn",
         removedKeys: removed,
       });
@@ -224,10 +218,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_added",
         title: tx("新しく保存する項目が増えています", "There are new things being saved"),
-        detail: tx(
-          `${fk(added)} が増えました。これまでのデータはそのまま使えます。意図した追加であれば、そのまま公開して問題ありません。`,
-          `${fk(added)} was added. Existing data still works. If you meant to add it, it's fine to publish as is.`
-        ),
+        detail: format(tx("{added} が増えました。これまでのデータはそのまま使えます。意図した追加であれば、そのまま公開して問題ありません。", "{added} was added. Existing data still works. If you meant to add it, it's fine to publish as is."), { added: fk(added) }),
         severity: "info",
         addedKeys: added,
       });
@@ -245,10 +236,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_renamed",
         title: tx("データにつけた名前が変わっています", "The names given to saved data have changed"),
-        detail: tx(
-          `前は${fk(removed)}でしたが、今回は${fk(added)}になっています。名前が変わると、前のデータはアプリから見つけられなくなります。`,
-          `They used to be ${fk(removed)}, but now they're ${fk(added)}. When the names change, the app can no longer find the old data.`
-        ),
+        detail: format(tx("前は{removed}でしたが、今回は{added}になっています。名前が変わると、前のデータはアプリから見つけられなくなります。", "They used to be {removed}, but now they're {added}. When the names change, the app can no longer find the old data."), { removed: fk(removed), added: fk(added) }),
         severity: "warn",
         removedKeys: removed,
         addedKeys: added,
@@ -257,10 +245,7 @@ export function compareStorageUsage(
       findings.push({
         kind: "key_removed",
         title: tx("前まで使っていたデータの名前が、新しいコードにありません", "A data name used before is missing from the new code"),
-        detail: tx(
-          `前は${fk(removed)}という名前で保存していましたが、新しいコードではその名前が使われていません。`,
-          `Data used to be saved under ${fk(removed)}, but the new code doesn't use that name.`
-        ),
+        detail: format(tx("前は{removed}という名前で保存していましたが、新しいコードではその名前が使われていません。", "Data used to be saved under {removed}, but the new code doesn't use that name."), { removed: fk(removed) }),
         severity: "warn",
         removedKeys: removed,
       });
@@ -283,7 +268,7 @@ function uniq(values: string[]): string[] {
  * 検知した内容（前の名前・今の名前）を埋め込むので、そのままコピーして送れる。
  */
 export function buildStorageFixPrompt(findings: StorageChangeFinding[], locale: Locale = "ja"): string {
-  if (locale === "en") return buildStorageFixPromptEn(findings);
+  if (locale !== "ja") return buildStorageFixPromptEn(findings);
   const oldKeys = uniq(findings.flatMap((f) => f.removedKeys ?? []));
   const newKeys = uniq(findings.flatMap((f) => f.addedKeys ?? []));
   const switchedToLocal = findings.some((f) => f.kind === "mode_zisup_to_local");

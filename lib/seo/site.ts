@@ -19,13 +19,28 @@ export const SITE_TITLE_EN = `Jisapp — ${SITE_TAGLINE_EN}`;
 export const SITE_DESCRIPTION_EN =
   "Paste code from ChatGPT, Claude or Gemini and it becomes a real app. No servers, no setup — anyone can make, publish and share apps for free.";
 
+/**
+ * ベトナム語版の表記（機械翻訳・ネイティブ未確認）。ブランド名はラテン文字の Jisapp。
+ * 確認したら lib/i18n/dictionaries/glossary.md も直す
+ */
+export const SITE_TAGLINE_VI = "Biến code do AI viết thành app của riêng bạn — miễn phí";
+export const SITE_TITLE_VI = `Jisapp — ${SITE_TAGLINE_VI}`;
+export const SITE_DESCRIPTION_VI =
+  "Dán code từ ChatGPT, Claude hoặc Gemini là có ngay một app thật. Không cần server, không cần cài đặt — ai cũng có thể tạo, đăng và chia sẻ app miễn phí.";
+
 export function siteName(locale: Locale): string {
-  return locale === "en" ? SITE_NAME_EN : SITE_NAME;
+  return locale === "ja" ? SITE_NAME : SITE_NAME_EN;
 }
 export function siteTitle(locale: Locale): string {
+  if (locale === "vi") return SITE_TITLE_VI;
   return locale === "en" ? SITE_TITLE_EN : SITE_TITLE;
 }
+export function siteTagline(locale: Locale): string {
+  if (locale === "vi") return SITE_TAGLINE_VI;
+  return locale === "en" ? SITE_TAGLINE_EN : SITE_TAGLINE;
+}
 export function siteDescription(locale: Locale): string {
+  if (locale === "vi") return SITE_DESCRIPTION_VI;
   return locale === "en" ? SITE_DESCRIPTION_EN : SITE_DESCRIPTION;
 }
 
@@ -35,8 +50,10 @@ export function siteDescription(locale: Locale): string {
  */
 export const SITE_OG_IMAGE = "/og.png";
 export const SITE_OG_IMAGE_EN = "/og-en.png";
+export const SITE_OG_IMAGE_VI = "/og-vi.png";
 
 export function siteOgImage(locale: Locale): string {
+  if (locale === "vi") return SITE_OG_IMAGE_VI;
   return locale === "en" ? SITE_OG_IMAGE_EN : SITE_OG_IMAGE;
 }
 

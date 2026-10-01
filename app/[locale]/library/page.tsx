@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { CATEGORY_MAP } from "@/lib/categories";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale } from "@/lib/i18n/config";
+import { intlLocale, format } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
@@ -303,7 +303,7 @@ export default function LibraryPage() {
                     type="button"
                     onClick={() => setSelected(entry)}
                     className="relative block text-left"
-                    aria-label={t(`「${entry.name ?? "アプリ"}」の詳細`, `Details for “${entry.name ?? "this app"}”`)}
+                    aria-label={format(t("「{name}」の詳細", "Details for “{name}”"), { name: entry.name ?? t("アプリ", "this app") })}
                   >
                     <MiniPreview
                       id={entry.appId}
@@ -374,9 +374,12 @@ export default function LibraryPage() {
         title={t("保存データを消す", "Delete saved data")}
         message={
           dataDeleteTarget
-            ? t(
-                `「${dataDeleteTarget.name ?? "アプリ"}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリはライブラリに残ります。`,
-                `Delete all the data you've saved in “${dataDeleteTarget.name ?? "this app"}”? This can't be undone. The app stays in your library.`
+            ? format(
+                t(
+                  "「{name}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリはライブラリに残ります。",
+                  "Delete all the data you've saved in “{name}”? This can't be undone. The app stays in your library."
+                ),
+                { name: dataDeleteTarget.name ?? t("アプリ", "this app") }
               )
             : ""
         }
@@ -391,7 +394,7 @@ export default function LibraryPage() {
         title={t("ライブラリから削除", "Remove from library")}
         message={
           removeTarget
-            ? t(`「${removeTarget.name ?? "アプリ"}」をマイライブラリから削除しますか？`, `Remove “${removeTarget.name ?? "this app"}” from your library?`)
+            ? format(t("「{name}」をマイライブラリから削除しますか？", "Remove “{name}” from your library?"), { name: removeTarget.name ?? t("アプリ", "this app") })
             : ""
         }
         confirmLabel={t("削除する", "Remove")}

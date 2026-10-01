@@ -52,7 +52,7 @@ import {
   buildSharedConvertMessage,
 } from "@/lib/playground/prompt-template";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { localizePath } from "@/lib/i18n/config";
+import { localizePath, format } from "@/lib/i18n/config";
 import { categoryName } from "@/lib/categories";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
@@ -282,7 +282,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
               <button
                 key={i}
                 onClick={() => setStep(i)}
-                aria-label={t(`ステップ ${i + 1}`, `Step ${i + 1}`)}
+                aria-label={format(t("ステップ {n}", "Step {n}"), { n: i + 1 })}
                 className={cn(
                   "rounded-full transition-all",
                   i === step ? "h-2 w-7 bg-white" : "h-2 w-2 bg-white/40 hover:bg-white/60"
@@ -402,7 +402,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                     {[t("機能を追加して", "Add a feature"), t("もっとおしゃれにして", "Make it more stylish")].map((phrase) => (
                       <span key={phrase} className="inline-flex items-center gap-1.5 rounded-full bg-sky-200 px-3 py-1 text-xs font-bold text-sky-800">
                         <MessageCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                        {t(`「${phrase}」`, `“${phrase}”`)}
+                        {format(t("「{phrase}」", "“{phrase}”"), { phrase })}
                       </span>
                     ))}
                   </div>
@@ -1385,7 +1385,7 @@ export default function PlaygroundPage() {
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast(t(`${fileName} を保存しました`, `Saved ${fileName}`));
+      showToast(format(t("{fileName} を保存しました", "Saved {fileName}"), { fileName }));
       return;
     }
 
@@ -1433,7 +1433,7 @@ export default function PlaygroundPage() {
       if (!res.ok) {
         showToast(t("ローカルに保存しました（サーバー保存は失敗）", "Saved on this device (saving to the server failed)"));
       } else {
-        showToast(t(`「${title}」を保存しました`, `Saved “${title}”`));
+        showToast(format(t("「{title}」を保存しました", "Saved “{title}”"), { title }));
         // ログイン済みならマイプロジェクトにも登録
         if (session?.user) {
           await fetch("/api/my-projects", {
@@ -1776,7 +1776,7 @@ export default function PlaygroundPage() {
           {t("貼り直す", "Paste again")}
         </button>
         <span className="ml-2 hidden text-[11px] text-slate-400 xl:inline">
-          {t(`${lineCount}行 · ${charCount.toLocaleString()}文字`, `${lineCount} lines · ${charCount.toLocaleString()} chars`)}
+          {format(t("{lineCount}行 · {charCount}文字", "{lineCount} lines · {charCount} chars"), { lineCount, charCount: charCount.toLocaleString() })}
         </span>
         <div className="ml-auto flex items-center">
           {/* スマホは幅が足りないため、コピー・保存を優先して元に戻す/やり直すを隠す */}
@@ -2479,9 +2479,12 @@ export default function PlaygroundPage() {
                   )}
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                      t(
-                        `「${publishTitle || "アプリ"}」をAIと作って公開しました\n#ジサップ #個人開発`,
-                        `I made “${publishTitle || "an app"}” with AI and published it\n#Jisapp #buildinpublic`
+                      format(
+                        t(
+                          "「{title}」をAIと作って公開しました\n#ジサップ #個人開発",
+                          "I made “{title}” with AI and published it\n#Jisapp #buildinpublic"
+                        ),
+                        { title: publishTitle || t("アプリ", "an app") }
                       )
                     )}&url=${encodeURIComponent(publishedUrl)}`}
                     target="_blank"
@@ -2496,7 +2499,7 @@ export default function PlaygroundPage() {
                   <ShareButtonRow
                     url={publishedUrl}
                     title={publishTitle}
-                    text={t(`${publishTitle} | ジサップで作った無料アプリ`, `${publishTitle} | a free app made on Jisapp`)}
+                    text={format(t("{publishTitle} | ジサップで作った無料アプリ", "{publishTitle} | a free app made on Jisapp"), { publishTitle })}
                   />
                   <div>
                     <p className="mb-2 text-xs font-bold text-gray-600">{t("アプリの URL", "App URL")}</p>

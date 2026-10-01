@@ -3,23 +3,22 @@
 import { useEffect, useCallback, useRef, type RefObject } from "react";
 import type { GroupSession } from "@/lib/groups/client";
 import { applyAppStorageMessage } from "@/lib/apps/app-storage";
-import { localeFromPath } from "@/lib/i18n/config";
+import { pick } from "@/lib/i18n/config";
+import { getClientLocaleState } from "@/lib/i18n/client";
 import { translateApiMessage } from "@/lib/i18n/api-messages";
 import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, checkAppDataValue, isReservedDataKey, utf8Bytes, type AppDataWarning } from "@/lib/app-data-limits";
 import { compressAppData, decompressAppData } from "@/lib/app-data-codec";
 
-/** 英語ページで開いているか（アプリに返すエラー文の言語に使う） */
-function isEnglishPage(): boolean {
-  return typeof window !== "undefined" && localeFromPath(window.location.pathname) === "en";
-}
-
+/** アプリに返すエラー文を、表示中の言語にする */
 function tx(ja: string, en: string): string {
-  return isEnglishPage() ? en : ja;
+  const { locale, dict } = getClientLocaleState();
+  return pick(locale, ja, en, dict);
 }
 
-/** ブラウザ側で作る日本語のメッセージ（容量の上限など）を、英語ページでは英語にする */
+/** ブラウザ側で作る日本語のメッセージ（容量の上限など）を、英語・ベトナム語ページでは訳す */
 function localizeMessage(message: string): string {
-  return isEnglishPage() ? translateApiMessage(message) : message;
+  const state = getClientLocaleState();
+  return state.locale === "ja" ? message : translateApiMessage(message, state);
 }
 
 /** 保存を断ったとき、ジサップの画面に知らせる（AppDataNotice が受け取って表示する） */
@@ -78,9 +77,10 @@ async function callGroupData(group: GroupSession, body: Record<string, unknown>)
   // グループの共有データがもうすぐいっぱいなら、書き込んだ人の画面にも知らせる
   if (json.warning) notifyAppDataWarning(group.appId, json.warning);
   const result = json.result ?? null;
-  // 抜けたメンバーの名前はサーバーが日本語で入れるので、英語ページでは英語にする
-  if (result && isEnglishPage()) {
-    return JSON.parse(JSON.stringify(result).split('"退出したメンバー"').join('"Former member"'));
+  // 抜けたメンバーの名前はサーバーが日本語で入れるので、英語・ベトナム語ページでは訳す
+  if (result && getClientLocaleState().locale !== "ja") {
+    const former = JSON.stringify(tx("退出したメンバー", "Former member"));
+    return JSON.parse(JSON.stringify(result).split('"退出したメンバー"').join(former));
   }
   return result;
 }

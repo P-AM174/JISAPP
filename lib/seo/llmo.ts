@@ -213,11 +213,12 @@ const LLMO_EN: LlmoContent = {
 };
 
 export function getLlmo(locale: Locale = DEFAULT_LOCALE): LlmoContent {
-  return locale === "en" ? LLMO_EN : LLMO_JA;
+  // ベトナム語は、AI 向けの説明文は英語のものを使う
+  return locale === "ja" ? LLMO_JA : LLMO_EN;
 }
 
 function inLanguage(locale: Locale) {
-  return locale === "en" ? "en" : "ja-JP";
+  return locale === "ja" ? "ja-JP" : locale;
 }
 
 export function createOrganizationJsonLd(locale: Locale = DEFAULT_LOCALE) {
@@ -242,17 +243,17 @@ export function createPlatformSoftwareJsonLd(locale: Locale = DEFAULT_LOCALE) {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: locale === "en" ? "Jisapp" : SITE_BRAND,
+    name: locale === "ja" ? SITE_BRAND : "Jisapp",
     alternateName: ["ジサップ", "Jisapp"],
     url: absoluteUrl(localizePath("/", locale)),
     description: llmo.definition,
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web Browser",
-    inLanguage: ["ja-JP", "en"],
+    inLanguage: ["ja-JP", "en", "vi"],
     offers: {
       "@type": "Offer",
       price: "0",
-      priceCurrency: locale === "en" ? "USD" : "JPY",
+      priceCurrency: locale === "ja" ? "JPY" : "USD",
     },
     sameAs: SITE_SAME_AS,
     featureList: llmo.featureList,

@@ -49,8 +49,8 @@ import { ShareButton, AppUrlCopyField } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { ProjectThumb } from "@/components/projects/project-thumb";
 import { supabase } from "@/lib/supabase";
-import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, localizePath, makeT, type Locale } from "@/lib/i18n/config";
+import { getClientLocaleState, useLocale, useT } from "@/lib/i18n/client";
+import { intlLocale, localizePath, makeT, type Locale, format, plural } from "@/lib/i18n/config";
 import { categoryName } from "@/lib/categories";
 import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
 import { formatBytes } from "@/lib/app-data-limits";
@@ -83,7 +83,7 @@ function isPublishedProject(proj: Project) {
 }
 
 function getPublishActionLabel(proj: Project, locale: Locale) {
-  const t = makeT(locale);
+  const t = makeT(locale, getClientLocaleState().dict);
   return isPublishedProject(proj) ? t("出品情報", "Listing info") : t("出品 / URL発行", "Publish / Get URL");
 }
 
@@ -111,7 +111,7 @@ function mapServerProject(locale: Locale, row: {
   const lineCount = row.code_lines ?? (row.html_code ? row.html_code.split("\n").length : 0);
   const charCount = row.code_chars ?? row.html_code?.length ?? 0;
   const status = row.status as Project["status"];
-  const t = makeT(locale);
+  const t = makeT(locale, getClientLocaleState().dict);
   const meta = {
     draft:    { tag: t("作業中", "Draft"),   tagColor: "bg-sky-100 text-sky-700",        gradient: "from-sky-400 to-cyan-500" },
     listed:   { tag: t("公開中", "Live"),   tagColor: "bg-emerald-100 text-emerald-700", gradient: "from-emerald-500 to-teal-600" },
@@ -257,13 +257,13 @@ function ProjectCard({ proj, storageBytes, maxKeyBytes, onDeleteData, onDelete, 
           </span>
           <span className="flex items-center gap-1">
             <FileText className="h-3 w-3" />
-            {t(`${proj.lines} 行`, `${proj.lines} lines`)}
+            {format(t("{lines} 行", "{lines} lines"), { lines: proj.lines })}
           </span>
-          <span>{t(`${proj.chars.toLocaleString()} 文字`, `${proj.chars.toLocaleString()} chars`)}</span>
+          <span>{format(t("{chars} 文字", "{chars} chars"), { chars: proj.chars.toLocaleString() })}</span>
           {isPublishedProject(proj) && proj.libraryCount != null && (
             <span className="flex items-center gap-1 text-teal-600">
               <LibraryBig className="h-3 w-3" />
-              {t(`${proj.libraryCount}人がライブラリ登録`, `In ${proj.libraryCount} ${proj.libraryCount === 1 ? "library" : "libraries"}`)}
+              {format(t("{n}人がライブラリ登録", plural(locale, proj.libraryCount, "In {n} library", "In {n} libraries")), { n: proj.libraryCount })}
             </span>
           )}
         </div>
@@ -300,7 +300,7 @@ function ProjectCard({ proj, storageBytes, maxKeyBytes, onDeleteData, onDelete, 
               <ShareButton
                 url={proj.url ?? getAppShareUrl(String(proj.appId))}
                 title={proj.title}
-                text={t(`${proj.title} | ジサップで作った無料アプリ`, `${proj.title} | a free app made on Jisapp`)}
+                text={format(t("{title} | ジサップで作った無料アプリ", "{title} | a free app made on Jisapp"), { title: proj.title })}
                 variant="outline"
                 className="flex-1"
               />
@@ -345,7 +345,7 @@ function AcquiredCard({ app }: { app: AcquiredApp }) {
         {app.acquiredAt && (
           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-400">
             <Clock className="h-2.5 w-2.5" />
-            {t(`${app.acquiredAt} に取得`, `Got ${app.acquiredAt}`)}
+            {format(t("{acquiredAt} に取得", "Got {acquiredAt}"), { acquiredAt: app.acquiredAt })}
           </p>
         )}
       </div>
@@ -640,7 +640,7 @@ export default function ProjectsPage() {
 
   const handleUnlist = async (proj: Project) => {
     if (!proj.appId) return;
-    if (!confirm(t(`「${proj.title}」の出品を取り下げますか？\nトップページの一覧から非表示になります（URLは引き続き使えます）。`, `Unlist “${proj.title}”?\nIt will be hidden from the home page (the URL keeps working).`))) return;
+    if (!confirm(format(t("「{title}」の出品を取り下げますか？\nトップページの一覧から非表示になります（URLは引き続き使えます）。", "Unlist “{title}”?\nIt will be hidden from the home page (the URL keeps working)."), { title: proj.title }))) return;
 
     setUnlisting(true);
     try {
@@ -780,7 +780,7 @@ export default function ProjectsPage() {
     const proj = myProjects.find((p) => p.id === id);
     const confirmMsg =
       proj && isPublishedProject(proj)
-        ? t(`「${proj.title}」を削除しますか？\n出品も取り下げられ、トップページ・探すページから非表示になります。`, `Delete “${proj.title}”?\nIt will also be unlisted and hidden from the home and search pages.`)
+        ? format(t("「{title}」を削除しますか？\n出品も取り下げられ、トップページ・探すページから非表示になります。", "Delete “{title}”?\nIt will also be unlisted and hidden from the home and search pages."), { title: proj.title })
         : t("このプロジェクトを削除しますか？", "Delete this project?");
 
     if (!confirm(confirmMsg)) return;
@@ -920,10 +920,7 @@ export default function ProjectsPage() {
         <StorageMeter usage={usage}>
           {playgroundBytes > 0 && (
             <p className="mt-1 text-xs text-gray-500">
-              {t(
-                `うち、開発スタジオで試したときの保存データ：${formatBytes(playgroundBytes)}`,
-                `Including ${formatBytes(playgroundBytes)} saved while testing in the Studio`
-              )}
+              {format(t("うち、開発スタジオで試したときの保存データ：{playgroundBytes}", "Including {playgroundBytes} saved while testing in the Studio"), { playgroundBytes: formatBytes(playgroundBytes) })}
             </p>
           )}
         </StorageMeter>
@@ -1056,10 +1053,7 @@ export default function ProjectsPage() {
         title={t("保存データを消す", "Delete saved data")}
         message={
           dataDeleteTarget
-            ? t(
-                `「${dataDeleteTarget.title}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリ自体は消えません。`,
-                `Delete all the data you've saved in “${dataDeleteTarget.title}”? This can't be undone. The app itself stays.`
-              )
+            ? format(t("「{title}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリ自体は消えません。", "Delete all the data you've saved in “{title}”? This can't be undone. The app itself stays."), { title: dataDeleteTarget.title })
             : ""
         }
         confirmLabel={t("消す", "Delete")}

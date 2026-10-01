@@ -5,6 +5,7 @@ import Link from "@/lib/i18n/navigation";
 import { ChevronRight, UserRound, X } from "lucide-react";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { format } from "@/lib/i18n/config";
 
 /** フォローしている作者の一覧（マイライブラリ上部の「フォロー中」をタップしたとき） */
 export function FollowedCreatorsModal({ names, onClose }: { names: string[]; onClose: () => void }) {
@@ -33,7 +34,7 @@ export function FollowedCreatorsModal({ names, onClose }: { names: string[]; onC
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-base font-black text-gray-900">
-            {t(`フォロー中の作者（${names.length}人）`, `Creators you follow (${names.length})`)}
+            {format(t("フォロー中の作者（{count}人）", "Creators you follow ({count})"), { count: names.length })}
           </h2>
           <button
             onClick={onClose}

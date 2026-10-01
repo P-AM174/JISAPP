@@ -18,7 +18,7 @@ import {
   Package,
 } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, type Locale } from "@/lib/i18n/config";
+import { intlLocale, type Locale, format, plural } from "@/lib/i18n/config";
 
 type AppRequest = {
   id: string;
@@ -183,7 +183,7 @@ export default function RequestDetailPage() {
                 </span>
                 <span className="ml-auto text-xs text-gray-400">{formatDate(request.createdAt, locale)}</span>
                 <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                  <MessageSquare className="h-3 w-3" /> {t(`${responses.length}件の返信`, `${responses.length} ${responses.length === 1 ? "reply" : "replies"}`)}
+                  <MessageSquare className="h-3 w-3" /> {format(t("{n}件の返信", plural(locale, responses.length, "{n} reply", "{n} replies")), { n: responses.length })}
                 </span>
               </div>
               <h1 className="text-lg font-black text-gray-900">{request.title}</h1>
@@ -194,7 +194,7 @@ export default function RequestDetailPage() {
               <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-black text-gray-900">
                   <Package className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2} />
-                  {t(`作ってみました（${responses.length}件）`, `People made it (${responses.length})`)}
+                  {format(t("作ってみました（{count}件）", "People made it ({count})"), { count: responses.length })}
                 </h2>
                 <div className="space-y-4">
                   {responses.map((r) => (

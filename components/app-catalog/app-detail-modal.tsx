@@ -31,6 +31,7 @@ import { GroupAppNotice } from "./group-app-badge";
 import { displayCreatorName, getCreatorProfilePath } from "./utils";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { ModalApp } from "./types";
+import { format } from "@/lib/i18n/config";
 
 const STAMPS = [
   { id: "like", Icon: Heart, label: "いいね！", labelEn: "Love it!" },
@@ -355,7 +356,7 @@ export function AppDetailModal({
             <ShareButtonRow
               url={getAppShareUrl(String(app.id))}
               title={app.name}
-              text={t(`${app.name} | ジサップで作った無料アプリ`, `${app.name} | a free app made on Jisapp`)}
+              text={format(t("{name} | ジサップで作った無料アプリ", "{name} | a free app made on Jisapp"), { name: app.name })}
             />
 
             <button

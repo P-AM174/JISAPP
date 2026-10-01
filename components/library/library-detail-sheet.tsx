@@ -7,7 +7,7 @@ import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 import { categoryName } from "@/lib/categories";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale } from "@/lib/i18n/config";
+import { intlLocale, format } from "@/lib/i18n/config";
 import { lastOpenedLabel, type LibraryEntry } from "@/lib/library/sort";
 import { AppStorageBar } from "@/components/app-storage-bar";
 
@@ -85,7 +85,7 @@ export function LibraryDetailSheet({
   const stats = [
     { label: t("ライブラリ登録", "In libraries"), value: detail ? detail.libraryCount.toLocaleString() : "–" },
     { label: t("スタンプ", "Stamps"), value: detail ? detail.stampCount.toLocaleString() : "–" },
-    { label: t("自分が開いた", "You opened"), value: t(`${entry.openCount ?? 0}回`, `${entry.openCount ?? 0}×`) },
+    { label: t("自分が開いた", "You opened"), value: format(t("{openCount}回", "{openCount}×"), { openCount: entry.openCount ?? 0 }) },
   ];
 
   return (

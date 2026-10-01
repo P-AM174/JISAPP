@@ -3,19 +3,21 @@
 import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 import { LocaleProvider } from "@/lib/i18n/client";
-import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary, Locale } from "@/lib/i18n/config";
 
 export function Providers({
   children,
   session,
   locale,
+  dict,
 }: {
   children: React.ReactNode;
   session?: Session | null;
   locale: Locale;
+  dict?: Dictionary | null;
 }) {
   return (
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} dict={dict}>
       <SessionProvider session={session}>{children}</SessionProvider>
     </LocaleProvider>
   );

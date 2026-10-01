@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { Key, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { AttachType, SecretMeta } from "@/lib/secrets/constants";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, type Locale } from "@/lib/i18n/config";
+import { intlLocale, type Locale, format } from "@/lib/i18n/config";
 
 type Props = {
   open: boolean;
@@ -162,7 +162,7 @@ export function SecretsSettingsModal({
 
   const deleteAppSecret = async (name: string) => {
     if (!appId) return;
-    if (!window.confirm(t(`「${name}」を削除しますか？`, `Delete “${name}”?`))) return;
+    if (!window.confirm(format(t("「{name}」を削除しますか？", "Delete “{name}”?"), { name }))) return;
     setAppError("");
     try {
       const res = await fetch(
@@ -225,9 +225,12 @@ export function SecretsSettingsModal({
               <p className="text-xs leading-relaxed text-gray-500">
                 {mode === "studio"
                   ? t("外部API・AI（OpenAI、天気API、地図APIなど）のキーを登録します。コードに書く secret 名と、ここで登録する名前を同じ大文字にしてください。", "Register keys for external APIs and AI (OpenAI, weather, maps, etc.). Use the same UPPERCASE name here as the secret name in your code.")
-                  : t(
-                      `${appTitle ? `「${appTitle}」` : "このアプリ"} の公開版で使う外部APIキーです。コードでは secret: '名前' だけ指定します。`,
-                      `External API keys used by the published version of ${appTitle ? `“${appTitle}”` : "this app"}. In the code, only write secret: 'NAME'.`
+                  : format(
+                      t(
+                        "{app} の公開版で使う外部APIキーです。コードでは secret: '名前' だけ指定します。",
+                        "External API keys used by the published version of {app}. In the code, only write secret: 'NAME'."
+                      ),
+                      { app: appTitle ? format(t("「{title}」", "“{title}”"), { title: appTitle }) : t("このアプリ", "this app") }
                     )}
               </p>
               <div className="rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2.5 text-[11px] leading-relaxed text-violet-900">
@@ -251,7 +254,7 @@ export function SecretsSettingsModal({
                         <p className="text-[10px] text-gray-400">{attachLabel(s, locale)}</p>
                         <p className="mt-0.5 text-[10px] text-emerald-600">
                           {t("●●●● 登録済み", "●●●● Saved")}
-                          {s.updated_at ? t(` · 更新 ${formatUpdatedAt(s.updated_at, locale)}`, ` · updated ${formatUpdatedAt(s.updated_at, locale)}`) : ""}
+                          {s.updated_at ? format(t(" · 更新 {updated_at}", " · updated {updated_at}"), { updated_at: formatUpdatedAt(s.updated_at, locale) }) : ""}
                         </p>
                       </div>
                       <button
@@ -288,7 +291,7 @@ export function SecretsSettingsModal({
                   className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4"
                 >
                   <p className="text-xs font-bold text-emerald-800">
-                    {formMode === "edit" ? t(`「${editingName}」を編集`, `Edit “${editingName}”`) : t("新しいシークレット", "New secret")}
+                    {formMode === "edit" ? format(t("「{editingName}」を編集", "Edit “{editingName}”"), { editingName }) : t("新しいシークレット", "New secret")}
                   </p>
                   <div>
                     <label className="mb-1 block text-xs font-bold text-gray-700">{t("名前（大文字）", "Name (UPPERCASE)")}</label>

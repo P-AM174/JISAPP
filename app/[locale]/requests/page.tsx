@@ -18,7 +18,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n/client";
-import { intlLocale, type Locale } from "@/lib/i18n/config";
+import { intlLocale, type Locale, format, plural } from "@/lib/i18n/config";
 
 type AppRequest = {
   id: string;
@@ -66,7 +66,7 @@ function RequestCard({ req }: { req: AppRequest }) {
             {categoryLabel(req.category, locale)}
           </span>
           <span className="flex shrink-0 items-center gap-1 text-[11px] text-gray-400">
-            <MessageSquare className="h-3 w-3" /> {t(`${req.responses}件の返信`, `${req.responses} ${req.responses === 1 ? "reply" : "replies"}`)}
+            <MessageSquare className="h-3 w-3" /> {format(t("{n}件の返信", plural(locale, req.responses, "{n} reply", "{n} replies")), { n: req.responses })}
           </span>
         </div>
         <h3 className="text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700">

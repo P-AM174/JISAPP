@@ -23,6 +23,7 @@ import { STUDIO_AIS, copyText, type StudioAi } from "@/lib/playground/ai-launch"
 import { buildSharedConvertMessage, getPromptStorage } from "@/lib/playground/prompt-template";
 import { storageFixMessage } from "@/lib/playground/code-cleanup";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { format } from "@/lib/i18n/config";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
 
@@ -47,7 +48,7 @@ export function StageIndicator({
 
   if (compact) {
     return (
-      <div className="flex gap-1" aria-label={t(`ステップ ${current + 1} / 3：${STAGES[current].label}`, `Step ${current + 1} of 3: ${STAGES[current].labelEn}`)}>
+      <div className="flex gap-1" aria-label={format(t("ステップ {n} / 3：{label}", "Step {n} of 3: {label}"), { n: current + 1, label: t(STAGES[current].label, STAGES[current].labelEn) })}>
         {STAGES.map((s, i) => (
           <span
             key={s.id}
@@ -137,7 +138,7 @@ export function LaunchAiLink({
     >
       {children ?? (
         <>
-          {t(`${ai.name}で作る`, `Make it with ${ai.name}`)}
+          {format(t("{name}で作る", "Make it with {name}"), { name: ai.name })}
           <ArrowUpRight className="h-4 w-4 shrink-0 opacity-80" strokeWidth={2.25} />
         </>
       )}
@@ -385,7 +386,7 @@ export function EditorStart({
                 {waitingForAi ? (
                   <>
                     <p className="text-xs font-bold tracking-wide text-teal-700">
-                      {returned ? t("おかえりなさい", "Welcome back") : t(`${ai?.url ? ai.name : "AI"}の返事を待っています`, `Waiting for ${ai?.url ? ai.name : "the AI"}'s reply`)}
+                      {returned ? t("おかえりなさい", "Welcome back") : format(t("{ai}の返事を待っています", "Waiting for {ai}'s reply"), { ai: ai?.url ? ai.name : t("AI", "the AI") })}
                     </p>
                     <h2 className="mt-1 text-xl font-extrabold leading-snug tracking-tight text-slate-900 [word-break:auto-phrase]">
                       {t("AIのコードを、このエディタに貼り付けてください", "Paste the AI's code into this editor")}
@@ -393,7 +394,7 @@ export function EditorStart({
                     <ol className="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-600">
                       <li className="flex gap-2.5">
                         <StepDot n={1} />
-                        <span>{t(`${ai?.url ? ai.name : "AI"}の返事にあるコードを、最初から最後まで全部コピー`, `Copy all the code in ${ai?.url ? ai.name : "the AI"}'s reply, from start to finish`)}</span>
+                        <span>{format(t("{ai}の返事にあるコードを、最初から最後まで全部コピー", "Copy all the code in {ai}'s reply, from start to finish"), { ai: ai?.url ? ai.name : t("AI", "the AI") })}</span>
                       </li>
                       <li className="flex gap-2.5">
                         <StepDot n={2} />
@@ -418,7 +419,7 @@ export function EditorStart({
                           className="bg-none bg-transparent p-0 text-xs font-semibold text-slate-500 shadow-none hover:bg-transparent hover:text-slate-800"
                         >
                           <ArrowUpRight className="h-3.5 w-3.5" />
-                          {t(`もう一度${ai.name}を開く`, `Open ${ai.name} again`)}
+                          {format(t("もう一度{name}を開く", "Open {name} again"), { name: ai.name })}
                         </LaunchAiLink>
                       )}
                       <button type="button" onClick={onReopenCopied} className="flex items-center gap-1 hover:text-slate-800">

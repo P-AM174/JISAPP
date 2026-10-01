@@ -28,6 +28,7 @@ import {
   getFollowedCreatorNames,
   syncFollowsFromServer,
 } from "@/lib/follow-creators";
+import { format, plural } from "@/lib/i18n/config";
 
 type CreatorProfile = {
   name: string;
@@ -147,7 +148,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
                 </p>
                 <h1 className="text-2xl font-black text-white sm:text-3xl">{displayCreatorName(profile.name, locale)}</h1>
                 <p className="mt-1 text-sm font-semibold text-white/80">
-                  {t(`ジサップで ${profile.appCount} 本のアプリを公開中`, `${profile.appCount} ${profile.appCount === 1 ? "app" : "apps"} published on Jisapp`)}
+                  {format(t("ジサップで {n} 本のアプリを公開中", plural(locale, profile.appCount, "{n} app published on Jisapp", "{n} apps published on Jisapp")), { n: profile.appCount })}
                 </p>
               </div>
             </div>
@@ -227,7 +228,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
               </div>
               <div>
                 <h2 className="text-base font-black text-gray-900">{t("出品アプリ一覧", "Published apps")}</h2>
-                <p className="text-xs text-gray-400">{t(`${profile.apps.length}件`, `${profile.apps.length} ${profile.apps.length === 1 ? "app" : "apps"}`)}</p>
+                <p className="text-xs text-gray-400">{format(t("{n}件", plural(locale, profile.apps.length, "{n} app", "{n} apps")), { n: profile.apps.length })}</p>
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">

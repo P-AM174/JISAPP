@@ -12,7 +12,8 @@ import {
   X,
   Users,
 } from "lucide-react";
-import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
+import { searchKey } from "@/lib/i18n/text";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { CatalogApp } from "@/lib/home/catalog";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
@@ -35,7 +36,9 @@ const ALL = "all";
 function resolveCategory(value: string | null): string {
   if (!value || value === "すべて" || value === ALL) return ALL;
   if (CATEGORY_MAP[value]) return value;
-  const hit = CATEGORIES.find((c) => c.name === value || c.nameEn.toLowerCase() === value.toLowerCase());
+  const hit = CATEGORIES.find(
+    (c) => c.name === value || c.nameEn.toLowerCase() === value.toLowerCase() || searchKey(c.nameVi) === searchKey(value)
+  );
   return hit ? hit.id : value;
 }
 
@@ -62,30 +65,37 @@ export function SearchPageClient({
     SORT_OPTIONS.some(o => o.value === initSort) ? initSort : "default"
   );
   const [selectedApp, setSelectedApp] = useState<ModalApp | null>(null);
-  const allApps = initialApps;
+  const categories = useMemo(() => visibleCategories(locale), [locale]);
+  // ベトナム語ページでは、フラグがオンになるまでゲームのアプリを一覧に出さない（lib/features.ts）
+  const allApps = useMemo(
+    () => (categories.length === CATEGORIES.length ? initialApps : initialApps.filter((a) => a.category !== "games")),
+    [initialApps, categories]
+  );
   const loading = false;
   const error = false;
 
-  const categoryKeys = useMemo(() => [ALL, ...CATEGORIES.map(c => c.id)], []);
+  const categoryKeys = useMemo(() => [ALL, ...categories.map(c => c.id)], [categories]);
   const categoryLabel = (key: string) => (key === ALL ? t("すべて", "All") : categoryName(key, locale));
   const groupAppCount = useMemo(() => allApps.filter((a) => a.group_sharing).length, [allApps]);
   /** カテゴリの件数は、グループの絞り込みをかけた後の数で出す */
   const countBase = useMemo(() => (groupOnly ? allApps.filter((a) => a.group_sharing) : allApps), [allApps, groupOnly]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // 大文字小文字と、ベトナム語の声調記号の有無を問わずに探す（「quan ly」で「quản lý」が見つかる）
+    const q = searchKey(query.trim());
+    const has = (value: string | null | undefined) => !!value && searchKey(value).includes(q);
 
     const result = allApps.filter((app) => {
       const cat = app.category ? CATEGORY_MAP[app.category] : null;
-      const appCatName = cat ? `${cat.name} ${cat.nameEn}` : app.category ?? "";
+      const appCatName = cat ? `${cat.name} ${cat.nameEn} ${cat.nameVi}` : app.category ?? "";
       const matchCat = activeCategory === ALL || app.category === activeCategory;
       const matchGroup = !groupOnly || !!app.group_sharing;
       const matchQ   = !q
-        || app.title.toLowerCase().includes(q)
-        || (app.description ?? "").toLowerCase().includes(q)
-        || (app.creator_name ?? "").toLowerCase().includes(q)
-        || appCatName.toLowerCase().includes(q)
-        || (!!app.group_sharing && ["グループ", "group"].some((word) => (q.length >= 2 && word.includes(q)) || q.includes(word)));
+        || has(app.title)
+        || has(app.description)
+        || has(app.creator_name)
+        || has(appCatName)
+        || (!!app.group_sharing && ["グループ", "group", "nhom"].some((word) => (q.length >= 2 && word.includes(q)) || q.includes(word)));
       return matchCat && matchGroup && matchQ;
     });
 

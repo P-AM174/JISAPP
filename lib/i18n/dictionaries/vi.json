@@ -1584,6 +1584,11 @@
     "reviewed": false,
     "en": "All →"
   },
+  "すべての言語": {
+    "vi": "Mọi ngôn ngữ",
+    "reviewed": false,
+    "en": "All languages"
+  },
   "すべての通知を見る →": {
     "vi": "Xem tất cả thông báo →",
     "reviewed": false,
@@ -2043,6 +2048,11 @@
     "vi": "Không chuẩn bị được app: {1}",
     "reviewed": false,
     "en": "Couldn't prepare the app: {1}"
+  },
+  "アプリの言語": {
+    "vi": "Ngôn ngữ của app",
+    "reviewed": false,
+    "en": "App language"
   },
   "アプリの読み込みに失敗しました": {
     "vi": "Không tải được app",

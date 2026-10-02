@@ -52,7 +52,7 @@ export function CatalogAppCard({
                 {categoryName(cat, locale)}
               </span>
             )}
-            <AppLangTag title={app.title} description={app.description} className="ml-auto" />
+            <AppLangTag title={app.title} description={app.description} />
             <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 ml-auto">
               FREE
             </span>

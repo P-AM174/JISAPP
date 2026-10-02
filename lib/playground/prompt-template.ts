@@ -486,7 +486,9 @@ The user may describe the app in Vietnamese. Understand it and build exactly tha
 [Vietnamese display rules (required)]
 - Set <html lang="vi"> and <meta charset="UTF-8">.
 - Don't load any web fonts (no Google Fonts, no CDN). Use only system fonts that can display Vietnamese diacritics:
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+  font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  Do not use system-ui or a generic font first: on Windows set to Japanese or Chinese it becomes a CJK font that has no Vietnamese glyphs, and the diacritics break apart.
+- Make inputs, buttons, textareas and selects use the same font (input, button, textarea, select { font: inherit; }).
 - Use line-height around 1.5 so diacritics above and below letters aren't cut off. Don't set fixed heights that clip text on buttons or tags.
 - Vietnamese words are separated by spaces. Never use word-break: break-all.
 - Show dates as dd/mm/yyyy and numbers with "." as the thousands separator, using Intl.DateTimeFormat('vi-VN') and Intl.NumberFormat('vi-VN') (e.g. 1.000.000). Use Vietnamese đồng (₫) for money unless the user asks otherwise.
@@ -502,12 +504,12 @@ export const PROMPT_TEMPLATE_VI = PROMPT_TEMPLATE_EN.split(PROMPT_APP_NAME_PLACE
 
 export const PROMPT_JISAPP_DESIGN_VI = PROMPT_JISAPP_DESIGN_EN.replace(
   '- Font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
-  '- Font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif (system fonts only, they must display Vietnamese diacritics)'
+  '- Font: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (system fonts only, in this order, so Vietnamese diacritics display correctly; never put system-ui first)'
 );
 
 export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(
   "- Write all text in the app's screens in English",
   `- Write all text in the app's screens in natural Vietnamese with correct diacritics, and set <html lang="vi">
-- Use only system fonts that display Vietnamese (system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif), line-height about 1.5
+- Use only system fonts that display Vietnamese, in this order: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (not system-ui). line-height about 1.5
 - Format dates and numbers with Intl (vi-VN): dd/mm/yyyy, 1.000`
 );

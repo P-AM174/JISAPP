@@ -36,7 +36,7 @@ export function JisappLogo({ className, href = "/", onClick, size = "default" }:
   const t = useT();
   const locale = useLocale();
   const content = (
-    <span className={cn("inline-flex items-center", isLg ? "h-12 gap-2.5" : "h-10 gap-2")}>
+    <span className={cn("relative inline-flex items-center", isLg ? "h-12 gap-2.5" : "h-10 gap-2")}>
       <JisappLogoIcon className={cn("shrink-0", isLg ? "h-11 w-11" : "h-10 w-10")} />
       <span
         className={cn(
@@ -48,7 +48,8 @@ export function JisappLogo({ className, href = "/", onClick, size = "default" }:
       </span>
       {/* ベトナム語版はネイティブの確認が済むまで Beta と表示する（lib/features.ts） */}
       {showViBeta(locale) && (
-        <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-amber-800 ring-1 ring-amber-200">
+        // 幅を取らないよう、ロゴの右上に重ねる（スマホの狭いヘッダーではみ出さないように）
+        <span className="pointer-events-none absolute -right-3 -top-0.5 rounded-full bg-amber-100 px-1 py-px text-[8px] font-bold uppercase leading-none tracking-wide text-amber-800 ring-1 ring-amber-200">
           Beta
         </span>
       )}

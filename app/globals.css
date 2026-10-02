@@ -85,7 +85,7 @@ body {
 
 /* ベトナム語ページ：声調記号が上下につくので、記号のある書体を先にし、行の高さを詰めすぎない */
 html[lang="vi"] body {
-  font-family: var(--font-be-vietnam-pro), "Noto Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  font-family: var(--font-be-vietnam-pro), "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
   line-height: 1.55;
 }
 html[lang="vi"] {

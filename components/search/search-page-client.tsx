@@ -13,7 +13,8 @@ import {
   Users,
 } from "lucide-react";
 import { CATEGORIES, CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
-import { searchKey } from "@/lib/i18n/text";
+import { detectTextLang, searchKey } from "@/lib/i18n/text";
+import { LOCALE_LABELS, type Locale } from "@/lib/i18n/config";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { CatalogApp } from "@/lib/home/catalog";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
@@ -63,6 +64,8 @@ export function SearchPageClient({
   const [activeCategory, setActiveCategory] = useState(initCategory);
   // グループ共有アプリだけに絞る（カテゴリとは別の絞り込み。組み合わせて使える）
   const [groupOnly,      setGroupOnly]      = useState(initGroup);
+  // アプリの言語の絞り込み（英語・ベトナム語ページだけ。初期値は「すべて」）
+  const [langFilter,     setLangFilter]     = useState<Locale | "all">("all");
   const [sortMethod,     setSortMethod]     = useState<SortMethod>(
     SORT_OPTIONS.some(o => o.value === initSort) ? initSort : "default"
   );
@@ -92,13 +95,14 @@ export function SearchPageClient({
       const appCatName = cat ? `${cat.name} ${cat.nameEn} ${cat.nameVi}` : app.category ?? "";
       const matchCat = activeCategory === ALL || app.category === activeCategory;
       const matchGroup = !groupOnly || !!app.group_sharing;
+      const matchLang = langFilter === "all" || detectTextLang(app.title, app.description) === langFilter;
       const matchQ   = !q
         || has(app.title)
         || has(app.description)
         || has(app.creator_name)
         || has(appCatName)
         || (!!app.group_sharing && ["グループ", "group", "nhom"].some((word) => (q.length >= 2 && word.includes(q)) || q.includes(word)));
-      return matchCat && matchGroup && matchQ;
+      return matchCat && matchGroup && matchLang && matchQ;
     });
 
     switch (sortMethod) {
@@ -110,7 +114,7 @@ export function SearchPageClient({
         new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
       );
     }
-  }, [allApps, query, activeCategory, groupOnly, sortMethod]);
+  }, [allApps, query, activeCategory, groupOnly, langFilter, sortMethod]);
 
   const hasFilter = !!(query || activeCategory !== ALL || groupOnly || sortMethod !== "default");
   const resetAll  = () => { setQuery(""); setActiveCategory(ALL); setGroupOnly(false); setSortMethod("default"); };
@@ -275,6 +279,25 @@ export function SearchPageClient({
                 </select>
               </div>
             </div>
+
+            {/* アプリの言語（英語・ベトナム語ページだけ） */}
+            {locale !== "ja" && (
+              <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t("アプリの言語", "App language")}>
+                {(["all", locale, ...(["vi", "en", "ja"] as const).filter((l) => l !== locale)] as const).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setLangFilter(l)}
+                    aria-pressed={langFilter === l}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                      langFilter === l ? "bg-emerald-600 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    {l === "all" ? t("すべての言語", "All languages") : LOCALE_LABELS[l]}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* 結果ステータスバー */}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

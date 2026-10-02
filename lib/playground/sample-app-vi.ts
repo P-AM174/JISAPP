@@ -2,6 +2,7 @@
  * ベトナム語版の開発スタジオで「サンプルを動かす」と読み込むアプリ。
  * ベトナム語ページではゲームを前面に出さない（lib/features.ts）ため、反射神経ゲームの代わりに割り勘の計算ツールにする。
  * 画面の文言はベトナム語（機械翻訳・ネイティブ未確認）。数字は vi-VN の書式（1.000 のようにピリオド区切り）
+ * フォントに system-ui を使わない（日本語版 Windows では日本語フォントになり、声調記号がばらけて表示される）
  */
 export const SAMPLE_APP_HTML_VI = `<!DOCTYPE html>
 <html lang="vi">
@@ -11,8 +12,10 @@ export const SAMPLE_APP_HTML_VI = `<!DOCTYPE html>
 <title>Chia tiền nhóm</title>
 <style>
   * { box-sizing: border-box; margin: 0; }
+  input, button { font: inherit; }
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    /* Fonts with Vietnamese glyphs first (system-ui can be a CJK font on some Windows setups) */
+    font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
     line-height: 1.5;
     color: #0f172a;
     background: #f8fafc;
@@ -106,11 +109,12 @@ export const SAMPLE_APP_HTML_VI = `<!DOCTYPE html>
   function update() {
     const total = readTotal();
     const people = Math.max(1, Math.floor(Number(peopleInput.value) || 1));
-    const withTip = total * (1 + tip / 100);
+    // integer math so 450.000 + 10% split by 3 is exactly 165.000 (no floating-point rounding up)
+    const withTip = Math.round((total * (100 + tip)) / 100);
     const share = Math.ceil(withTip / people / 1000) * 1000;
     each.textContent = money.format(share) + " ₫";
     note.textContent = total
-      ? "Tổng cộng " + money.format(Math.round(withTip)) + " ₫ · làm tròn lên đến 1.000 ₫"
+      ? "Tổng cộng " + money.format(withTip) + " ₫ · làm tròn lên đến 1.000 ₫"
       : "Làm tròn lên đến 1.000 ₫";
   }
 

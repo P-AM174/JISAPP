@@ -46,7 +46,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { CATEGORIES, CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
+import { CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
 import { showGames } from "@/lib/features";
 import { sortLibrary, type LibraryEntry } from "@/lib/library/sort";
 import { CategoryIcon } from "@/lib/category-icon";

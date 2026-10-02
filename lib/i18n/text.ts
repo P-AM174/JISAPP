@@ -51,9 +51,7 @@ export function matchesSearch(target: string | null | undefined, query: string):
 export function visibleLength(value: string): number {
   if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
     const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-    let count = 0;
-    for (const _ of segmenter.segment(value)) count++;
-    return count;
+    return Array.from(segmenter.segment(value)).length;
   }
   return Array.from(value.normalize("NFC")).length;
 }

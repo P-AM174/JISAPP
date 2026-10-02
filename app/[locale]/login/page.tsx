@@ -14,6 +14,7 @@ import {
   Eye, EyeOff, X, CheckCircle2, Mail, Lock, User,
   ArrowRight, AlertCircle, RefreshCw, ShieldCheck,
 } from "lucide-react";
+import { rich } from "@/lib/i18n/rich";
 
 // ─── Google SVG アイコン ───────────────────────────────────
 function GoogleIcon() {
@@ -248,10 +249,7 @@ function LoginContent() {
               </div>
               <h1 className="text-2xl font-black text-gray-900">{t("メールを確認してください", "Check your email")}</h1>
               <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
-                {t(
-                  <><span className="font-semibold text-emerald-700">{regEmail}</span> に<br />6桁の認証コードを送信しました</>,
-                  <>We sent a 6-digit code to<br /><span className="font-semibold text-emerald-700">{regEmail}</span></>
-                )}
+                {rich(t("<t0>{regEmail}</t0> に<br/>6桁の認証コードを送信しました", "We sent a 6-digit code to<br/><t0>{regEmail}</t0>"), { t0: (c) => <span className="font-semibold text-emerald-700">{c}</span> }, { regEmail })}
               </p>
             </div>
 
@@ -491,19 +489,7 @@ function LoginContent() {
             )}
 
             <p className="mt-5 text-center text-[11px] text-gray-400">
-              {t(
-                <>
-                  登録・ログインすることで
-                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">利用規約</Link>および
-                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">プライバシーポリシー</Link>
-                  に同意したものとみなされます。
-                </>,
-                <>
-                  By signing up or signing in, you agree to the
-                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">Terms of Service</Link>and
-                  <Link href="/terms" className="text-emerald-600 hover:underline mx-1">Privacy Policy</Link>.
-                </>
-              )}
+              {rich(t("登録・ログインすることで<t0>利用規約</t0>および<t0>プライバシーポリシー</t0>に同意したものとみなされます。", "By signing up or signing in, you agree to the<t0>Terms of Service</t0>and<t0>Privacy Policy</t0>."), { t0: (c) => <Link href="/terms" className="text-emerald-600 hover:underline mx-1">{c}</Link> })}
             </p>
           </div>
         </div>

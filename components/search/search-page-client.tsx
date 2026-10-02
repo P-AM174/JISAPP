@@ -19,6 +19,8 @@ import type { CatalogApp } from "@/lib/home/catalog";
 import { AppDetailModal } from "@/components/app-catalog/app-detail-modal";
 import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
 import type { ModalApp } from "@/components/app-catalog/types";
+import { rich } from "@/lib/i18n/rich";
+import { plural } from "@/lib/i18n/config";
 
 type AppItem = CatalogApp;
 
@@ -279,7 +281,11 @@ export function SearchPageClient({
               <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
                 {!loading ? (
                   <>
-                    <span>{t(<><span className="font-semibold text-emerald-700">{filtered.length}件</span> 表示中</>, <>Showing <span className="font-semibold text-emerald-700">{filtered.length}</span> {filtered.length === 1 ? "app" : "apps"}</>)}</span>
+                    <span>{rich(
+                      t("<b>{n}件</b> 表示中", plural(locale, filtered.length, "Showing <b>{n}</b> app", "Showing <b>{n}</b> apps")),
+                      { b: (c) => <span className="font-semibold text-emerald-700">{c}</span> },
+                      { n: filtered.length }
+                    )}</span>
                     {activeCategory !== ALL && (
                       <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
                         {categoryLabel(activeCategory)}<button onClick={() => setActiveCategory(ALL)} aria-label={t("カテゴリの絞り込みを外す", "Remove category filter")}><X className="h-3 w-3" /></button>

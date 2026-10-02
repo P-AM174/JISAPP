@@ -53,6 +53,7 @@ import { readActiveGroup, usesSharedData, type GroupSession } from "@/lib/groups
 import { useT } from "@/lib/i18n/client";
 import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons";
 import { format } from "@/lib/i18n/config";
+import { rich } from "@/lib/i18n/rich";
 
 
 
@@ -390,17 +391,7 @@ ${app.js_code ?? ""}`)}
       {/* フッター（最小限。スマホでは画面を広く使うため隠す） */}
       <div className="hidden shrink-0 border-t border-gray-100 bg-gray-50 py-2 text-center sm:block">
         <p className="text-[10px] text-gray-400">
-          {t(
-            <>
-              <Link href="/playground" className="hover:text-emerald-600">ジサップ 開発スタジオ</Link>
-              {" "}で作成されました ·{" "}
-            </>,
-            <>
-              Made with{" "}
-              <Link href="/playground" className="hover:text-emerald-600">Jisapp Studio</Link>
-              {" "}·{" "}
-            </>
-          )}
+          {rich(t("<t0>ジサップ 開発スタジオ</t0> で作成されました · ", "Made with <t0>Jisapp Studio</t0> · "), { t0: (c) => <Link href="/playground" className="hover:text-emerald-600">{c}</Link> })}
           <Link href="/" className="hover:text-emerald-600">jisapp.app</Link>
         </p>
       </div>
@@ -895,7 +886,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             </div>
             <h2 className="text-lg font-black text-gray-900 mb-1">{t("ログインが必要です", "Please sign in")}</h2>
             <p className="text-sm text-gray-500 leading-relaxed mb-5">
-              {t(<>安全な取引のためにログインが必要です。<br />ログイン画面へ移動しますか？</>, <>You need to sign in for a safe transaction.<br />Go to the sign-in page?</>)}
+              {rich(t("安全な取引のためにログインが必要です。<br/>ログイン画面へ移動しますか？", "You need to sign in for a safe transaction.<br/>Go to the sign-in page?"))}
             </p>
             <div className="flex flex-col gap-2.5">
               <Link
@@ -939,7 +930,7 @@ function MarketplaceAppPage({ id }: { id: string }) {
             {/* 本文 */}
             <div className="px-6 py-5 space-y-4">
               <p className="text-sm leading-relaxed text-gray-700">
-                {t(<>ここから先は<span className="font-bold">外部サイト（Googleドライブ等）</span>へ移動します。</>, <>The next page is an <span className="font-bold">external site (Google Drive, etc.)</span>.</>)}
+                {rich(t("ここから先は<t0>外部サイト（Googleドライブ等）</t0>へ移動します。", "The next page is an <t0>external site (Google Drive, etc.)</t0>."), { t0: (c) => <span className="font-bold">{c}</span> })}
               </p>
               <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 space-y-2.5">
                 <p className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
@@ -949,11 +940,11 @@ function MarketplaceAppPage({ id }: { id: string }) {
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
                     <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
-                    <span>{t(<><span className="font-semibold">Googleスプレッドシートの場合</span>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。</>, <><span className="font-semibold">Google Sheets</span>: choose “File” → “Make a copy” to copy it to your own Google Drive.</>)}</span>
+                    <span>{rich(t("<t0>Googleスプレッドシートの場合</t0>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。", "<t0>Google Sheets</t0>: choose “File” → “Make a copy” to copy it to your own Google Drive."), { t0: (c) => <span className="font-semibold">{c}</span> })}</span>
                   </li>
                   <li className="flex items-start gap-2 text-xs leading-relaxed text-amber-900">
                     <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5" strokeWidth={2} />
-                    <span>{t(<><span className="font-semibold">Notionの場合</span>：ページ右上の「・・・」→「複製」を押して、ご自身のワークスペースにコピーしてください。</>, <><span className="font-semibold">Notion</span>: choose “•••” → “Duplicate” at the top right to copy it to your own workspace.</>)}</span>
+                    <span>{rich(t("<t0>Notionの場合</t0>：ページ右上の「・・・」→「複製」を押して、ご自身のワークスペースにコピーしてください。", "<t0>Notion</t0>: choose “•••” → “Duplicate” at the top right to copy it to your own workspace."), { t0: (c) => <span className="font-semibold">{c}</span> })}</span>
                   </li>
                 </ul>
               </div>

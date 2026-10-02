@@ -65,3 +65,18 @@ export function visibleLength(value: string): number {
 export function isComposing(e: { nativeEvent?: { isComposing?: boolean }; keyCode?: number }): boolean {
   return !!e.nativeEvent?.isComposing || e.keyCode === 229;
 }
+
+/** ベトナム語にしかない文字（声調記号つきの母音・ơ ư đ など） */
+const VIETNAMESE_CHARS = /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i;
+const JAPANESE_CHARS = /[\u3040-\u30ff\u3400-\u9fff]/;
+
+/**
+ * アプリ名・説明文から、書かれている言語を推定する（マーケットの言語タグと絞り込み用）。
+ * DB に言語の列を足すまでの間の代わり（scripts/add-app-lang.sql を参照）
+ */
+export function detectTextLang(...texts: (string | null | undefined)[]): "ja" | "en" | "vi" {
+  const text = texts.filter(Boolean).join(" ").normalize("NFC");
+  if (JAPANESE_CHARS.test(text)) return "ja";
+  if (VIETNAMESE_CHARS.test(text)) return "vi";
+  return "en";
+}

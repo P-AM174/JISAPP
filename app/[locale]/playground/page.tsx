@@ -94,6 +94,7 @@ import {
 } from "@/lib/studio/login-prompt";
 import { trackEvent } from "@/lib/analytics/client";
 import { isComposing } from "@/lib/i18n/text";
+import { rich } from "@/lib/i18n/rich";
 
 /** 作りたいもの・選んだAI・進み具合を覚えておく（AIアプリから戻ってきても続きから） */
 const FLOW_STORAGE_KEY = "jisapp_studio_flow";
@@ -311,7 +312,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                 initialTab={promptBuilderTab}
               />
               <p className="text-base font-bold leading-relaxed text-[#334155]">
-                {t(<>プログラミング知識ゼロでOK！<br />作りたいアプリを入力して、完成した指示文をAIに送ろう</>, <>No coding knowledge needed!<br />Type the app you want, then send the finished instructions to an AI</>)}
+                {rich(t("プログラミング知識ゼロでOK！<br/>作りたいアプリを入力して、完成した指示文をAIに送ろう", "No coding knowledge needed!<br/>Type the app you want, then send the finished instructions to an AI"))}
               </p>
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 overflow-hidden shadow-sm">
@@ -428,10 +429,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
           {step === 2 && (
             <div className="space-y-4">
               <p className="text-base font-bold leading-relaxed text-[#334155]">
-                {t(
-                  <>いい感じに動いたら<br /><span className="text-emerald-600">「下書き保存」</span>を押そう！（右上の「…」メニューにもあります）</>,
-                  <>Once it works nicely,<br />press <span className="text-emerald-600">“Save draft”</span>! (It’s also in the “…” menu at the top right.)</>
-                )}
+                {rich(t("いい感じに動いたら<br/><t0>「下書き保存」</t0>を押そう！（右上の「…」メニューにもあります）", "Once it works nicely,<br/>press <t0>“Save draft”</t0>! (It’s also in the “…” menu at the top right.)"), { t0: (c) => <span className="text-emerald-600">{c}</span> })}
               </p>
 
               <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-4">
@@ -440,7 +438,7 @@ function GuideModal({ onClose }: { onClose: () => void }) {
                   {t("マイプロジェクトに保存されるよ", "It's saved to My projects")}
                 </p>
                 <p className="text-sm leading-relaxed text-emerald-700">
-                  {t(<>ブラウザを閉じても消えない。<br />いつでも続きから再開できる！</>, <>It stays even after you close the browser.<br />Pick up where you left off anytime!</>)}
+                  {rich(t("ブラウザを閉じても消えない。<br/>いつでも続きから再開できる！", "It stays even after you close the browser.<br/>Pick up where you left off anytime!"))}
                 </p>
               </div>
             </div>
@@ -584,9 +582,10 @@ function PasteIssueModal({
               <li className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                 <span>
-                  {t(
-                    <>コードの最後が <code className="rounded bg-slate-100 px-1 text-xs">&lt;/html&gt;</code> で終わっているか</>,
-                    <>The code ends with <code className="rounded bg-slate-100 px-1 text-xs">&lt;/html&gt;</code></>
+                  {rich(
+                    t("コードの最後が {tag} で終わっているか", "The code ends with {tag}"),
+                    {},
+                    { tag: <code className="rounded bg-slate-100 px-1 text-xs">&lt;/html&gt;</code> }
                   )}
                 </span>
               </li>
@@ -1683,9 +1682,13 @@ export default function PlaygroundPage() {
                 : t("まだAIの出力が終わっていないかもしれません", "The AI may not have finished yet")}
             </p>
             <p className="mt-0.5 text-xs text-amber-900">
-              {t(
-                <>AIがコードを最後まで書き終わるのを待ってから、<code className="rounded bg-amber-200/70 px-1">&lt;!DOCTYPE html&gt;</code> から始まるコードをコピーして貼り直してください。</>,
-                <>Wait until the AI has finished writing all the code, then copy the code that starts with <code className="rounded bg-amber-200/70 px-1">&lt;!DOCTYPE html&gt;</code> and paste it again.</>
+              {rich(
+                t(
+                  "AIがコードを最後まで書き終わるのを待ってから、{tag} から始まるコードをコピーして貼り直してください。",
+                  "Wait until the AI has finished writing all the code, then copy the code that starts with {tag} and paste it again."
+                ),
+                {},
+                { tag: <code className="rounded bg-amber-200/70 px-1">&lt;!DOCTYPE html&gt;</code> }
               )}
             </p>
           </div>
@@ -1715,10 +1718,7 @@ export default function PlaygroundPage() {
         <div className="flex shrink-0 items-start gap-2.5 border-b border-emerald-100 bg-emerald-50/70 px-4 py-2.5 text-xs leading-relaxed text-emerald-900">
           <Users className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
           <p className="min-w-0 flex-1">
-            {t(
-              <><span className="font-semibold">グループ共有を使うアプリです。</span>スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。</>,
-              <><span className="font-semibold">This app uses group sharing.</span> In the Studio it runs on test data kept only on this device. After publishing, choose “Create a group” on the app’s page to share it with the members you invite.</>
-            )}
+            {rich(t("<t0>グループ共有を使うアプリです。</t0>スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。", "<t0>This app uses group sharing.</t0> In the Studio it runs on test data kept only on this device. After publishing, choose “Create a group” on the app’s page to share it with the members you invite."), { t0: (c) => <span className="font-semibold">{c}</span> })}
           </p>
         </div>
       )}
@@ -1726,10 +1726,7 @@ export default function PlaygroundPage() {
         <div className="flex shrink-0 items-start gap-2.5 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
           <Database className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
           <p className="min-w-0 flex-1 leading-relaxed">
-            {t(
-              <>このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには{" "}<code className="rounded bg-white px-1 ring-1 ring-slate-200">window.Jisapp.saveData</code> / <code className="rounded bg-white px-1 ring-1 ring-slate-200">loadData</code> を使います。</>,
-              <>This app saves with localStorage, so data only stays in this browser on this device. To keep it across devices, use{" "}<code className="rounded bg-white px-1 ring-1 ring-slate-200">window.Jisapp.saveData</code> / <code className="rounded bg-white px-1 ring-1 ring-slate-200">loadData</code>.</>
-            )}
+            {rich(t("このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0> を使います。", "This app saves with localStorage, so data only stays in this browser on this device. To keep it across devices, use <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>."), { t0: (c) => <code className="rounded bg-white px-1 ring-1 ring-slate-200">{c}</code> })}
           </p>
           <button
             type="button"
@@ -2067,7 +2064,7 @@ export default function PlaygroundPage() {
             className="flex min-w-0 items-center gap-2 rounded-lg transition-opacity hover:opacity-80"
           >
             <JisappLogoIcon className="h-7 w-7 shrink-0" />
-            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">{t(<>開発<span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">スタジオ</span></>, <>Jisapp <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">Studio</span></>)}</span>
+            <span className="truncate text-[15px] font-bold tracking-tight text-slate-900">{rich(t("開発<t0>スタジオ</t0>", "Jisapp <t0>Studio</t0>"), { t0: (c) => <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">{c}</span> })}</span>
           </Link>
 
           <div className="hidden flex-1 justify-center lg:flex">
@@ -2802,10 +2799,7 @@ export default function PlaygroundPage() {
                   </div>
                   {!isLoggedIn && !publishListed && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
-                      {t(
-                        <>未ログインで URL のみ発行したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます。ログインするとマイページから管理できます。</>,
-                        <>Apps published by URL only without signing in are <strong>deleted automatically if nobody opens them for 2 months</strong>. Sign in to manage them from My page.</>
-                      )}
+                      {rich(t("未ログインで URL のみ発行したアプリは、<t0>2か月間誰も開かないと自動削除</t0>されます。ログインするとマイページから管理できます。", "Apps published by URL only without signing in are <t0>deleted automatically if nobody opens them for 2 months</t0>. Sign in to manage them from My page."), { t0: (c) => <strong>{c}</strong> })}
                     </div>
                   )}
                   {publishError && (

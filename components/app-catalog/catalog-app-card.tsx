@@ -7,6 +7,7 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import { CategoryIcon } from "@/lib/category-icon";
 import { MiniPreview } from "./mini-preview";
 import { GroupAppBadge } from "./group-app-badge";
+import { AppLangTag } from "./app-lang-tag";
 import { catalogToModalApp, displayCreatorName } from "./utils";
 import type { CatalogCardApp, ModalApp } from "./types";
 
@@ -51,6 +52,7 @@ export function CatalogAppCard({
                 {categoryName(cat, locale)}
               </span>
             )}
+            <AppLangTag title={app.title} description={app.description} className="ml-auto" />
             <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 ml-auto">
               FREE
             </span>
@@ -71,8 +73,11 @@ export function CatalogAppCard({
         {app.group_sharing && <GroupAppBadge className="right-2.5 px-2.5 text-[11px]" />}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <span className="w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
-          {cat ? categoryName(cat, locale) : app.category ?? t("その他", "Other")}
+        <span className="flex items-center gap-1.5">
+          <span className="w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+            {cat ? categoryName(cat, locale) : app.category ?? t("その他", "Other")}
+          </span>
+          <AppLangTag title={app.title} description={app.description} />
         </span>
         <h3 className="text-sm font-bold leading-snug text-gray-900 transition-colors group-hover:text-emerald-700 line-clamp-2">
           {app.title}

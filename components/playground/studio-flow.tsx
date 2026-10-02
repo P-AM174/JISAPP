@@ -24,6 +24,7 @@ import { buildSharedConvertMessage, getPromptStorage } from "@/lib/playground/pr
 import { storageFixMessage } from "@/lib/playground/code-cleanup";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { format, pick, toLocale } from "@/lib/i18n/config";
+import { rich } from "@/lib/i18n/rich";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
 
@@ -173,21 +174,7 @@ function StorageRequirementNote({
         {t("データを保存するアプリの場合", "If your app saves data")}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-slate-600">
-        {t(
-          <>
-            保存と読み込みに{" "}
-            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">window.Jisapp.saveData</code>
-            {" / "}
-            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">loadData</code>{" "}
-            を使う指定が必要です。localStorage のままだと、同じ端末のブラウザにしか残りません。
-          </>,
-          <>
-            The code needs to save and load with{" "}
-            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">window.Jisapp.saveData</code>
-            {" / "}
-            <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">loadData</code>. With localStorage, data only stays in this browser on this device.
-          </>
-        )}
+        {rich(t("保存と読み込みに <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0> を使う指定が必要です。localStorage のままだと、同じ端末のブラウザにしか残りません。", "The code needs to save and load with <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>. With localStorage, data only stays in this browser on this device."), { t0: (c) => <code className="rounded bg-white px-1 py-0.5 text-[11px] text-slate-800 ring-1 ring-slate-200">{c}</code> })}
       </p>
       {withCopy && (
         <button

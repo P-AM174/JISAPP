@@ -129,6 +129,56 @@
     "reviewed": false,
     "en": "Please enter the 6-digit code"
   },
+  "<b>{n}件</b> のリクエスト": {
+    "vi": "<b>{n}</b> yêu cầu",
+    "reviewed": false,
+    "en": "<b>{n}</b> requests"
+  },
+  "<b>{n}件</b> 表示中": {
+    "vi": "Đang hiện <b>{n}</b> app",
+    "reviewed": false,
+    "en": "Showing <b>{n}</b> apps"
+  },
+  "<t0>Googleスプレッドシートの場合</t0>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。": {
+    "vi": "<t0>Google Sheets</t0>: chọn “Tệp” → “Tạo bản sao” để sao chép vào Google Drive của bạn.",
+    "reviewed": false,
+    "en": "<t0>Google Sheets</t0>: choose “File” → “Make a copy” to copy it to your own Google Drive."
+  },
+  "<t0>Notionの場合</t0>：ページ右上の「・・・」→「複製」を押して、ご自身のワークスペースにコピーしてください。": {
+    "vi": "<t0>Notion</t0>: chọn “•••” → “Duplicate” ở góc trên bên phải để sao chép vào workspace của bạn.",
+    "reviewed": false,
+    "en": "<t0>Notion</t0>: choose “•••” → “Duplicate” at the top right to copy it to your own workspace."
+  },
+  "<t0>{email}</t0> に<br/>パスワードリセット用のリンクを送りました。<br/>メールをご確認ください（迷惑メールフォルダも）。": {
+    "vi": "Đã gửi link đặt lại mật khẩu đến<br/><t0>{email}</t0>.<br/>Hãy kiểm tra hộp thư (cả thư mục spam).",
+    "reviewed": false,
+    "en": "We sent a password reset link to<br/><t0>{email}</t0>.<br/>Check your inbox (and your spam folder)."
+  },
+  "<t0>{regEmail}</t0> に<br/>6桁の認証コードを送信しました": {
+    "vi": "Đã gửi mã 6 chữ số đến<br/><t0>{regEmail}</t0>",
+    "reviewed": false,
+    "en": "We sent a 6-digit code to<br/><t0>{regEmail}</t0>"
+  },
+  "<t0>グループ共有を使うアプリです。</t0>スタジオでは、この端末だけのテスト用データで動きます。公開したあと、アプリのページで「グループを作る」と、招待したメンバーと共有できます。": {
+    "vi": "<t0>App này dùng chia sẻ nhóm.</t0> Trong Studio, app chạy bằng dữ liệu thử chỉ lưu trên thiết bị này. Sau khi đăng, chọn “Tạo nhóm” trên trang app để chia sẻ với các thành viên bạn mời.",
+    "reviewed": false,
+    "en": "<t0>This app uses group sharing.</t0> In the Studio it runs on test data kept only on this device. After publishing, choose “Create a group” on the app’s page to share it with the members you invite."
+  },
+  "<t0>ジサップ 開発スタジオ</t0> で作成されました · ": {
+    "vi": "Làm bằng <t0>Jisapp Studio</t0> · ",
+    "reviewed": false,
+    "en": "Made with <t0>Jisapp Studio</t0> · "
+  },
+  "<t0>マイプロジェクト</t0>にクラウド保存（別の端末からも続きを編集）": {
+    "vi": "Lưu lên đám mây trong <t0>Dự án của tôi</t0> (sửa tiếp được từ thiết bị khác)",
+    "reviewed": false,
+    "en": "Saved to <t0>My projects</t0> in the cloud (keep editing from other devices)"
+  },
+  "<t0>マイライブラリ</t0>に自動登録（保存機能付きアプリが使える）": {
+    "vi": "Tự động thêm vào <t0>Thư viện của tôi</t0> (app có lưu dữ liệu chạy ngay)",
+    "reviewed": false,
+    "en": "Added to <t0>My library</t0> automatically (apps that save data just work)"
+  },
   "AIがコードを書いている途中でコピーしたか、AIの出力が途中で止まったようです。": {
     "vi": "Có thể bạn sao chép khi AI vẫn đang viết, hoặc AI đã dừng giữa chừng.",
     "reviewed": false,
@@ -143,6 +193,11 @@
     "vi": "Có vẻ bạn đã sao chép trước khi AI viết xong, nên câu lệnh đã được dán thay vì code.",
     "reviewed": false,
     "en": "It looks like you copied before the AI finished, so the instructions were pasted instead of the code."
+  },
+  "AIがコードを最後まで書き終わるのを待ってから、{tag} から始まるコードをコピーして貼り直してください。": {
+    "vi": "Đợi AI viết xong toàn bộ code, rồi sao chép phần code bắt đầu bằng {tag} và dán lại.",
+    "reviewed": false,
+    "en": "Wait until the AI has finished writing all the code, then copy the code that starts with {tag} and paste it again."
   },
   "AIが作ったHTMLコードを貼り付けるだけでアプリが動く無料の開発スタジオ。プレビュー・APIキー登録・URL発行までブラウザだけで完結。": {
     "vi": "Studio miễn phí: dán code HTML do AI viết là thành app chạy được ngay. Xem trước, đăng ký API key và tạo link — tất cả trên trình duyệt.",
@@ -564,6 +619,11 @@
     "reviewed": false,
     "en": "Copy URL"
   },
+  "URLをコピーしました。Zaloを開いて、メッセージに貼り付けてください": {
+    "vi": "Đã sao chép link. Mở Zalo và dán vào tin nhắn nhé",
+    "reviewed": false,
+    "en": "URL copied. Open Zalo and paste it into a message"
+  },
   "URLをコピーしました！": {
     "vi": "Đã sao chép link!",
     "reviewed": false,
@@ -874,6 +934,11 @@
     "reviewed": false,
     "en": "●●●● Keep the saved key as is"
   },
+  "「APIキー」にキーを登録し、コードでは <t0>secret: 'NAME'</t0> だけ指定する方法が安全です。": {
+    "vi": "Cách an toàn là đăng ký key ở “API key” và chỉ ghi <t0>secret: 'NAME'</t0> trong code.",
+    "reviewed": false,
+    "en": "The safe way is to register the key under “API keys” and only write <t0>secret: 'NAME'</t0> in the code."
+  },
   "「URLだけ発行」はカテゴリ未選択でも利用できます": {
     "vi": "“Chỉ tạo link” dùng được mà không cần chọn danh mục",
     "reviewed": false,
@@ -1079,6 +1144,11 @@
     "reviewed": false,
     "en": "Love it!"
   },
+  "いい感じに動いたら<br/><t0>「下書き保存」</t0>を押そう！（右上の「…」メニューにもあります）": {
+    "vi": "Khi app chạy ổn,<br/>hãy nhấn <t0>“Lưu nháp”</t0>! (Cũng có trong menu “…” góc trên bên phải.)",
+    "reviewed": false,
+    "en": "Once it works nicely,<br/>press <t0>“Save draft”</t0>! (It’s also in the “…” menu at the top right.)"
+  },
   "いつも使っている生成AIのアプリに貼り付けて、送信してください": {
     "vi": "Dán vào app AI bạn hay dùng rồi gửi",
     "reviewed": false,
@@ -1189,6 +1259,11 @@
     "reviewed": false,
     "en": "It'd be even better if…"
   },
+  "ここから先は<t0>外部サイト（Googleドライブ等）</t0>へ移動します。": {
+    "vi": "Trang tiếp theo là <t0>trang web bên ngoài (Google Drive, v.v.)</t0>.",
+    "reviewed": false,
+    "en": "The next page is an <t0>external site (Google Drive, etc.)</t0>."
+  },
   "ここでアプリが動きます": {
     "vi": "App của bạn chạy ở đây",
     "reviewed": false,
@@ -1288,6 +1363,11 @@
     "vi": "Dữ liệu đã lưu trong app này",
     "reviewed": false,
     "en": "Data saved in this app"
+  },
+  "このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0> を使います。": {
+    "vi": "App này lưu bằng localStorage nên dữ liệu chỉ nằm trong trình duyệt của thiết bị này. Muốn giữ trên nhiều thiết bị, hãy dùng <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>.",
+    "reviewed": false,
+    "en": "This app saves with localStorage, so data only stays in this browser on this device. To keep it across devices, use <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>."
   },
   "このアプリは外部サービスのAPIキーを使います": {
     "vi": "App này dùng API key của dịch vụ bên ngoài",
@@ -2619,6 +2699,11 @@
     "reviewed": false,
     "en": "Don't write the key in the code — register it from “Register API key” in the “…” menu at the top right, using the same secret name the AI used in the code (e.g. secret: &apos;WEATHER&apos;)."
   },
+  "コードの最後が {tag} で終わっているか": {
+    "vi": "Code kết thúc bằng {tag}",
+    "reviewed": false,
+    "en": "The code ends with {tag}"
+  },
   "コードは、いつも使っている生成AI（ChatGPT・Gemini・Claude など）が書きます。まずはAIに送るプロンプトを作りましょう。": {
     "vi": "Code do AI bạn quen dùng (ChatGPT, Gemini, Claude...) viết. Trước tiên, hãy tạo câu lệnh để gửi cho AI.",
     "reviewed": false,
@@ -3429,6 +3514,11 @@
     "reviewed": false,
     "en": "Use your browser's “Share” → “Add to Home Screen” to open it like an app."
   },
+  "ブラウザを閉じても消えない。<br/>いつでも続きから再開できる！": {
+    "vi": "Đóng trình duyệt cũng không mất.<br/>Làm tiếp bất cứ lúc nào!",
+    "reviewed": false,
+    "en": "It stays even after you close the browser.<br/>Pick up where you left off anytime!"
+  },
   "プレビュー": {
     "vi": "Xem trước",
     "reviewed": false,
@@ -3448,6 +3538,11 @@
     "vi": "Dành cho người chưa từng lập trình, học sinh, sinh viên và bất kỳ ai muốn có một công cụ nhỏ của riêng mình.",
     "reviewed": false,
     "en": "Made for people who have never programmed, students, and anyone who wants a small tool of their own."
+  },
+  "プログラミング知識ゼロでOK！<br/>作りたいアプリを入力して、完成した指示文をAIに送ろう": {
+    "vi": "Không cần biết lập trình!<br/>Nhập app bạn muốn, rồi gửi câu lệnh hoàn chỉnh cho AI",
+    "reviewed": false,
+    "en": "No coding knowledge needed!<br/>Type the app you want, then send the finished instructions to an AI"
   },
   "プロジェクト": {
     "vi": "Dự án",
@@ -3629,6 +3724,11 @@
     "reviewed": false,
     "en": "Only people who add it to their library can see it (anyone can still run the app)"
   },
+  "マイライブラリに追加すると<t0>データの保存・同期機能</t0>が使えるようになります。": {
+    "vi": "Thêm vào thư viện để <t0>lưu và đồng bộ dữ liệu</t0>.",
+    "reviewed": false,
+    "en": "Add it to your library to <t0>save and sync your data</t0>."
+  },
   "マイライブラリに追加するとソースコードを閲覧できます": {
     "vi": "Thêm vào thư viện để xem mã nguồn",
     "reviewed": false,
@@ -3703,6 +3803,11 @@
     "vi": "Tin nhắn đang trống",
     "reviewed": false,
     "en": "The message is empty"
+  },
+  "メッセージで送る": {
+    "vi": "Gửi qua tin nhắn",
+    "reviewed": false,
+    "en": "Send in a message"
   },
   "メッセージは1〜200文字で入力してください": {
     "vi": "Tin nhắn phải từ 1–200 ký tự",
@@ -4019,6 +4124,11 @@
     "reviewed": false,
     "en": "Please sign in"
   },
+  "ログインして、マイライブラリに登録すると<t0>端末をまたいでデータを同期</t0>できます。": {
+    "vi": "Đăng nhập và thêm app vào thư viện để <t0>đồng bộ dữ liệu giữa các thiết bị</t0>.",
+    "reviewed": false,
+    "en": "Sign in and add this app to your library to <t0>sync your data across devices</t0>."
+  },
   "ログインしてグループを作る": {
     "vi": "Đăng nhập để tạo nhóm",
     "reviewed": false,
@@ -4143,6 +4253,16 @@
     "vi": " · ",
     "reviewed": false,
     "en": " · "
+  },
+  "・<t0>URLのみ</t0>で公開したアプリは、<t0>2か月間誰も開かないと自動削除</t0>されます（マーケット出品は削除されません）。": {
+    "vi": "• App đăng <t0>chỉ bằng link</t0> sẽ <t0>tự động bị xóa nếu 2 tháng không ai mở</t0> (app trên Chợ app vẫn được giữ).",
+    "reviewed": false,
+    "en": "• Apps published <t0>by URL only</t0> are <t0>deleted automatically if nobody opens them for 2 months</t0> (apps listed in the market are kept)."
+  },
+  "・下書きは<t0>このブラウザだけ</t0>に保存されます。別端末や再インストール後は<t0>続きから編集できません</t0>。": {
+    "vi": "• Bản nháp chỉ được lưu <t0>trong trình duyệt này</t0>. Bạn <t0>không thể sửa tiếp</t0> trên thiết bị khác hoặc sau khi cài lại.",
+    "reviewed": false,
+    "en": "• Drafts are saved <t0>only in this browser</t0>. You <t0>can’t continue editing</t0> on another device or after reinstalling."
   },
   "・動かない時": {
     "vi": "• Khi app không chạy",
@@ -4444,6 +4564,11 @@
     "reviewed": false,
     "en": "Tell us what you want to make"
   },
+  "作りたいアプリの説明は自分で書いてOKです。その文の<t0>末尾</t0>に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。": {
+    "vi": "Bạn cứ mô tả app theo ý mình. Dán các quy tắc bắt buộc bên dưới vào <t0>cuối</t0> tin nhắn trước khi gửi, để việc lưu dữ liệu và API key được xử lý đúng.",
+    "reviewed": false,
+    "en": "Describe your app however you like. Paste the required rules below at the <t0>end</t0> of your message before sending it, so saving and API keys are handled correctly."
+  },
   "作りたいアプリは何ですか。": {
     "vi": "Bạn muốn làm app gì?",
     "reviewed": false,
@@ -4714,6 +4839,11 @@
     "reviewed": false,
     "en": "Your storage (10MB across all apps) is full. Delete data you no longer need"
   },
+  "保存と読み込みに <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0> を使う指定が必要です。localStorage のままだと、同じ端末のブラウザにしか残りません。": {
+    "vi": "Code cần lưu và tải dữ liệu bằng <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>. Nếu dùng localStorage, dữ liệu chỉ nằm trong trình duyệt của thiết bị này.",
+    "reviewed": false,
+    "en": "The code needs to save and load with <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>. With localStorage, data only stays in this browser on this device."
+  },
   "保存に使う名前を前のバージョンと同じに戻せば、これまでのデータをそのまま引き継げます。修正方法が分からない場合は、下のボタンでAIにそのまま送れる指示文をコピーできます。": {
     "vi": "Đổi các tên về giống phiên bản trước là dữ liệu cũ được giữ nguyên. Không biết sửa thế nào? Dùng nút bên dưới để sao chép câu lệnh gửi luôn cho AI.",
     "reviewed": false,
@@ -4973,6 +5103,11 @@
     "vi": "Đăng / Tạo link",
     "reviewed": false,
     "en": "Publish / Get URL"
+  },
+  "出品したアプリを<t0>マイページ</t0>から管理": {
+    "vi": "Quản lý app đã đăng từ <t0>Trang của tôi</t0>",
+    "reviewed": false,
+    "en": "Manage your published apps from <t0>My page</t0>"
   },
   "出品した商品": {
     "vi": "App bạn đã đăng",
@@ -5419,6 +5554,11 @@
     "reviewed": false,
     "en": "To use external APIs or AI (OpenAI, weather or map APIs, etc.), register your key from “Register API key” in the “…” menu at the top right. In the code, write only the name, like secret: 'API_NAME' — never the value (API_NAME is the same UPPERCASE name you registered)."
   },
+  "外部API（HTTPS）との通信が利用できます。CORSで直接接続できないAPIは <t0>window.Jisapp.fetch(url)</t0> をご利用ください。APIキーは「シークレット管理」に登録し、コードでは <t0>{ secret: 'NAME' }</t0> だけ指定してください。コードにキーを直接書くと閲覧者に見える可能性があります。": {
+    "vi": "App có thể kết nối với API HTTPS bên ngoài. Với API chặn truy cập trực tiếp (CORS), hãy dùng <t0>window.Jisapp.fetch(url)</t0>. Đăng ký API key ở “Quản lý secret” và trong code chỉ ghi <t0>{ secret: 'NAME' }</t0>. Key viết thẳng trong code có thể bị người xem nhìn thấy.",
+    "reviewed": false,
+    "en": "Apps can talk to external HTTPS APIs. For APIs that block direct access (CORS), use <t0>window.Jisapp.fetch(url)</t0>. Register API keys under “Secrets” and only reference them in code as <t0>{ secret: 'NAME' }</t0>. A key written directly in the code may be visible to anyone viewing it."
+  },
   "外部サイトへ移動します": {
     "vi": "Bạn sắp rời Jisapp",
     "reviewed": false,
@@ -5448,6 +5588,11 @@
     "vi": "Học tập",
     "reviewed": false,
     "en": "Learning"
+  },
+  "安全な取引のためにログインが必要です。<br/>ログイン画面へ移動しますか？": {
+    "vi": "Bạn cần đăng nhập để giao dịch an toàn.<br/>Đến trang đăng nhập?",
+    "reviewed": false,
+    "en": "You need to sign in for a safe transaction.<br/>Go to the sign-in page?"
   },
   "安全な実行環境": {
     "vi": "Môi trường chạy app an toàn",
@@ -5874,6 +6019,11 @@
     "reviewed": false,
     "en": "Please enter a valid email address"
   },
+  "未ログインで URL のみ発行したアプリは、<t0>2か月間誰も開かないと自動削除</t0>されます。ログインするとマイページから管理できます。": {
+    "vi": "App chỉ tạo link khi chưa đăng nhập sẽ <t0>tự động bị xóa nếu 2 tháng không ai mở</t0>. Đăng nhập để quản lý app từ Trang của tôi.",
+    "reviewed": false,
+    "en": "Apps published by URL only without signing in are <t0>deleted automatically if nobody opens them for 2 months</t0>. Sign in to manage them from My page."
+  },
   "未保存の変更があります": {
     "vi": "Có thay đổi chưa lưu",
     "reviewed": false,
@@ -5963,6 +6113,11 @@
     "vi": "Tìm một app bạn thích nhé",
     "reviewed": false,
     "en": "Find an app you like"
+  },
+  "気に入ったアプリをここに追加して、いつでもすぐ起動できます。<br/>利用するにはログインが必要です。": {
+    "vi": "Thêm những app bạn thích vào đây để mở bất cứ lúc nào.<br/>Cần đăng nhập để dùng thư viện.",
+    "reviewed": false,
+    "en": "Add apps you like here and open them anytime.<br/>Sign in to use your library."
   },
   "注目のアプリ": {
     "vi": "App nổi bật",
@@ -6098,6 +6253,11 @@
     "vi": "Dùng thử Studio không cần tài khoản",
     "reviewed": false,
     "en": "Try the Studio without an account"
+  },
+  "登録・ログインすることで<t0>利用規約</t0>および<t0>プライバシーポリシー</t0>に同意したものとみなされます。": {
+    "vi": "Khi đăng ký hoặc đăng nhập, bạn đồng ý với<t0>Điều khoản sử dụng</t0>và<t0>Chính sách quyền riêng tư</t0>.",
+    "reviewed": false,
+    "en": "By signing up or signing in, you agree to the<t0>Terms of Service</t0>and<t0>Privacy Policy</t0>."
   },
   "登録完了！": {
     "vi": "Xong rồi!",
@@ -6708,6 +6868,11 @@
     "vi": "Mở",
     "reviewed": false,
     "en": "Open"
+  },
+  "開発<t0>スタジオ</t0>": {
+    "vi": "Jisapp <t0>Studio</t0>",
+    "reviewed": false,
+    "en": "Jisapp <t0>Studio</t0>"
   },
   "開発スタジオ": {
     "vi": "Studio",

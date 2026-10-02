@@ -5,6 +5,7 @@ import Link from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { Mail, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { rich } from "@/lib/i18n/rich";
 
 export default function ForgotPasswordPage() {
   const t = useT();
@@ -65,10 +66,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <h2 className="text-lg font-black text-gray-900 mb-2">{t("メールを送信しました", "Email sent")}</h2>
                 <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                  {t(
-                    <><span className="font-semibold text-emerald-700">{email}</span> に<br />パスワードリセット用のリンクを送りました。<br />メールをご確認ください（迷惑メールフォルダも）。</>,
-                    <>We sent a password reset link to<br /><span className="font-semibold text-emerald-700">{email}</span>.<br />Check your inbox (and your spam folder).</>
-                  )}
+                  {rich(t("<t0>{email}</t0> に<br/>パスワードリセット用のリンクを送りました。<br/>メールをご確認ください（迷惑メールフォルダも）。", "We sent a password reset link to<br/><t0>{email}</t0>.<br/>Check your inbox (and your spam folder)."), { t0: (c) => <span className="font-semibold text-emerald-700">{c}</span> }, { email })}
                 </p>
                 <Link
                   href="/login"

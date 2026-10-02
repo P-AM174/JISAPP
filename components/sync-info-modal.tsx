@@ -5,6 +5,7 @@ import Link from "@/lib/i18n/navigation";
 import { Cloud, LibraryBig, LogIn, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
+import { rich } from "@/lib/i18n/rich";
 
 type SyncInfoModalProps = {
   open: boolean;
@@ -93,11 +94,11 @@ export function SyncInfoModal({
           <p className="mt-2 text-center text-sm leading-relaxed text-gray-600">
             {isLogin ? (
               <>
-                {t(<>ログインして、マイライブラリに登録すると<span className="font-bold text-gray-800">端末をまたいでデータを同期</span>できます。</>, <>Sign in and add this app to your library to <span className="font-bold text-gray-800">sync your data across devices</span>.</>)}
+                {rich(t("ログインして、マイライブラリに登録すると<t0>端末をまたいでデータを同期</t0>できます。", "Sign in and add this app to your library to <t0>sync your data across devices</t0>."), { t0: (c) => <span className="font-bold text-gray-800">{c}</span> })}
               </>
             ) : (
               <>
-                {t(<>マイライブラリに追加すると<span className="font-bold text-gray-800">データの保存・同期機能</span>が使えるようになります。</>, <>Add it to your library to <span className="font-bold text-gray-800">save and sync your data</span>.</>)}
+                {rich(t("マイライブラリに追加すると<t0>データの保存・同期機能</t0>が使えるようになります。", "Add it to your library to <t0>save and sync your data</t0>."), { t0: (c) => <span className="font-bold text-gray-800">{c}</span> })}
               </>
             )}
           </p>

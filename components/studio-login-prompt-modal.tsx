@@ -3,6 +3,7 @@
 import Link from "@/lib/i18n/navigation";
 import { useT } from "@/lib/i18n/client";
 import { Cloud, LogIn, X, AlertTriangle, BookOpen, FolderOpen } from "lucide-react";
+import { rich } from "@/lib/i18n/rich";
 
 type Props = {
   open: boolean;
@@ -49,15 +50,15 @@ export function StudioLoginPromptModal({ open, action, onContinue, onClose }: Pr
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex gap-2">
                 <FolderOpen className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{t(<><strong>マイプロジェクト</strong>にクラウド保存（別の端末からも続きを編集）</>, <>Saved to <strong>My projects</strong> in the cloud (keep editing from other devices)</>)}</span>
+                <span>{rich(t("<t0>マイプロジェクト</t0>にクラウド保存（別の端末からも続きを編集）", "Saved to <t0>My projects</t0> in the cloud (keep editing from other devices)"), { t0: (c) => <strong>{c}</strong> })}</span>
               </li>
               <li className="flex gap-2">
                 <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{t(<><strong>マイライブラリ</strong>に自動登録（保存機能付きアプリが使える）</>, <>Added to <strong>My library</strong> automatically (apps that save data just work)</>)}</span>
+                <span>{rich(t("<t0>マイライブラリ</t0>に自動登録（保存機能付きアプリが使える）", "Added to <t0>My library</t0> automatically (apps that save data just work)"), { t0: (c) => <strong>{c}</strong> })}</span>
               </li>
               <li className="flex gap-2">
                 <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{t(<>出品したアプリを<strong>マイページ</strong>から管理</>, <>Manage your published apps from <strong>My page</strong></>)}</span>
+                <span>{rich(t("出品したアプリを<t0>マイページ</t0>から管理", "Manage your published apps from <t0>My page</t0>"), { t0: (c) => <strong>{c}</strong> })}</span>
               </li>
             </ul>
           </div>
@@ -68,8 +69,8 @@ export function StudioLoginPromptModal({ open, action, onContinue, onClose }: Pr
               {t("ログインしない場合", "If you don't sign in")}
             </p>
             <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-amber-800">
-              <li>{t(<>・下書きは<strong>このブラウザだけ</strong>に保存されます。別端末や再インストール後は<strong>続きから編集できません</strong>。</>, <>• Drafts are saved <strong>only in this browser</strong>. You <strong>can’t continue editing</strong> on another device or after reinstalling.</>)}</li>
-              <li>{t(<>・<strong>URLのみ</strong>で公開したアプリは、<strong>2か月間誰も開かないと自動削除</strong>されます（マーケット出品は削除されません）。</>, <>• Apps published <strong>by URL only</strong> are <strong>deleted automatically if nobody opens them for 2 months</strong> (apps listed in the market are kept).</>)}</li>
+              <li>{rich(t("・下書きは<t0>このブラウザだけ</t0>に保存されます。別端末や再インストール後は<t0>続きから編集できません</t0>。", "• Drafts are saved <t0>only in this browser</t0>. You <t0>can’t continue editing</t0> on another device or after reinstalling."), { t0: (c) => <strong>{c}</strong> })}</li>
+              <li>{rich(t("・<t0>URLのみ</t0>で公開したアプリは、<t0>2か月間誰も開かないと自動削除</t0>されます（マーケット出品は削除されません）。", "• Apps published <t0>by URL only</t0> are <t0>deleted automatically if nobody opens them for 2 months</t0> (apps listed in the market are kept)."), { t0: (c) => <strong>{c}</strong> })}</li>
             </ul>
           </div>
 

@@ -20,6 +20,7 @@ import {
 import { useLocale, useT } from "@/lib/i18n/client";
 import { intlLocale, type Locale, format, plural, pick } from "@/lib/i18n/config";
 import { showGames } from "@/lib/features";
+import { rich } from "@/lib/i18n/rich";
 
 type AppRequest = {
   id: string;
@@ -403,9 +404,10 @@ export default function RequestsPage() {
           {loading ? (
             t("読み込み中...", "Loading...")
           ) : (
-            t(
-              <><span className="font-semibold text-emerald-700">{filtered.length}件</span> のリクエスト</>,
-              <><span className="font-semibold text-emerald-700">{filtered.length}</span> {filtered.length === 1 ? "request" : "requests"}</>
+            rich(
+              t("<b>{n}件</b> のリクエスト", plural(locale, filtered.length, "<b>{n}</b> request", "<b>{n}</b> requests")),
+              { b: (c) => <span className="font-semibold text-emerald-700">{c}</span> },
+              { n: filtered.length }
             )
           )}
         </p>

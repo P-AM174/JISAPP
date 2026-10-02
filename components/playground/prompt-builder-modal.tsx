@@ -8,6 +8,7 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import { pickDeep } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics/client";
+import { rich } from "@/lib/i18n/rich";
 
 type Props = {
   open: boolean;
@@ -463,10 +464,7 @@ export function PromptBuilderModal({
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-black text-amber-900">{t("自分でプロンプトを書く人向け", "If you write your own prompt")}</p>
               <p className="mt-1.5 text-xs leading-relaxed text-amber-800">
-                {t(
-                  <>作りたいアプリの説明は自分で書いてOKです。その文の<span className="font-bold">末尾</span>に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。</>,
-                  <>Describe your app however you like. Paste the required rules below at the <span className="font-bold">end</span> of your message before sending it, so saving and API keys are handled correctly.</>
-                )}
+                {rich(t("作りたいアプリの説明は自分で書いてOKです。その文の<t0>末尾</t0>に、下の必須ルールを貼り付けてからAIに送ってください。保存先やAPIキーの扱いが正しくなります。", "Describe your app however you like. Paste the required rules below at the <t0>end</t0> of your message before sending it, so saving and API keys are handled correctly."), { t0: (c) => <span className="font-bold">{c}</span> })}
               </p>
             </div>
 

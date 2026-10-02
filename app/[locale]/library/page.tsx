@@ -35,6 +35,7 @@ import {
   type LibraryEntry,
   type LibrarySortMode,
 } from "@/lib/library/sort";
+import { rich } from "@/lib/i18n/rich";
 
 /** 選んだ並べ方を、この端末に覚えておく */
 const SORT_STORAGE_KEY = "jisapp_library_sort";
@@ -192,7 +193,7 @@ export default function LibraryPage() {
             <div>
               <h2 className="text-xl font-black text-gray-900">{t("マイライブラリ", "My library")}</h2>
               <p className="mt-2 text-sm text-gray-500">
-                {t(<>気に入ったアプリをここに追加して、いつでもすぐ起動できます。<br />利用するにはログインが必要です。</>, <>Add apps you like here and open them anytime.<br />Sign in to use your library.</>)}
+                {rich(t("気に入ったアプリをここに追加して、いつでもすぐ起動できます。<br/>利用するにはログインが必要です。", "Add apps you like here and open them anytime.<br/>Sign in to use your library."))}
               </p>
             </div>
             <Link

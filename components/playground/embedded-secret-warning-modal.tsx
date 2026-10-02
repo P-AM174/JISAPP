@@ -3,6 +3,7 @@
 import { AlertTriangle, Key, X } from "lucide-react";
 import type { EmbeddedSecretFinding } from "@/lib/playground/detect-embedded-secrets";
 import { useT } from "@/lib/i18n/client";
+import { rich } from "@/lib/i18n/rich";
 
 type Props = {
   open: boolean;
@@ -49,10 +50,7 @@ export function EmbeddedSecretWarningModal({
             </ul>
           )}
           <p className="text-xs leading-relaxed text-gray-600">
-            {t(
-              <>「APIキー」にキーを登録し、コードでは{" "}<code className="rounded bg-gray-100 px-1">secret: &apos;NAME&apos;</code>{" "}だけ指定する方法が安全です。</>,
-              <>The safe way is to register the key under “API keys” and only write{" "}<code className="rounded bg-gray-100 px-1">secret: &apos;NAME&apos;</code>{" "}in the code.</>
-            )}
+            {rich(t("「APIキー」にキーを登録し、コードでは <t0>secret: 'NAME'</t0> だけ指定する方法が安全です。", "The safe way is to register the key under “API keys” and only write <t0>secret: 'NAME'</t0> in the code."), { t0: (c) => <code className="rounded bg-gray-100 px-1">{c}</code> })}
           </p>
           <div className="flex flex-col gap-2">
             <button

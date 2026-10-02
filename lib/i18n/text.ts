@@ -12,16 +12,20 @@ export function normalizeText(value: string): string {
   return value.normalize("NFC");
 }
 
-/** オブジェクトの文字列の値をすべて NFC にそろえる（1段だけ） */
-export function normalizeFields<T extends Record<string, unknown>>(obj: T): T {
-  const out: Record<string, unknown> = { ...obj };
+/**
+ * API が受け取った JSON の文字列の値を NFC にそろえる（1段だけ）。
+ * skip に書いたキー（アプリのコードなど）は、書かれたまま残す
+ */
+export function normalizeFields<T>(obj: T, skip: string[] = []): T {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+  const out: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
   for (const [key, value] of Object.entries(out)) {
-    if (typeof value === "string") out[key] = value.normalize("NFC");
+    if (typeof value === "string" && !skip.includes(key)) out[key] = value.normalize("NFC");
   }
   return out as T;
 }
 
-const COMBINING_MARKS = /[̀-ͯ]/g;
+const COMBINING_MARKS = /[\u0300-\u036f]/g;
 
 /**
  * 検索用のキー。小文字にし、声調記号などの結合文字を外し、đ を d にする。
@@ -52,4 +56,12 @@ export function visibleLength(value: string): number {
     return count;
   }
   return Array.from(value.normalize("NFC")).length;
+}
+
+/**
+ * 入力方法（ベトナム語の Telex・VNI、日本語の IME など）で文字を確定する前か。
+ * 確定前の Enter で送信・検索しないようにする
+ */
+export function isComposing(e: { nativeEvent?: { isComposing?: boolean }; keyCode?: number }): boolean {
+  return !!e.nativeEvent?.isComposing || e.keyCode === 229;
 }

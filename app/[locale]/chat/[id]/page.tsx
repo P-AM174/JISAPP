@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   FastForward,
 } from "lucide-react";
+import { isComposing } from "@/lib/i18n/text";
 
 // ─── 型 ───
 type MessageSender = "user" | "creator" | "system" | "gemini";
@@ -407,7 +408,7 @@ export default function ChatPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !isComposing(e)) {
       e.preventDefault();
       handleSend();
     }

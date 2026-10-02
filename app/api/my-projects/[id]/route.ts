@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { removeAppFromCatalogByOwner } from "@/lib/apps/catalog-removal";
+import { normalizeFields } from "@/lib/i18n/text";
 
 async function getUserId(): Promise<string | null> {
   try {
@@ -96,7 +97,7 @@ export async function PATCH(req: Request, context: RouteContext) {
   const { id } = await context.params;
   let body: { status?: string; is_listed?: boolean; title?: string; description?: string };
   try {
-    body = await req.json();
+    body = normalizeFields(await req.json(), ["html_code", "code"]);
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }

@@ -93,6 +93,7 @@ import {
   wasStudioLoginPromptShown,
 } from "@/lib/studio/login-prompt";
 import { trackEvent } from "@/lib/analytics/client";
+import { isComposing } from "@/lib/i18n/text";
 
 /** 作りたいもの・選んだAI・進み具合を覚えておく（AIアプリから戻ってきても続きから） */
 const FLOW_STORAGE_KEY = "jisapp_studio_flow";
@@ -2396,7 +2397,7 @@ export default function PlaygroundPage() {
                   type="text"
                   value={saveTitle}
                   onChange={(e) => setSaveTitle(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveConfirm(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !isComposing(e)) handleSaveConfirm(); }}
                   placeholder={t("例：タスク管理アプリ、計算機...", "e.g. Task manager, calculator...")}
                   maxLength={60}
                   autoFocus

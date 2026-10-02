@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "@/lib/i18n/navigation";
-import { useT } from "@/lib/i18n/client";
+import { useLocale, useT } from "@/lib/i18n/client";
+import { showViBeta } from "@/lib/features";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ type JisappLogoProps = {
 export function JisappLogo({ className, href = "/", onClick, size = "default" }: JisappLogoProps) {
   const isLg = size === "lg";
   const t = useT();
+  const locale = useLocale();
   const content = (
     <span className={cn("inline-flex items-center", isLg ? "h-12 gap-2.5" : "h-10 gap-2")}>
       <JisappLogoIcon className={cn("shrink-0", isLg ? "h-11 w-11" : "h-10 w-10")} />
@@ -44,6 +46,12 @@ export function JisappLogo({ className, href = "/", onClick, size = "default" }:
       >
         Jisapp
       </span>
+      {/* ベトナム語版はネイティブの確認が済むまで Beta と表示する（lib/features.ts） */}
+      {showViBeta(locale) && (
+        <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-amber-800 ring-1 ring-amber-200">
+          Beta
+        </span>
+      )}
     </span>
   );
 

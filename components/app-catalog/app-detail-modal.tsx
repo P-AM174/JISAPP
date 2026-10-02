@@ -32,6 +32,7 @@ import { displayCreatorName, getCreatorProfilePath } from "./utils";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { ModalApp } from "./types";
 import { format } from "@/lib/i18n/config";
+import { isComposing } from "@/lib/i18n/text";
 
 const STAMPS = [
   { id: "like", Icon: Heart, label: "いいね！", labelEn: "Love it!" },
@@ -294,7 +295,7 @@ export function AppDetailModal({
                   placeholder={t("例：ダークモードがあると最高！", "e.g. A dark mode would be awesome!")}
                   className="flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs placeholder:text-gray-300 focus:border-violet-400 focus:outline-none"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRequest();
+                    if (e.key === "Enter" && !isComposing(e)) handleRequest();
                   }}
                 />
                 <button

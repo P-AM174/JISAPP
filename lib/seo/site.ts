@@ -50,7 +50,8 @@ export function siteDescription(locale: Locale): string {
  */
 export const SITE_OG_IMAGE = "/og.png";
 export const SITE_OG_IMAGE_EN = "/og-en.png";
-export const SITE_OG_IMAGE_VI = "/og-vi.png";
+/** ベトナム語は描いて出す（app/og/site/[file]/route.tsx） */
+export const SITE_OG_IMAGE_VI = "/og/site/vi.png";
 
 export function siteOgImage(locale: Locale): string {
   if (locale === "vi") return SITE_OG_IMAGE_VI;

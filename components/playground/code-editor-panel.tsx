@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
+import { isComposing } from "@/lib/i18n/text";
 
 type Props = {
   code: string;
@@ -95,7 +96,7 @@ export function CodeEditorPanel({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !isComposing(e)) {
                   e.preventDefault();
                   onJumpMatch(e.shiftKey ? "prev" : "next");
                 }

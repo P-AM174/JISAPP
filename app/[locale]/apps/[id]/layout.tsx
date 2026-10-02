@@ -37,7 +37,7 @@ export async function generateMetadata({
     description: app.description,
     path: `/apps/${app.id}`,
     // アプリ名を描き込んだ専用OGP画像（取得に失敗したときは共通画像へリダイレクト）
-    ogImage: `/og/apps/${encodeURIComponent(app.id)}${locale === "en" ? ".en" : ""}.png`,
+    ogImage: `/og/apps/${encodeURIComponent(app.id)}${locale === "ja" ? "" : `.${locale}`}.png`,
     ogTitle: t(`${app.title}｜${siteName(locale)}`, `${app.title} | ${siteName(locale)}`),
     ogDescription: app.description,
     noIndex: app.isListed === false,

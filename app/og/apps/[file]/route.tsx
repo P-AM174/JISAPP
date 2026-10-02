@@ -12,7 +12,9 @@ import {
   SITE_OG_IMAGE_EN,
   SITE_TAGLINE,
   SITE_TAGLINE_EN,
+  SITE_TAGLINE_VI,
   absoluteUrl,
+  siteOgImage,
 } from "@/lib/seo/site";
 
 export const runtime = "nodejs";
@@ -20,7 +22,8 @@ export const runtime = "nodejs";
 /**
  * アプリ名を描き込んだ OGP 画像。
  * X は拡張子なしのURLをカード化しないことがあるため、必ず `.png` で終わるパスで配信する。
- * 例: /og/apps/<id>.png（英語版は /og/apps/<id>.en.png）
+ * 例: /og/apps/<id>.png（英語版は /og/apps/<id>.en.png、ベトナム語版は /og/apps/<id>.vi.png）
+ * 共有されたアプリ自体が広告になるよう、英語・ベトナム語版には「Made with Jisapp」を入れる
  */
 const CACHE_CONTROL = "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800";
 
@@ -45,10 +48,12 @@ export async function GET(
   }
 
   let name = decodeURIComponent(file.slice(0, -4));
-  const en = name.endsWith(".en");
+  const vi = name.endsWith(".vi");
+  // ベトナム語版も、文言以外は英語版と同じ作り
+  const en = name.endsWith(".en") || vi;
   if (en) name = name.slice(0, -3);
   const id = name;
-  const fallbackImage = absoluteUrl(en ? SITE_OG_IMAGE_EN : SITE_OG_IMAGE);
+  const fallbackImage = absoluteUrl(vi ? siteOgImage("vi") : en ? SITE_OG_IMAGE_EN : SITE_OG_IMAGE);
   const app = await getShareableAppSeo(id);
 
   if (!app) {
@@ -56,7 +61,14 @@ export async function GET(
     return Response.redirect(fallbackImage, 302);
   }
 
-  const rawTitle = app.title.trim() || (en ? "A Jisapp app" : "ジサップのアプリ");
+  const rawTitle = app.title.trim().normalize("NFC") || (vi ? "Một app trên Jisapp" : en ? "A Jisapp app" : "ジサップのアプリ");
+  const tagline = vi ? SITE_TAGLINE_VI : en ? SITE_TAGLINE_EN : SITE_TAGLINE;
+  const badge = vi
+    ? "Dùng miễn phí ngay trên trình duyệt"
+    : en
+      ? "Free to use, right in your browser"
+      : "ブラウザでそのまま無料で使えます";
+  const footer = en ? "Made with Jisapp · jisapp.app" : "jisapp.app";
   const title =
     rawTitle.length > MAX_TITLE_LENGTH
       ? `${rawTitle.slice(0, MAX_TITLE_LENGTH)}…`
@@ -65,7 +77,8 @@ export async function GET(
   try {
     const [logo, fonts] = await Promise.all([
       loadLogoDataUri().catch(() => null),
-      loadNotoSansJP([700, 900]),
+      // ベトナム語は、画像に描く文字だけを含むフォントを読み込む（声調記号の字形を確実に入れるため）
+      vi ? loadNotoSansJP([700, 900], `Jisapp${tagline}${title}${badge}${footer}…`) : loadNotoSansJP([700, 900]),
     ]);
 
     return new ImageResponse(
@@ -124,7 +137,7 @@ export async function GET(
                 {en ? "Jisapp" : SITE_BRAND}
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: OG_THEME.mutedText }}>
-                {en ? SITE_TAGLINE_EN : SITE_TAGLINE}
+                {tagline}
               </div>
             </div>
           </div>
@@ -165,10 +178,10 @@ export async function GET(
                 padding: "10px 24px",
               }}
             >
-              {en ? "Free to use, right in your browser" : "ブラウザでそのまま無料で使えます"}
+              {badge}
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, color: OG_THEME.mutedText }}>
-              jisapp.app
+              {footer}
             </div>
           </div>
         </div>

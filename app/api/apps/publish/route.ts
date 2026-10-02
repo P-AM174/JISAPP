@@ -6,6 +6,7 @@ import {
   snapshotFromAppRow,
   upsertLibrarySnapshot,
 } from "@/lib/library/snapshots";
+import { normalizeFields } from "@/lib/i18n/text";
 import {
   queueLibraryUpdatesOnRepublish,
 } from "@/lib/library/pending-updates";
@@ -133,7 +134,7 @@ export async function POST(request: Request) {
   };
 
   try {
-    body = await request.json();
+    body = normalizeFields(await request.json(), ["html_code", "code"]);
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }

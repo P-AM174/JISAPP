@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getLibraryCounts } from "@/lib/library-counts";
 import { usesSharedData } from "@/lib/groups/client";
+import { normalizeFields } from "@/lib/i18n/text";
 
 async function getUserId(): Promise<string | null> {
   try {
@@ -119,7 +120,7 @@ export async function POST(req: Request) {
   };
 
   try {
-    body = await req.json();
+    body = normalizeFields(await req.json(), ["html_code", "code"]);
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }

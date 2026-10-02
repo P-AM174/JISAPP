@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { normalizeFields } from "@/lib/i18n/text";
 
 const VALID_CATEGORIES = [
   "ゲーム",
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
 
   let body: { title?: string; content?: string; category?: string; authorName?: string };
   try {
-    body = await req.json();
+    body = normalizeFields(await req.json());
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }

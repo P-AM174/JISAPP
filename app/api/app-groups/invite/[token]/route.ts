@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/api-auth";
+import { normalizeFields } from "@/lib/i18n/text";
 import {
   GROUP_LIMITS,
   cleanName,
@@ -43,7 +44,7 @@ export async function POST(req: Request, ctx: Ctx) {
 
   let body: { displayName?: string };
   try {
-    body = await req.json();
+    body = normalizeFields(await req.json());
   } catch {
     body = {};
   }

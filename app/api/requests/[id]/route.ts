@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { createUserNotification } from "@/lib/notifications/create-notification";
+import { normalizeFields } from "@/lib/i18n/text";
 
 async function requireUserId(): Promise<string | null> {
   try {
@@ -84,7 +85,7 @@ export async function POST(
   const { id } = await params;
   let body: { creatorName?: string; message?: string; appUrl?: string };
   try {
-    body = await req.json();
+    body = normalizeFields(await req.json());
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }

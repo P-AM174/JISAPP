@@ -60,13 +60,44 @@ function buildResetEmailHtml(name: string, resetUrl: string): string {
 }
 
 /** 英語版のメール */
-function buildResetEmailHtmlEn(name: string, resetUrl: string): string {
+/** メールの文言（英語・ベトナム語）。ベトナム語は機械翻訳でネイティブ未確認 */
+type EmailStrings = Record<"lang" | "title" | "tagline" | "hi" | "received" | "useButton" | "button" | "copyUrl" | "expiresBefore" | "oneHour" | "ignore", string>;
+
+const EMAIL_EN: EmailStrings = {
+  lang: "en",
+  title: "Reset your Jisapp password",
+  tagline: "Turn AI-made code into your own app",
+  hi: "Hi",
+  received: "We received a request to reset your password.",
+  useButton: "Use the button below to set a new one.",
+  button: "Reset password",
+  copyUrl: "If the button doesn't work, copy this URL:",
+  expiresBefore: "This link expires in",
+  oneHour: "1 hour",
+  ignore: "If you didn't request this, you can ignore this email.",
+};
+
+const EMAIL_VI: EmailStrings = {
+  lang: "vi",
+  title: "Đặt lại mật khẩu Jisapp",
+  tagline: "Biến code do AI viết thành app của riêng bạn",
+  hi: "Chào",
+  received: "Chúng tôi nhận được yêu cầu đặt lại mật khẩu của bạn.",
+  useButton: "Nhấn nút bên dưới để đặt mật khẩu mới.",
+  button: "Đặt lại mật khẩu",
+  copyUrl: "Nếu nút không hoạt động, hãy sao chép link này:",
+  expiresBefore: "Link này hết hạn sau",
+  oneHour: "1 giờ",
+  ignore: "Nếu bạn không yêu cầu, hãy bỏ qua email này.",
+};
+
+function buildResetEmailHtmlEn(name: string, resetUrl: string, s: EmailStrings = EMAIL_EN): string {
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${s.lang}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Reset your Jisapp password</title>
+  <title>${s.title}</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f6f4;font-family:'Helvetica Neue',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0">
@@ -76,28 +107,28 @@ function buildResetEmailHtmlEn(name: string, resetUrl: string): string {
           <tr>
             <td style="background:linear-gradient(135deg,#1a7358,#2b8a6c);padding:32px 40px;text-align:center;">
               <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-.5px;">Jisapp</span>
-              <p style="color:rgba(255,255,255,.8);font-size:13px;margin:8px 0 0;">Turn AI-made code into your own app</p>
+              <p style="color:rgba(255,255,255,.8);font-size:13px;margin:8px 0 0;">${s.tagline}</p>
             </td>
           </tr>
           <tr>
             <td style="padding:36px 40px;">
-              <p style="font-size:15px;color:#374151;margin:0 0 8px;">Hi <strong>${name}</strong>,</p>
+              <p style="font-size:15px;color:#374151;margin:0 0 8px;">${s.hi} <strong>${name}</strong>,</p>
               <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;">
-                We received a request to reset your password.<br />
-                Use the button below to set a new one.
+                ${s.received}<br />
+                ${s.useButton}
               </p>
               <div style="text-align:center;margin:0 0 28px;">
                 <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#1a7358,#2b8a6c);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:12px;">
-                  Reset password
+                  ${s.button}
                 </a>
               </div>
               <p style="font-size:12px;color:#9ca3af;margin:0 0 8px;">
-                If the button doesn't work, copy this URL:
+                ${s.copyUrl}
               </p>
               <p style="font-size:11px;color:#6b7280;word-break:break-all;margin:0 0 20px;">${resetUrl}</p>
               <p style="font-size:13px;color:#9ca3af;line-height:1.6;margin:0;">
-                This link expires in <strong>1 hour</strong>.<br />
-                If you didn't request this, you can ignore this email.
+                ${s.expiresBefore} <strong>${s.oneHour}</strong>.<br />
+                ${s.ignore}
               </p>
             </td>
           </tr>
@@ -114,10 +145,22 @@ function buildResetEmailHtmlEn(name: string, resetUrl: string): string {
 </html>`;
 }
 
+/**
+ * 差出人。日本語以外のメールは、差出人名を「Jisapp」にする（環境変数の名前がカタカナでも）
+ */
+function fromAddress(foreign: boolean): string {
+  const configured = process.env.RESEND_FROM_EMAIL;
+  if (!configured) return foreign ? "Jisapp <onboarding@resend.dev>" : "ジサップ <onboarding@resend.dev>";
+  if (!foreign) return configured;
+  const m = configured.match(/<([^>]+)>/);
+  return `Jisapp <${m ? m[1] : configured.trim()}>`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, locale } = await req.json();
-    const en = locale === "en";
+    const en = locale === "en" || locale === "vi";
+    const vi = locale === "vi";
     if (!email) {
       return NextResponse.json({ error: "メールアドレスを入力してください" }, { status: 400 });
     }
@@ -133,15 +176,16 @@ export async function POST(req: NextRequest) {
     await storePasswordResetToken(email, token, expiresAt);
 
     const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const resetUrl = `${baseUrl}${en ? "/en" : ""}/reset-password?token=${token}`;
-    const fromEmail =
-      process.env.RESEND_FROM_EMAIL ?? (en ? "Jisapp <onboarding@resend.dev>" : "ジサップ <onboarding@resend.dev>");
+    const resetUrl = `${baseUrl}${vi ? "/vi" : en ? "/en" : ""}/reset-password?token=${token}`;
+    const fromEmail = fromAddress(en);
 
     const { error: sendError } = await resend.emails.send({
       from: fromEmail,
       to: [email],
-      subject: en ? "Reset your Jisapp password" : "【ジサップ】パスワードリセット",
-      html: en
+      subject: vi ? EMAIL_VI.title : en ? "Reset your Jisapp password" : "【ジサップ】パスワードリセット",
+      html: vi
+        ? buildResetEmailHtmlEn(user.name ?? "bạn", resetUrl, EMAIL_VI)
+        : en
         ? buildResetEmailHtmlEn(user.name ?? "there", resetUrl)
         : buildResetEmailHtml(user.name ?? "ユーザー", resetUrl),
     });

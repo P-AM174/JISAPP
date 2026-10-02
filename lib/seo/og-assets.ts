@@ -24,8 +24,13 @@ export async function loadLogoDataUri(): Promise<string> {
   return `data:image/png;base64,${buf.toString("base64")}`;
 }
 
+/**
+ * OGP 画像用のフォント。
+ * text を渡すと、その文字だけを含むフォントを読み込む（ベトナム語の声調記号つきの文字も確実に入る）
+ */
 export async function loadNotoSansJP(
-  weights: Array<700 | 900> = [700, 900]
+  weights: Array<700 | 900> = [700, 900],
+  text?: string
 ): Promise<
   Array<{
     name: string;
@@ -43,7 +48,9 @@ export async function loadNotoSansJP(
 
   for (const weight of weights) {
     const css = await fetch(
-      `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@${weight}&display=swap`,
+      `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@${weight}&display=swap${
+        text ? `&text=${encodeURIComponent(Array.from(new Set(Array.from(text.normalize("NFC")))).join(""))}` : ""
+      }`,
       {
         headers: {
           "User-Agent":

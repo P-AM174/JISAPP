@@ -26,7 +26,9 @@ import {
   type GroupSession,
 } from "@/lib/groups/client";
 import { useLocale, useT } from "@/lib/i18n/client";
+import { shareToZalo } from "@/lib/share";
 import { intlLocale, format, plural } from "@/lib/i18n/config";
+import { isComposing } from "@/lib/i18n/text";
 
 type InviteInfo = { group: { id: string; name: string; appId: string }; appTitle: string; memberCount: number };
 
@@ -743,7 +745,7 @@ function JoinModal({
         placeholder={t("例：たろう", "e.g. Sam")}
         className={INPUT}
         onKeyDown={(e) => {
-          if (e.key === "Enter") void join();
+          if (e.key === "Enter" && !isComposing(e)) void join();
         }}
       />
       <p className="mt-1.5 text-xs text-slate-500">{t("メンバーに表示される名前です。ログインは必要ありません。", "This is the name members see. No sign-in needed.")}</p>
@@ -902,21 +904,40 @@ function InviteLinkSection({ appId, appTitle, group }: { appId: string; appTitle
           {copied ? t("コピー済み", "Copied") : t("コピー", "Copy")}
         </button>
       </div>
-      <a
-        href={
-          locale === "en"
-            ? `https://wa.me/?text=${encodeURIComponent(message + url)}`
-            : `https://line.me/R/msg/text/?${encodeURIComponent(message + url)}`
-        }
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:brightness-95",
-          locale === "en" ? "bg-[#25D366]" : "bg-[#06C755]"
-        )}
-      >
-        {t("LINEで送る", "Send on WhatsApp")}
-      </a>
+      {locale === "vi" ? (
+        // ベトナムでは Zalo・Messenger が主流。Zalo には ID なしで使える共有 URL がないため、
+        // OS の共有シート（Zalo・Messenger を選べる）を開き、使えないときはコピーする
+        <button
+          type="button"
+          onClick={() => {
+            void shareToZalo({ url, text: message }).then((result) => {
+              if (result === "copied") {
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 2000);
+              }
+            });
+          }}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0068FF] px-4 py-3 text-sm font-bold text-white transition hover:brightness-95"
+        >
+          {copied ? t("コピー済み", "Copied") : t("LINEで送る", "Send on WhatsApp")}
+        </button>
+      ) : (
+        <a
+          href={
+            locale === "en"
+              ? `https://wa.me/?text=${encodeURIComponent(message + url)}`
+              : `https://line.me/R/msg/text/?${encodeURIComponent(message + url)}`
+          }
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:brightness-95",
+            locale === "en" ? "bg-[#25D366]" : "bg-[#06C755]"
+          )}
+        >
+          {t("LINEで送る", "Send on WhatsApp")}
+        </a>
+      )}
       <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
         {t("リンクを知っている人は誰でも参加できます。グループ外に漏れたときは、作った人が「招待リンクを作り直す」で古いリンクを使えなくできます。", "Anyone with the link can join. If it leaks outside the group, the creator can make a new invite link so the old one stops working.")}
       </p>

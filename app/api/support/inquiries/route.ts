@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { normalizeFields } from "@/lib/i18n/text";
 
 export async function POST(request: Request) {
   let body: { name?: string; email?: string; subject?: string; body?: string };
   try {
-    body = await request.json();
+    body = normalizeFields(await request.json());
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }

@@ -2,18 +2,20 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo/site";
 import { CATEGORIES } from "@/lib/categories";
 import { listPublicAppIdsForSitemap } from "@/lib/seo/public-apps";
-import { LOCALES, localizePath } from "@/lib/i18n/config";
+import { localizePath } from "@/lib/i18n/config";
+import { indexedLocales } from "@/lib/features";
 
 type Entry = MetadataRoute.Sitemap[number];
 
 /**
- * 日本語（言語なしの URL）と英語（/en）の両方を載せ、
+ * 日本語（言語なしの URL）と英語（/en）、正式公開後はベトナム語（/vi）も載せ、
  * それぞれに hreflang の対応（alternates.languages）をつける。
  */
 function localized(path: string, rest: Omit<Entry, "url" | "alternates">): Entry[] {
+  const locales = indexedLocales();
   const languages: Record<string, string> = {};
-  for (const l of LOCALES) languages[l] = absoluteUrl(localizePath(path, l));
-  return LOCALES.map((l) => ({
+  for (const l of locales) languages[l] = absoluteUrl(localizePath(path, l));
+  return locales.map((l) => ({
     ...rest,
     url: absoluteUrl(localizePath(path, l)),
     alternates: { languages },

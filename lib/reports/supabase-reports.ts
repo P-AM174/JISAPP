@@ -97,6 +97,13 @@ export async function updateSupabaseReportStatus(id: string, status: string) {
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.from("app_reports").update({ status }).eq("id", id);
   if (error) throw error;
+  // 通報を受けてから対応するまでの時間を残す（resolved_at は scripts/add-analytics-events.sql で足す列。
+  // 列がまだないときは失敗するが、ステータスの更新は済んでいるので無視する）
+  await supabase
+    .from("app_reports")
+    .update({ resolved_at: status === "pending" ? null : new Date().toISOString() })
+    .eq("id", id)
+    .then(() => undefined, () => undefined);
 }
 
 function isUUID(id: string) {

@@ -25,6 +25,13 @@ export function middleware(req: NextRequest) {
       url.search = "";
       return NextResponse.redirect(url);
     }
+    // 有料出品・購入（エスクロー決済）の画面は、ベトナム語版では出さない
+    if (pathLocale === "vi" && /^\/dashboard(\/|$)/.test(legacy)) {
+      const url = req.nextUrl.clone();
+      url.pathname = legacy.startsWith("/dashboard/purchases") ? "/vi/library" : "/vi/projects";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
     return NextResponse.next();
   }
 

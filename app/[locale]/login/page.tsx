@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
+import { trackEvent } from "@/lib/analytics/client";
 import Link from "@/lib/i18n/navigation";
 import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -165,6 +166,7 @@ function LoginContent() {
 
       // 本登録完了 → 自動ログイン
       setStage("done");
+      trackEvent("signup", { method: "email" });
       await signIn("credentials", {
         email: regEmail, password: regPw,
         callbackUrl: localizePath(returnUrl, locale), redirect: true,

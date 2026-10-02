@@ -7,6 +7,7 @@ import { buildPromptFromTemplate, getPromptRulesShort } from "@/lib/playground/p
 import { useLocale, useT } from "@/lib/i18n/client";
 import { pickDeep } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics/client";
 
 type Props = {
   open: boolean;
@@ -142,6 +143,7 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(finishedPrompt);
       setCopied("template");
+      trackEvent("prompt_copy", { via: "builder" });
     } catch {
       setError(t("コピーできませんでした。下の文を長押ししてコピーしてください", "Couldn't copy. Long-press the text below to copy it"));
     }
@@ -152,6 +154,7 @@ export function PromptBuilderModal({
     try {
       await navigator.clipboard.writeText(rulesShort);
       setCopied("rules");
+      trackEvent("prompt_copy", { via: "rules" });
     } catch {
       setError(t("コピーに失敗しました。もう一度お試しください", "Copy failed. Please try again"));
     }

@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 import { LocaleProvider } from "@/lib/i18n/client";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import type { Dictionary, Locale } from "@/lib/i18n/config";
 
 export function Providers({
@@ -18,6 +19,7 @@ export function Providers({
 }) {
   return (
     <LocaleProvider locale={locale} dict={dict}>
+      <PageViewTracker />
       <SessionProvider session={session}>{children}</SessionProvider>
     </LocaleProvider>
   );

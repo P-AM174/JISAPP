@@ -46,7 +46,8 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { CATEGORIES, CATEGORY_MAP, categoryName } from "@/lib/categories";
+import { CATEGORIES, CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
+import { showGames } from "@/lib/features";
 import { sortLibrary, type LibraryEntry } from "@/lib/library/sort";
 import { CategoryIcon } from "@/lib/category-icon";
 import type { HomeCatalogData } from "@/lib/home/catalog";
@@ -541,7 +542,7 @@ function SiteHeader({
               { label: t("生産性ツール", "Productivity"), href: "/search?category=生産性" },
               { label: t("業務効率化", "Work efficiency"), href: "/search?category=業務効率化" },
               { label: t("SNS運用", "Social media"), href: "/search?category=SNS運用" },
-              { label: t("個人開発のゲーム", "Indie games"), href: "/search?category=ゲーム" },
+              ...(showGames(locale) ? [{ label: t("個人開発のゲーム", "Indie games"), href: "/search?category=ゲーム" }] : []),
               { label: t("無料アプリ", "Free apps"), href: "/search?filter=free" },
               { label: t("みんなのリクエスト", "Community requests"), href: "/requests" },
             ].map((item) => (
@@ -930,12 +931,20 @@ export function HomePageClient({
 }) {
   const [query,           setQuery]           = useState("");
   const [showContact,     setShowContact]     = useState(false);
-  const { playgroundApps, popularMonth, popularCreators, featuredApps } = initialData;
+  const t = useT();
+  const locale = useLocale();
+  // ベトナム語ページでは、フラグがオンになるまでゲームを出さない（lib/features.ts）
+  const gamesVisible = showGames(locale);
+  const categories = visibleCategories(locale);
+  const { popularCreators } = initialData;
+  const withoutGames = <T extends { category?: string | null }>(apps: T[]) =>
+    gamesVisible ? apps : apps.filter((a) => a.category !== "games" && a.category !== "ゲーム");
+  const playgroundApps = useMemo(() => withoutGames(initialData.playgroundApps), [initialData.playgroundApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
+  const popularMonth = useMemo(() => withoutGames(initialData.popularMonth), [initialData.popularMonth, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
+  const featuredApps = useMemo(() => withoutGames(initialData.featuredApps), [initialData.featuredApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
   const loadingPG = false;
   const [pgCategoryFilter, setPgCategoryFilter] = useState<string>("all");
   const [selectedApp, setSelectedApp]         = useState<ModalApp | null>(null);
-  const t = useT();
-  const locale = useLocale();
 
   // 人気順（応援バッジ数）でフィルタ済み
   const filteredPlaygroundApps = useMemo(() => {
@@ -964,7 +973,7 @@ export function HomePageClient({
   const mainListShowsEverything =
     pgCategoryFilter === "all" && newApps.length <= NEW_SECTION_LIMIT;
   const showNewSection = !mainListShowsEverything;
-  const showGameSection = gameApps.length > 0 && !mainListShowsEverything;
+  const showGameSection = gamesVisible && gameApps.length > 0 && !mainListShowsEverything;
 
   // 人気系は数が揃うまで出さない（1〜2件だと寂しく見える）
   const MIN_POPULAR_APPS = 3;
@@ -1149,7 +1158,7 @@ export function HomePageClient({
               >
                 {t("すべて", "All")}
               </button>
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => setPgCategoryFilter(pgCategoryFilter === cat.id ? "all" : cat.id)}
@@ -1448,7 +1457,7 @@ export function HomePageClient({
             <LanguageSwitcher />
           </div>
           <nav aria-label={t("カテゴリ一覧", "Categories")} className="flex flex-wrap justify-center gap-2 pt-2">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.id}`}

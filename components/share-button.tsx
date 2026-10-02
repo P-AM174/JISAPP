@@ -4,17 +4,42 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Share2, Link2, Mail, X, Copy, CheckCircle2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useT } from "@/lib/i18n/client";
+import { useLocale, useT } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n/config";
 import {
+  canShareToMessenger,
   copyShareUrl,
   getFacebookShareUrl,
   getLineShareUrl,
   getMailShareUrl,
+  getMessengerShareUrl,
   getTwitterShareUrl,
   nativeShare,
   openShareWindow,
   prefersNativeShare,
+  shareToZalo,
+  withUtm,
+  type ShareSource,
 } from "@/lib/share";
+import { trackEvent } from "@/lib/analytics/client";
+
+/**
+ * 共有先の並び順。言語ごとに、その国でよく使われる SNS を先に出す。
+ * ベトナムは Facebook・Zalo が人口の8割近く、X は1割未満（URL コピーは下に常に出す）
+ */
+const SHARE_ORDER: Record<Locale, ShareSource[]> = {
+  ja: ["x", "line", "facebook", "mail"],
+  en: ["x", "line", "facebook", "mail"],
+  vi: ["facebook", "messenger", "zalo", "x"],
+};
+
+function MessengerBrandIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.17.16.14.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.98-.87c.17-.08.36-.09.53-.04.91.25 1.88.38 2.91.38 5.64 0 10-4.13 10-9.7C22 6.13 17.64 2 12 2Zm6 7.46-2.94 4.66a1.5 1.5 0 0 1-2.17.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66a1.5 1.5 0 0 1 2.17-.4l2.34 1.75a.6.6 0 0 0 .72 0l3.16-2.4c.42-.32.97.18.69.63Z" />
+    </svg>
+  );
+}
 
 /** ブランドマークは公式の形をインラインSVGで表示（文字での代用はしない） */
 function XBrandIcon({ className }: { className?: string }) {
@@ -57,10 +82,15 @@ function ShareSheet({
   shareText: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [zaloNote, setZaloNote] = useState(false);
   const t = useT();
+  const locale = useLocale();
 
   useEffect(() => {
-    if (!open) setCopied(false);
+    if (!open) {
+      setCopied(false);
+      setZaloNote(false);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -79,42 +109,72 @@ function ShareSheet({
 
   if (!open) return null;
 
-  const channels = [
-    {
+  // 共有先ごとに計測用の UTM をつけた URL（日本語ページではつけない）
+  const link = (source: ShareSource) => withUtm(url, source, locale);
+  type Channel = { id: ShareSource; label: string; sub: string; icon: React.ReactNode; bg: string; action: () => void | Promise<void>; keepOpen?: boolean };
+  const all: Partial<Record<ShareSource, Channel>> = {
+    x: {
       id: "x",
       label: "X（Twitter）",
       sub: t("ポストする", "Post"),
       icon: <XBrandIcon className="h-4 w-4" />,
       bg: "bg-gray-900 text-white",
-      action: () => openShareWindow(getTwitterShareUrl(url, shareText)),
+      action: () => openShareWindow(getTwitterShareUrl(link("x"), shareText)),
     },
-    {
+    line: {
       id: "line",
       label: "LINE",
       sub: t("トーク・タイムライン", "Chats & timeline"),
       icon: <MessageCircle className="h-4 w-4" strokeWidth={2.5} />,
       bg: "bg-[#06C755] text-white",
-      action: () => openShareWindow(getLineShareUrl(url, shareText)),
+      action: () => openShareWindow(getLineShareUrl(link("line"), shareText)),
     },
-    {
+    facebook: {
       id: "facebook",
       label: "Facebook",
       sub: t("シェアする", "Share"),
       icon: <FacebookBrandIcon className="h-5 w-5" />,
       bg: "bg-[#1877F2] text-white",
-      action: () => openShareWindow(getFacebookShareUrl(url)),
+      action: () => openShareWindow(getFacebookShareUrl(link("facebook"))),
     },
-    {
+    messenger: canShareToMessenger()
+      ? {
+          id: "messenger",
+          label: "Messenger",
+          sub: t("メッセージで送る", "Send in a message"),
+          icon: <MessengerBrandIcon className="h-5 w-5" />,
+          bg: "bg-gradient-to-br from-[#0099FF] to-[#A033FF] text-white",
+          action: () => {
+            window.location.href = getMessengerShareUrl(link("messenger"));
+          },
+        }
+      : undefined,
+    zalo: {
+      id: "zalo",
+      label: "Zalo",
+      sub: t("メッセージで送る", "Send in a message"),
+      icon: <span className="text-[11px] font-black tracking-tight">Zalo</span>,
+      bg: "bg-[#0068FF] text-white",
+      // Zalo は ID なしで使える共有 URL がないため、OS の共有シートか URL のコピーで送る
+      keepOpen: true,
+      action: async () => {
+        const result = await shareToZalo({ url: link("zalo"), title, text: shareText });
+        if (result === "shared") onClose();
+        else if (result === "copied") setZaloNote(true);
+      },
+    },
+    mail: {
       id: "mail",
       label: t("メール", "Email"),
       sub: t("メールアプリで送る", "Send with your mail app"),
       icon: null,
       bg: "bg-emerald-600 text-white",
       action: () => {
-        window.location.href = getMailShareUrl(url, title, shareText);
+        window.location.href = getMailShareUrl(link("mail"), title, shareText);
       },
     },
-  ];
+  };
+  const channels = SHARE_ORDER[locale].map((id) => all[id]).filter((c): c is Channel => !!c);
 
   const sheet = (
     <div className="fixed inset-0 z-[500] flex items-end justify-center sm:items-center sm:p-4">
@@ -144,8 +204,9 @@ function ShareSheet({
               key={ch.id}
               type="button"
               onClick={() => {
-                ch.action();
-                onClose();
+                trackEvent("share", { channel: ch.id });
+                void ch.action();
+                if (!ch.keepOpen) onClose();
               }}
               className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50 active:scale-[0.98]"
             >
@@ -165,11 +226,17 @@ function ShareSheet({
           ))}
         </div>
 
+        {zaloNote && (
+          <p className="mx-5 -mt-1 mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            {t("URLをコピーしました。Zaloを開いて、メッセージに貼り付けてください", "URL copied. Open Zalo and paste it into a message")}
+          </p>
+        )}
         <div className="border-t border-gray-100 px-5 py-4">
           <button
             type="button"
             onClick={async () => {
-              const ok = await copyShareUrl(url);
+              trackEvent("share", { channel: "copy" });
+              const ok = await copyShareUrl(link("copy"));
               if (ok) {
                 setCopied(true);
                 setTimeout(() => onClose(), 800);
@@ -200,6 +267,7 @@ export function ShareButton({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const t = useT();
+  const locale = useLocale();
   if (label === undefined) label = t("共有する", "Share");
   const shareText = text ?? title ?? t("ジサップのアプリ", "A Jisapp app");
   const closeSheet = useCallback(() => setSheetOpen(false), []);
@@ -209,8 +277,11 @@ export function ShareButton({
     setSharing(true);
     try {
       if (prefersNativeShare()) {
-        const ok = await nativeShare({ url, title, text: shareText });
-        if (ok) return;
+        const ok = await nativeShare({ url: withUtm(url, "native", locale), title, text: shareText });
+        if (ok) {
+          trackEvent("share", { channel: "native" });
+          return;
+        }
       }
       setSheetOpen(true);
     } finally {

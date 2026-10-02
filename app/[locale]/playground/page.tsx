@@ -92,6 +92,7 @@ import {
   markStudioLoginPromptShown,
   wasStudioLoginPromptShown,
 } from "@/lib/studio/login-prompt";
+import { trackEvent } from "@/lib/analytics/client";
 
 /** 作りたいもの・選んだAI・進み具合を覚えておく（AIアプリから戻ってきても続きから） */
 const FLOW_STORAGE_KEY = "jisapp_studio_flow";
@@ -905,6 +906,7 @@ export default function PlaygroundPage() {
       if (!res.ok) throw new Error(json.error ?? (isRepublish ? t("上書きに失敗しました", "Couldn't update the app") : t("出品に失敗しました", "Couldn't publish the app")));
       const appUrl = `${window.location.origin}${localizePath(`/apps/${json.id}`, locale)}`;
       setPublishedUrl(appUrl);
+      trackEvent("publish", { mode: publishListed ? "listed" : "url_only", overwrite: overwriting });
       setLastPublishWasOverwrite(overwriting);
       setPublishContext((prev) => ({ projectId: prev?.projectId, appId: json.id }));
       // コードとタイトルをlocalStorageに保存（マイプロジェクトに反映）
@@ -1151,6 +1153,8 @@ export default function PlaygroundPage() {
     const issue = detectCodeIssue(next);
     setPasteIssue(issue);
     setActivePane(issue ? "editor" : "preview");
+    trackEvent("studio_paste", { ok: !issue });
+    if (!issue) trackEvent("preview");
     setAwaitingCode(false);
     setPasteFailed(false);
     setReturned(false);
@@ -1197,6 +1201,7 @@ export default function PlaygroundPage() {
     setPromptText(prompt);
     const ok = copyTextNow(prompt) || (await copyText(prompt));
     setPromptCopied(ok);
+    if (ok) trackEvent("prompt_copy", { via: "studio" });
     leftForAiRef.current = true;
     setTemplateStep("copied");
     setTemplateOpen(true);

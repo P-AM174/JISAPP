@@ -66,7 +66,6 @@ type Inquiry = {
 type Tab = "dashboard" | "apps" | "inquiries" | "reports" | "users";
 type AppSubTab = "listed" | "url_only";
 type MessageChannel = "bell" | "email" | "both";
-type CodeTab = "html" | "css" | "js";
 
 type Report = {
   id: string;
@@ -221,7 +220,6 @@ export default function AdminDashboard() {
     css_code: string;
     js_code: string;
   } | null>(null);
-  const [codeTab,            setCodeTab]            = useState<CodeTab>("html");
   // コードの書き換え（運営）
   const [codeEditing,        setCodeEditing]        = useState(false);
   const [codeDraft,          setCodeDraft]          = useState<{ html_code: string; css_code: string; js_code: string } | null>(null);
@@ -561,7 +559,6 @@ export default function AdminDashboard() {
   const handleViewCode = async (product: Product) => {
     setCodeTarget(product);
     setCodeData(null);
-    setCodeTab("html");
     setCodeEditing(false);
     setCodeDraft(null);
     setCodeNotes("");
@@ -569,11 +566,13 @@ export default function AdminDashboard() {
     const res = await fetch(`/api/admin/apps/${product.id}/code`);
     if (res.ok) {
       const data = await res.json();
+      // ジサップのアプリは 1 つの HTML で作るので、CSS・JS が別に入っている古いアプリも HTML にまとめて扱う
+      // （書き換えて公開すると、CSS・JS の欄は空になる）
       setCodeData({
         title: data.title,
-        html_code: data.html_code ?? "",
-        css_code: data.css_code ?? "",
-        js_code: data.js_code ?? "",
+        html_code: combineAppCode(data.html_code ?? "", data.css_code ?? "", data.js_code ?? ""),
+        css_code: "",
+        js_code: "",
       });
     } else {
       alert("コードの取得に失敗しました");
@@ -618,11 +617,10 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer);
   }, [codeEditing, codeDraft]);
 
-  /** 元のコードを全部消す（HTML・CSS・JS をまとめて空にする） */
+  /** 元のコードを全部消す */
   const clearDraft = async () => {
-    if (!(await askConfirm("HTML・CSS・JS のコードをすべて消しますか？（公開するまで元のアプリには影響しません）", "全部消す"))) return;
+    if (!(await askConfirm("コードをすべて消しますか？（公開するまで元のアプリには影響しません）", "全部消す"))) return;
     setCodeDraft({ html_code: "", css_code: "", js_code: "" });
-    setCodeTab("html");
     notify("コードを全部消しました");
   };
 
@@ -638,7 +636,6 @@ export default function AdminDashboard() {
     setCodeDraft(next);
     setPreviewCode(next);
     setPreviewKey((k) => k + 1);
-    setCodeTab("html");
     notify(looksLikePrompt(text) ? "置き換えました（まだプロンプトのようです。コードか確かめてください）" : "コピーしたコードで置き換えました");
   };
 
@@ -1518,12 +1515,12 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <>
+              {/* 中身はスクロールできるようにし、「書き換えて公開」の帯はいつも下に見えるようにする */}
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
                 {/* コピー・保存 */}
                 <div className="flex flex-col gap-2 border-b border-gray-100 bg-slate-50/70 px-5 py-3 sm:flex-row sm:items-center">
                   <p className="flex-1 text-[11px] leading-relaxed text-gray-500">
-                    {codeData.css_code.trim() || codeData.js_code.trim()
-                      ? "HTML・CSS・JS を 1 つのファイルにまとめて、コピー・保存します。"
-                      : `全 ${fullCode.split("\n").length.toLocaleString()} 行 · ${fullCode.length.toLocaleString()} 文字`}
+                    {`全 ${fullCode.split("\n").length.toLocaleString()} 行 · ${fullCode.length.toLocaleString()} 文字`}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -1565,28 +1562,6 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {(codeEditing || codeData.css_code.trim() || codeData.js_code.trim()) && (
-                  <div className="flex gap-1 px-5 pt-3">
-                    {(["html", "css", "js"] as const).map((t) => {
-                      const shown = codeEditing && codeDraft ? codeDraft : codeData;
-                      const src = t === "html" ? shown.html_code : t === "css" ? shown.css_code : shown.js_code;
-                      return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setCodeTab(t)}
-                          className={cn(
-                            "rounded-t-lg px-4 py-2 text-xs font-bold uppercase",
-                            codeTab === t ? "bg-slate-900 text-white" : "text-gray-500 hover:bg-gray-100"
-                          )}
-                        >
-                          {t}
-                          <span className="ml-1 text-[10px] font-semibold normal-case opacity-60">{src.trim() ? `${src.split("\n").length}行` : "空"}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
                 {codeEditing && codeDraft ? (
                   <>
                     {/* 書き換えの道具 */}
@@ -1612,20 +1587,18 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                     </div>
-                    <div className="grid min-h-0 flex-1 lg:grid-cols-2">
+                    {/* スマホは高さを決めて、画面全体をスクロールできるようにする（PCは残りの高さいっぱい） */}
+                    <div className="grid shrink-0 lg:min-h-0 lg:flex-1 lg:shrink lg:grid-cols-2">
                       <textarea
-                        value={codeTab === "html" ? codeDraft.html_code : codeTab === "css" ? codeDraft.css_code : codeDraft.js_code}
-                        onChange={(e) => {
-                          const key = codeTab === "html" ? "html_code" : codeTab === "css" ? "css_code" : "js_code";
-                          setCodeDraft((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
-                        }}
+                        value={codeDraft.html_code}
+                        onChange={(e) => setCodeDraft((prev) => (prev ? { ...prev, html_code: e.target.value } : prev))}
                         spellCheck={false}
-                        aria-label={`${codeTab.toUpperCase()} を書き換える`}
+                        aria-label="コードを書き換える"
                         placeholder="ここにコードを貼ってください"
-                        className={cn("min-h-[300px] resize-none bg-slate-950 p-4 font-mono text-xs leading-relaxed text-amber-100 outline-none lg:block", editPane === "code" ? "block" : "hidden")}
+                        className={cn("h-[55dvh] min-h-[300px] resize-none bg-slate-950 p-4 font-mono text-xs leading-relaxed text-amber-100 outline-none lg:block lg:h-auto", editPane === "code" ? "block" : "hidden")}
                       />
                       {/* プレビュー（運営用の別枠で動かすので、元のアプリや利用者のデータには影響しない） */}
-                      <div className={cn("min-h-[300px] flex-col border-l border-gray-100 bg-slate-50 lg:flex", editPane === "preview" ? "flex" : "hidden")}>
+                      <div className={cn("h-[55dvh] min-h-[300px] flex-col border-l border-gray-100 bg-slate-50 lg:flex lg:h-auto", editPane === "preview" ? "flex" : "hidden")}>
                         <p className="px-4 py-2 text-[11px] font-bold text-gray-400">プレビュー（入力が止まって1秒で更新・公開前の確認用）</p>
                         {previewCode && previewCode.html_code.trim() ? (
                           <AppRunner
@@ -1677,7 +1650,15 @@ export default function AdminDashboard() {
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col gap-2 border-t border-gray-100 bg-amber-50/60 px-5 py-3 sm:flex-row sm:items-center">
+                  </>
+                ) : (
+                  <pre className="min-h-[240px] flex-1 overflow-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-100">
+                    <code>{codeData.html_code || "（空）"}</code>
+                  </pre>
+                )}
+              </div>
+                {codeEditing && codeDraft && (
+                    <div className="flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-amber-50/60 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:items-center">
                       <input
                         type="text"
                         value={codeNotes}
@@ -1708,11 +1689,6 @@ export default function AdminDashboard() {
                         </button>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <pre className="min-h-[240px] flex-1 overflow-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-100">
-                    <code>{(codeTab === "html" ? codeData.html_code : codeTab === "css" ? codeData.css_code : codeData.js_code) || "（空）"}</code>
-                  </pre>
                 )}
               </>
             )}

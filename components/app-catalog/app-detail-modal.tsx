@@ -20,6 +20,7 @@ import {
   Palette,
   AlertTriangle,
   Smartphone,
+  Wand2,
 } from "lucide-react";
 import { AppReportModal } from "./app-report-modal";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,24 @@ export function AppDetailModal({
       })
       .catch(() => {});
   }, [app.id, isLoggedIn]);
+
+  // コードを公開しているアプリだけ「このアプリをもとに作る」を出す
+  const [remixable, setRemixable] = useState(false);
+  useEffect(() => {
+    setRemixable(false);
+    const id = String(app.id);
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+    let cancelled = false;
+    fetch(`/api/apps/${id}/remix?check=1`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d.available) setRemixable(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [app.id]);
 
   const storageKey = `jisapp_stamps_${app.id}`;
   const [myStamps, setMyStamps] = useState<StampId[]>(() => {
@@ -385,6 +404,21 @@ export function AppDetailModal({
                   <LibraryBig className="h-4 w-4" />
                 )}
                 {t("マイライブラリに追加", "Add to my library")}
+              </button>
+            )}
+            {remixable && (
+              <button
+                type="button"
+                onClick={() => router.push(`/playground?remix=${app.id}`)}
+                className="flex w-full flex-col items-center justify-center rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-violet-700 hover:bg-violet-100 active:scale-[0.98] transition-all"
+              >
+                <span className="flex items-center gap-2 text-sm font-bold">
+                  <Wand2 className="h-4 w-4" />
+                  {t("このアプリをもとに作る", "Make your own version")}
+                </span>
+                <span className="text-[11px] font-medium text-violet-500">
+                  {t("自分用に作り変えられます。元のアプリは変わりません", "Make it your own. The original app stays as it is")}
+                </span>
               </button>
             )}
             <button

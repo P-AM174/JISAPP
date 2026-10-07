@@ -35,6 +35,7 @@ import {
   Undo2,
   Upload,
   Users,
+  Wand2,
   Wrench,
   X,
   Zap,
@@ -60,6 +61,7 @@ import { CodeEditorPanel } from "@/components/playground/code-editor-panel";
 import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal";
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
+import { RemixGuideModal, isRemixGuideHidden } from "@/components/playground/remix-guide-modal";
 import {
   EditorStart,
   PaneTitleBar,
@@ -734,6 +736,10 @@ export default function PlaygroundPage() {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishTitle, setPublishTitle]       = useState("");
   const [publishDesc, setPublishDesc]         = useState("");
+  /** 「このアプリをもとに作る」で開いたときの、もとのアプリの名前（新しいアプリとして公開する） */
+  const [remixFrom, setRemixFrom]             = useState<string | null>(null);
+  const [remixGuideOpen, setRemixGuideOpen]   = useState(false);
+  const [remixBannerClosed, setRemixBannerClosed] = useState(false);
   const [publishCategory, setPublishCategory] = useState("");
   const [publishListed, setPublishListed]     = useState(true);
   const [publishCodePublic, setPublishCodePublic] = useState(false);
@@ -878,11 +884,15 @@ export default function PlaygroundPage() {
     secretWarningAckRef.current = false;
     // 再公開以外は前回タイトルを入れず空欄から（新規作成のたびに残らないように）
     if (!isRepublish) {
-      setPublishTitle("");
+      setPublishTitle(remixFrom ? format(t("{title}（アレンジ）", "{title} (remix)"), { title: remixFrom }) : "");
       setPublishGroupSharing(null);
+      // もとにしたアプリの名前を説明に入れておく（消して書き直してもよい）
+      if (remixFrom && !publishDesc.trim()) {
+        setPublishDesc(format(t("『{title}』をもとに作りました。", "Based on “{title}”."), { title: remixFrom }));
+      }
     }
     setShowPublishModal(true);
-  }, [isRepublish]);
+  }, [isRepublish, remixFrom, publishDesc, t]);
 
   const handlePublish = async () => {
     const title = publishTitle.trim() || t("開発スタジオアプリ", "Studio app");
@@ -1045,6 +1055,25 @@ export default function PlaygroundPage() {
       // 新規セッション：前回アプリのAPIキーを引き継がないよう紐付けを破棄
       try { localStorage.removeItem("jisapp_playground_app_id"); } catch { /* noop */ }
     }
+    // 「このアプリをもとに作る」：公開されているコードを、新しいアプリとして読み込む（元のアプリとは紐付けない）
+    const remixId = params.get("remix");
+    if (remixId && !isRestore) {
+      fetch(`/api/apps/${encodeURIComponent(remixId)}/remix`)
+        .then((r) => r.json())
+        .then((d: { available?: boolean; title?: string; html_code?: string }) => {
+          if (!d.available || !d.html_code) {
+            showToast(t("このアプリのコードは読み込めませんでした", "Couldn't load this app's code"));
+            return;
+          }
+          setCode(d.html_code);
+          setPreviewHtml(d.html_code);
+          setIframeKey((k) => k + 1);
+          setRemixFrom(d.title ?? "");
+          if (!isRemixGuideHidden()) setRemixGuideOpen(true);
+        })
+        .catch(() => showToast(t("このアプリのコードは読み込めませんでした", "Couldn't load this app's code")));
+      return;
+    }
     if (projectId) {
       fetch(`/api/my-projects/${projectId}`)
         .then((r) => r.json())
@@ -1134,6 +1163,8 @@ export default function PlaygroundPage() {
           });
       }
     } catch { /* noop */ }
+    // 開いたときに 1 回だけ（showToast・t は毎回作り直されるため入れない）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyPublishMeta]);
 
 
@@ -1313,6 +1344,9 @@ export default function PlaygroundPage() {
     setReturned(false);
     setLaunchedAi(null);
     setActivePane("editor");
+    // 一から作り直すときは、もとにしたアプリとの関係もなくす
+    setRemixFrom(null);
+    setPublishDesc("");
   };
 
   /** 空のエディタに直接貼られたときも、AIの説明文や囲みを取り除く */
@@ -1700,6 +1734,30 @@ export default function PlaygroundPage() {
   // コードの下に出す注意（途中で切れている・サンプル・APIキー）
   const renderNotices = () => (
     <>
+      {remixFrom !== null && !remixBannerClosed && (
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-violet-100 bg-violet-50/80 px-4 py-2.5 text-xs text-violet-900">
+          <Wand2 className="h-4 w-4 shrink-0 text-violet-600" />
+          <p className="min-w-0 flex-1 leading-relaxed">
+            {rich(t("「{title}」をもとに作っています。<b>元のアプリは変わりません。</b>", "You're building on “{title}”. <b>The original app stays as it is.</b>"), { b: (c) => <span className="font-semibold">{c}</span> }, { title: remixFrom })}
+          </p>
+          <button
+            type="button"
+            onClick={() => setRemixGuideOpen(true)}
+            className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-violet-800 ring-1 ring-violet-200 hover:bg-violet-100"
+          >
+            {t("変え方を見る", "How to change it")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setRemixBannerClosed(true)}
+            aria-label={t("この案内を閉じる", "Close this note")}
+            title={t("閉じる", "Close")}
+            className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-violet-400 hover:bg-violet-200/60 hover:text-violet-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {codeIssue === "truncated" && (
         <div className="flex shrink-0 items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -2027,6 +2085,9 @@ export default function PlaygroundPage() {
 
       {/* ══ 使い方ガイドモーダル ══ */}
       {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} />}
+      {remixGuideOpen && remixFrom !== null && (
+        <RemixGuideModal sourceTitle={remixFrom} onClose={() => setRemixGuideOpen(false)} />
+      )}
 
       <EmbeddedSecretWarningModal
         open={secretWarningOpen}

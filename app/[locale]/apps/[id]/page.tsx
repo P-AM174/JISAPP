@@ -35,6 +35,7 @@ import {
   Link2,
   Lightbulb,
   FileSpreadsheet,
+  Wand2,
 } from "lucide-react";
 import { type AppRow } from "@/lib/supabase";
 import { AppUpdateModal, type PendingUpdateInfo } from "@/components/library/app-update-modal";
@@ -259,6 +260,17 @@ function SupabaseAppPage({ id }: { id: string }) {
             </span>
             {sessionStatus !== "loading" && !isLoggedIn && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
+            )}
+            {app.code_public && (
+              <Link
+                href={`/playground?remix=${id}`}
+                title={t("このアプリをもとに、自分用のアプリを作ります（元のアプリは変わりません）", "Make your own version of this app (the original stays as it is)")}
+                className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-100 transition-colors"
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t("このアプリをもとに作る", "Make your own version")}</span>
+                <span className="sm:hidden">{t("もとに作る", "Remix")}</span>
+              </Link>
             )}
             {app.code_public && (
               <button

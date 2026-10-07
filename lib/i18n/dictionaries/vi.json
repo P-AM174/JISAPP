@@ -7073,5 +7073,160 @@
     "vi": "<b>Chờ AI viết xong</b> toàn bộ code, rồi bấm \"Sao chép\" ở góc trên bên phải khung code và dán lại đoạn code bắt đầu bằng {tag}.",
     "reviewed": false,
     "en": "<b>Wait until the AI has finished writing</b> all the code, then press “Copy” at the top right of the code box and paste the code that starts with {tag}."
+  },
+  "このアプリをもとに作る": {
+    "vi": "Làm app của riêng bạn từ app này",
+    "reviewed": false,
+    "en": "Make your own version"
+  },
+  "自分用に作り変えられます。元のアプリは変わりません": {
+    "vi": "Bạn có thể sửa thành app của riêng mình. App gốc không bị thay đổi",
+    "reviewed": false,
+    "en": "Make it your own. The original app stays as it is"
+  },
+  "このアプリをもとに、自分用のアプリを作ります（元のアプリは変わりません）": {
+    "vi": "Làm app của riêng bạn dựa trên app này (app gốc không bị thay đổi)",
+    "reviewed": false,
+    "en": "Make your own version of this app (the original stays as it is)"
+  },
+  "もとに作る": {
+    "vi": "Làm từ app này",
+    "reviewed": false,
+    "en": "Remix"
+  },
+  "{title}（アレンジ）": {
+    "vi": "{title} (bản của tôi)",
+    "reviewed": false,
+    "en": "{title} (remix)"
+  },
+  "『{title}』をもとに作りました。": {
+    "vi": "Làm dựa trên “{title}”.",
+    "reviewed": false,
+    "en": "Based on “{title}”."
+  },
+  "このアプリのコードは読み込めませんでした": {
+    "vi": "Không tải được code của app này",
+    "reviewed": false,
+    "en": "Couldn't load this app's code"
+  },
+  "「{title}」をもとに作っています。<b>元のアプリは変わりません。</b>": {
+    "vi": "Bạn đang làm dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
+    "reviewed": false,
+    "en": "You're building on “{title}”. <b>The original app stays as it is.</b>"
+  },
+  "変え方を見る": {
+    "vi": "Xem cách sửa",
+    "reviewed": false,
+    "en": "How to change it"
+  },
+  "この案内を閉じる": {
+    "vi": "Đóng thông báo này",
+    "reviewed": false,
+    "en": "Close this note"
+  },
+  "↑ コピーしたコードを貼る": {
+    "vi": "↑ Dán code đã sao chép",
+    "reviewed": false,
+    "en": "↑ Paste the code you copied"
+  },
+  "このコードを、次のように変えてください。": {
+    "vi": "Hãy sửa code này như sau:",
+    "reviewed": false,
+    "en": "Please change this code like this:"
+  },
+  "・色を青っぽくしたい": {
+    "vi": "・Đổi màu sang tông xanh dương",
+    "reviewed": false,
+    "en": "・Make the colours bluish"
+  },
+  "・メモを書く欄を足したい": {
+    "vi": "・Thêm ô để ghi chú",
+    "reviewed": false,
+    "en": "・Add a field for notes"
+  },
+  "変えたあとのコードを、最初から最後まで全部書いてください。": {
+    "vi": "Hãy viết toàn bộ code sau khi sửa, từ đầu đến cuối.",
+    "reviewed": false,
+    "en": "Write the whole updated code from start to finish."
+  },
+  "メッセージを送る": {
+    "vi": "Gửi tin nhắn",
+    "reviewed": false,
+    "en": "Send a message"
+  },
+  "変更したコードです。": {
+    "vi": "Đây là code đã sửa.",
+    "reviewed": false,
+    "en": "Here's the updated code."
+  },
+  "コードを全部コピーする": {
+    "vi": "Sao chép toàn bộ code",
+    "reviewed": false,
+    "en": "Copy all the code"
+  },
+  "コードの右上の<b>「全部コピー」</b>を押すと、このアプリのコードがまるごとコピーされます。": {
+    "vi": "Bấm <b>“Sao chép hết”</b> ở góc trên bên phải phần code để sao chép toàn bộ code của app này.",
+    "reviewed": false,
+    "en": "Press <b>“Copy all”</b> at the top right of the code to copy the whole app."
+  },
+  "AIに、変えたいところと一緒に送る": {
+    "vi": "Gửi cho AI cùng với chỗ muốn sửa",
+    "reviewed": false,
+    "en": "Send it to the AI with your changes"
+  },
+  "ChatGPT などのAIのチャットに<b>コピーしたコードを貼り</b>、その下に<b>変えたいところ</b>を書いて送ります。": {
+    "vi": "Trong khung chat AI như ChatGPT, <b>dán code đã sao chép</b>, rồi viết <b>chỗ bạn muốn sửa</b> bên dưới và gửi đi.",
+    "reviewed": false,
+    "en": "In an AI chat such as ChatGPT, <b>paste the code you copied</b> and write <b>what you want to change</b> below it, then send."
+  },
+  "AIの返事のコードをコピーする": {
+    "vi": "Sao chép code trong câu trả lời của AI",
+    "reviewed": false,
+    "en": "Copy the code from the AI's reply"
+  },
+  "AIがコードを<b>最後まで書き終わるのを待って</b>から、": {
+    "vi": "<b>Chờ AI viết xong toàn bộ code</b>, rồi ",
+    "reviewed": false,
+    "en": "<b>Wait until the AI has finished writing</b> the code, then "
+  },
+  "<b>コードの枠の右上の「コピー」</b>を押します。": {
+    "vi": "bấm <b>“Sao chép” ở góc trên bên phải khung code</b>.",
+    "reviewed": false,
+    "en": "press <b>“Copy” at the top right of the code box</b>."
+  },
+  "自分が送った文章の下のコピーボタンではありません。": {
+    "vi": "Không phải nút sao chép bên dưới tin nhắn bạn đã gửi.",
+    "reviewed": false,
+    "en": "Not the copy button under the message you sent."
+  },
+  "ジサップに戻って「貼り直す」": {
+    "vi": "Quay lại Jisapp và bấm “Dán lại”",
+    "reviewed": false,
+    "en": "Come back to Jisapp and press “Paste again”"
+  },
+  "ジサップに戻って<b>「貼り直す」</b>を押すと、変えたアプリがすぐに動きます。うまくいったら公開しましょう。": {
+    "vi": "Quay lại Jisapp và bấm <b>“Dán lại”</b>, app đã sửa sẽ chạy ngay. Nếu ổn thì hãy đăng app nhé.",
+    "reviewed": false,
+    "en": "Come back to Jisapp and press <b>“Paste again”</b>. Your changed app runs right away. When you're happy with it, publish it."
+  },
+  "このアプリの変え方": {
+    "vi": "Cách sửa app này",
+    "reviewed": false,
+    "en": "How to change this app"
+  },
+  "「{title}」をもとに、自分用のアプリを作れます。<b>元のアプリは変わりません。</b>": {
+    "vi": "Bạn có thể làm app của riêng mình dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
+    "reviewed": false,
+    "en": "You can make your own app based on “{title}”. <b>The original app stays as it is.</b>"
+  },
+  "次回から表示しない": {
+    "vi": "Không hiện lại lần sau",
+    "reviewed": false,
+    "en": "Don't show this again"
+  },
+  "わかった、はじめる": {
+    "vi": "Đã hiểu, bắt đầu thôi",
+    "reviewed": false,
+    "en": "Got it, let's start"
   }
 }

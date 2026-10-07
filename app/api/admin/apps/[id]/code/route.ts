@@ -5,8 +5,11 @@ import { prisma } from "@/lib/db";
 import { snapshotFromAppRow, upsertLibrarySnapshot } from "@/lib/library/snapshots";
 import { queueLibraryUpdatesOnRepublish } from "@/lib/library/pending-updates";
 import { createUserNotification } from "@/lib/notifications/create-notification";
+import { Resend } from "resend";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 function isUUID(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -79,7 +82,14 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   const body = (await request.json().catch(() => null)) as
-    | { html_code?: string; css_code?: string; js_code?: string; notes?: string }
+    | {
+        html_code?: string;
+        css_code?: string;
+        js_code?: string;
+        notes?: string;
+        /** 作者にメールでも知らせるときだけ付ける。本文の {link} はアプリのURLに置き換える */
+        email?: { subject?: string; text?: string };
+      }
     | null;
   const html_code = (body?.html_code ?? "").trim();
   if (!html_code) {
@@ -146,5 +156,31 @@ export async function PUT(request: Request, context: RouteContext) {
     updateNotes: notes || "運営がコードを修正しました",
   });
 
-  return NextResponse.json({ ok: true, codeVersion });
+  // 作者にメールでも知らせる（運営が選んだときだけ）。送れなくても書き換え自体は成功として返す
+  let emailSent = false;
+  let emailError: string | undefined;
+  const subject = (body?.email?.subject ?? "").trim().slice(0, 150);
+  const text = (body?.email?.text ?? "").trim().slice(0, 5000);
+  if (subject && text) {
+    if (!resend) emailError = "メール送信が設定されていません";
+    else if (!app.creator_id) emailError = "作者が見つかりません";
+    else {
+      const creator = await prisma.user.findUnique({ where: { id: app.creator_id }, select: { email: true } });
+      if (!creator?.email) emailError = "作者のメールアドレスが見つかりません";
+      else {
+        const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jisapp.app").replace(/\/$/, "");
+        const { error } = await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL ?? "ジサップ <onboarding@resend.dev>",
+          to: creator.email,
+          subject,
+          text: text.split("{link}").join(`${site}/apps/${id}`),
+        });
+        if (error) emailError = "メール送信に失敗しました";
+        else emailSent = true;
+      }
+    }
+    console.info("[admin] code update email", { appId: id, emailSent, emailError });
+  }
+
+  return NextResponse.json({ ok: true, codeVersion, emailSent, emailError });
 }

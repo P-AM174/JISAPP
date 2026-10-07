@@ -11,7 +11,11 @@ import {
   Smartphone, Copy, Download, LogOut, ClipboardCheck, LayoutTemplate, Link2,
   ArrowRight, Inbox, Clock, type LucideIcon,
 } from "lucide-react";
-import { Pencil, Save, Infinity as InfinityIcon } from "lucide-react";
+import { Pencil, Save, Infinity as InfinityIcon, ClipboardPaste, Eraser, RotateCcw, FileText } from "lucide-react";
+import { AppRunner } from "@/components/app-runner";
+import { looksLikePrompt } from "@/lib/playground/code-cleanup";
+import { detectTextLang } from "@/lib/i18n/text";
+import { promptRemakeEmail } from "@/lib/admin/prompt-remake-email";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ADMIN_FLAG_OPTIONS, adminFlagLabel } from "@/lib/support/admin-flags";
 import { copyText } from "@/lib/playground/ai-launch";
@@ -35,6 +39,8 @@ type Product = {
   isFeatured: boolean;
   /** グループ共有アプリか（一覧では水色で目立たせる） */
   groupSharing?: boolean;
+  /** コードではなくプロンプトが入っている（黄色の札） */
+  looksLikePrompt?: boolean;
   adminFlags: string[];
   listingType: string;
   productType: string;
@@ -221,6 +227,17 @@ export default function AdminDashboard() {
   const [codeDraft,          setCodeDraft]          = useState<{ html_code: string; css_code: string; js_code: string } | null>(null);
   const [codeNotes,          setCodeNotes]          = useState("");
   const [savingCode,         setSavingCode]         = useState(false);
+  // 書き換え中のプレビュー（入力が止まって1秒たったら更新）
+  const [previewCode,        setPreviewCode]        = useState<{ html_code: string; css_code: string; js_code: string } | null>(null);
+  const [previewKey,         setPreviewKey]         = useState(0);
+  const [editPane,           setEditPane]           = useState<"code" | "preview">("code");
+  // 作り直したことを作者にメールでも知らせるか
+  const [sendEmail,          setSendEmail]          = useState(false);
+  const [emailSubject,       setEmailSubject]       = useState("");
+  const [emailText,          setEmailText]          = useState("");
+  const [emailOpen,          setEmailOpen]          = useState(false);
+  // プロンプトが入っているアプリだけを出す
+  const [promptOnly,         setPromptOnly]         = useState(false);
   // 確認画面（ブラウザの confirm() はアプリ内ブラウザなどで出ずに「キャンセル」扱いになるため、画面の中に出す）
   const [confirmState,       setConfirmState]       = useState<{ title: string; message: string; label: string; resolve: (ok: boolean) => void } | null>(null);
   const askConfirm = (message: string, label = "OK", title = "確認") =>
@@ -324,7 +341,7 @@ export default function AdminDashboard() {
   const filteredProducts = useMemo(() => {
     const q = appSearch.trim().toLowerCase();
     const base = products.filter((p) =>
-      appSubTab === "listed" ? p.isListed : !p.isListed
+      (appSubTab === "listed" ? p.isListed : !p.isListed) && (!promptOnly || p.looksLikePrompt)
     );
     if (!q) return base;
     return base.filter(p =>
@@ -334,7 +351,8 @@ export default function AdminDashboard() {
       p.creator.email.toLowerCase().includes(q) ||
       (p.category ?? "").toLowerCase().includes(q)
     );
-  }, [products, appSearch, appSubTab]);
+  }, [products, appSearch, appSubTab, promptOnly]);
+  const promptCount = useMemo(() => products.filter((p) => p.looksLikePrompt && (appSubTab === "listed" ? p.isListed : !p.isListed)).length, [products, appSubTab]);
 
   const listedCount = useMemo(() => products.filter((p) => p.isListed).length, [products]);
   const urlOnlyCount = useMemo(() => products.filter((p) => !p.isListed).length, [products]);
@@ -572,33 +590,98 @@ export default function AdminDashboard() {
     setCodeDraft(null);
   };
 
+  // 元のコードにプロンプトが入っているか（作り直しの案内・メールに使う）
+  const originalIsPrompt = codeData ? looksLikePrompt(combineAppCode(codeData.html_code, codeData.css_code, codeData.js_code)) : false;
+
   const startCodeEdit = () => {
-    if (!codeData) return;
-    setCodeDraft({ html_code: codeData.html_code, css_code: codeData.css_code, js_code: codeData.js_code });
-    setCodeNotes("");
+    if (!codeData || !codeTarget) return;
+    const draft = { html_code: codeData.html_code, css_code: codeData.css_code, js_code: codeData.js_code };
+    setCodeDraft(draft);
+    setPreviewCode(draft);
+    setPreviewKey((k) => k + 1);
+    setEditPane("code");
+    setCodeNotes(originalIsPrompt ? "運営がプロンプトをもとにアプリを作り直しました" : "");
+    // 作者へのメールのひな形（作者の言語はアプリ名と説明文から判断する）
+    const lang = detectTextLang(codeData.title, codeTarget.description);
+    const mail = promptRemakeEmail(lang, codeTarget.creator.name, codeData.title);
+    setEmailSubject(mail.subject);
+    setEmailText(mail.text);
+    setSendEmail(originalIsPrompt);
+    setEmailOpen(false);
     setCodeEditing(true);
+  };
+
+  // 書き換えの入力が止まって1秒たったら、プレビューを更新する
+  useEffect(() => {
+    if (!codeEditing || !codeDraft) return;
+    const timer = setTimeout(() => setPreviewCode(codeDraft), 1000);
+    return () => clearTimeout(timer);
+  }, [codeEditing, codeDraft]);
+
+  /** 元のコードを全部消す（HTML・CSS・JS をまとめて空にする） */
+  const clearDraft = async () => {
+    if (!(await askConfirm("HTML・CSS・JS のコードをすべて消しますか？（公開するまで元のアプリには影響しません）", "全部消す"))) return;
+    setCodeDraft({ html_code: "", css_code: "", js_code: "" });
+    setCodeTab("html");
+    notify("コードを全部消しました");
+  };
+
+  /** コピーしたコードで、まるごと置き換える */
+  const replaceWithClipboard = async () => {
+    let text = "";
+    try { text = await navigator.clipboard.readText(); } catch { text = ""; }
+    if (!text.trim()) {
+      notify("コピーしたコードを読み取れませんでした。コード欄に直接貼ってください");
+      return;
+    }
+    const next = { html_code: text, css_code: "", js_code: "" };
+    setCodeDraft(next);
+    setPreviewCode(next);
+    setPreviewKey((k) => k + 1);
+    setCodeTab("html");
+    notify(looksLikePrompt(text) ? "置き換えました（まだプロンプトのようです。コードか確かめてください）" : "コピーしたコードで置き換えました");
+  };
+
+  /** 書き換えを始める前のコードに戻す */
+  const revertDraft = () => {
+    if (!codeData) return;
+    const draft = { html_code: codeData.html_code, css_code: codeData.css_code, js_code: codeData.js_code };
+    setCodeDraft(draft);
+    setPreviewCode(draft);
+    setPreviewKey((k) => k + 1);
+    notify("元のコードに戻しました");
   };
 
   /** 運営がコードを書き換えて保存する（作者・ライブラリに入れている人に知らせる） */
   const handleSaveEditedCode = async () => {
     if (!codeTarget || !codeDraft) return;
-    if (!(await askConfirm(`「${codeData?.title ?? codeTarget.title}」のコードを書き換えて公開しますか？\n作者と、ライブラリに入れている人に更新のお知らせが届きます。`))) return;
+    const mailNote = sendEmail ? "\n作者にはメールでもお知らせします。" : "";
+    if (!(await askConfirm(`「${codeData?.title ?? codeTarget.title}」のコードを書き換えて公開しますか？\n作者と、ライブラリに入れている人に更新のお知らせが届きます。${mailNote}`))) return;
     setSavingCode(true);
     const res = await fetch(`/api/admin/apps/${codeTarget.id}/code`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...codeDraft, notes: codeNotes }),
+      body: JSON.stringify({
+        ...codeDraft,
+        notes: codeNotes,
+        ...(sendEmail ? { email: { subject: emailSubject, text: emailText } } : {}),
+      }),
     });
     setSavingCode(false);
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       notify(data.error ?? "保存できませんでした");
       return;
     }
     setCodeData((prev) => (prev ? { ...prev, ...codeDraft } : prev));
     setCodeEditing(false);
     setCodeDraft(null);
-    notify("コードを書き換えました");
+    // 作り直したので、一覧のプロンプトの札を外す
+    if (!looksLikePrompt(combineAppCode(codeDraft.html_code, codeDraft.css_code, codeDraft.js_code))) {
+      setProducts((list) => list.map((p) => (p.id === codeTarget.id ? { ...p, looksLikePrompt: false } : p)));
+    }
+    if (sendEmail) notify(data.emailSent ? "コードを書き換え、作者にメールで知らせました" : `コードを書き換えました（メール：${data.emailError ?? "送れませんでした"}）`);
+    else notify("コードを書き換えました");
   };
 
   const fullCode = codeData ? combineAppCode(codeData.html_code, codeData.css_code, codeData.js_code) : "";
@@ -937,6 +1020,18 @@ export default function AdminDashboard() {
                 ]}
               />
               <SearchBox value={appSearch} onChange={setAppSearch} placeholder="管理番号・タイトル・出品者で検索" />
+              <button
+                type="button"
+                onClick={() => setPromptOnly((v) => !v)}
+                className={cn(
+                  "flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold ring-1 transition",
+                  promptOnly ? "bg-amber-500 text-white ring-amber-500" : "bg-amber-50 text-amber-800 ring-amber-200 hover:bg-amber-100"
+                )}
+                title="コードではなくプロンプト（AIに送る文章）が入っているアプリだけを出す"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                プロンプトのアプリ（{promptCount}）
+              </button>
             </div>
             <p className="-mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
               {filteredProducts.length} 件を表示中
@@ -963,6 +1058,9 @@ export default function AdminDashboard() {
                             <Pill cls={st.cls}>{st.label}</Pill>
                             {p.groupSharing && (
                               <Pill cls={GROUP_PILL}><Users className="mr-0.5 h-3 w-3" />グループ共有</Pill>
+                            )}
+                            {p.looksLikePrompt && (
+                              <Pill cls="bg-amber-400 text-amber-950 ring-amber-400"><FileText className="mr-0.5 h-3 w-3" />プロンプトが入っています</Pill>
                             )}
                             {p.category && <Pill cls="bg-slate-50 text-slate-500 ring-slate-200">{p.category}</Pill>}
                           </div>
@@ -1385,7 +1483,7 @@ export default function AdminDashboard() {
       {codeTarget && (
         <div className="fixed inset-0 z-[600] flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           onClick={closeCode}>
-          <div className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+          <div className={cn("flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-3xl", codeEditing ? "max-w-7xl" : "max-w-4xl")} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-3 border-b border-gray-100 px-5 py-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
                 <Code2 className="h-5 w-5" />
@@ -1449,6 +1547,24 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* プロンプトが入っているアプリ */}
+                {originalIsPrompt && (
+                  <div className="flex flex-col gap-2 border-b border-amber-200 bg-amber-50 px-5 py-3 sm:flex-row sm:items-center">
+                    <p className="flex flex-1 items-start gap-2 text-xs font-bold leading-relaxed text-amber-900">
+                      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                      このアプリには、コードではなくプロンプト（AIに送る文章）が入っています。プロンプトをコピーしてアプリを作り、「書き換える」→「コピーしたコードで置き換え」で入れ替えられます。
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCopyCode}
+                      className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-black text-white shadow-sm hover:bg-amber-600"
+                    >
+                      <Copy className="h-4 w-4" />
+                      プロンプトをコピー
+                    </button>
+                  </div>
+                )}
+
                 {(codeEditing || codeData.css_code.trim() || codeData.js_code.trim()) && (
                   <div className="flex gap-1 px-5 pt-3">
                     {(["html", "css", "js"] as const).map((t) => {
@@ -1473,16 +1589,94 @@ export default function AdminDashboard() {
                 )}
                 {codeEditing && codeDraft ? (
                   <>
-                    <textarea
-                      value={codeTab === "html" ? codeDraft.html_code : codeTab === "css" ? codeDraft.css_code : codeDraft.js_code}
-                      onChange={(e) => {
-                        const key = codeTab === "html" ? "html_code" : codeTab === "css" ? "css_code" : "js_code";
-                        setCodeDraft((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
-                      }}
-                      spellCheck={false}
-                      aria-label={`${codeTab.toUpperCase()} を書き換える`}
-                      className="min-h-[240px] flex-1 resize-none bg-slate-950 p-4 font-mono text-xs leading-relaxed text-amber-100 outline-none"
-                    />
+                    {/* 書き換えの道具 */}
+                    <div className="flex flex-wrap items-center gap-2 border-y border-gray-100 bg-white px-5 py-2.5">
+                      <button type="button" onClick={replaceWithClipboard} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                        <ClipboardPaste className="h-3.5 w-3.5" />コピーしたコードで置き換え
+                      </button>
+                      <button type="button" onClick={clearDraft} className="flex items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100">
+                        <Eraser className="h-3.5 w-3.5" />全部消す
+                      </button>
+                      <button type="button" onClick={revertDraft} className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50">
+                        <RotateCcw className="h-3.5 w-3.5" />元に戻す
+                      </button>
+                      <button type="button" onClick={() => { setPreviewCode(codeDraft); setPreviewKey((k) => k + 1); }} className="ml-auto flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50">
+                        <RefreshCw className="h-3.5 w-3.5" />プレビューを更新
+                      </button>
+                      {/* スマホではコードとプレビューを切り替える */}
+                      <div className="flex w-full gap-1 rounded-xl bg-gray-100 p-1 lg:hidden">
+                        {(["code", "preview"] as const).map((p) => (
+                          <button key={p} type="button" onClick={() => setEditPane(p)} className={cn("flex-1 rounded-lg py-1.5 text-xs font-bold", editPane === p ? "bg-white text-gray-900 shadow-sm" : "text-gray-500")}>
+                            {p === "code" ? "コード" : "プレビュー"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid min-h-0 flex-1 lg:grid-cols-2">
+                      <textarea
+                        value={codeTab === "html" ? codeDraft.html_code : codeTab === "css" ? codeDraft.css_code : codeDraft.js_code}
+                        onChange={(e) => {
+                          const key = codeTab === "html" ? "html_code" : codeTab === "css" ? "css_code" : "js_code";
+                          setCodeDraft((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
+                        }}
+                        spellCheck={false}
+                        aria-label={`${codeTab.toUpperCase()} を書き換える`}
+                        placeholder="ここにコードを貼ってください"
+                        className={cn("min-h-[300px] resize-none bg-slate-950 p-4 font-mono text-xs leading-relaxed text-amber-100 outline-none lg:block", editPane === "code" ? "block" : "hidden")}
+                      />
+                      {/* プレビュー（運営用の別枠で動かすので、元のアプリや利用者のデータには影響しない） */}
+                      <div className={cn("min-h-[300px] flex-col border-l border-gray-100 bg-slate-50 lg:flex", editPane === "preview" ? "flex" : "hidden")}>
+                        <p className="px-4 py-2 text-[11px] font-bold text-gray-400">プレビュー（入力が止まって1秒で更新・公開前の確認用）</p>
+                        {previewCode && previewCode.html_code.trim() ? (
+                          <AppRunner
+                            key={previewKey}
+                            html={previewCode.html_code}
+                            css={previewCode.css_code}
+                            js={previewCode.js_code}
+                            title={codeData.title}
+                            appId={`admin-preview-${codeTarget.id}`}
+                            className="min-h-[300px] w-full flex-1 overflow-hidden bg-white"
+                          />
+                        ) : (
+                          <div className="flex flex-1 items-center justify-center p-6 text-xs text-gray-400">コードを貼るとここに表示されます</div>
+                        )}
+                      </div>
+                    </div>
+                    {/* 作者にメールでも知らせる（選べる） */}
+                    <div className="border-t border-gray-100 bg-white px-5 py-2.5">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-gray-700">
+                          <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4 accent-emerald-600" />
+                          <Mail className="h-3.5 w-3.5 text-gray-400" />作者にメールでも知らせる
+                        </label>
+                        {sendEmail && (
+                          <button type="button" onClick={() => setEmailOpen((v) => !v)} className="text-xs font-bold text-emerald-700 hover:underline">
+                            {emailOpen ? "メールの文面を閉じる" : "メールの文面を見る・直す"}
+                          </button>
+                        )}
+                      </div>
+                      {sendEmail && emailOpen && (
+                        <div className="mt-2 space-y-2">
+                          <input
+                            type="text"
+                            value={emailSubject}
+                            onChange={(e) => setEmailSubject(e.target.value)}
+                            maxLength={150}
+                            aria-label="メールの件名"
+                            className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold outline-none focus:border-emerald-400"
+                          />
+                          <textarea
+                            value={emailText}
+                            onChange={(e) => setEmailText(e.target.value)}
+                            rows={8}
+                            maxLength={5000}
+                            aria-label="メールの本文"
+                            className="w-full resize-y rounded-lg border border-gray-200 bg-white p-3 text-xs leading-relaxed outline-none focus:border-emerald-400"
+                          />
+                          <p className="text-[11px] text-gray-400">本文の {"{link}"} は、送るときにアプリのURLに置き換わります。</p>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-col gap-2 border-t border-gray-100 bg-amber-50/60 px-5 py-3 sm:flex-row sm:items-center">
                       <input
                         type="text"

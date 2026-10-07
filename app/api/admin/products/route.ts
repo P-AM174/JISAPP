@@ -4,6 +4,7 @@ import { listProductsForAdmin, countUsers, countPendingReports } from "@/lib/ser
 import { countPendingSupabaseReports } from "@/lib/reports/supabase-reports";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { resolveGroupSharing } from "@/lib/groups/detect";
+import { findPromptAppIds } from "@/lib/admin/prompt-apps";
 
 function isUUID(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -40,7 +41,10 @@ export async function GET() {
     .neq("status", "deleted")
     .order("created_at", { ascending: false });
 
-  const groupSharing = await resolveGroupSharing(supabase, playgroundApps ?? []);
+  const [groupSharing, promptIds] = await Promise.all([
+    resolveGroupSharing(supabase, playgroundApps ?? []),
+    findPromptAppIds(supabase),
+  ]);
 
   const playgroundAsProducts = (playgroundApps ?? []).map((app) => ({
     id: app.id,
@@ -55,6 +59,8 @@ export async function GET() {
     isListed: !!app.is_listed,
     isFeatured: !!app.is_featured,
     groupSharing: groupSharing[app.id] ?? false,
+    /** コードではなくプロンプトが入っている（運営画面で札をつける） */
+    looksLikePrompt: promptIds.has(app.id),
     adminFlags: (app.admin_flags as string[] | null) ?? [],
     listingType: app.is_listed ? "playground" : "external",
     productType: "playground",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import Link from "@/lib/i18n/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
 import {
@@ -524,34 +524,80 @@ function PasteIssueModal({
   onClose,
   onPasteAgain,
   onCopyRetry,
+  onDiscard,
 }: {
   issue: CodeIssue;
   onClose: () => void;
   onPasteAgain: () => void;
   onCopyRetry: () => void;
+  /** 貼った文章を消して、AIのチャットに戻ってもらう */
+  onDiscard: () => void;
 }) {
   const t = useT();
-  const title =
-    issue === "prompt"
-      ? t("貼り付けたのは、AIに送ったプロンプトです", "You pasted the prompt you sent to the AI")
-      : issue === "truncated"
-        ? t("コードが最後まで出力されていないようです", "The code doesn’t seem to be complete")
-        : t("まだAIの出力が終わっていないかもしれません", "The AI may not have finished yet");
-  const lead =
-    issue === "prompt"
-      ? t(
-          "AIがコードを書き終わる前にコピーしたため、コードではなく指示文が貼られたようです。",
-          "It looks like you copied before the AI finished, so the instructions were pasted instead of the code."
-        )
-      : issue === "truncated"
-        ? t(
-            "AIがコードを書いている途中でコピーしたか、AIの出力が途中で止まったようです。",
-            "You may have copied while the AI was still writing, or the AI stopped partway."
-          )
-        : t(
-            "AIがコードを書き終わる前にコピーしたため、コードがまだコピーできていない可能性があります。",
-            "You may have copied before the AI finished, so the code hasn’t been copied yet."
-          );
+  // コードではなく文章（自分がAIに送ったプロンプトなど）が貼られたとき
+  const isText = issue === "prompt" || issue === "not_html";
+  const title = isText
+    ? t("これはコードではなく、AIに送った文章のようです", "This looks like the message you sent to the AI, not code")
+    : t("コードが最後まで出力されていないようです", "The code doesn’t seem to be complete");
+  const lead = isText
+    ? t(
+        "AIのチャットで、自分が送った文章のコピーボタンを押していませんか？",
+        "Did you press the copy button under your own message in the AI chat?"
+      )
+    : t(
+        "AIがコードを書いている途中でコピーしたか、AIの出力が途中で止まったようです。",
+        "You may have copied while the AI was still writing, or the AI stopped partway."
+      );
+  const strong = (chunk: ReactNode) => <strong className="font-black text-rose-600 underline decoration-rose-300 decoration-2 underline-offset-2">{chunk}</strong>;
+  const codeTag = (s: string) => <code className="rounded bg-slate-100 px-1 text-xs">{s}</code>;
+
+  if (isText) {
+    return (
+      <div className="fixed inset-0 z-[480] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
+        <div role="alertdialog" aria-modal="true" aria-label={title} className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-gradient-to-br from-amber-400 to-orange-500 px-6 py-5 text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/25">
+              <TriangleAlert className="h-7 w-7" strokeWidth={2.5} />
+            </div>
+            <h2 className="mt-3 text-lg font-black leading-snug">{title}</h2>
+            <p className="mt-1 text-sm text-white/90">{lead}</p>
+          </div>
+          <div className="space-y-4 p-6">
+            <ol className="space-y-3 text-sm text-slate-700">
+              <li className="flex gap-2.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-black text-white">1</span>
+                <span className="text-base leading-snug">{rich(t("AIがコードを<b>最後まで書き終わるのを待つ</b>", "<b>Wait until the AI has finished writing</b> all the code"), { b: strong })}</span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">2</span>
+                <span>{rich(t("AIの返事の中にある、<b>コードの枠の右上の「コピー」</b>を押す", "Press the <b>“Copy” button at the top right of the code box</b> in the AI’s reply"), { b: (c) => <strong className="font-black text-slate-900">{c}</strong> })}</span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">3</span>
+                <span>{rich(t("ここに貼る（コードは {tag} などで始まります）", "Paste it here (code starts with something like {tag})"), {}, { tag: codeTag("<!DOCTYPE html>") })}</span>
+              </li>
+            </ol>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={onPasteAgain}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-sm font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700"
+              >
+                <ClipboardPaste className="h-4 w-4" />
+                {t("コピーし直したので、もう一度貼り付ける", "I copied it again — paste again")}
+              </button>
+              <button type="button" onClick={onDiscard} className="w-full rounded-xl bg-white py-2.5 text-sm font-bold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+                {t("AIのチャットに戻る", "Go back to the AI chat")}
+              </button>
+              <button type="button" onClick={onClose} className="py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600">
+                {t("このまま動かす", "Run it anyway")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[480] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -1677,17 +1723,15 @@ export default function PlaygroundPage() {
           <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" strokeWidth={2.5} />
           <div className="min-w-0 flex-1">
             <p className="font-black">
-              {codeIssue === "prompt"
-                ? t("貼り付けたのは、AIに送ったプロンプトです", "You pasted the prompt you sent to the AI")
-                : t("まだAIの出力が終わっていないかもしれません", "The AI may not have finished yet")}
+              {t("これはコードではなく、AIに送った文章のようです", "This looks like the message you sent to the AI, not code")}
             </p>
             <p className="mt-0.5 text-xs text-amber-900">
               {rich(
                 t(
-                  "AIがコードを最後まで書き終わるのを待ってから、{tag} から始まるコードをコピーして貼り直してください。",
-                  "Wait until the AI has finished writing all the code, then copy the code that starts with {tag} and paste it again."
+                  "AIがコードを<b>最後まで書き終わるのを待って</b>から、コードの枠の右上の「コピー」を押し、{tag} から始まるコードを貼り直してください。",
+                  "<b>Wait until the AI has finished writing</b> all the code, then press “Copy” at the top right of the code box and paste the code that starts with {tag}."
                 ),
-                {},
+                { b: (c) => <strong className="font-black text-rose-700 underline decoration-rose-300 decoration-2 underline-offset-2">{c}</strong> },
                 { tag: <code className="rounded bg-amber-200/70 px-1">&lt;!DOCTYPE html&gt;</code> }
               )}
             </p>
@@ -1965,6 +2009,13 @@ export default function PlaygroundPage() {
           onPasteAgain={() => {
             setPasteIssue(null);
             void handlePasteFromClipboard();
+          }}
+          onDiscard={() => {
+            // 貼った文章を消して、コードを貼る前の画面に戻す
+            setPasteIssue(null);
+            applyCode("");
+            setPreviewHtml("");
+            showToast(t("AIのチャットで、コードを書き終わるまで待ってからコピーしてください", "In the AI chat, wait until the code is finished, then copy it"));
           }}
           onCopyRetry={() => {
             void copyText(truncatedRetryMessage(locale)).then((ok) =>

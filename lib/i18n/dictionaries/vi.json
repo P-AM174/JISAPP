@@ -7028,5 +7028,50 @@
     "vi": ") mà các app của nhà sáng tạo nhận được. Số người theo dõi là số người đang theo dõi nhà sáng tạo này.",
     "reviewed": false,
     "en": ") the creator's apps have received. The follower count is the number of people following this creator."
+  },
+  "これはコードではなく、AIに送った文章のようです": {
+    "vi": "Có vẻ đây không phải code mà là đoạn văn bạn đã gửi cho AI",
+    "reviewed": false,
+    "en": "This looks like the message you sent to the AI, not code"
+  },
+  "AIのチャットで、自分が送った文章のコピーボタンを押していませんか？": {
+    "vi": "Có phải bạn đã bấm nút sao chép dưới tin nhắn mình gửi trong khung chat AI không?",
+    "reviewed": false,
+    "en": "Did you press the copy button under your own message in the AI chat?"
+  },
+  "AIがコードを<b>最後まで書き終わるのを待つ</b>": {
+    "vi": "<b>Chờ AI viết xong</b> toàn bộ code",
+    "reviewed": false,
+    "en": "<b>Wait until the AI has finished writing</b> all the code"
+  },
+  "AIの返事の中にある、<b>コードの枠の右上の「コピー」</b>を押す": {
+    "vi": "Trong câu trả lời của AI, bấm <b>nút \"Sao chép\" ở góc trên bên phải khung code</b>",
+    "reviewed": false,
+    "en": "Press the <b>“Copy” button at the top right of the code box</b> in the AI’s reply"
+  },
+  "ここに貼る（コードは {tag} などで始まります）": {
+    "vi": "Dán vào đây (code bắt đầu bằng {tag} hoặc tương tự)",
+    "reviewed": false,
+    "en": "Paste it here (code starts with something like {tag})"
+  },
+  "AIのチャットに戻る": {
+    "vi": "Quay lại khung chat AI",
+    "reviewed": false,
+    "en": "Go back to the AI chat"
+  },
+  "このまま動かす": {
+    "vi": "Vẫn chạy như vậy",
+    "reviewed": false,
+    "en": "Run it anyway"
+  },
+  "AIのチャットで、コードを書き終わるまで待ってからコピーしてください": {
+    "vi": "Trong khung chat AI, hãy chờ code được viết xong rồi mới sao chép nhé",
+    "reviewed": false,
+    "en": "In the AI chat, wait until the code is finished, then copy it"
+  },
+  "AIがコードを<b>最後まで書き終わるのを待って</b>から、コードの枠の右上の「コピー」を押し、{tag} から始まるコードを貼り直してください。": {
+    "vi": "<b>Chờ AI viết xong</b> toàn bộ code, rồi bấm \"Sao chép\" ở góc trên bên phải khung code và dán lại đoạn code bắt đầu bằng {tag}.",
+    "reviewed": false,
+    "en": "<b>Wait until the AI has finished writing</b> all the code, then press “Copy” at the top right of the code box and paste the code that starts with {tag}."
   }
 }

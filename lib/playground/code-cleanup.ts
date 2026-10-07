@@ -42,7 +42,7 @@ export type CodeIssue = "prompt" | "not_html" | "truncated";
  * ジサップが作ったプロンプト（AIへの指示文）に必ず入っている目印。
  * AIの返事を待たずにコピーすると、クリップボードに指示文が残ったまま貼られてしまう
  */
-const PROMPT_MARKERS = [
+export const PROMPT_MARKERS = [
   "あなたはジサップ（Jisapp）向けの優秀なフロントエンドエンジニアです",
   "【コードを書くときのルール】",
   "【ジサップ必須ルール",
@@ -62,6 +62,15 @@ export function detectCodeIssue(code: string): CodeIssue | null {
   const startsDocument = /<!doctype html|<html[\s>]/i.test(trimmed);
   if (startsDocument && !/<\/html>\s*$/i.test(trimmed)) return "truncated";
   return null;
+}
+
+/**
+ * コードではなく文章（AIに送ったプロンプトなど）が入っているか。
+ * 運営画面で「プロンプトが入っているアプリ」を見つけるのに使う
+ */
+export function looksLikePrompt(code: string): boolean {
+  const issue = detectCodeIssue(code);
+  return issue === "prompt" || issue === "not_html";
 }
 
 /** AI に送る「続きを出して」の依頼文 */

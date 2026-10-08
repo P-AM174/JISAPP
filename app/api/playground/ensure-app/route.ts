@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isReservedOfficialName } from "@/lib/official-name";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -73,7 +74,8 @@ export async function POST(request: Request) {
   }
 
   const title = (body.title ?? "").trim() || "下書きアプリ";
-  const creatorName = (session?.user as { name?: string })?.name ?? "ゲスト";
+  const sessionName = (session?.user as { name?: string })?.name ?? "";
+  const creatorName = sessionName && !isReservedOfficialName(sessionName) ? sessionName : "ゲスト";
   const now = new Date().toISOString();
 
   const { data, error } = await supabase

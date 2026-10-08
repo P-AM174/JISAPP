@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isReservedOfficialName } from "@/lib/official-name";
 import type { ProductType } from "@/lib/products/types";
 
 export async function findUserByEmail(email: string) {
@@ -10,6 +11,13 @@ export async function upsertOAuthUser(input: {
   name?: string | null;
   image?: string | null;
 }) {
+  // Google の名前が運営とまぎらわしいときは使わない（新規はメールの @ より前、既存は今の名前のまま）
+  if (isReservedOfficialName(input.name)) {
+    const existing = await findUserByEmail(input.email);
+    if (!existing?.isOfficial) {
+      input = { ...input, name: existing ? undefined : input.email.split("@")[0] };
+    }
+  }
   return prisma.user.upsert({
     where: { email: input.email.toLowerCase() },
     create: {

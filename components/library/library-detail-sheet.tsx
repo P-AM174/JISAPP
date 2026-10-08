@@ -10,6 +10,7 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import { intlLocale, format } from "@/lib/i18n/config";
 import { lastOpenedLabel, type LibraryEntry } from "@/lib/library/sort";
 import { AppStorageBar } from "@/components/app-storage-bar";
+import { CreatorAvatarContent } from "@/components/creator-avatar";
 
 type Detail = {
   title: string;
@@ -146,7 +147,7 @@ export function LibraryDetailSheet({
               className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3 transition-colors hover:bg-emerald-50"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-base font-black text-white">
-                {creator[0]?.toUpperCase() ?? "?"}
+                <CreatorAvatarContent name={creator} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[11px] font-semibold text-emerald-700">{t("作者", "Creator")}</span>

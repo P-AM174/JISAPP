@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { isReservedOfficialName } from "@/lib/official-name";
 import { OFFICIAL_CREATOR_NAME, getOfficialCreator } from "@/lib/agent/official-creator";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -183,7 +184,11 @@ export async function POST(request: Request) {
     body.project_id = undefined;
   }
 
-  const creatorName = (body.creator_name ?? "").trim() || sessionCreatorName || "ゲスト";
+  // 運営モード以外で、運営とまぎらわしい名前は作者名にしない
+  const requestedName = (body.creator_name ?? "").trim();
+  const creatorName = body.as_official
+    ? requestedName || OFFICIAL_CREATOR_NAME
+    : [requestedName, sessionCreatorName ?? ""].find((n) => n && !isReservedOfficialName(n)) || "ゲスト";
   const now = new Date().toISOString();
   const appPayload = {
     title,

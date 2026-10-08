@@ -34,6 +34,7 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import type { ModalApp } from "./types";
 import { format } from "@/lib/i18n/config";
 import { isComposing } from "@/lib/i18n/text";
+import { CreatorAvatarContent } from "@/components/creator-avatar";
 
 const STAMPS = [
   { id: "like", Icon: Heart, label: "いいね！", labelEn: "Love it!" },
@@ -234,7 +235,7 @@ export function AppDetailModal({
                   onClick={onClose}
                   className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-md ring-4 ring-white"
                 >
-                  {app.creator[0]?.toUpperCase() ?? "?"}
+                  <CreatorAvatarContent name={app.creator} />
                 </Link>
                 <div className="min-w-0 flex-1">
                   <Link

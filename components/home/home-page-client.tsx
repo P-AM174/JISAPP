@@ -60,6 +60,7 @@ import type { ModalApp } from "@/components/app-catalog/types";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 
 import { ContactFormModal } from "@/components/support/contact-form-modal";
+import { CreatorAvatarContent } from "@/components/creator-avatar";
 
 /** 依頼のステータスは日本語のまま保存するので、表示だけ訳す */
 const REQUEST_STATUS_EN: Record<string, string> = { 完了: "Done", 納品済み: "Delivered", 開発中: "In progress", 相談中: "Discussing" };
@@ -1080,7 +1081,6 @@ export function HomePageClient({
             />
             <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {popularCreators.map((creator) => {
-                const initial = creator.name[0]?.toUpperCase() ?? "?";
                 const colors = [
                   "from-emerald-500 to-teal-600",
                   "from-violet-500 to-purple-600",
@@ -1099,7 +1099,7 @@ export function HomePageClient({
                     className="shrink-0 w-36 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 text-center transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200"
                   >
                     <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${colors[colorIdx]} text-2xl font-black text-white shadow-md`}>
-                      {initial}
+                      <CreatorAvatarContent name={creator.name} />
                     </div>
                     <p className="mt-2 text-sm font-black text-gray-900 truncate">{displayCreatorName(creator.name, locale)}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">{format(t("アプリ {n}本", plural(locale, creator.appCount, "{n} app", "{n} apps")), { n: creator.appCount })}</p>

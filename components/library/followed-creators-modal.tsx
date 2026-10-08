@@ -6,6 +6,7 @@ import { ChevronRight, UserRound, X } from "lucide-react";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { format } from "@/lib/i18n/config";
+import { CreatorAvatarContent } from "@/components/creator-avatar";
 
 /** フォローしている作者の一覧（マイライブラリ上部の「フォロー中」をタップしたとき） */
 export function FollowedCreatorsModal({ names, onClose }: { names: string[]; onClose: () => void }) {
@@ -62,7 +63,7 @@ export function FollowedCreatorsModal({ names, onClose }: { names: string[]; onC
                   className="flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-emerald-50"
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-base font-black text-white">
-                    {name[0]?.toUpperCase() ?? "?"}
+                    <CreatorAvatarContent name={name} />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900">{displayCreatorName(name, locale)}</span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-emerald-600" />

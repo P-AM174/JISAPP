@@ -29,6 +29,7 @@ import {
   syncFollowsFromServer,
 } from "@/lib/follow-creators";
 import { format, plural } from "@/lib/i18n/config";
+import { CreatorAvatarContent } from "@/components/creator-avatar";
 
 type CreatorProfile = {
   name: string;
@@ -112,7 +113,6 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
     );
   }
 
-  const initial = profile.name[0]?.toUpperCase() ?? "?";
   const colorIdx =
     Math.abs(
       profile.name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
@@ -140,7 +140,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
           <div className={`bg-gradient-to-br ${gradients[colorIdx]} px-6 pb-8 pt-10`}>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:gap-5">
               <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-white/25 text-3xl font-black text-white shadow-lg backdrop-blur-sm ring-4 ring-white/30">
-                {initial}
+                <CreatorAvatarContent name={profile.name} />
               </div>
               <div className="text-center sm:text-left">
                 <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/80">
@@ -210,7 +210,7 @@ export function CreatorProfileClient({ slug }: { slug: string }) {
                   className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">
-                    {name[0]?.toUpperCase() ?? "?"}
+                    <CreatorAvatarContent name={name} />
                   </span>
                   {name}
                   <ChevronRight className="h-3.5 w-3.5" />

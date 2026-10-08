@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isReservedOfficialName } from "@/lib/official-name";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -103,6 +104,9 @@ export async function POST(
     } catch {
       creatorName = "ユーザー";
     }
+  }
+  if (isReservedOfficialName(creatorName)) {
+    return NextResponse.json({ error: "「ジサップ公式」など、運営とまぎらわしい名前は使えません" }, { status: 400 });
   }
   if (creatorName.length > 30) {
     creatorName = creatorName.slice(0, 30);

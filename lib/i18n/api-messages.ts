@@ -75,6 +75,7 @@ const EXACT: Record<string, string> = {
   "リンクが無効または期限切れです。再度パスワードリセットを行ってください。":
     "This link is invalid or has expired. Please request a password reset again.",
   このメールアドレスはすでに登録されています: "This email address is already registered",
+  "「ジサップ公式」など、運営とまぎらわしい名前は使えません": "Names that look like the Jisapp team (such as “Jisapp Official”) can't be used",
   "認証コードが正しくないか、有効期限が切れています。": "The code is incorrect or has expired.",
   クリエイターが見つかりません: "Creator not found",
   マイライブラリに登録されていません: "It isn't in your library",

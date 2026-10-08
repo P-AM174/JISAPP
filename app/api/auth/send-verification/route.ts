@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isReservedOfficialName } from "@/lib/official-name";
 import { Resend } from "resend";
 import bcrypt from "bcryptjs";
 import { findUserByEmail, storeVerificationCode } from "@/lib/services/store";
@@ -174,6 +175,10 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
+    }
+    // 運営とまぎらわしい名前は使えない（公式のロゴが出てしまうため）
+    if (isReservedOfficialName(name)) {
+      return NextResponse.json({ error: "「ジサップ公式」など、運営とまぎらわしい名前は使えません" }, { status: 400 });
     }
     if (password.length < 6) {
       return NextResponse.json({ error: "パスワードは6文字以上にしてください" }, { status: 400 });

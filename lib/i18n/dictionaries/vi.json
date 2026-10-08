@@ -7248,5 +7248,10 @@
     "vi": "Chưa có tài khoản chính thức. Hãy tạo từ hàng chờ duyệt trong trang quản trị",
     "reviewed": false,
     "en": "There's no official account yet. Create it from the admin approval queue"
+  },
+  "「ジサップ公式」など、運営とまぎらわしい名前は使えません": {
+    "vi": "Không thể dùng tên dễ nhầm với đội ngũ Jisapp (như “Jisapp Official”)",
+    "reviewed": false,
+    "en": "Names that look like the Jisapp team (such as “Jisapp Official”) can't be used"
   }
 }

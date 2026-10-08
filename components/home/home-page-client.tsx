@@ -15,6 +15,7 @@ import {
   User,
   Heart,
   TrendingUp,
+  Clapperboard,
   Users,
   Settings2,
   BadgeCheck,
@@ -945,6 +946,8 @@ export function HomePageClient({
   const withoutGames = <T extends { category?: string | null }>(apps: T[]) =>
     gamesVisible ? apps : apps.filter((a) => a.category !== "games" && a.category !== "ゲーム");
   const playgroundApps = useMemo(() => withoutGames(initialData.playgroundApps), [initialData.playgroundApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
+  // SNS（ショート動画）で紹介したアプリ。まずは日本語のページだけで、「今月の人気アプリ」の代わりに出す
+  const snsApps = locale === "ja" ? initialData.snsApps ?? [] : [];
   const popularMonth = useMemo(() => withoutGames(initialData.popularMonth), [initialData.popularMonth, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
   const featuredApps = useMemo(() => withoutGames(initialData.featuredApps), [initialData.featuredApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
   const loadingPG = false;
@@ -1010,8 +1013,25 @@ export function HomePageClient({
           </section>
         )}
 
-        {/* ─── 今月の人気アプリ TOP5 ─── */}
-        {popularMonth.length >= MIN_POPULAR_APPS && (
+        {/* ─── SNSで紹介したアプリ（日本語のページだけ。運営画面で決めた並び） ─── */}
+        {snsApps.length > 0 && (
+          <section>
+            <SectionHeader
+              icon={<Clapperboard className="h-5 w-5 text-rose-500" strokeWidth={2.5} />}
+              title="SNSで紹介したアプリ"
+              sub="ショート動画で紹介したアプリを、そのまま遊べます"
+              href="/features/sns"
+            />
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {snsApps.map((app) => (
+                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ─── 今月の人気アプリ TOP5（日本語のページでは、いったん SNSで紹介したアプリ に差し替え） ─── */}
+        {locale !== "ja" && popularMonth.length >= MIN_POPULAR_APPS && (
           <section>
             <SectionHeader
               icon={<TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={2.5} />}

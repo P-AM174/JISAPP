@@ -15,6 +15,7 @@ import { Pencil, Save, Infinity as InfinityIcon, ClipboardPaste, Eraser, RotateC
 import { AppRunner } from "@/components/app-runner";
 import { looksLikePrompt } from "@/lib/playground/code-cleanup";
 import type { AdminAppStats } from "@/lib/admin/app-stats";
+import { SnsFeaturedPanel } from "@/components/admin/sns-featured-panel";
 
 type AppSort = "new" | "opens" | "recent" | "data";
 
@@ -1052,6 +1053,8 @@ export default function AdminDashboard() {
         {/* ══════ アプリ管理 ══════ */}
         {tab === "apps" && (
           <>
+            {/* トップページ（日本語）と特集ページに出す「SNSで紹介したアプリ」 */}
+            <SnsFeaturedPanel candidates={products} notify={notify} />
             <div className="flex flex-wrap items-center gap-3">
               <SectionTitle icon={Smartphone} title="アプリ管理" />
               <Segmented

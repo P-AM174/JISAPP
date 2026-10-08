@@ -18,7 +18,7 @@ export function isRemixGuideHidden(): boolean {
 }
 
 /** 押してほしいボタンを目立たせる（光る枠と指のマーク） */
-function Target({ children, className }: { children: ReactNode; className?: string }) {
+export function Target({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span className={cn("relative inline-flex", className)}>
       <span className="absolute -inset-1 animate-pulse rounded-lg ring-[3px] ring-amber-400" aria-hidden />
@@ -29,7 +29,7 @@ function Target({ children, className }: { children: ReactNode; className?: stri
 }
 
 /** 開発スタジオのエディタの上の部分（本物と同じ並び・名前） */
-function StudioMock({ highlight }: { highlight: "copy" | "paste" }) {
+export function StudioMock({ highlight }: { highlight: "copy" | "paste" }) {
   const t = useT();
   const paste = (
     <span className="flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-100">
@@ -71,7 +71,7 @@ function StudioMock({ highlight }: { highlight: "copy" | "paste" }) {
 }
 
 /** AIのチャットに、コードと変えたいところを送るところ */
-function ChatSendMock() {
+export function ChatSendMock() {
   const t = useT();
   return (
     <div className="space-y-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
@@ -98,7 +98,7 @@ function ChatSendMock() {
 }
 
 /** AIの返事のコードの枠。右上の「コピー」を押す */
-function ChatReplyMock() {
+export function ChatReplyMock() {
   const t = useT();
   return (
     <div className="space-y-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">

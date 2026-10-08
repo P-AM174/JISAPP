@@ -186,20 +186,48 @@ export async function getFeaturedApps(limit = 8): Promise<CatalogApp[]> {
   }
 }
 
+/**
+ * SNS（ショート動画）で紹介したアプリ。運営画面で決めた並び（apps.sns_order）の順。
+ * 列がまだないとき（scripts/add-sns-featured.sql の実行前）は空のまま返す
+ */
+export async function getSnsFeaturedApps(limit = 100): Promise<CatalogApp[]> {
+  noStore();
+  try {
+    const { data, error } = await supabase
+      .from("apps")
+      .select("id, title, description, category, creator_name, creator_id, created_at, group_sharing")
+      .eq("status", "active")
+      .not("sns_order", "is", null)
+      .order("sns_order", { ascending: true })
+      .limit(limit);
+    if (error || !data?.length) return [];
+    const [apps, stampCounts] = await Promise.all([
+      withGroupSharing(data),
+      getStampCounts(data.map((a) => a.id)),
+    ]);
+    return apps.map((app) => ({ ...app, stamp_count: stampCounts[app.id] ?? 0 }));
+  } catch {
+    return [];
+  }
+}
+
 export type HomeCatalogData = {
   playgroundApps: CatalogApp[];
   popularMonth: CatalogApp[];
   popularCreators: PopularCreator[];
   featuredApps: CatalogApp[];
+  /** SNSで紹介したアプリ（日本語のトップページで「今月の人気アプリ」の代わりに出す） */
+  snsApps: CatalogApp[];
 };
 
 export async function getHomeCatalogData(): Promise<HomeCatalogData> {
-  const [playgroundApps, popularMonth, popularCreators, featuredApps] = await Promise.all([
+  const [playgroundApps, popularMonth, popularCreators, featuredApps, snsApps] = await Promise.all([
     getPopularApps(50),
     getPopularMonthApps(5),
     getPopularCreators(),
     getFeaturedApps(8),
+    getSnsFeaturedApps(8),
   ]);
 
-  return { playgroundApps, popularMonth, popularCreators, featuredApps };
+  return { playgroundApps, popularMonth, popularCreators, featuredApps, snsApps };
 }

@@ -4,6 +4,8 @@
  * よくある原因：AIのチャットで自分が送った文章のコピーボタンを押した／AIが書き終わる前にコピーした
  * （ベトナム語はネイティブ未確認）
  */
+import { contactUrl } from "@/lib/contact-url";
+
 export type MailLang = "ja" | "en" | "vi";
 
 export function promptRemakeEmail(lang: MailLang, creatorName: string | null, appTitle: string): { subject: string; text: string } {
@@ -27,7 +29,9 @@ export function promptRemakeEmail(lang: MailLang, creatorName: string | null, ap
         '2. In the AI\'s reply, press the "Copy" button at the top right of the code box',
         '3. Before pasting into Jisapp, check that what you copied starts with something like "<!DOCTYPE html>" (if it starts with normal sentences, it isn\'t code)',
         "",
-        "You're free to change the app however you like. If anything is unclear, just reply to this email.",
+        "You're free to change the app however you like.",
+        "This address can't receive replies. If anything is unclear, please contact us here:",
+        contactUrl("en"),
         "",
         "Jisapp team",
       ].join("\n"),
@@ -52,7 +56,9 @@ export function promptRemakeEmail(lang: MailLang, creatorName: string | null, ap
         "2. Trong câu trả lời của AI, bấm nút \"Sao chép\" ở góc trên bên phải khung code",
         "3. Trước khi dán vào Jisapp, kiểm tra nội dung đã sao chép có bắt đầu bằng \"<!DOCTYPE html>\" hay không (nếu bắt đầu bằng câu chữ bình thường thì đó không phải code)",
         "",
-        "Bạn có thể tự do sửa app theo ý mình. Có gì chưa rõ, bạn cứ trả lời email này nhé.",
+        "Bạn có thể tự do sửa app theo ý mình.",
+        "Địa chỉ email này chỉ dùng để gửi, nên không nhận được thư trả lời. Có gì chưa rõ, bạn hãy liên hệ qua biểu mẫu sau nhé:",
+        contactUrl("vi"),
         "",
         "Đội ngũ Jisapp",
       ].join("\n"),
@@ -76,7 +82,9 @@ export function promptRemakeEmail(lang: MailLang, creatorName: string | null, ap
       "2. AI の返事の中にある、コードの枠の右上の「コピー」を押す",
       "3. ジサップに貼る前に、コピーしたものが「<!DOCTYPE html>」などの英語の記号で始まっているか確かめる（日本語の文章で始まっていたら、それはコードではありません）",
       "",
-      "中身は自由に作り変えられます。分からないことがあれば、このメールに返信してください。",
+      "中身は自由に作り変えられます。",
+      "このメールは送信専用のため、返信いただいても届きません。分からないことがあれば、次のフォームからお問い合わせください。",
+      contactUrl("ja"),
       "",
       "ジサップ運営",
     ].join("\n"),

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { contactFooterJa } from "@/lib/contact-url";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
@@ -73,7 +74,7 @@ export async function POST(request: Request, context: RouteContext) {
       from: fromEmail,
       to: user.email,
       subject: `[ジサップ] ${title}`,
-      text: `${name}\n\nジサップ運営からのお知らせです。\n\n---\n${message}\n\n---\nジサップ運営`,
+      text: `${name}\n\nジサップ運営からのお知らせです。\n\n---\n${message}\n\n---\nジサップ運営\n\n${contactFooterJa()}`,
     });
     if (error) {
       return NextResponse.json({ error: "メール送信に失敗しました" }, { status: 500 });

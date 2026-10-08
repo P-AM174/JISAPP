@@ -7233,5 +7233,20 @@
     "vi": "Bạn có thể làm app của riêng mình dựa trên app này. App gốc không bị thay đổi.",
     "reviewed": false,
     "en": "You can make your own app based on this one. The original stays as it is."
+  },
+  "運営モード：「{name}」として出品します（コードは公開されます）": {
+    "vi": "Chế độ vận hành: đăng với tên “{name}” (code sẽ được công khai)",
+    "reviewed": false,
+    "en": "Operator mode: publishing as “{name}” (code will be public)"
+  },
+  "運営モードを使うには、先に運営画面にログインしてください": {
+    "vi": "Để dùng chế độ vận hành, hãy đăng nhập trang quản trị trước",
+    "reviewed": false,
+    "en": "Sign in to the admin page first to use operator mode"
+  },
+  "公式アカウントがまだありません。運営画面の承認キューから作ってください": {
+    "vi": "Chưa có tài khoản chính thức. Hãy tạo từ hàng chờ duyệt trong trang quản trị",
+    "reviewed": false,
+    "en": "There's no official account yet. Create it from the admin approval queue"
   }
 }

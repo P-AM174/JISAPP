@@ -5,6 +5,16 @@ import { OFFICIAL_CREATOR_NAME, getOfficialCreator } from "@/lib/agent/official-
 import { findUserByEmail } from "@/lib/services/store";
 import { prisma } from "@/lib/db";
 
+/** 開発スタジオの運営モードで使う：運営としてログインしているか・公式アカウントの名前 */
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const creator = await getOfficialCreator();
+  return NextResponse.json({ creator: creator ? { id: creator.id, name: creator.name ?? OFFICIAL_CREATOR_NAME } : null });
+}
+
 export async function POST(request: Request) {
   const admin = await requireAdmin();
   if (!admin.ok) {

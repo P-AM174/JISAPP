@@ -14,6 +14,28 @@ import {
 import { Pencil, Save, Infinity as InfinityIcon, ClipboardPaste, Eraser, RotateCcw, FileText } from "lucide-react";
 import { AppRunner } from "@/components/app-runner";
 import { looksLikePrompt } from "@/lib/playground/code-cleanup";
+import type { AdminAppStats } from "@/lib/admin/app-stats";
+
+type AppSort = "new" | "opens" | "recent" | "data";
+
+/** バイト数を KB・MB で */
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n}B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)}KB`;
+  return `${(n / 1024 / 1024).toFixed(1)}MB`;
+}
+
+/** 最近開かれた日時（今日・昨日・○日前・日付） */
+function formatOpenedAt(iso: string | null): string {
+  if (!iso) return "まだ開かれていません";
+  const d = new Date(iso);
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const hm = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  if (days <= 0 && new Date().getDate() === d.getDate()) return `今日 ${hm}`;
+  if (days <= 1) return `昨日 ${hm}`;
+  if (days < 30) return `${days}日前`;
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
 import { detectTextLang } from "@/lib/i18n/text";
 import { promptRemakeEmail } from "@/lib/admin/prompt-remake-email";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -41,6 +63,8 @@ type Product = {
   groupSharing?: boolean;
   /** コードではなくプロンプトが入っている（黄色の札） */
   looksLikePrompt?: boolean;
+  /** 開かれた回数・最近開かれた日時・保存データ（スタジオのアプリだけ） */
+  stats?: AdminAppStats | null;
   adminFlags: string[];
   listingType: string;
   productType: string;
@@ -236,6 +260,8 @@ export default function AdminDashboard() {
   const [emailOpen,          setEmailOpen]          = useState(false);
   // プロンプトが入っているアプリだけを出す
   const [promptOnly,         setPromptOnly]         = useState(false);
+  const [appSort,            setAppSort]            = useState<AppSort>("new");
+  const [statsReady,         setStatsReady]         = useState(true);
   // 確認画面（ブラウザの confirm() はアプリ内ブラウザなどで出ずに「キャンセル」扱いになるため、画面の中に出す）
   const [confirmState,       setConfirmState]       = useState<{ title: string; message: string; label: string; resolve: (ok: boolean) => void } | null>(null);
   const askConfirm = (message: string, label = "OK", title = "確認") =>
@@ -300,6 +326,7 @@ export default function AdminDashboard() {
       if (prodRes.ok) {
         const data = await prodRes.json();
         setProducts(data.products ?? []);
+        setStatsReady(data.statsReady !== false);
         setUserCount(data.userCount ?? 0);
         setAuthed(true);
       } else if (prodRes.status === 403) {
@@ -341,15 +368,24 @@ export default function AdminDashboard() {
     const base = products.filter((p) =>
       (appSubTab === "listed" ? p.isListed : !p.isListed) && (!promptOnly || p.looksLikePrompt)
     );
-    if (!q) return base;
-    return base.filter(p =>
+    const matched = !q ? base : base.filter(p =>
       String(p.appNumber).includes(q) ||
       p.title.toLowerCase().includes(q) ||
       (p.creator.name ?? "").toLowerCase().includes(q) ||
       p.creator.email.toLowerCase().includes(q) ||
       (p.category ?? "").toLowerCase().includes(q)
     );
-  }, [products, appSearch, appSubTab, promptOnly]);
+    if (appSort === "new") return matched;
+    // 使われ方で並べ替える（数字のないアプリは後ろ）
+    const key = (p: Product): number => {
+      const st = p.stats;
+      if (!st) return -1;
+      if (appSort === "opens") return st.openCount;
+      if (appSort === "recent") return st.lastOpenedAt ? new Date(st.lastOpenedAt).getTime() : 0;
+      return st.dataBytes + st.groupBytes;
+    };
+    return [...matched].sort((a, b) => key(b) - key(a));
+  }, [products, appSearch, appSubTab, promptOnly, appSort]);
   const promptCount = useMemo(() => products.filter((p) => p.looksLikePrompt && (appSubTab === "listed" ? p.isListed : !p.isListed)).length, [products, appSubTab]);
 
   const listedCount = useMemo(() => products.filter((p) => p.isListed).length, [products]);
@@ -777,6 +813,16 @@ export default function AdminDashboard() {
             運営管理
           </span>
           <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+            {/* 開発スタジオを運営モードで開き、ジサップ公式として出品する */}
+            <Link
+              href="/playground?official=1"
+              target="_blank"
+              title="公式アプリを作る（開発スタジオを運営モードで開く）"
+              className="flex h-8 items-center gap-1.5 rounded-xl bg-emerald-600 px-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:h-9 sm:px-2.5"
+            >
+              <Code2 className="h-4 w-4" />
+              <span className="hidden md:inline">公式アプリを作る</span>
+            </Link>
             <Link
               href="/admin/approvals"
               title="承認キュー"
@@ -1029,7 +1075,25 @@ export default function AdminDashboard() {
                 <FileText className="h-3.5 w-3.5" />
                 プロンプトのアプリ（{promptCount}）
               </button>
+              <label className="flex h-9 items-center gap-1.5 rounded-xl bg-white px-2.5 text-xs font-bold text-gray-600 ring-1 ring-gray-200">
+                並べ替え
+                <select
+                  value={appSort}
+                  onChange={(e) => setAppSort(e.target.value as AppSort)}
+                  className="bg-transparent text-xs font-bold text-gray-800 outline-none"
+                >
+                  <option value="new">新しい順</option>
+                  <option value="opens">よく開かれた順</option>
+                  <option value="recent">最近開かれた順</option>
+                  <option value="data">保存データが多い順</option>
+                </select>
+              </label>
             </div>
+            {!statsReady && (
+              <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-200">
+                保存データの数字を出すには、Supabase で scripts/add-admin-app-stats.sql を実行してください（開かれた回数・日時は今も出ています）。
+              </p>
+            )}
             <p className="-mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
               {filteredProducts.length} 件を表示中
               <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-bold text-sky-700 ring-1 ring-sky-200">
@@ -1069,6 +1133,25 @@ export default function AdminDashboard() {
                           <p className="mt-0.5 truncate text-[11px] text-gray-400">
                             {p.creator.name ?? p.creator.email} · {p.createdAt}
                           </p>
+                          {p.stats && (
+                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                              <span title="アプリのページが開かれた回数"><span className="font-bold text-gray-800">{p.stats.openCount.toLocaleString()}</span> 回開かれた</span>
+                              <span title="一番最近開かれた日時">最終 <span className="font-bold text-gray-800">{formatOpenedAt(p.stats.lastOpenedAt)}</span></span>
+                              {statsReady && (
+                                <>
+                                  <span title="マイライブラリに入れている人数">ライブラリ <span className="font-bold text-gray-800">{p.stats.libraryUsers}</span> 人</span>
+                                  <span title="このアプリでデータを保存している人数と合計">
+                                    保存 <span className="font-bold text-gray-800">{p.stats.dataUsers}</span> 人 · {formatBytes(p.stats.dataBytes)}
+                                  </span>
+                                  {p.stats.groupCount > 0 && (
+                                    <span title="グループの数・メンバーの合計・共有データの合計">
+                                      グループ <span className="font-bold text-gray-800">{p.stats.groupCount}</span>（{p.stats.groupMembers} 人）· {formatBytes(p.stats.groupBytes)}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* フラグ・注目 */}

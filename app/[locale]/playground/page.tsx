@@ -35,6 +35,7 @@ import {
   Undo2,
   Upload,
   Users,
+  ShieldCheck,
   Wand2,
   Wrench,
   X,
@@ -740,6 +741,9 @@ export default function PlaygroundPage() {
   const [remixFrom, setRemixFrom]             = useState<string | null>(null);
   const [remixGuideOpen, setRemixGuideOpen]   = useState(false);
   const [remixBannerClosed, setRemixBannerClosed] = useState(false);
+  /** 運営モード（?official=1）：ジサップ公式のアカウントとして出品する。運営としてログインしているときだけ */
+  const [officialName, setOfficialName]       = useState<string | null>(null);
+  const officialMode = officialName !== null;
   const [publishCategory, setPublishCategory] = useState("");
   const [publishListed, setPublishListed]     = useState(true);
   const [publishCodePublic, setPublishCodePublic] = useState(false);
@@ -833,14 +837,14 @@ export default function PlaygroundPage() {
 
   const runWithLoginPrompt = useCallback(
     (action: "save" | "publish", fn: () => void) => {
-      if (isLoggedIn || wasStudioLoginPromptShown()) {
+      if (isLoggedIn || officialMode || wasStudioLoginPromptShown()) {
         fn();
         return;
       }
       pendingStudioActionRef.current = fn;
       setLoginPrompt({ open: true, action });
     },
-    [isLoggedIn]
+    [isLoggedIn, officialMode]
   );
 
   const handleLoginPromptContinue = () => {
@@ -950,8 +954,9 @@ export default function PlaygroundPage() {
           html_code: code,
           category: publishCategory || null,
           is_listed: publishListed,
-          code_public: publishCodePublic,
+          code_public: officialMode ? true : publishCodePublic,
           group_sharing: publishGroupSharing ?? sharesData,
+          as_official: officialMode || undefined,
           app_id: publishContext?.appId,
           project_id: publishContext?.projectId,
           reset_user_data: isRepublish ? publishResetUserData : undefined,
@@ -1054,6 +1059,24 @@ export default function PlaygroundPage() {
     if (!isRestore) {
       // 新規セッション：前回アプリのAPIキーを引き継がないよう紐付けを破棄
       try { localStorage.removeItem("jisapp_playground_app_id"); } catch { /* noop */ }
+    }
+    // 運営モード：運営としてログインしているか確かめてから、公式アカウントとして出品できるようにする
+    if (params.get("official") === "1") {
+      fetch("/api/admin/official-creator")
+        .then(async (r) => {
+          const d = (await r.json().catch(() => ({}))) as { creator?: { name: string } | null };
+          if (!r.ok) {
+            showToast(t("運営モードを使うには、先に運営画面にログインしてください", "Sign in to the admin page first to use operator mode"));
+            return;
+          }
+          if (!d.creator) {
+            showToast(t("公式アカウントがまだありません。運営画面の承認キューから作ってください", "There's no official account yet. Create it from the admin approval queue"));
+            return;
+          }
+          setOfficialName(d.creator.name);
+          setPublishCodePublic(true);
+        })
+        .catch(() => { /* noop */ });
     }
     // 「このアプリをもとに作る」：公開されているコードを、新しいアプリとして読み込む（元のアプリとは紐付けない）
     const remixId = params.get("remix");
@@ -1734,6 +1757,14 @@ export default function PlaygroundPage() {
   // コードの下に出す注意（途中で切れている・サンプル・APIキー）
   const renderNotices = () => (
     <>
+      {officialMode && (
+        <div className="flex shrink-0 items-center gap-2.5 border-b-2 border-emerald-300 bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <p className="min-w-0 flex-1 leading-relaxed">
+            {format(t("運営モード：「{name}」として出品します（コードは公開されます）", "Operator mode: publishing as “{name}” (code will be public)"), { name: officialName ?? "" })}
+          </p>
+        </div>
+      )}
       {remixFrom !== null && !remixBannerClosed && (
         <div className="flex shrink-0 items-center gap-2.5 border-b border-violet-100 bg-violet-50/80 px-4 py-2.5 text-xs text-violet-900">
           <Wand2 className="h-4 w-4 shrink-0 text-violet-600" />
@@ -2633,7 +2664,7 @@ export default function PlaygroundPage() {
                         setPublishDesc("");
                         setPublishCategory("");
                         setPublishListed(true);
-                        setPublishCodePublic(false);
+                        setPublishCodePublic(officialMode);
                         setPublishGroupSharing(null);
                       }}
                       className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
@@ -2847,7 +2878,8 @@ export default function PlaygroundPage() {
                     <label className="flex cursor-pointer items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={publishCodePublic}
+                        checked={officialMode || publishCodePublic}
+                        disabled={officialMode}
                         onChange={(e) => setPublishCodePublic(e.target.checked)}
                         className="mt-0.5 h-4 w-4 rounded border-violet-300 text-emerald-600 focus:ring-emerald-500"
                       />

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { contactFooterJa } from "@/lib/contact-url";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -72,7 +73,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         from: fromEmail,
         to: inquiry.email,
         subject: `[ジサップ] ${inquiry.subject} への返信`,
-        text: `${name}\n\nお問い合わせありがとうございます。\n\n--- お問い合わせ内容 ---\n${inquiry.body}\n\n--- 運営からの返信 ---\n${reply}\n\n---\nジサップ運営`,
+        text: `${name}\n\nお問い合わせありがとうございます。\n\n--- お問い合わせ内容 ---\n${inquiry.body}\n\n--- 運営からの返信 ---\n${reply}\n\n---\nジサップ運営\n\n${contactFooterJa()}`,
       });
     } catch (err) {
       console.error("[admin/inquiries reply email]", err);

@@ -931,6 +931,10 @@ export function HomePageClient({
 }) {
   const [query,           setQuery]           = useState("");
   const [showContact,     setShowContact]     = useState(false);
+  // メールなどから https://jisapp.app/?contact=1 で来たら、問い合わせフォームを開く
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("contact") === "1") setShowContact(true);
+  }, []);
   const t = useT();
   const locale = useLocale();
   // ベトナム語ページでは、フラグがオンになるまでゲームを出さない（lib/features.ts）

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/admin-auth";
+import { OFFICIAL_CREATOR_NAME, getOfficialCreator } from "@/lib/agent/official-creator";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -131,6 +133,8 @@ export async function POST(request: Request) {
     app_id?: string;
     reset_user_data?: boolean;
     update_notes?: string;
+    /** 開発スタジオの運営モード：ジサップ公式のアカウントとして出品する（運営だけ） */
+    as_official?: boolean;
   };
 
   try {
@@ -160,6 +164,24 @@ export async function POST(request: Request) {
     sessionCreatorName = (session?.user as { name?: string })?.name ?? null;
     sessionUserId = (session?.user as { id?: string })?.id ?? null;
   } catch { /* noop */ }
+
+  // 運営モード：運営としてログインしていることを確かめ、公式アカウントとして出品する（コードは必ず公開）
+  if (body.as_official) {
+    const admin = await requireAdmin();
+    if (!admin.ok) {
+      return NextResponse.json({ error: "公式アプリの出品は運営だけができます" }, { status: 403 });
+    }
+    const official = await getOfficialCreator();
+    if (!official) {
+      return NextResponse.json({ error: "公式アカウントがまだありません。運営画面の承認キューから作ってください" }, { status: 400 });
+    }
+    sessionUserId = official.id;
+    sessionCreatorName = official.name ?? OFFICIAL_CREATOR_NAME;
+    body.creator_name = sessionCreatorName;
+    body.code_public = true;
+    // 運営の人のマイプロジェクトとは結びつけない
+    body.project_id = undefined;
+  }
 
   const creatorName = (body.creator_name ?? "").trim() || sessionCreatorName || "ゲスト";
   const now = new Date().toISOString();

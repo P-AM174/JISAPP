@@ -7228,5 +7228,10 @@
     "vi": "Đã hiểu, bắt đầu thôi",
     "reviewed": false,
     "en": "Got it, let's start"
+  },
+  "このアプリをもとに、自分用のアプリを作れます。元のアプリは変わりません。": {
+    "vi": "Bạn có thể làm app của riêng mình dựa trên app này. App gốc không bị thay đổi.",
+    "reviewed": false,
+    "en": "You can make your own app based on this one. The original stays as it is."
   }
 }

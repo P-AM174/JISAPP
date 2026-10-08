@@ -35,6 +35,7 @@ import {
   Link2,
   Lightbulb,
   FileSpreadsheet,
+  ChevronLeft,
   Wand2,
 } from "lucide-react";
 import { type AppRow } from "@/lib/supabase";
@@ -247,7 +248,13 @@ function SupabaseAppPage({ id }: { id: string }) {
       {/* ヘッダー */}
       <header className="shrink-0 border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex h-13 max-w-5xl items-center gap-3 px-4 py-2">
-          <BackButton />
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-emerald-600"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t("トップへ", "Home")}
+          </Link>
           <div className="flex flex-1 flex-col min-w-0">
             <h1 className="truncate text-sm font-black text-gray-900">{app.title}</h1>
             {app.description && (
@@ -262,22 +269,11 @@ function SupabaseAppPage({ id }: { id: string }) {
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
             )}
             {app.code_public && (
-              <Link
-                href={`/playground?remix=${id}`}
-                title={t("このアプリをもとに、自分用のアプリを作ります（元のアプリは変わりません）", "Make your own version of this app (the original stays as it is)")}
-                className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-100 transition-colors"
-              >
-                <Wand2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t("このアプリをもとに作る", "Make your own version")}</span>
-                <span className="sm:hidden">{t("もとに作る", "Remix")}</span>
-              </Link>
-            )}
-            {app.code_public && (
               <button
                 type="button"
                 onClick={loadSourceCode}
                 disabled={codeLoading}
-                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50 sm:px-3"
               >
                 <Code2 className="h-3.5 w-3.5" />
                 {codeLoading ? t("読込中…", "Loading…") : codePanelOpen ? t("コードを閉じる", "Hide code") : t("コード", "Code")}
@@ -301,6 +297,7 @@ function SupabaseAppPage({ id }: { id: string }) {
               text={format(t("{title} | ジサップで作った無料アプリ", "{title} | a free app made on Jisapp"), { title: app.title })}
               variant="outline"
               className="w-auto"
+              compactOnMobile
             />
           </div>
         </div>
@@ -331,6 +328,19 @@ ${app.js_code ?? ""}`)}
       <main className="relative flex min-h-0 flex-1 flex-col">
         {codePanelOpen && app.code_public && (
           <div className="shrink-0 border-b border-violet-100 bg-gray-950 text-gray-100">
+            {/* コードを見られなくても（ログイン前など）、もとにして作るのはここからできる */}
+            <div className="flex items-center gap-3 border-b border-white/10 bg-violet-950/60 px-4 py-2.5">
+              <p className="min-w-0 flex-1 text-[11px] leading-snug text-violet-200">
+                {t("このアプリをもとに、自分用のアプリを作れます。元のアプリは変わりません。", "You can make your own app based on this one. The original stays as it is.")}
+              </p>
+              <Link
+                href={`/playground?remix=${id}`}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-violet-500 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-violet-400 transition-colors"
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                {t("このアプリをもとに作る", "Make your own version")}
+              </Link>
+            </div>
             <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2">
               {(["html", "css", "js"] as const).map((tab) => (
                 <button

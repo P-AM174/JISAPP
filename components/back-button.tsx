@@ -4,6 +4,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
+import { backTargetSkippingLogin } from "@/lib/nav-history";
 
 type BackButtonProps = {
   label?: React.ReactNode;
@@ -25,6 +26,12 @@ export function BackButton({
   if (label === undefined) label = t("戻る", "Back");
 
   const handleBack = () => {
+    // ひとつ前がログイン画面（Google のログインを含む）なら、ログインする前のページへ
+    const skipLogin = backTargetSkippingLogin();
+    if (skipLogin) {
+      router.push(skipLogin);
+      return;
+    }
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {

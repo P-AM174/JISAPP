@@ -66,6 +66,8 @@ type ShareButtonProps = {
   size?: "sm" | "md";
   variant?: "solid" | "outline" | "ghost";
   label?: string;
+  /** スマホでは文字を隠してアイコンだけにする（上部の狭い帯に置くとき） */
+  compactOnMobile?: boolean;
 };
 
 function ShareSheet({
@@ -263,6 +265,7 @@ export function ShareButton({
   size = "sm",
   variant = "outline",
   label,
+  compactOnMobile = false,
 }: ShareButtonProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -303,6 +306,7 @@ export function ShareButton({
         type="button"
         onClick={handleShare}
         disabled={sharing}
+        aria-label={compactOnMobile ? label : undefined}
         className={cn(
           "flex w-full items-center justify-center gap-1.5 rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-60",
           pad,
@@ -311,7 +315,7 @@ export function ShareButton({
         )}
       >
         <Share2 className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
-        {label}
+        {compactOnMobile ? <span className="hidden sm:inline">{label}</span> : label}
       </button>
 
       <ShareSheet

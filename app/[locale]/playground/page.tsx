@@ -2655,6 +2655,14 @@ export default function PlaygroundPage() {
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
+                  {/* 公開は済んでいるので、確認なしでトップへ */}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/")}
+                    className="w-full py-1 text-xs font-semibold text-gray-400 transition-colors hover:text-emerald-600"
+                  >
+                    {t("トップに戻る", "Back to home")}
+                  </button>
                 </div>
               </>
             ) : (

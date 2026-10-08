@@ -7253,5 +7253,115 @@
     "vi": "Không thể dùng tên dễ nhầm với đội ngũ Jisapp (như “Jisapp Official”)",
     "reviewed": false,
     "en": "Names that look like the Jisapp team (such as “Jisapp Official”) can't be used"
+  },
+  "ニックネーム": {
+    "vi": "Biệt danh",
+    "reviewed": false,
+    "en": "Nickname"
+  },
+  "ログインしていないので、作者名は「<b>{name}（ゲスト）</b>」と表示されます。本名は入れないでください。": {
+    "vi": "Bạn chưa đăng nhập nên tên người tạo sẽ hiển thị là “<b>{name} (Khách)</b>”. Đừng dùng tên thật nhé.",
+    "reviewed": false,
+    "en": "You're not signed in, so the creator name shows as “<b>{name} (Guest)</b>”. Don't use your real name."
+  },
+  "ジサップで表示する名前": {
+    "vi": "Tên hiển thị trên Jisapp",
+    "reviewed": false,
+    "en": "Your name on Jisapp"
+  },
+  "ジサップで表示する名前を決めてください": {
+    "vi": "Hãy chọn tên hiển thị trên Jisapp",
+    "reviewed": false,
+    "en": "Choose your name on Jisapp"
+  },
+  "表示名を変える": {
+    "vi": "Đổi tên hiển thị",
+    "reviewed": false,
+    "en": "Change your display name"
+  },
+  "アプリを公開したときの作者名などに使います。Google の名前は表示されません。": {
+    "vi": "Tên này dùng làm tên người tạo khi bạn đăng app. Tên Google của bạn sẽ không hiển thị.",
+    "reviewed": false,
+    "en": "It's shown as the creator name when you publish apps. Your Google name is never shown."
+  },
+  "公開済みのアプリの作者名も、新しい名前になります。": {
+    "vi": "Tên người tạo trên các app đã đăng cũng sẽ đổi theo.",
+    "reviewed": false,
+    "en": "The creator name on your published apps changes too."
+  },
+  "例：たろう、ハルの工房": {
+    "vi": "Ví dụ: Minh, Xưởng của Lan",
+    "reviewed": false,
+    "en": "e.g. Alex, Haru's workshop"
+  },
+  "表示する名前": {
+    "vi": "Tên hiển thị",
+    "reviewed": false,
+    "en": "Display name"
+  },
+  "本名ではなく、ニックネームがおすすめです（20文字まで・あとから変えられます）": {
+    "vi": "Nên dùng biệt danh thay vì tên thật (tối đa 20 ký tự, có thể đổi sau)",
+    "reviewed": false,
+    "en": "We recommend a nickname rather than your real name (up to 20 characters, changeable later)"
+  },
+  "この名前にする": {
+    "vi": "Dùng tên này",
+    "reviewed": false,
+    "en": "Use this name"
+  },
+  "変更する": {
+    "vi": "Thay đổi",
+    "reviewed": false,
+    "en": "Change"
+  },
+  "ログアウトする": {
+    "vi": "Đăng xuất",
+    "reviewed": false,
+    "en": "Sign out"
+  },
+  "名前を入力してください": {
+    "vi": "Hãy nhập tên",
+    "reviewed": false,
+    "en": "Please enter a name"
+  },
+  "名前は20文字以内にしてください": {
+    "vi": "Tên tối đa 20 ký tự",
+    "reviewed": false,
+    "en": "Names can be up to 20 characters"
+  },
+  "この名前は使えません": {
+    "vi": "Không thể dùng tên này",
+    "reviewed": false,
+    "en": "This name can't be used"
+  },
+  "この名前はほかの人が使っています。別の名前にしてください": {
+    "vi": "Tên này đã có người dùng. Hãy chọn tên khác",
+    "reviewed": false,
+    "en": "Someone else is using this name. Please choose another"
+  },
+  "公式アカウントの名前は変えられません": {
+    "vi": "Không thể đổi tên tài khoản chính thức",
+    "reviewed": false,
+    "en": "The official account's name can't be changed"
+  },
+  "公開する前に、ジサップで表示する名前を決めてください": {
+    "vi": "Hãy chọn tên hiển thị trên Jisapp trước khi đăng",
+    "reviewed": false,
+    "en": "Choose your name on Jisapp before publishing"
+  },
+  "ニックネームを入力してください": {
+    "vi": "Hãy nhập biệt danh",
+    "reviewed": false,
+    "en": "Please enter a nickname"
+  },
+  "ニックネームは20文字以内にしてください": {
+    "vi": "Biệt danh tối đa 20 ký tự",
+    "reviewed": false,
+    "en": "Nicknames can be up to 20 characters"
+  },
+  "ユーザーが見つかりません": {
+    "vi": "Không tìm thấy người dùng",
+    "reviewed": false,
+    "en": "User not found"
   }
 }

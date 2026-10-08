@@ -10,6 +10,7 @@ import { JisappLogo } from "@/components/jisapp-logo";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { localizePath, format } from "@/lib/i18n/config";
 import { StorageMeter } from "@/components/storage-meter";
+import { UsernameDialog } from "@/components/username-dialog";
 import {
   Package,
   ShieldCheck,
@@ -27,6 +28,7 @@ import {
   FolderOpen,
   Upload,
   Clock,
+  Pencil,
 } from "lucide-react";
 
 // ダミーデータは廃止
@@ -67,6 +69,7 @@ export default function MyPage() {
     Array<{ id: string | number; title: string; category?: string; is_playground_app?: boolean }>
   >([]);
   const [mounted, setMounted]                   = useState(false);
+  const [nameEditOpen, setNameEditOpen]         = useState(false);
 
   // ─── 未ログインなら /login へリダイレクト ───
   useEffect(() => {
@@ -165,7 +168,7 @@ export default function MyPage() {
     );
   }
 
-  // セッションユーザー情報
+  // セッションユーザー情報（名前はジサップ用に本人が決めたもの）
   const userName  = session?.user?.name  ?? t("ジサップユーザー", "Jisapp user");
   const userEmail = session?.user?.email ?? "";
   const userImage = session?.user?.image ?? null;
@@ -173,6 +176,14 @@ export default function MyPage() {
 
   return (
     <div className="min-h-screen bg-jisapp-ambient">
+      {nameEditOpen && (
+        <UsernameDialog
+          mode="edit"
+          initialName={session?.user?.name ?? ""}
+          onClose={() => setNameEditOpen(false)}
+          onDone={() => setNameEditOpen(false)}
+        />
+      )}
       {/* ─── ヘッダー ─── */}
       <header className="sticky top-0 z-50 border-b border-white/70 bg-white/75 backdrop-blur-xl">
         <div aria-hidden className="h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400" />
@@ -247,7 +258,18 @@ export default function MyPage() {
                   </div>
                 )}
                 <div>
-                  <p className="font-bold text-gray-900">{userName}</p>
+                  <p className="flex items-center gap-1.5 font-bold text-gray-900">
+                    {userName}
+                    <button
+                      type="button"
+                      onClick={() => setNameEditOpen(true)}
+                      title={t("表示名を変える", "Change your display name")}
+                      aria-label={t("表示名を変える", "Change your display name")}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-emerald-50 hover:text-emerald-600"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </p>
                   {userEmail && (
                     <p className="text-xs text-gray-400 truncate max-w-[140px]">{userEmail}</p>
                   )}

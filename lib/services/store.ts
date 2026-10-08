@@ -6,30 +6,45 @@ export async function findUserByEmail(email: string) {
   return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 }
 
+/**
+ * Google でログインした人を登録・更新する。
+ * プライバシーのため Google の名前（本名のことが多い）は使わない。
+ * 表示する名前は、本人がジサップ用に決める（usernameSet が false の間は名前を決める画面が出る）
+ */
 export async function upsertOAuthUser(input: {
   email: string;
   name?: string | null;
   image?: string | null;
 }) {
-  // Google の名前が運営とまぎらわしいときは使わない（新規はメールの @ より前、既存は今の名前のまま）
-  if (isReservedOfficialName(input.name)) {
-    const existing = await findUserByEmail(input.email);
-    if (!existing?.isOfficial) {
-      input = { ...input, name: existing ? undefined : input.email.split("@")[0] };
-    }
-  }
   return prisma.user.upsert({
     where: { email: input.email.toLowerCase() },
     create: {
       email: input.email.toLowerCase(),
-      name: input.name ?? null,
+      name: null,
       image: input.image ?? null,
     },
     update: {
-      name: input.name ?? undefined,
       image: input.image ?? undefined,
     },
   });
+}
+
+export const USERNAME_MAX = 20;
+
+/** ジサップで表示する名前として使えるか。使えないときは理由（日本語）を返す */
+export async function validateUsername(name: string, userId: string): Promise<string | null> {
+  const n = name.normalize("NFKC").trim();
+  if (!n) return "名前を入力してください";
+  if (n.length > USERNAME_MAX) return `名前は${USERNAME_MAX}文字以内にしてください`;
+  if (isReservedOfficialName(n)) return "「ジサップ公式」など、運営とまぎらわしい名前は使えません";
+  if (/[（(]s*(ゲスト|guest|khách)s*[)）]s*$/i.test(n) || /^(ゲスト|guest|匿名|ユーザー)$/i.test(n)) return "この名前は使えません";
+  // 作者のページは名前でつながっているため、ほかの人と同じ名前は使えない
+  const same = await prisma.user.findFirst({
+    where: { id: { not: userId }, name: { equals: n, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (same) return "この名前はほかの人が使っています。別の名前にしてください";
+  return null;
 }
 
 export async function createCredentialUser(input: {
@@ -42,6 +57,8 @@ export async function createCredentialUser(input: {
       email: input.email.toLowerCase(),
       name: input.name,
       passwordHash: input.passwordHash,
+      // 登録のときにニックネームを決めている
+      usernameSet: true,
     },
   });
 }

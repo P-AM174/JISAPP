@@ -21,6 +21,8 @@ model User {
   passwordHash    String?
   role            UserRole         @default(USER)
   isOfficial      Boolean          @default(false)
+  /// ジサップで表示する名前を本人が決めたか（Google ログインの人は、決めるまで Google の名前を表に出さない）
+  usernameSet     Boolean          @default(false)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   products        Product[]

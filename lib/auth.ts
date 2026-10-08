@@ -39,19 +39,19 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user, account }) {
-      if (user?.email) {
-        const dbUser = await findUserByEmail(user.email);
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.name = dbUser.name;
-          token.role = dbUser.role;
-        }
-      } else if (account?.provider === "google" && token.email) {
-        const dbUser = await findUserByEmail(token.email as string);
+    async jwt({ token, user, account, trigger }) {
+      // ログインしたとき・名前を決めたあと（update）に、データベースの内容で名前を入れ直す
+      // 名前の仕組みより前にログインした人（token に usernameSet がない）も、一度だけ読み直す
+      const refresh = account?.provider === "google" || trigger === "update" || token.usernameSet === undefined;
+      const email = user?.email ?? (refresh ? (token.email as string | undefined) : undefined);
+      if (email) {
+        const dbUser = await findUserByEmail(email);
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
+          // 本人がジサップ用の名前を決めるまでは、名前を出さない（Google の名前＝本名を表に出さないため）
+          token.name = dbUser.usernameSet ? dbUser.name : null;
+          token.usernameSet = dbUser.usernameSet;
         }
       }
       return token;
@@ -61,6 +61,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
         session.user.name = token.name;
+        (session.user as { usernameSet?: boolean }).usernameSet = token.usernameSet === true;
       }
       return session;
     },

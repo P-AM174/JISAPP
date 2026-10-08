@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { isReservedOfficialName } from "@/lib/official-name";
+import { GUEST_NICKNAME_MAX, guestNickname, withGuestMark } from "@/lib/guest-name";
+import { prisma } from "@/lib/db";
 import { OFFICIAL_CREATOR_NAME, getOfficialCreator } from "@/lib/agent/official-creator";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -184,11 +186,32 @@ export async function POST(request: Request) {
     body.project_id = undefined;
   }
 
-  // 運営モード以外で、運営とまぎらわしい名前は作者名にしない
-  const requestedName = (body.creator_name ?? "").trim();
-  const creatorName = body.as_official
-    ? requestedName || OFFICIAL_CREATOR_NAME
-    : [requestedName, sessionCreatorName ?? ""].find((n) => n && !isReservedOfficialName(n)) || "ゲスト";
+  // 作者名
+  // ・運営モード：ジサップ公式
+  // ・ログインしている人：本人が決めたジサップ用の名前（決めていなければ公開できない）
+  // ・ログインしていない人：入力したニックネーム＋「（ゲスト）」（ニックネームは必須）
+  let creatorName: string;
+  if (body.as_official) {
+    creatorName = sessionCreatorName || OFFICIAL_CREATOR_NAME;
+  } else if (sessionUserId) {
+    const me = await prisma.user.findUnique({ where: { id: sessionUserId }, select: { name: true, usernameSet: true } });
+    if (!me?.usernameSet || !me.name?.trim()) {
+      return NextResponse.json({ error: "公開する前に、ジサップで表示する名前を決めてください" }, { status: 403 });
+    }
+    creatorName = me.name.trim();
+  } else {
+    const nickname = guestNickname(body.creator_name);
+    if (!nickname) {
+      return NextResponse.json({ error: "ニックネームを入力してください" }, { status: 400 });
+    }
+    if (nickname.length > GUEST_NICKNAME_MAX) {
+      return NextResponse.json({ error: `ニックネームは${GUEST_NICKNAME_MAX}文字以内にしてください` }, { status: 400 });
+    }
+    if (isReservedOfficialName(nickname)) {
+      return NextResponse.json({ error: "「ジサップ公式」など、運営とまぎらわしい名前は使えません" }, { status: 400 });
+    }
+    creatorName = withGuestMark(nickname);
+  }
   const now = new Date().toISOString();
   const appPayload = {
     title,

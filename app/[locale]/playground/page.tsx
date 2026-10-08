@@ -63,6 +63,9 @@ import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
 import { RemixGuideModal, isRemixGuideHidden } from "@/components/playground/remix-guide-modal";
+import { GUEST_NICKNAME_MAX, guestNickname } from "@/lib/guest-name";
+
+const GUEST_NICK_KEY = "jisapp_guest_nickname";
 import {
   EditorStart,
   PaneTitleBar,
@@ -744,6 +747,11 @@ export default function PlaygroundPage() {
   /** 運営モード（?official=1）：ジサップ公式のアカウントとして出品する。運営としてログインしているときだけ */
   const [officialName, setOfficialName]       = useState<string | null>(null);
   const officialMode = officialName !== null;
+  /** ログインせずに公開するときのニックネーム（必須。作者名は「ニックネーム（ゲスト）」になる）。端末に覚えておく */
+  const [guestNick, setGuestNick] = useState("");
+  useEffect(() => {
+    try { setGuestNick(localStorage.getItem(GUEST_NICK_KEY) ?? ""); } catch { /* noop */ }
+  }, []);
   const [publishCategory, setPublishCategory] = useState("");
   const [publishListed, setPublishListed]     = useState(true);
   const [publishCodePublic, setPublishCodePublic] = useState(false);
@@ -757,6 +765,8 @@ export default function PlaygroundPage() {
   const [publishUpdateNotes, setPublishUpdateNotes] = useState("");
 
   const isRepublish = !!publishContext?.appId;
+  /** ログインせずに公開する（ニックネームが必須） */
+  const guestPublish = !isLoggedIn && !officialMode;
 
   // ── 作る流れ（作りたいもの → AI → 貼り付け） ──
   const [idea, setIdea]                   = useState("");
@@ -957,6 +967,7 @@ export default function PlaygroundPage() {
           code_public: officialMode ? true : publishCodePublic,
           group_sharing: publishGroupSharing ?? sharesData,
           as_official: officialMode || undefined,
+          creator_name: guestPublish ? guestNickname(guestNick) : undefined,
           app_id: publishContext?.appId,
           project_id: publishContext?.projectId,
           reset_user_data: isRepublish ? publishResetUserData : undefined,
@@ -2760,6 +2771,32 @@ export default function PlaygroundPage() {
                       className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                     />
                   </div>
+                  {guestPublish && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-gray-700">
+                        {t("ニックネーム", "Nickname")} <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={guestNick}
+                        onChange={(e) => {
+                          setGuestNick(e.target.value);
+                          try { localStorage.setItem(GUEST_NICK_KEY, e.target.value); } catch { /* noop */ }
+                        }}
+                        placeholder={t("例：たろう", "e.g. Alex")}
+                        maxLength={GUEST_NICKNAME_MAX}
+                        autoComplete="nickname"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                      />
+                      <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+                        {rich(
+                          t("ログインしていないので、作者名は「<b>{name}（ゲスト）</b>」と表示されます。本名は入れないでください。", "You're not signed in, so the creator name shows as “<b>{name} (Guest)</b>”. Don't use your real name."),
+                          { b: (c) => <span className="font-bold text-gray-700">{c}</span> },
+                          { name: guestNickname(guestNick) || t("ニックネーム", "Nickname") }
+                        )}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-gray-700">
                       {t("説明（任意）", "Description (optional)")}
@@ -2968,7 +3005,7 @@ export default function PlaygroundPage() {
                     </button>
                     <button
                       onClick={handlePublish}
-                      disabled={publishing || !publishTitle.trim()}
+                      disabled={publishing || !publishTitle.trim() || (guestPublish && !guestNickname(guestNick))}
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
                     >
                       {publishing ? (

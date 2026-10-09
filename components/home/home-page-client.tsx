@@ -46,7 +46,6 @@ import {
   FolderOpen,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
 import { showGames } from "@/lib/features";
 import { sortLibrary, type LibraryEntry } from "@/lib/library/sort";
@@ -57,7 +56,7 @@ import { CatalogAppCard } from "@/components/app-catalog/catalog-app-card";
 import { HeroCarousel } from "@/components/home/hero/hero-carousel";
 import type { HeroSlidePublic } from "@/lib/hero/types";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
-import type { ModalApp } from "@/components/app-catalog/types";
+import type { CatalogCardApp, ModalApp } from "@/components/app-catalog/types";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 
 import { ContactFormModal } from "@/components/support/contact-form-modal";
@@ -883,7 +882,7 @@ function HomeLibrarySection() {
         />
         {/* スマホ：横スクロール。PC：1行目だけ見せ、入りきらない分は隠す（2行目以降の高さを0にする） */}
         <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:auto-rows-[0] sm:grid-cols-4 sm:grid-rows-[auto] sm:gap-x-3 sm:gap-y-0 sm:overflow-hidden sm:px-0 sm:pb-0 md:grid-cols-5 lg:grid-cols-6">
-          {ordered.map((entry) => {
+          {ordered.slice(0, HOME_ROW_LIMIT).map((entry) => {
             const gradient = getGradient(entry);
             return (
               <Link
@@ -921,6 +920,22 @@ function HomeLibrarySection() {
   );
 }
 
+/** トップページの各列に出すのは8個まで。それより多い分は「すべて見る」から */
+const HOME_ROW_LIMIT = 8;
+
+/** アプリのカードを横スクロールで並べる（マイライブラリと同じ見せ方） */
+function AppRow({ apps, onSelect }: { apps: CatalogCardApp[]; onSelect: (app: ModalApp) => void }) {
+  return (
+    <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {apps.slice(0, HOME_ROW_LIMIT).map((app) => (
+        <div key={app.id} className="w-40 shrink-0 snap-start sm:w-48">
+          <CatalogAppCard app={app} compact onSelect={onSelect} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── メインページ ───
 export function HomePageClient({
   initialData,
@@ -946,22 +961,10 @@ export function HomePageClient({
   const withoutGames = <T extends { category?: string | null }>(apps: T[]) =>
     gamesVisible ? apps : apps.filter((a) => a.category !== "games" && a.category !== "ゲーム");
   const playgroundApps = useMemo(() => withoutGames(initialData.playgroundApps), [initialData.playgroundApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
-  // SNS（ショート動画）で紹介したアプリ。まずは日本語のページだけで、「今月の人気アプリ」の代わりに出す
+  // SNS（ショート動画）で紹介したアプリ。まずは日本語のページだけ
   const snsApps = locale === "ja" ? initialData.snsApps ?? [] : [];
-  const popularMonth = useMemo(() => withoutGames(initialData.popularMonth), [initialData.popularMonth, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
   const featuredApps = useMemo(() => withoutGames(initialData.featuredApps), [initialData.featuredApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
-  const loadingPG = false;
-  const [pgCategoryFilter, setPgCategoryFilter] = useState<string>("all");
   const [selectedApp, setSelectedApp]         = useState<ModalApp | null>(null);
-
-  // 人気順（応援バッジ数）でフィルタ済み
-  const filteredPlaygroundApps = useMemo(() => {
-    return playgroundApps.filter((a) => {
-      const catMatch = pgCategoryFilter === "all" || a.category === pgCategoryFilter;
-      const textMatch = !query || a.title.includes(query) || (a.description ?? "").includes(query);
-      return catMatch && textMatch;
-    });
-  }, [playgroundApps, pgCategoryFilter, query]);
 
   // 新着順（同データを created_at 降順で再ソート）
   const newApps = useMemo(() =>
@@ -972,19 +975,10 @@ export function HomePageClient({
 
   // ゲームカテゴリ（新着順）
   const gameApps = useMemo(() =>
-    newApps.filter(a => a.category === "ゲーム"),
+    newApps.filter(a => a.category === "games" || a.category === "ゲーム"),
   [newApps]);
 
-  // アプリが少ないうちは「みんなが作ったアプリ」に全件が出ており、
-  // 「新着」「ゲーム」は同じカードの繰り返しになるため出さない
-  const NEW_SECTION_LIMIT = 8;
-  const mainListShowsEverything =
-    pgCategoryFilter === "all" && newApps.length <= NEW_SECTION_LIMIT;
-  const showNewSection = !mainListShowsEverything;
-  const showGameSection = gamesVisible && gameApps.length > 0 && !mainListShowsEverything;
-
-  // 人気系は数が揃うまで出さない（1〜2件だと寂しく見える）
-  const MIN_POPULAR_APPS = 3;
+  // 人気クリエイターは数が揃うまで出さない（1〜2件だと寂しく見える）
   const MIN_POPULAR_CREATORS = 3;
 
   return (
@@ -996,23 +990,6 @@ export function HomePageClient({
       <HomeLibrarySection />
       <main id="browse" className="mx-auto max-w-6xl space-y-12 px-4 py-10">
 
-        {/* ─── 注目のアプリ（管理者選定） ─── */}
-        {featuredApps.length > 0 && (
-          <section>
-            <SectionHeader
-              icon={<BadgeCheck className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
-              title={t("注目のアプリ", "Featured apps")}
-              sub={t("運営がピックアップしたおすすめアプリ", "Hand-picked by the Jisapp team")}
-              href="/search?sort=featured"
-            />
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {featuredApps.map((app) => (
-                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* ─── SNSで紹介したアプリ（日本語のページだけ。運営画面で決めた並び） ─── */}
         {snsApps.length > 0 && (
           <section>
@@ -1022,72 +999,20 @@ export function HomePageClient({
               sub="ショート動画で紹介したアプリを、そのまま遊べます"
               href="/features/sns"
             />
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {snsApps.map((app) => (
-                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
-              ))}
-            </div>
+            <AppRow apps={snsApps} onSelect={setSelectedApp} />
           </section>
         )}
 
-        {/* ─── 今月の人気アプリ TOP5（日本語のページでは、いったん SNSで紹介したアプリ に差し替え） ─── */}
-        {locale !== "ja" && popularMonth.length >= MIN_POPULAR_APPS && (
+        {/* ─── 注目のアプリ（運営画面で選んだもの） ─── */}
+        {featuredApps.length > 0 && (
           <section>
             <SectionHeader
-              icon={<TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={2.5} />}
-              title={t("今月の人気アプリ", "Popular this month")}
-              sub={t("今月最も応援バッジをもらったアプリ", "Apps that got the most cheer badges this month")}
+              icon={<BadgeCheck className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
+              title={t("注目のアプリ", "Featured apps")}
+              sub={t("運営がピックアップしたおすすめアプリ", "Hand-picked by the Jisapp team")}
+              href="/search?sort=featured"
             />
-            <div className="relative">
-              <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {popularMonth.map((app, i) => {
-                  const cat = app.category ? CATEGORY_MAP[app.category] : null;
-                  const gradient = cat?.gradient ?? "from-emerald-500 to-teal-600";
-                  const modalApp: ModalApp = {
-                    id: app.id,
-                    name: app.title,
-                    description: app.description ?? "",
-                    creator: app.creator_name ?? t("匿名", "Anonymous"),
-                    rating: 5.0,
-                    reviews: app.stamp_count ?? 0,
-                    category: cat ? categoryName(cat, locale) : app.category ?? "",
-                    gradient,
-                    categoryId: app.category ?? null,
-                  };
-                  const rankColors = [
-                    "bg-amber-400 text-amber-900",
-                    "bg-gray-300 text-gray-700",
-                    "bg-orange-300 text-orange-800",
-                    "bg-gray-100 text-gray-600",
-                    "bg-gray-100 text-gray-600",
-                  ];
-                  return (
-                    <button
-                      key={app.id}
-                      onClick={() => setSelectedApp(modalApp)}
-                      className="group relative shrink-0 w-40 rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.06] hover:shadow-md hover:ring-emerald-300 transition-all text-left overflow-hidden"
-                    >
-                      {/* ランク */}
-                      <div className={`absolute top-2 left-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black shadow-sm ${rankColors[i] ?? rankColors[4]}`}>
-                        {i + 1}
-                      </div>
-                      <MiniPreview id={app.id} fallbackGradient={gradient} fallbackCategoryId={app.category} height={96} />
-                      <div className="p-2.5">
-                        <p className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
-                          {app.title}
-                        </p>
-                        {(app.stamp_count ?? 0) > 0 && (
-                          <p className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
-                            <Heart className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-                            {app.stamp_count}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <AppRow apps={featuredApps} onSelect={setSelectedApp} />
           </section>
         )}
 
@@ -1099,8 +1024,8 @@ export function HomePageClient({
               title={t("人気クリエイター", "Popular creators")}
               sub={t("たくさんのアプリを作った注目のユーザー", "People who've made lots of apps")}
             />
-            <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {popularCreators.map((creator) => {
+            <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {popularCreators.slice(0, HOME_ROW_LIMIT).map((creator) => {
                 const colors = [
                   "from-emerald-500 to-teal-600",
                   "from-violet-500 to-purple-600",
@@ -1116,7 +1041,7 @@ export function HomePageClient({
                   <Link
                     key={creator.name}
                     href={getCreatorProfilePath(creator.name)}
-                    className="shrink-0 w-36 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 text-center transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200"
+                    className="shrink-0 snap-start w-36 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5 text-center transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-emerald-200"
                   >
                     <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${colors[colorIdx]} text-2xl font-black text-white shadow-md`}>
                       <CreatorAvatarContent name={creator.name} />
@@ -1160,74 +1085,7 @@ export function HomePageClient({
           </section>
         )}
 
-        {/* ─── プレイグラウンドアプリ（人気順） ─── */}
-        <section>
-          <SectionHeader
-            icon={<Terminal className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
-            title={t("みんなが作ったアプリ", "Apps from the community")}
-            sub={t("応援バッジが多い順 · 開発スタジオで作成・公開", "Most cheered first · made and published in the Studio")}
-            href="/search?source=playground"
-          />
-          {/* カテゴリフィルタータブ */}
-          {!loadingPG && playgroundApps.length > 0 && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                onClick={() => setPgCategoryFilter("all")}
-                className={cn(
-                  "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
-                  pgCategoryFilter === "all"
-                    ? "bg-violet-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600 hover:bg-violet-50 hover:text-violet-700"
-                )}
-              >
-                {t("すべて", "All")}
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setPgCategoryFilter(pgCategoryFilter === cat.id ? "all" : cat.id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
-                    pgCategoryFilter === cat.id
-                      ? "bg-violet-600 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-600 hover:bg-violet-50 hover:text-violet-700"
-                  )}
-                >
-                  <CategoryIcon categoryId={cat.id} className="h-3.5 w-3.5 shrink-0" />
-                  {categoryName(cat, locale)}
-                </button>
-              ))}
-            </div>
-          )}
-          {loadingPG ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
-            </div>
-          ) : filteredPlaygroundApps.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {filteredPlaygroundApps.map((app) => (
-                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
-              ))}
-            </div>
-          ) : playgroundApps.length === 0 ? (
-            <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
-              <p className="text-sm font-semibold text-gray-500">{t("まだ公開されたアプリがありません", "No apps have been published yet")}</p>
-              <p className="mt-2 text-xs text-gray-400">{t("開発スタジオでアプリを作って出品してみましょう！", "Make an app in the Studio and publish it!")}</p>
-              <Link href="/playground" className="mt-4 inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2 text-sm font-bold text-white hover:bg-violet-700">
-                {t("開発スタジオへ", "Go to the Studio")} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          ) : (
-            <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
-              <p className="text-sm font-semibold text-gray-500">
-                {query ? format(t("「{query}」に一致するアプリはありません", "No apps match “{query}”"), { query }) : t("このカテゴリのアプリはまだありません", "No apps in this category yet")}
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* ─── 新着・注目アプリ ─── */}
-        {showNewSection && (
+        {/* ─── 新着アプリ ─── */}
         <section>
           <SectionHeader
             icon={<JisappLogoIcon className="h-5 w-5" />}
@@ -1235,16 +1093,8 @@ export function HomePageClient({
             sub={t("最近開発スタジオで公開された新しいアプリ", "Recently published from the Studio")}
             href="/search?sort=new"
           />
-          {loadingPG ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-            </div>
-          ) : newApps.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {newApps.slice(0, 8).map((app) => (
-                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
-              ))}
-            </div>
+          {newApps.length > 0 ? (
+            <AppRow apps={newApps} onSelect={setSelectedApp} />
           ) : (
             <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-black/5">
               <p className="text-sm font-semibold text-gray-500">
@@ -1257,50 +1107,19 @@ export function HomePageClient({
             </div>
           )}
         </section>
-        )}
 
-        {/* ─── 個人開発ゲーム ─── */}
-        {showGameSection && (
+        {/* ─── ゲームアプリ ─── */}
+        {gamesVisible && gameApps.length > 0 && (
           <section>
             <SectionHeader
               icon={<Gamepad2 className="h-5 w-5 text-violet-500" strokeWidth={2.5} />}
               title={t("ゲームアプリ", "Games")}
               sub={t("ジサップで作られた遊べるゲーム集。ブラウザひとつで今すぐプレイ！", "Games made on Jisapp. Play right now in your browser!")}
-              href="/search?category=ゲーム"
+              href="/category/games"
             />
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {gameApps.map((app) => (
-                <CatalogAppCard key={app.id} app={app} compact onSelect={setSelectedApp} />
-              ))}
-            </div>
+            <AppRow apps={gameApps} onSelect={setSelectedApp} />
           </section>
         )}
-
-        {/* ─── アプリリクエスト ─── */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <SectionHeader
-              icon={<Heart className="h-5 w-5 text-rose-500" />}
-              title={t("こんなアプリが欲しい！リクエスト", "App requests")}
-              sub={t("作ってほしいアプリをリクエスト。ジサップユーザーがAIで作ってくれるかも", "Ask for an app you want. Someone on Jisapp might build it with AI")}
-              href="/requests"
-            />
-          </div>
-          <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 p-6 ring-1 ring-rose-100 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex-1 text-center sm:text-left">
-                <p className="font-bold text-gray-800 text-sm">{t("「こんなゲームが欲しい」「こんなツールがあったら便利」", "“I want a game like this” · “A tool like this would help”")}</p>
-                <p className="mt-1 text-xs text-gray-500">{t("リクエストを投稿すると、他のジサップユーザーがAIで作って返信してくれます。", "Post a request and other Jisapp users may build it with AI and reply.")}</p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <Link href="/requests"
-                  className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-rose-600 transition-colors">
-                  {t("リクエストを見る", "See requests")} <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* ─── 他の開発環境との違い ─── */}
         <section className="py-2">

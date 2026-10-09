@@ -48,14 +48,14 @@ export function MiniPreview({
     if (live !== "always") return;
     const el = containerRef.current;
     if (!el) return;
+    // 画面に近づいたら読み込み、画面から離れたら片付ける（動いているプレビューが増え続けて、
+    // スマホのメモリが足りなくなりページごと落ちるのを防ぐ）
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
+        setInView(entry.isIntersecting);
+        if (!entry.isIntersecting) setLoaded(false);
       },
-      { rootMargin: "300px" }
+      { rootMargin: "200px" }
     );
     observer.observe(el);
     return () => observer.disconnect();

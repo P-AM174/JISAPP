@@ -12,6 +12,7 @@ import {
   type AppDataWarning,
 } from "@/lib/app-data-limits";
 import { decodeAppDataValue } from "@/lib/app-data-codec-server";
+import { keepHistoryBeforeDelete, keepHistoryBeforeOverwrite } from "@/lib/app-data-history";
 import { isStorageLimitExempt } from "@/lib/app-data-exemptions";
 import { notifyStorageAlmostFull, notifyStorageFull } from "@/lib/notifications/storage-notices";
 
@@ -29,15 +30,28 @@ function limitError(code: AppDataLimitCode) {
 }
 const LIBRARY_KEY = "__in_library__";
 
-async function isAppInLibrary(userId: string, appId: string): Promise<boolean> {
-  const { data } = await supabase
+/** マイライブラリに入っているか。確かめられなかったとき（データベースのエラー）は null */
+async function isAppInLibrary(userId: string, appId: string): Promise<boolean | null> {
+  const { data, error } = await supabase
     .from("app_user_data")
     .select("app_id")
     .eq("user_id", userId)
     .eq("app_id", appId)
     .eq("data_key", LIBRARY_KEY)
     .maybeSingle();
+  if (error) {
+    console.error("[app-data] library check", error.message);
+    return null;
+  }
   return !!data;
+}
+
+/**
+ * 読み込みに失敗したことを、はっきりエラーで返す。
+ * 「データなし（value: null）」と返すと、多くのアプリが空の状態で始め、次の保存で元のデータを上書きしてしまうため
+ */
+function loadFailed(status: number, extra: Record<string, unknown> = {}) {
+  return NextResponse.json({ error: "保存データを読み込めませんでした", ...extra }, { status });
 }
 
 async function getUserId(): Promise<string | null> {
@@ -53,7 +67,8 @@ async function getUserId(): Promise<string | null> {
 export async function GET(req: Request) {
   const userId = await getUserId();
   if (!userId) {
-    return NextResponse.json({ value: null, logged_in: false });
+    // クラウドから読むのはログインしている画面だけ。ここで分からないのは、ログインの確認に失敗したとき
+    return loadFailed(401, { logged_in: false });
   }
 
   const { searchParams } = new URL(req.url);
@@ -69,8 +84,10 @@ export async function GET(req: Request) {
   }
 
   const inLibrary = await isAppInLibrary(userId, appId);
+  if (inLibrary === null) return loadFailed(503, { logged_in: true });
   if (!inLibrary) {
-    return NextResponse.json({ value: null, logged_in: true, in_library: false });
+    // 画面はマイライブラリに入っていると思って読みに来ている。食い違いなので、データなしではなくエラーにする
+    return loadFailed(409, { logged_in: true, in_library: false });
   }
 
   const { data, error } = await supabase
@@ -83,7 +100,7 @@ export async function GET(req: Request) {
 
   if (error) {
     console.error("[app-data GET]", error);
-    return NextResponse.json({ value: null, logged_in: true });
+    return loadFailed(503, { logged_in: true });
   }
 
   // 圧縮して保存したデータは、ここで元に戻して返す（ブラウザの対応状況に関係なく読めるように）
@@ -134,6 +151,9 @@ export async function POST(req: Request) {
   if (problem && !(exempt && problem === "too_large")) return limitError(problem);
 
   const inLibrary = await isAppInLibrary(userId, appId);
+  if (inLibrary === null) {
+    return NextResponse.json({ error: "保存できませんでした。少し待ってからもう一度試してください", logged_in: true }, { status: 503 });
+  }
   if (!inLibrary) {
     return NextResponse.json(
       {
@@ -161,6 +181,9 @@ export async function POST(req: Request) {
     await notifyStorageFull(userId);
     return limitError("quota_exceeded");
   }
+
+  // 上書きする前の内容を、必要に応じて履歴に残す（万一の事故のときに戻せるように）
+  await keepHistoryBeforeOverwrite(supabase, userId, appId, key, value ?? null);
 
   const { error } = await supabase
     .from("app_user_data")
@@ -211,7 +234,7 @@ export async function DELETE(req: Request) {
 
   const { data: rows, error: selectError } = await supabase
     .from("app_user_data")
-    .select("data_key")
+    .select("data_key, data_value, updated_at")
     .eq("user_id", userId)
     .eq("app_id", appId);
   if (selectError) {
@@ -220,6 +243,8 @@ export async function DELETE(req: Request) {
 
   const keys = (rows ?? []).map((r) => r.data_key).filter((key) => !isReservedDataKey(key));
   if (keys.length > 0) {
+    // 消す前の内容を履歴に残す（30日間。間違えて消したときに戻せるように）
+    await keepHistoryBeforeDelete(supabase, userId, appId, (rows ?? []).filter((r) => keys.includes(r.data_key)));
     const { error } = await supabase
       .from("app_user_data")
       .delete()

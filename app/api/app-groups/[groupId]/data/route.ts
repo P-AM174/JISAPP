@@ -118,12 +118,17 @@ export async function POST(req: Request, ctx: Ctx) {
 
     case "get": {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
-      const { data } = await client
+      const { data, error: getError } = await client
         .from("app_group_values")
         .select("data_value")
         .eq("group_id", groupId)
         .eq("data_key", body.key)
         .maybeSingle();
+      // 読めなかったときに「データなし」と返すと、アプリが空の状態でみんなのデータを上書きしてしまうので、エラーにする
+      if (getError) {
+        console.error("[app-groups data get]", getError.message);
+        return NextResponse.json({ error: "グループのデータを読み込めませんでした" }, { status: 503 });
+      }
       return NextResponse.json({ result: data ? parseValue(data.data_value as string) : null });
     }
 
@@ -149,13 +154,17 @@ export async function POST(req: Request, ctx: Ctx) {
 
     case "list": {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
-      const { data: items } = await client
+      const { data: items, error: listError } = await client
         .from("app_group_items")
         .select("id, data_value, author_id, created_at")
         .eq("group_id", groupId)
         .eq("data_key", body.key)
         .order("created_at", { ascending: true })
         .limit(GROUP_LIMITS.itemsPerKey);
+      if (listError) {
+        console.error("[app-groups data list]", listError.message);
+        return NextResponse.json({ error: "グループのデータを読み込めませんでした" }, { status: 503 });
+      }
       const { data: members } = await client
         .from("app_group_members")
         .select("id, display_name")

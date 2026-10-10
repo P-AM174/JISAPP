@@ -242,6 +242,15 @@ export function useZisupBridge(
 ) {
   /** アプリが onChange で見張っているキー */
   const watchedKeysRef = useRef<Set<string>>(new Set());
+  /**
+   * この画面でクラウドからの読み込みに失敗したキー。
+   * 多くのアプリは読み込みに失敗すると空の状態で始め、次の保存で元のデータを上書きしてしまう。
+   * そのため、ここに入っているキーは、保存の前にクラウドを確かめ直し、データがあれば保存を止める
+   */
+  const loadFailedKeysRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    loadFailedKeysRef.current = new Set();
+  }, [appId, cloudUserId]);
   /** すぐに確かめ直すための合図（アプリが書き込んだとき） */
   const pollNowRef = useRef<(() => void) | null>(null);
 
@@ -334,15 +343,37 @@ export function useZisupBridge(
             return;
           }
         }
+        // グループの値を読めなかったキーは、上書きする前に確かめ直す（空の状態でみんなのデータを消さない）
+        const sharedKey = `shared:${msg.key ?? ""}`;
+        if (group && msg.op === "set" && loadFailedKeysRef.current.has(sharedKey)) {
+          let hasData = true;
+          try {
+            hasData = (await callGroupData(group, { op: "get", key: msg.key })) != null;
+          } catch {
+            hasData = true;
+          }
+          if (hasData) {
+            const message = tx(
+              "グループのデータを読み込めていないため、みんなのデータを上書きしないよう保存を止めました。通信を確かめてから、ページを読み込み直してください",
+              "The group's data couldn't be loaded, so saving was stopped to avoid overwriting everyone's data. Check your connection and reload the page"
+            );
+            notifyAppDataError(message);
+            send(id, null, message);
+            return;
+          }
+          loadFailedKeysRef.current.delete(sharedKey);
+        }
         try {
           const result = group
             ? await callGroupData(group, { op: msg.op, key: msg.key, value: msg.value, itemId: msg.itemId })
             : localShared(appId, msg);
+          if (msg.op === "get") loadFailedKeysRef.current.delete(sharedKey);
           send(id, JSON.stringify(result ?? null));
           // 自分が書き込んだら、他のメンバーの返事も来やすいので確認の間隔を短く戻す
           if (msg.op === "set" || msg.op === "add" || msg.op === "remove") pollNowRef.current?.();
         } catch (err) {
           const message = err instanceof Error ? err.message : tx("共有データのエラー", "Shared data error");
+          if (msg.op === "get") loadFailedKeysRef.current.add(sharedKey);
           if (msg.op === "set" || msg.op === "add") notifyAppDataError(message);
           send(id, null, message);
         }
@@ -388,6 +419,25 @@ export function useZisupBridge(
           return;
         }
         if (cloudUserId) {
+          // 読み込みに失敗していたキーは、上書きする前にクラウドを確かめ直す（空の状態での上書きを防ぐ）
+          if (loadFailedKeysRef.current.has(key)) {
+            let cloudHasData = true;
+            try {
+              cloudHasData = (await loadFromCloud(appId, key)) !== null;
+            } catch {
+              cloudHasData = true; // 確かめられないときも、念のため保存しない
+            }
+            if (cloudHasData) {
+              const message = tx(
+                "保存データを読み込めていないため、元のデータを上書きしないよう保存を止めました。通信を確かめてから、ページを読み込み直してください",
+                "Your saved data couldn't be loaded, so saving was stopped to avoid overwriting it. Check your connection and reload the page"
+              );
+              notifyAppDataError(message);
+              send(id, null, message);
+              return;
+            }
+            loadFailedKeysRef.current.delete(key);
+          }
           try {
             await saveToCloud(appId, key, value ?? "");
             removeLocalValue(appId, key);
@@ -426,8 +476,10 @@ export function useZisupBridge(
                 cloudValue = localValue;
               }
             }
+            loadFailedKeysRef.current.delete(key);
             send(id, cloudValue);
           } catch (err) {
+            loadFailedKeysRef.current.add(key);
             send(id, null, err instanceof Error ? err.message : tx("読み込みエラー", "Load error"));
           }
         } else {

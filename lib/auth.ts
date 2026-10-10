@@ -45,13 +45,20 @@ export const authOptions: NextAuthOptions = {
       const refresh = account?.provider === "google" || trigger === "update" || token.usernameSet === undefined;
       const email = user?.email ?? (refresh ? (token.email as string | undefined) : undefined);
       if (email) {
-        const dbUser = await findUserByEmail(email);
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.role = dbUser.role;
-          // 本人がジサップ用の名前を決めるまでは、名前を出さない（Google の名前＝本名を表に出さないため）
-          token.name = dbUser.usernameSet ? dbUser.name : null;
-          token.usernameSet = dbUser.usernameSet;
+        // データベースが一時的に読めなくても、ログインそのものは崩さない（今のトークンのまま続ける）。
+        // ここで失敗してログインが外れると、アプリの保存データを読めず、空の状態で上書きされる事故につながるため
+        try {
+          const dbUser = await findUserByEmail(email);
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.role = dbUser.role;
+            // 本人がジサップ用の名前を決めるまでは、名前を出さない（Google の名前＝本名を表に出さないため）
+            token.name = dbUser.usernameSet ? dbUser.name : null;
+            token.usernameSet = dbUser.usernameSet;
+          }
+        } catch (e) {
+          console.error("[auth] jwt refresh", e instanceof Error ? e.message : e);
+          if (user) throw e; // ログインした瞬間（id がまだない）だけは、失敗として扱う
         }
       }
       return token;
@@ -61,7 +68,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
         session.user.name = token.name;
-        (session.user as { usernameSet?: boolean }).usernameSet = token.usernameSet === true;
+        // 分からないとき（古いトークン）は「決めた」扱いにして、画面をふさがない。決めていない人は次の読み直しで false になる
+        (session.user as { usernameSet?: boolean }).usernameSet = token.usernameSet !== false;
       }
       return session;
     },

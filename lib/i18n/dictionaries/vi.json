@@ -7363,5 +7363,240 @@
     "vi": "Không tìm thấy người dùng",
     "reviewed": false,
     "en": "User not found"
+  },
+  "書き終わった → コピーOK": {
+    "vi": "Viết xong → sao chép được",
+    "reviewed": false,
+    "en": "Finished → copy now"
+  },
+  "書いている途中 → まだ": {
+    "vi": "Đang viết → chưa được",
+    "reviewed": false,
+    "en": "Still writing → wait"
+  },
+  "コピーする前に、AIが<b>最後まで書き終わった</b>か確かめる": {
+    "vi": "Trước khi sao chép, hãy chắc chắn AI đã <b>viết xong hoàn toàn</b>",
+    "reviewed": false,
+    "en": "Before copying, make sure the AI has <b>completely finished</b>"
+  },
+  "AIの文字が動かなくなった": {
+    "vi": "Chữ của AI đã ngừng chạy",
+    "reviewed": false,
+    "en": "The AI's text has stopped moving"
+  },
+  "送信ボタンが「■（停止）」から元の「↑」に戻った": {
+    "vi": "Nút gửi đã trở lại “↑” (không còn là “■” dừng)",
+    "reviewed": false,
+    "en": "The send button is back to “↑” (not “■” stop)"
+  },
+  "コードの最後が {tag} で終わっている": {
+    "vi": "Code kết thúc bằng {tag}",
+    "reviewed": false,
+    "en": "The code ends with {tag}"
+  },
+  "書いている途中にコピーを押すと、コピーできていません。そのまま貼ると、前にコピーしたもの（プロンプトなど）が貼られます。": {
+    "vi": "Nếu bấm sao chép khi AI vẫn đang viết thì sẽ không sao chép được, và khi dán sẽ dán nội dung bạn đã sao chép trước đó (như câu lệnh).",
+    "reviewed": false,
+    "en": "If you press copy while it's still writing, nothing is copied, and you'll paste whatever you copied before (like the prompt)."
+  },
+  "ジサップで「{title}」を作った！遊んでみて👇\n{url}\n#ジサップ #個人開発": {
+    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé 👇\n{url}\n#Jisapp",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it 👇\n{url}\n#Jisapp #buildinpublic"
+  },
+  "上書きしました": {
+    "vi": "Đã cập nhật",
+    "reviewed": false,
+    "en": "Updated"
+  },
+  "出品しました": {
+    "vi": "Đã đăng",
+    "reviewed": false,
+    "en": "Published"
+  },
+  "URLを発行しました": {
+    "vi": "Đã tạo URL",
+    "reviewed": false,
+    "en": "Your URL is ready"
+  },
+  "新しくなりました！": {
+    "vi": "Đã cập nhật xong!",
+    "reviewed": false,
+    "en": "It's updated!"
+  },
+  "完成！": {
+    "vi": "Hoàn thành!",
+    "reviewed": false,
+    "en": "It's done!"
+  },
+  "ジサップで「{title}」を作った！遊んでみて": {
+    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it"
+  },
+  "友だちに送って遊んでもらう": {
+    "vi": "Gửi cho bạn bè chơi thử",
+    "reviewed": false,
+    "en": "Send it to friends to try"
+  },
+  "コピーしました。SNSに貼って投稿できます": {
+    "vi": "Đã sao chép. Dán vào bài đăng mạng xã hội nhé",
+    "reviewed": false,
+    "en": "Copied. Paste it into a post"
+  },
+  "SNSに投稿する文をコピー": {
+    "vi": "Sao chép nội dung để đăng mạng xã hội",
+    "reviewed": false,
+    "en": "Copy a post for social media"
+  },
+  "ログインしないと、このアプリはあとから直せません": {
+    "vi": "Nếu không đăng nhập, bạn sẽ không sửa được app này sau này",
+    "reviewed": false,
+    "en": "Without signing in, you can't edit this app later"
+  },
+  "今ログインすると、このアプリはそのままあなたの作品になります。": {
+    "vi": "Đăng nhập ngay bây giờ, app này sẽ trở thành của bạn.",
+    "reviewed": false,
+    "en": "Sign in now and this app becomes yours as it is."
+  },
+  "あとから直して、同じURLのまま上書きできる": {
+    "vi": "Sửa sau và cập nhật mà vẫn giữ nguyên URL",
+    "reviewed": false,
+    "en": "Edit it later and update it at the same URL"
+  },
+  "作ったアプリを、マイプロジェクトでまとめて管理できる": {
+    "vi": "Quản lý tất cả app đã làm trong Dự án của tôi",
+    "reviewed": false,
+    "en": "Keep all your apps in My projects"
+  },
+  "アプリのデータが、ほかの端末にも残る": {
+    "vi": "Dữ liệu app được giữ cả trên thiết bị khác",
+    "reviewed": false,
+    "en": "Your app data stays on your other devices too"
+  },
+  "応援バッジをもらうと、お知らせが届く": {
+    "vi": "Nhận thông báo khi có người cổ vũ app của bạn",
+    "reviewed": false,
+    "en": "Get notified when people cheer for your app"
+  },
+  "Googleでログインして、自分の作品にする": {
+    "vi": "Đăng nhập bằng Google và giữ app này",
+    "reviewed": false,
+    "en": "Sign in with Google and keep it"
+  },
+  "メールアドレスでログイン・登録する": {
+    "vi": "Đăng nhập hoặc đăng ký bằng email",
+    "reviewed": false,
+    "en": "Sign in or sign up with email"
+  },
+  "ジサップで「{title}」を作った！遊んでみて👇\n#ジサップ #個人開発": {
+    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé 👇\n#Jisapp",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it 👇\n#Jisapp #buildinpublic"
+  },
+  "受け付けました。運営がアプリにして、できあがったらメールでお知らせします。": {
+    "vi": "Đã nhận. Đội ngũ Jisapp sẽ làm app và gửi email cho bạn khi xong.",
+    "reviewed": false,
+    "en": "Got it. The Jisapp team will build it and email you when it's ready."
+  },
+  "うまくいかないときは、運営が代わりにアプリにします（無料）": {
+    "vi": "Làm không được? Đội ngũ Jisapp sẽ làm giúp (miễn phí)",
+    "reviewed": false,
+    "en": "Stuck? The Jisapp team can build it for you (free)"
+  },
+  "できあがりを受け取るメールアドレス": {
+    "vi": "Email để nhận app khi xong",
+    "reviewed": false,
+    "en": "Email to receive your app"
+  },
+  "送っています…": {
+    "vi": "Đang gửi…",
+    "reviewed": false,
+    "en": "Sending…"
+  },
+  "運営にアプリを作ってもらう": {
+    "vi": "Nhờ đội ngũ Jisapp làm app",
+    "reviewed": false,
+    "en": "Ask the team to build it"
+  },
+  "送れませんでした。少し待ってからもう一度お試しください。": {
+    "vi": "Không gửi được. Hãy thử lại sau ít phút.",
+    "reviewed": false,
+    "en": "Couldn't send. Please try again in a moment."
+  },
+  "貼った文章を運営が確認して、アプリにしてお届けします。": {
+    "vi": "Đội ngũ Jisapp sẽ đọc nội dung bạn đã dán và gửi app cho bạn.",
+    "reviewed": false,
+    "en": "The team will read the text you pasted and send you the app."
+  },
+  "ログインしている場合、うまく作れなかったときの文章は、頼まなくても運営が確認してお届けすることがあります。": {
+    "vi": " Khi bạn đã đăng nhập, đội ngũ có thể xem nội dung chưa chạy được và gửi app cho bạn dù bạn không nhờ.",
+    "reviewed": false,
+    "en": " When you're signed in, the team may also check text that didn't work and send you an app."
+  },
+  "「{title}」をあなたの作品にしました": {
+    "vi": "“{title}” giờ là app của bạn",
+    "reviewed": false,
+    "en": "“{title}” is now yours"
+  },
+  "マイプロジェクトから、あとで直して上書き公開できます。": {
+    "vi": "Bạn có thể sửa và cập nhật sau trong Dự án của tôi.",
+    "reviewed": false,
+    "en": "You can edit and update it later from My projects."
+  },
+  "マイプロジェクトへ": {
+    "vi": "Đến Dự án của tôi",
+    "reviewed": false,
+    "en": "Go to My projects"
+  },
+  "{ai}が最後まで書き終わってから、返事にあるコードを全部コピー": {
+    "vi": "Khi {ai} đã viết xong hoàn toàn, sao chép toàn bộ code trong câu trả lời",
+    "reviewed": false,
+    "en": "Once {ai} has completely finished, copy all the code in its reply"
+  },
+  "AIが書き終わったら、返ってきたコードを全部コピーして、ジサップに戻って貼り付ける": {
+    "vi": "Khi AI viết xong, sao chép toàn bộ code trả về, quay lại Jisapp và dán vào",
+    "reviewed": false,
+    "en": "When the AI has finished, copy all the code it returns, come back to Jisapp and paste it"
+  },
+  "AIが書き終わる前に、コピーを押したようです": {
+    "vi": "Có vẻ bạn đã bấm sao chép trước khi AI viết xong",
+    "reviewed": false,
+    "en": "It looks like you pressed copy before the AI finished"
+  },
+  "貼られたのは、さっきジサップでコピーしたプロンプトです。AIが書いている途中にコピーを押すとコピーできず、前にコピーしたものが貼られます。": {
+    "vi": "Nội dung vừa dán là câu lệnh bạn đã sao chép từ Jisapp. Nếu bấm sao chép khi AI đang viết thì sẽ không sao chép được, nên nội dung cũ bị dán vào.",
+    "reviewed": false,
+    "en": "What got pasted is the prompt you copied from Jisapp. If you press copy while the AI is still writing, nothing is copied, so the previous copy gets pasted."
+  },
+  "まだコードではなく文章が入っています。AIが最後まで書き終わってから、返事のコードをコピーして貼り直してください。": {
+    "vi": "Đây vẫn là văn bản, chưa phải code. Hãy chờ AI viết xong, rồi sao chép code trong câu trả lời và dán lại.",
+    "reviewed": false,
+    "en": "This is still text, not code. Wait until the AI has finished, then copy the code from its reply and paste it again."
+  },
+  "このアプリはジサップで作られました。あなたも無料で作れる": {
+    "vi": "App này được làm bằng Jisapp. Bạn cũng làm được, miễn phí",
+    "reviewed": false,
+    "en": "Made with Jisapp. You can make one too, free"
+  },
+  "これをもとに作る": {
+    "vi": "Làm từ app này",
+    "reviewed": false,
+    "en": "Make your own"
+  },
+  "自分でも作る": {
+    "vi": "Tự làm app",
+    "reviewed": false,
+    "en": "Make one"
+  },
+  "内容が短すぎます": {
+    "vi": "Nội dung quá ngắn",
+    "reviewed": false,
+    "en": "The text is too short"
+  },
+  "先に、ジサップで表示する名前を決めてください": {
+    "vi": "Hãy chọn tên hiển thị trên Jisapp trước",
+    "reviewed": false,
+    "en": "Choose your name on Jisapp first"
   }
 }

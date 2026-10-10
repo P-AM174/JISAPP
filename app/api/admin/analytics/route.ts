@@ -24,5 +24,29 @@ export async function GET(req: NextRequest) {
       { status: 503 }
     );
   }
-  return NextResponse.json({ days, summary: summary.data ?? [], vnMonthly: vn.data ?? [] });
+  // 開発スタジオの貼り付けの内訳（動いた・さっきのプロンプト・文章・途中で切れた）と、国別の訪問
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const [pastes, views] = await Promise.all([
+    supabase.from("analytics_events").select("props").eq("name", "studio_paste").gte("created_at", since).limit(20000),
+    supabase.from("analytics_events").select("country, session_id").eq("name", "page_view").gte("created_at", since).limit(50000),
+  ]);
+  const pasteBreakdown: Record<string, number> = {};
+  for (const r of (pastes.data ?? []) as { props: { ok?: boolean; issue?: string } | null }[]) {
+    // 内訳を数え始める前の記録は「動いた／動かなかった」だけ
+    const k = r.props?.issue ?? (r.props?.ok ? "none" : "unknown");
+    pasteBreakdown[k] = (pasteBreakdown[k] ?? 0) + 1;
+  }
+  const byCountry = new Map<string, { views: number; sessions: Set<string> }>();
+  for (const r of (views.data ?? []) as { country: string | null; session_id: string | null }[]) {
+    const c = r.country ?? "??";
+    const v = byCountry.get(c) ?? { views: 0, sessions: new Set<string>() };
+    v.views++;
+    if (r.session_id) v.sessions.add(r.session_id);
+    byCountry.set(c, v);
+  }
+  const countries = [...byCountry.entries()]
+    .map(([country, v]) => ({ country, views: v.views, visits: v.sessions.size }))
+    .sort((a, b) => b.visits - a.visits)
+    .slice(0, 30);
+  return NextResponse.json({ days, summary: summary.data ?? [], vnMonthly: vn.data ?? [], pasteBreakdown, countries });
 }

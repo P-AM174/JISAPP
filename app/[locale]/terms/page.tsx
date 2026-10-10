@@ -61,6 +61,13 @@ function TermsJa() {
         CORSで直接接続できない場合は window.Jisapp.fetch を利用してください。
         ブラウザ内で完結するツール、外部API連携、window.Jisapp API によるデータ保存が利用できます（以前の名前 window.Zisup も使えます）。
       </p>
+      <h2 className="text-base font-bold text-gray-900">開発スタジオでうまく作れなかったとき</h2>
+      <p>
+        ログインして開発スタジオを使っているとき、コードではなく文章（AIに送るプロンプトなど）が貼られ、そのまま動くアプリにならなかった場合は、
+        運営がその文章を確認し、代わりにアプリにしてメールでお届けすることがあります。
+        ログインしていない場合は、「運営にアプリを作ってもらう」を押してメールアドレスを書いたときだけ、文章とメールアドレスを受け取ります。
+        受け取った文章は、アプリを作ってお届けするためだけに使います。
+      </p>
       <h2 className="text-base font-bold text-gray-900">出品・購入</h2>
       <p>
         出品物のソースコードは、購入完了後または無料公開の条件を満たした場合にのみ配布されます。
@@ -117,6 +124,13 @@ function TermsEn() {
         Apps run inside a sandbox and can communicate with external APIs over HTTPS. If an API can&apos;t be reached
         directly because of CORS, use window.Jisapp.fetch. You can build tools that run entirely in the browser,
         connect to external APIs, and save data with the window.Jisapp API (the older name window.Zisup also works).
+      </p>
+      <h2 className="text-base font-bold text-gray-900">When an app doesn&apos;t come together in the Studio</h2>
+      <p>
+        If you are signed in and text (such as a prompt for the AI) is pasted into the Studio instead of code, and it
+        doesn&apos;t become a working app, the Jisapp team may read that text, build the app for you, and send it by email.
+        If you are not signed in, we receive the text and your email address only when you press “Ask the team to build
+        it” and enter your email. We use the text only to build and send you the app.
       </p>
       <h2 className="text-base font-bold text-gray-900">Publishing and purchasing</h2>
       <p>

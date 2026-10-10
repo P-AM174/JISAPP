@@ -29,6 +29,8 @@ export default function AdminAnalyticsPage() {
   const [days, setDays] = useState(30);
   const [rows, setRows] = useState<Row[]>([]);
   const [vn, setVn] = useState<VnRow[]>([]);
+  const [pastes, setPastes] = useState<Record<string, number>>({});
+  const [countries, setCountries] = useState<{ country: string; views: number; visits: number }[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -41,6 +43,8 @@ export default function AdminAnalyticsPage() {
       if (!res.ok) throw new Error(json.error ?? "読み込めませんでした");
       setRows(json.summary);
       setVn(json.vnMonthly);
+      setPastes(json.pasteBreakdown ?? {});
+      setCountries(json.countries ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "読み込めませんでした");
     } finally {
@@ -170,7 +174,58 @@ export default function AdminAnalyticsPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="mt-2 text-xs text-gray-400">日本語ページの「ページ表示」は、ベトナムからのアクセスだけ数えています</p>
+              <p className="mt-2 text-xs text-gray-400">日本語ページの「ページ表示」は、2026-10-10 から数えています（それより前はベトナムからのアクセスだけ）</p>
+            </section>
+
+            <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
+              <h2 className="font-bold text-gray-900">開発スタジオの貼り付けの内訳</h2>
+              {(() => {
+                const LABEL: Record<string, string> = {
+                  none: "動いた",
+                  own_prompt: "さっきのプロンプトを貼った（AIが書き終わる前にコピー）",
+                  prompt: "AIに送る文章（プロンプト）を貼った",
+                  not_html: "コードではない文章を貼った",
+                  truncated: "コードが途中で切れていた",
+                  unknown: "動かなかった（内訳を数え始める前）",
+                };
+                const total = Object.values(pastes).reduce((a, b) => a + b, 0);
+                const list = Object.entries(pastes).sort((a, b) => b[1] - a[1]);
+                return total === 0 ? (
+                  <p className="mt-2 text-sm text-gray-500">まだ記録がありません</p>
+                ) : (
+                  <ul className="mt-3 space-y-1.5 text-sm">
+                    {list.map(([k, n]) => (
+                      <li key={k} className="flex items-center gap-3">
+                        <span className="w-14 text-right font-bold tabular-nums">{n.toLocaleString()}</span>
+                        <span className="w-12 text-right text-xs text-gray-400 tabular-nums">{Math.round((n / total) * 100)}%</span>
+                        <span className={k === "none" ? "text-emerald-700" : "text-gray-700"}>{LABEL[k] ?? k}</span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+            </section>
+
+            <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
+              <h2 className="font-bold text-gray-900">国別の訪問（ページ表示）</h2>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[320px] text-sm">
+                  <thead className="text-left text-xs text-gray-500">
+                    <tr><th className="py-1">国</th><th>訪問数</th><th>ページ表示</th></tr>
+                  </thead>
+                  <tbody>
+                    {countries.map((c) => (
+                      <tr key={c.country} className="border-t border-gray-100">
+                        <td className="py-1.5">{c.country}</td>
+                        <td>{c.visits.toLocaleString()}</td>
+                        <td>{c.views.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {countries.length === 0 && <p className="mt-2 text-sm text-gray-500">まだ記録がありません</p>}
+              </div>
+              <p className="mt-2 text-xs text-gray-400">国は Vercel が判定した2文字の国コード（JP=日本、IN=インド、GB=イギリス、IR=イラン など）</p>
             </section>
 
             <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">

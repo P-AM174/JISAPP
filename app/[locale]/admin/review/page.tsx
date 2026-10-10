@@ -16,6 +16,7 @@ import { AppRunner } from "@/components/app-runner";
 import { looksLikePrompt } from "@/lib/playground/code-cleanup";
 import type { AdminAppStats } from "@/lib/admin/app-stats";
 import { SnsFeaturedPanel } from "@/components/admin/sns-featured-panel";
+import { StuckPromptsPanel } from "@/components/admin/stuck-prompts-panel";
 
 type AppSort = "new" | "opens" | "recent" | "data";
 
@@ -1055,6 +1056,8 @@ export default function AdminDashboard() {
           <>
             {/* トップページ（日本語）と特集ページに出す「SNSで紹介したアプリ」 */}
             <SnsFeaturedPanel candidates={products} notify={notify} />
+            {/* 開発スタジオでプロンプトを貼ったまま、アプリにならなかった人（運営がアプリにして届ける） */}
+            <StuckPromptsPanel notify={notify} />
             <div className="flex flex-wrap items-center gap-3">
               <SectionTitle icon={Smartphone} title="アプリ管理" />
               <Segmented

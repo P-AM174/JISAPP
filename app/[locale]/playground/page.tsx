@@ -46,7 +46,6 @@ import { useSession } from "next-auth/react";
 import { CATEGORIES } from "@/lib/categories";
 import { CategoryIcon } from "@/lib/category-icon";
 import { AppRunner } from "@/components/app-runner";
-import { ShareButtonRow, AppUrlCopyField } from "@/components/share-button";
 import { JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   getSecretsStudioGuide,
@@ -63,6 +62,10 @@ import { PromptBuilderModal } from "@/components/playground/prompt-builder-modal
 import { EmbeddedSecretWarningModal } from "@/components/playground/embedded-secret-warning-modal";
 import { StorageChangeWarningModal } from "@/components/playground/storage-change-warning-modal";
 import { RemixGuideModal, isRemixGuideHidden } from "@/components/playground/remix-guide-modal";
+import { DoneSigns } from "@/components/playground/done-signs";
+import { PublishSuccess } from "@/components/playground/publish-success";
+import { StuckRequest } from "@/components/playground/stuck-request";
+import { rememberGuestClaim } from "@/components/guest-claim-gate";
 import { GUEST_NICKNAME_MAX, guestNickname } from "@/lib/guest-name";
 
 const GUEST_NICK_KEY = "jisapp_guest_nickname";
@@ -88,8 +91,7 @@ import {
   normalizePastedCode,
   usesStudioSecrets,
   usesLocalStorageOnly,
-  storageFixMessage,
-} from "@/lib/playground/code-cleanup";
+  storageFixMessage, looksLikePrompt } from "@/lib/playground/code-cleanup";
 import { copyText, copyTextNow, findStudioAi, type StudioAi } from "@/lib/playground/ai-launch";
 import { getSampleAppHtml, isSampleAppHtml } from "@/lib/playground/sample-app";
 import { usesSharedData } from "@/lib/groups/client";
@@ -531,6 +533,8 @@ function PasteIssueModal({
   onPasteAgain,
   onCopyRetry,
   onDiscard,
+  ownPrompt = false,
+  extra,
 }: {
   issue: CodeIssue;
   onClose: () => void;
@@ -538,14 +542,25 @@ function PasteIssueModal({
   onCopyRetry: () => void;
   /** 貼った文章を消して、AIのチャットに戻ってもらう */
   onDiscard: () => void;
+  /** 貼ったのが、さっきジサップでコピーしたプロンプトそのものだった（AIが書き終わる前にコピーを押した） */
+  ownPrompt?: boolean;
+  /** 下に足す内容（運営にアプリを作ってもらう、など） */
+  extra?: ReactNode;
 }) {
   const t = useT();
   // コードではなく文章（自分がAIに送ったプロンプトなど）が貼られたとき
   const isText = issue === "prompt" || issue === "not_html";
-  const title = isText
+  const title = ownPrompt
+    ? t("AIが書き終わる前に、コピーを押したようです", "It looks like you pressed copy before the AI finished")
+    : isText
     ? t("これはコードではなく、AIに送った文章のようです", "This looks like the message you sent to the AI, not code")
     : t("コードが最後まで出力されていないようです", "The code doesn’t seem to be complete");
-  const lead = isText
+  const lead = ownPrompt
+    ? t(
+        "貼られたのは、さっきジサップでコピーしたプロンプトです。AIが書いている途中にコピーを押すとコピーできず、前にコピーしたものが貼られます。",
+        "What got pasted is the prompt you copied from Jisapp. If you press copy while the AI is still writing, nothing is copied, so the previous copy gets pasted."
+      )
+    : isText
     ? t(
         "AIのチャットで、自分が送った文章のコピーボタンを押していませんか？",
         "Did you press the copy button under your own message in the AI chat?"
@@ -560,7 +575,7 @@ function PasteIssueModal({
   if (isText) {
     return (
       <div className="fixed inset-0 z-[480] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
-        <div role="alertdialog" aria-modal="true" aria-label={title} className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div role="alertdialog" aria-modal="true" aria-label={title} className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
           <div className="bg-gradient-to-br from-amber-400 to-orange-500 px-6 py-5 text-white">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/25">
               <TriangleAlert className="h-7 w-7" strokeWidth={2.5} />
@@ -568,7 +583,8 @@ function PasteIssueModal({
             <h2 className="mt-3 text-lg font-black leading-snug">{title}</h2>
             <p className="mt-1 text-sm text-white/90">{lead}</p>
           </div>
-          <div className="space-y-4 p-6">
+          <div className="min-h-0 space-y-4 overflow-y-auto p-6">
+            <DoneSigns compact={!ownPrompt} />
             <ol className="space-y-3 text-sm text-slate-700">
               <li className="flex gap-2.5">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-black text-white">1</span>
@@ -599,6 +615,7 @@ function PasteIssueModal({
                 {t("このまま動かす", "Run it anyway")}
               </button>
             </div>
+            {extra}
           </div>
         </div>
       </div>
@@ -622,31 +639,7 @@ function PasteIssueModal({
           <p className="mt-1 text-sm text-white/90">{lead}</p>
         </div>
         <div className="space-y-4 p-6">
-          <div>
-            <p className="text-sm font-bold text-slate-800">
-              {t("AIの画面で、コードが最後まで出力されたか確認してください", "Check in the AI app that all the code has been written")}
-            </p>
-            <ul className="mt-2 space-y-2 text-sm text-slate-600">
-              <li className="flex gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{t("AIが文字を書き続けていないか（止まるまで待ってください）", "The AI has stopped writing (wait until it does)")}</span>
-              </li>
-              <li className="flex gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                <span>
-                  {rich(
-                    t("コードの最後が {tag} で終わっているか", "The code ends with {tag}"),
-                    {},
-                    { tag: <code className="rounded bg-slate-100 px-1 text-xs">&lt;/html&gt;</code> }
-                  )}
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                <span>{t("書き終わってから、コードの欄のコピーボタンを押す", "Press the code block’s copy button only after it’s done")}</span>
-              </li>
-            </ul>
-          </div>
+          <DoneSigns compact />
           {issue === "truncated" && (
             <button
               type="button"
@@ -673,6 +666,20 @@ function PasteIssueModal({
       </div>
     </div>
   );
+}
+
+/** 最後に作ったプロンプト（「さっきのプロンプトを貼った」の見分けに使う） */
+const LAST_PROMPT_KEY = "jisapp_last_prompt";
+const squash = (s: string) => s.replace(/s+/g, "");
+/** 貼ったものが、ジサップで作ったプロンプト（の一部）か */
+function isOwnPrompt(pasted: string): boolean {
+  let last = "";
+  try { last = localStorage.getItem(LAST_PROMPT_KEY) ?? ""; } catch { /* noop */ }
+  if (!last) return false;
+  const a = squash(pasted), b = squash(last);
+  if (a.length < 20) return false;
+  const head = (x: string) => x.slice(0, 120);
+  return b.includes(head(a)) || a.includes(head(b));
 }
 
 // ─── メインページ ───
@@ -747,6 +754,7 @@ export default function PlaygroundPage() {
   /** 運営モード（?official=1）：ジサップ公式のアカウントとして出品する。運営としてログインしているときだけ */
   const [officialName, setOfficialName]       = useState<string | null>(null);
   const officialMode = officialName !== null;
+  useEffect(() => { isLoggedInRef.current = isLoggedIn; }, [isLoggedIn]);
   /** ログインせずに公開するときのニックネーム（必須。作者名は「ニックネーム（ゲスト）」になる）。端末に覚えておく */
   const [guestNick, setGuestNick] = useState("");
   useEffect(() => {
@@ -789,6 +797,11 @@ export default function PlaygroundPage() {
   const [localNoticeClosed, setLocalNoticeClosed] = useState(false);
   /** 貼り付けた直後に見つかった問題（AIの出力が終わる前にコピーした可能性） */
   const [pasteIssue, setPasteIssue]       = useState<CodeIssue | null>(null);
+  /** 貼ったのが、さっきジサップでコピーしたプロンプトだった */
+  const [pastedOwnPrompt, setPastedOwnPrompt] = useState(false);
+  /** 運営に残した「あきらめたプロンプト」の ID（そのあと動くコードが貼られたら、外す） */
+  const stuckIdRef = useRef<string | null>(null);
+  const isLoggedInRef = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const leftForAiRef = useRef(false);
 
@@ -911,6 +924,11 @@ export default function PlaygroundPage() {
   const handlePublish = async () => {
     const title = publishTitle.trim() || t("開発スタジオアプリ", "Studio app");
     if (!code.trim() || publishing) return;
+    // コードではなく文章（プロンプトなど）のままでは公開しない
+    if (looksLikePrompt(code)) {
+      setPublishError(t("まだコードではなく文章が入っています。AIが最後まで書き終わってから、返事のコードをコピーして貼り直してください。", "This is still text, not code. Wait until the AI has finished, then copy the code from its reply and paste it again."));
+      return;
+    }
     if (publishListed && !publishCategory) {
       setToast({ msg: t("カテゴリを選択してください", "Please choose a category"), show: true });
       setTimeout(() => setToast({ msg: "", show: false }), 3000);
@@ -977,6 +995,8 @@ export default function PlaygroundPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? (isRepublish ? t("上書きに失敗しました", "Couldn't update the app") : t("出品に失敗しました", "Couldn't publish the app")));
       const appUrl = `${window.location.origin}${localizePath(`/apps/${json.id}`, locale)}`;
+      // ゲストで公開したときは、ログインしたら自分の作品にできるよう、引き継ぎの印を端末に覚えておく
+      if (json.claim_token) rememberGuestClaim({ appId: json.id, token: json.claim_token, title });
       setPublishedUrl(appUrl);
       trackEvent("publish", { mode: publishListed ? "listed" : "url_only", overwrite: overwriting });
       setLastPublishWasOverwrite(overwriting);
@@ -1262,14 +1282,28 @@ export default function PlaygroundPage() {
     setIframeKey((k) => k + 1);
     // AIの返事が終わる前にコピーした（指示文・説明文・途中までのコード）ときは、はっきり知らせる
     const issue = detectCodeIssue(next);
+    const own = (issue === "prompt" || issue === "not_html") && isOwnPrompt(next);
+    setPastedOwnPrompt(own);
+    // ログインしている人がプロンプトを貼ったままのときは、運営があとでアプリにして届けられるよう残す。
+    // 動くコードが貼られたら「自分でできた」として一覧から外す
+    if ((issue === "prompt" || issue === "not_html") && isLoggedInRef.current) {
+      void fetch("/api/studio/stuck", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: next, locale }) })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { id?: string } | null) => { if (d?.id) stuckIdRef.current = d.id; })
+        .catch(() => {});
+    } else if (!issue && stuckIdRef.current) {
+      const sid = stuckIdRef.current;
+      stuckIdRef.current = null;
+      void fetch("/api/studio/stuck", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: sid }) }).catch(() => {});
+    }
     setPasteIssue(issue);
     setActivePane(issue ? "editor" : "preview");
-    trackEvent("studio_paste", { ok: !issue });
+    trackEvent("studio_paste", { ok: !issue, issue: own ? "own_prompt" : issue ?? "none" });
     if (!issue) trackEvent("preview");
     setAwaitingCode(false);
     setPasteFailed(false);
     setReturned(false);
-  }, [applyCode]);
+  }, [applyCode, locale]);
 
   const handlePasteFromClipboard = async () => {
     let text = "";
@@ -1310,6 +1344,8 @@ export default function PlaygroundPage() {
   /** コピーを試し、できたかどうかを「コピーしました」画面に反映する */
   const copyPromptAndShow = async (prompt: string) => {
     setPromptText(prompt);
+    // あとで「さっきのプロンプトを貼った」と見分けるため、端末に覚えておく
+    try { localStorage.setItem(LAST_PROMPT_KEY, prompt); } catch { /* noop */ }
     const ok = copyTextNow(prompt) || (await copyText(prompt));
     setPromptCopied(ok);
     if (ok) trackEvent("prompt_copy", { via: "studio" });
@@ -2105,6 +2141,8 @@ export default function PlaygroundPage() {
       {pasteIssue && (
         <PasteIssueModal
           issue={pasteIssue}
+          ownPrompt={pastedOwnPrompt}
+          extra={(pasteIssue === "prompt" || pasteIssue === "not_html") ? <StuckRequest prompt={code} isLoggedIn={isLoggedIn} /> : undefined}
           onClose={() => setPasteIssue(null)}
           onPasteAgain={() => {
             setPasteIssue(null);
@@ -2597,116 +2635,62 @@ export default function PlaygroundPage() {
 
             {/* ── 成功後の URL 表示 ── */}
             {publishedUrl ? (
-              <>
-                <div className="shrink-0 bg-emerald-50 px-6 py-5 text-center">
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 shadow-lg shadow-emerald-300">
-                    <CheckCircle2 className="h-7 w-7 text-white" />
-                  </div>
-                  <p className="text-base font-black text-emerald-900">{lastPublishWasOverwrite ? t("上書きしました！", "Updated!") : publishListed ? t("出品しました！", "Published!") : t("URLを発行しました！", "Your URL is ready!")}</p>
-                  <p className="mt-1 text-xs text-emerald-700">{lastPublishWasOverwrite ? t("同じURLで内容が更新されました", "The same URL now shows the new version") : publishListed ? t("マーケットに公開されました", "It's now listed in the market") : t("URLを知っている人だけがアクセスできます", "Only people with the URL can open it")}</p>
-                </div>
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 space-y-4">
-                  {(publishGroupSharing ?? sharesData) && (
-                    <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
-                      <p className="flex items-center gap-1.5 text-sm font-bold text-sky-900">
-                        <Users className="h-4 w-4 shrink-0" />
-                        {t("次は、メンバーを招待しましょう", "Next, invite your members")}
-                      </p>
-                      <ol className="mt-2 space-y-1 text-xs leading-relaxed text-sky-900">
-                        <li>{t("1. 下のボタンでアプリのページを開く", "1. Open the app's page with the button below")}</li>
-                        <li>{t("2. 上の帯の「グループを作る」を押す（ログインが必要です）", "2. Press “Create a group” in the bar at the top (you need to sign in)")}</li>
-                        <li>{t("3. 出てきた招待リンクを、LINEなどでメンバーに送る", "3. Send the invite link to your members by message")}</li>
-                      </ol>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // ?manage=1 で開くと、グループがなければ「グループを作る」、あれば「グループ管理」が開く
-                          try {
-                            router.push(`${new URL(publishedUrl).pathname}?manage=1`);
-                          } catch {
-                            router.push(`${publishedUrl}?manage=1`);
-                          }
-                        }}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 py-2.5 text-sm font-bold text-white shadow-sm hover:from-sky-700 hover:to-teal-700"
-                      >
-                        {t("アプリを開いてグループを作る", "Open the app and create a group")}
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                      format(
-                        t(
-                          "「{title}」をAIと作って公開しました\n#ジサップ #個人開発",
-                          "I made “{title}” with AI and published it\n#Jisapp #buildinpublic"
-                        ),
-                        { title: publishTitle || t("アプリ", "an app") }
-                      )
-                    )}&url=${encodeURIComponent(publishedUrl)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-current">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                    {t("Xでシェアする", "Share on X")}
-                  </a>
-                  <ShareButtonRow
-                    url={publishedUrl}
-                    title={publishTitle}
-                    text={format(t("{publishTitle} | ジサップで作った無料アプリ", "{publishTitle} | a free app made on Jisapp"), { publishTitle })}
-                  />
-                  <div>
-                    <p className="mb-2 text-xs font-bold text-gray-600">{t("アプリの URL", "App URL")}</p>
-                    <AppUrlCopyField url={publishedUrl} className="border border-emerald-200 py-2.5" />
-                  </div>
-                  <p className="text-[11px] text-gray-400">
-                    {t("URLを知っている人なら誰でもアクセス・使用できます", "Anyone with the URL can open and use it")}
-                  </p>
-                  {/* アクションボタン */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setShowPublishModal(false);
-                        setPublishedUrl(null);
-                        setPublishTitle("");
-                        setPublishDesc("");
-                        setPublishCategory("");
-                        setPublishListed(true);
-                        setPublishCodePublic(officialMode);
-                        setPublishGroupSharing(null);
-                      }}
-                      className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-                    >
-                      {t("編集を続ける", "Keep editing")}
-                    </button>
-                    <button
-                      onClick={() => {
-                        try {
-                          const relative = new URL(publishedUrl).pathname;
-                          router.push(relative);
-                        } catch {
-                          router.push(publishedUrl);
-                        }
-                      }}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white hover:bg-emerald-700"
-                    >
-                      {t("アプリを開く", "Open app")}
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                  {/* 公開は済んでいるので、確認なしでトップへ */}
-                  <button
-                    type="button"
-                    onClick={() => router.push("/")}
-                    className="w-full py-1 text-xs font-semibold text-gray-400 transition-colors hover:text-emerald-600"
-                  >
-                    {t("トップに戻る", "Back to home")}
-                  </button>
-                </div>
-              </>
+              <PublishSuccess
+                url={publishedUrl}
+                title={publishTitle}
+                code={code}
+                overwrite={lastPublishWasOverwrite}
+                listed={publishListed}
+                isGuest={!isLoggedIn && !officialMode}
+                groupBlock={
+                  (publishGroupSharing ?? sharesData) && (
+                      <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
+                        <p className="flex items-center gap-1.5 text-sm font-bold text-sky-900">
+                          <Users className="h-4 w-4 shrink-0" />
+                          {t("次は、メンバーを招待しましょう", "Next, invite your members")}
+                        </p>
+                        <ol className="mt-2 space-y-1 text-xs leading-relaxed text-sky-900">
+                          <li>{t("1. 下のボタンでアプリのページを開く", "1. Open the app's page with the button below")}</li>
+                          <li>{t("2. 上の帯の「グループを作る」を押す（ログインが必要です）", "2. Press “Create a group” in the bar at the top (you need to sign in)")}</li>
+                          <li>{t("3. 出てきた招待リンクを、LINEなどでメンバーに送る", "3. Send the invite link to your members by message")}</li>
+                        </ol>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // ?manage=1 で開くと、グループがなければ「グループを作る」、あれば「グループ管理」が開く
+                            try {
+                              router.push(`${new URL(publishedUrl).pathname}?manage=1`);
+                            } catch {
+                              router.push(`${publishedUrl}?manage=1`);
+                            }
+                          }}
+                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 py-2.5 text-sm font-bold text-white shadow-sm hover:from-sky-700 hover:to-teal-700"
+                        >
+                          {t("アプリを開いてグループを作る", "Open the app and create a group")}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )
+                }
+                onKeepEditing={() => {
+                  setShowPublishModal(false);
+                  setPublishedUrl(null);
+                  setPublishTitle("");
+                  setPublishDesc("");
+                  setPublishCategory("");
+                  setPublishListed(true);
+                  setPublishCodePublic(officialMode);
+                  setPublishGroupSharing(null);
+                }}
+                onOpenApp={() => {
+                  try {
+                    router.push(new URL(publishedUrl).pathname);
+                  } catch {
+                    router.push(publishedUrl);
+                  }
+                }}
+                onHome={() => router.push("/")}
+              />
             ) : (
               <>
                 {/* ── 出品フォーム ── */}

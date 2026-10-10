@@ -16,7 +16,8 @@ export async function upsertOAuthUser(input: {
   name?: string | null;
   image?: string | null;
 }) {
-  return prisma.user.upsert({
+  const existed = await findUserByEmail(input.email);
+  const user = await prisma.user.upsert({
     where: { email: input.email.toLowerCase() },
     create: {
       email: input.email.toLowerCase(),
@@ -27,6 +28,16 @@ export async function upsertOAuthUser(input: {
       image: input.image ?? undefined,
     },
   });
+  // Google での新規登録を計測に残す（メールでの登録は画面側で数えている）
+  if (!existed) {
+    try {
+      const { createServerSupabaseClient } = await import("@/lib/supabase-server");
+      await createServerSupabaseClient().from("analytics_events").insert({ name: "signup", props: { method: "google" } });
+    } catch {
+      /* 計測の失敗は無視する */
+    }
+  }
+  return user;
 }
 
 export const USERNAME_MAX = 20;

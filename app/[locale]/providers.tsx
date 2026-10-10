@@ -5,6 +5,7 @@ import type { Session } from "next-auth";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { UsernameSetupGate } from "@/components/username-dialog";
+import { GuestClaimGate } from "@/components/guest-claim-gate";
 import type { Dictionary, Locale } from "@/lib/i18n/config";
 
 export function Providers({
@@ -25,6 +26,8 @@ export function Providers({
         {children}
         {/* Google でログインして、まだジサップ用の名前を決めていない人に名前を決めてもらう */}
         <UsernameSetupGate />
+        {/* ゲストで公開したアプリを、ログインしたら本人の作品にする */}
+        <GuestClaimGate />
       </SessionProvider>
     </LocaleProvider>
   );

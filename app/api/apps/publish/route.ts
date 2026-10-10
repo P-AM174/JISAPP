@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { looksLikePrompt } from "@/lib/playground/code-cleanup";
+import { hashClaimToken, newClaimToken } from "@/lib/apps/claim";
 import { isReservedOfficialName } from "@/lib/official-name";
 import { GUEST_NICKNAME_MAX, guestNickname, withGuestMark } from "@/lib/guest-name";
 import { prisma } from "@/lib/db";
@@ -158,6 +160,10 @@ export async function POST(request: Request) {
   if (Buffer.byteLength(html_code, "utf8") > MAX_CODE_BYTES) {
     return NextResponse.json({ error: "コードサイズが大きすぎます（最大512KB）" }, { status: 413 });
   }
+  // コードではなく文章（AIに送るプロンプトなど）のままでは公開しない
+  if (looksLikePrompt(html_code)) {
+    return NextResponse.json({ error: "まだコードではなく文章が入っています。AIが最後まで書き終わってから、返事のコードをコピーして貼り直してください。" }, { status: 400 });
+  }
 
   // セッションからクリエイター名・IDを補完
   let sessionCreatorName: string | null = null;
@@ -231,6 +237,7 @@ export async function POST(request: Request) {
   const supabase = createServerSupabaseClient();
   const overwriteAppId = (body.app_id ?? "").trim() || null;
   let appId: string;
+  let claimToken: string | null = null;
 
   // 同じ人が、まったく同じコードのアプリを重ねて公開することはできない
   if (sessionUserId) {
@@ -328,6 +335,14 @@ export async function POST(request: Request) {
       );
     }
     appId = data.id;
+
+    // ゲストで公開したときは、ログインしたあと自分の作品として引き継げるよう、引き継ぎの印を渡す
+    // （サーバーにはハッシュだけを残し、元の文字列は本人の端末だけが持つ。列がまだなくても公開は止めない）
+    if (!sessionUserId) {
+      const token = newClaimToken();
+      const { error: claimError } = await supabase.from("apps").update({ claim_token_hash: hashClaimToken(token) }).eq("id", appId);
+      if (!claimError) claimToken = token;
+    }
   }
 
   // ログイン済みならマイプロジェクト・マイライブラリにも登録
@@ -377,5 +392,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ id: appId, updated: !!overwriteAppId }, { status: overwriteAppId ? 200 : 201 });
+  return NextResponse.json({ id: appId, updated: !!overwriteAppId, claim_token: claimToken }, { status: overwriteAppId ? 200 : 201 });
 }

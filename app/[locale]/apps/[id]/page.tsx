@@ -6,7 +6,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 import Link from "@/lib/i18n/navigation";
 import { useSession } from "next-auth/react";
 import { BackButton } from "@/components/back-button";
-import { JisappLogo } from "@/components/jisapp-logo";
+import { JisappLogo, JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   LayoutGrid,
   ShieldCheck,
@@ -77,6 +77,11 @@ function SupabaseAppPage({ id }: { id: string }) {
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [creatorRemoved, setCreatorRemoved] = useState(false);
+  // 「ジサップで作られました」の帯を閉じたか（この端末で一度閉じたら、しばらく出さない）
+  const [madeWithClosed, setMadeWithClosed] = useState(true);
+  useEffect(() => {
+    try { setMadeWithClosed(localStorage.getItem("jisapp_made_with_closed") === "1"); } catch { setMadeWithClosed(false); }
+  }, []);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdateInfo | null>(null);
   const [updateProcessing, setUpdateProcessing] = useState(false);
   const [adminRemoved, setAdminRemoved] = useState(false);
@@ -408,6 +413,32 @@ ${app.js_code ?? ""}`)}
           onAccept={() => handleUpdateAction("accept")}
           onDecline={() => handleUpdateAction("decline")}
         />
+      )}
+
+      {/* 作った本人以外に：このアプリはジサップで作られた・あなたも作れる（共有されたアプリが、次の作り手を呼ぶ） */}
+      {!madeWithClosed && !(app.creator_id && app.creator_id === (session?.user as { id?: string } | undefined)?.id) && (
+        <div className="flex shrink-0 items-center gap-2 border-t border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+          <JisappLogoIcon className="h-5 w-5 shrink-0" />
+          <p className="min-w-0 flex-1 truncate font-semibold">{t("このアプリはジサップで作られました。あなたも無料で作れる", "Made with Jisapp. You can make one too, free")}</p>
+          <Link
+            href={app.code_public ? `/playground?remix=${id}` : "/playground"}
+            className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700"
+          >
+            {app.code_public ? t("これをもとに作る", "Make your own") : t("自分でも作る", "Make one")}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMadeWithClosed(true);
+              try { localStorage.setItem("jisapp_made_with_closed", "1"); } catch { /* noop */ }
+            }}
+            aria-label={t("閉じる", "Close")}
+            className="shrink-0 rounded-full p-1 text-emerald-700 hover:bg-emerald-100"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
 
       {/* フッター（最小限。スマホでは画面を広く使うため隠す） */}

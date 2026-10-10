@@ -25,6 +25,7 @@ import { storageFixMessage } from "@/lib/playground/code-cleanup";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { format, pick, toLocale } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
+import { DoneSigns } from "@/components/playground/done-signs";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
 
@@ -377,13 +378,14 @@ export function EditorStart({
                     <ol className="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-600">
                       <li className="flex gap-2.5">
                         <StepDot n={1} />
-                        <span>{format(t("{ai}の返事にあるコードを、最初から最後まで全部コピー", "Copy all the code in {ai}'s reply, from start to finish"), { ai: ai?.url ? ai.name : t("AI", "the AI") })}</span>
+                        <span>{format(t("{ai}が最後まで書き終わってから、返事にあるコードを全部コピー", "Once {ai} has completely finished, copy all the code in its reply"), { ai: ai?.url ? ai.name : t("AI", "the AI") })}</span>
                       </li>
                       <li className="flex gap-2.5">
                         <StepDot n={2} />
                         <span>{t("下の「コードを貼り付けて動かす」を押す", "Press “Paste the code and run it” below")}</span>
                       </li>
                     </ol>
+                    <DoneSigns compact className="mt-3" />
                     {idea.trim() && (
                       <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
                         {t("作るもの：", "Making: ")}<span className="font-semibold text-slate-700">{idea}</span>
@@ -795,9 +797,12 @@ export function PromptTemplateModal({
                 </li>
                 <li className="flex gap-3">
                   <StepDot n={3} />
-                  <span className="text-sm font-semibold text-slate-700">
-                    {t("返ってきたコードを全部コピーして、ジサップに戻って貼り付ける", "Copy all the code it returns, come back to Jisapp and paste it")}
-                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-semibold text-slate-700">
+                      {t("AIが書き終わったら、返ってきたコードを全部コピーして、ジサップに戻って貼り付ける", "When the AI has finished, copy all the code it returns, come back to Jisapp and paste it")}
+                    </span>
+                    <DoneSigns className="mt-2" />
+                  </div>
                 </li>
               </ol>
             </div>

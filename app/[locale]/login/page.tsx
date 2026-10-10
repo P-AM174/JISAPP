@@ -167,7 +167,9 @@ function LoginContent() {
 
       // 本登録完了 → 自動ログイン
       setStage("done");
-      trackEvent("signup", { method: "email" });
+      let from = "";
+      try { from = sessionStorage.getItem("jisapp_signup_from") ?? ""; } catch { /* noop */ }
+      trackEvent("signup", { method: "email", ...(from ? { from } : {}) });
       await signIn("credentials", {
         email: regEmail, password: regPw,
         callbackUrl: localizePath(returnUrl, locale), redirect: true,

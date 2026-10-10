@@ -75,6 +75,9 @@ const EXACT: Record<string, string> = {
   "リンクが無効または期限切れです。再度パスワードリセットを行ってください。":
     "This link is invalid or has expired. Please request a password reset again.",
   このメールアドレスはすでに登録されています: "This email address is already registered",
+  "まだコードではなく文章が入っています。AIが最後まで書き終わってから、返事のコードをコピーして貼り直してください。": "This is still text, not code. Wait until the AI has finished, then copy the code from its reply and paste it again.",
+  "内容が短すぎます": "The text is too short",
+  "先に、ジサップで表示する名前を決めてください": "Choose your name on Jisapp first",
   "名前を入力してください": "Please enter a name",
   "名前は20文字以内にしてください": "Names can be up to 20 characters",
   "この名前は使えません": "This name can't be used",

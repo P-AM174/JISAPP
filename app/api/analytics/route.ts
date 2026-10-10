@@ -23,8 +23,7 @@ export async function POST(req: NextRequest) {
     const locale = isLocale(data.locale) ? data.locale : null;
     const country = str(req.headers.get("x-vercel-ip-country"), 2);
 
-    // ページ表示は、英語・ベトナム語ページか、ベトナムからのアクセスだけ記録する（日本語版の表示は数えない）
-    if (name === "page_view" && locale === "ja" && country !== "VN") return new NextResponse(null, { status: 204 });
+    // ページ表示は、日本語・英語・ベトナム語のどのページも記録する（2026-10-10 から日本語ページも数える）
 
     let props: Record<string, unknown> | null = null;
     if (data.props && typeof data.props === "object" && !Array.isArray(data.props)) {

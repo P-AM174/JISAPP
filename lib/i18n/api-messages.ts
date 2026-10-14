@@ -192,6 +192,21 @@ const PATTERNS: Pattern[] = [
     ja: "まったく同じコードのアプリ「{1}」をすでに公開しています。",
     en: "You've already published an app with exactly the same code: “{1}”. You can't publish the same app twice. To change it, update that app from My projects.",
   },
+  {
+    re: /^同じ名前のアプリ「(.+)」をすでに公開しています。/,
+    ja: "同じ名前のアプリ「{1}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。",
+    en: "You've already published an app named “{1}”. Update that app, or publish this one with a different name.",
+  },
+  {
+    re: /^このアプリは、すでに出品されている「(.+)」（作者：(.+)）とまったく同じコードなので、出品できません。$/,
+    ja: "このアプリは、すでに出品されている「{1}」（作者：{2}）とまったく同じコードなので、出品できません。",
+    en: "This app has exactly the same code as “{1}” (by {2}), which is already listed, so it can't be published.",
+  },
+  // もとに作ったアプリのお知らせ（lib/notifications/remix-notices.ts）
+  { re: /^([\s\S]+) さんが、あなたの「([\s\S]+)」をもとにアプリを作りました！$/, ja: "{1} さんが、あなたの「{2}」をもとにアプリを作りました！", en: "{1} built an app based on your “{2}”!" },
+  { re: /^新しいアプリ「([\s\S]+)」が生まれました。あなたのアプリが、誰かの「作りたい」のきっかけになっています。$/, ja: "新しいアプリ「{1}」が生まれました。あなたのアプリが、誰かの「作りたい」のきっかけになっています。", en: "Say hello to “{1}”. Your app inspired someone to build!" },
+  { re: /^あなたの「([\s\S]+)」をもとに、アプリが(\d+)件作られました！$/, ja: "あなたの「{1}」をもとに、アプリが{2}件作られました！", en: "{2} apps have been built from your “{1}”!" },
+  { re: /^最新は ([\s\S]+) さんの「([\s\S]+)」です。あなたのアプリが、みんなの「作りたい」のきっかけになっています。$/, ja: "最新は {1} さんの「{2}」です。あなたのアプリが、みんなの「作りたい」のきっかけになっています。", en: "Latest: “{2}” by {1}. Your app is inspiring people to build!" },
   { re: /^上書きに失敗しました: ([\s\S]*)$/, ja: "上書きに失敗しました: {1}", en: "Couldn't update: {1}" },
   { re: /^保存に失敗しました: ([\s\S]*)$/, ja: "保存に失敗しました: {1}", en: "Couldn't save: {1}" },
   { re: /^アプリの準備に失敗しました: ([\s\S]*)$/, ja: "アプリの準備に失敗しました: {1}", en: "Couldn't prepare the app: {1}" },

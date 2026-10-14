@@ -14,6 +14,8 @@ import {
   upsertLibrarySnapshot,
 } from "@/lib/library/snapshots";
 import { normalizeFields } from "@/lib/i18n/text";
+import { codeHash, normalizeCode, normalizeTitle } from "@/lib/apps/code-hash";
+import { notifyRemixed } from "@/lib/notifications/remix-notices";
 import {
   queueLibraryUpdatesOnRepublish,
 } from "@/lib/library/pending-updates";
@@ -77,11 +79,6 @@ async function userOwnsApp(
   return !!byCreator;
 }
 
-/** 比べるためにコードをそろえる（改行コードと前後の空白の違いは同じとみなす） */
-function normalizeCode(html: string, css?: string | null, js?: string | null): string {
-  return [html, css ?? "", js ?? ""].map((s) => s.replace(/\r\n?/g, "\n").trim()).join("\n\u0000\n");
-}
-
 /**
  * 同じ人が公開している別のアプリに、まったく同じコードのものがあれば返す。
  * 開発スタジオのプレビュー用に作られる下書きのアプリは対象外（出品・URL発行したものだけ比べる）
@@ -115,6 +112,65 @@ async function findSameCodeApp(
   return same ? { id: same.id as string, title: (same.title as string) ?? "" } : null;
 }
 
+/**
+ * 同じ人が、同じ名前のアプリをすでに公開していれば返す（出品・URL発行したものだけ。上書きする本人のアプリは除く）。
+ * 出品ルール：同じ人が同じ名前のアプリを重ねて出すことはできない。上書きするか、名前を変えてもらう
+ */
+async function findSameTitleApp(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  userId: string,
+  title: string,
+  excludeAppId: string | null
+): Promise<{ appId: string; projectId: string | null; title: string } | null> {
+  const { data: published } = await supabase
+    .from("user_projects")
+    .select("id, app_id")
+    .eq("user_id", userId)
+    .in("status", ["listed", "url_only"])
+    .not("app_id", "is", null);
+  const projectOf = new Map<string, string>();
+  for (const p of published ?? []) if (p.app_id && p.app_id !== excludeAppId) projectOf.set(p.app_id as string, p.id as string);
+  if (projectOf.size === 0) return null;
+  const { data } = await supabase
+    .from("apps")
+    .select("id, title")
+    .in("id", [...projectOf.keys()])
+    .eq("creator_id", userId)
+    .eq("status", "active");
+  const want = normalizeTitle(title);
+  const same = (data ?? []).find((a) => normalizeTitle((a.title as string) ?? "") === want);
+  return same ? { appId: same.id as string, projectId: projectOf.get(same.id as string) ?? null, title: (same.title as string) ?? "" } : null;
+}
+
+/**
+ * 誰かがマーケットに出品しているアプリに、まったく同じコードのものがあれば返す（出品するときだけ調べる）。
+ * 出品ルール：まったく同じコードのアプリは、作者に関係なく出品できない（URL だけの公開は対象外）。
+ * code_hash 列がまだないとき（scripts/add-code-hash-and-remix.sql の実行前）は調べない
+ */
+async function findListedSameCodeApp(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  hash: string,
+  excludeAppId: string | null
+): Promise<{ id: string; title: string; creator_name: string | null } | null> {
+  let query = supabase
+    .from("apps")
+    .select("id, title, creator_name")
+    .eq("code_hash", hash)
+    .eq("status", "active")
+    .eq("is_listed", true)
+    .limit(5);
+  if (excludeAppId) query = query.neq("id", excludeAppId);
+  const { data, error } = await query;
+  if (error || !data?.length) return null;
+  const a = data[0];
+  return { id: a.id as string, title: (a.title as string) ?? "", creator_name: (a.creator_name as string | null) ?? null };
+}
+
+/** 列がまだないとき（SQL の実行前）は、その列を外して保存し直す */
+function isMissingColumn(message: string | undefined, col: string): boolean {
+  return !!message && message.includes(col);
+}
+
 export async function POST(request: Request) {
   // コンテンツサイズ事前チェック
   const contentLength = request.headers.get("content-length");
@@ -140,6 +196,8 @@ export async function POST(request: Request) {
     update_notes?: string;
     /** 開発スタジオの運営モード：ジサップ公式のアカウントとして出品する（運営だけ） */
     as_official?: boolean;
+    /** 「このアプリをもとに作る」から作ったとき、もとのアプリの ID */
+    remix_of?: string;
   };
 
   try {
@@ -238,6 +296,45 @@ export async function POST(request: Request) {
   const overwriteAppId = (body.app_id ?? "").trim() || null;
   let appId: string;
   let claimToken: string | null = null;
+  const hash = codeHash(html_code, body.css_code, body.js_code);
+
+  // 出品ルール1：同じ人が、同じ名前のアプリを重ねて出すことはできない（上書きするか、名前を変えてもらう）
+  if (sessionUserId) {
+    const sameTitle = await findSameTitleApp(supabase, sessionUserId, title, overwriteAppId);
+    if (sameTitle) {
+      return NextResponse.json(
+        {
+          error: `同じ名前のアプリ「${sameTitle.title}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。`,
+          code: "same_title",
+          existing: { app_id: sameTitle.appId, project_id: sameTitle.projectId, title: sameTitle.title },
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  // 出品ルール2：まったく同じコードのアプリが、マーケットにすでに出品されていれば出品できない（作者に関係なく）
+  if (appPayload.is_listed) {
+    const other = await findListedSameCodeApp(supabase, hash, overwriteAppId);
+    if (other) {
+      return NextResponse.json(
+        {
+          error: `このアプリは、すでに出品されている「${other.title}」（作者：${other.creator_name || "ゲスト"}）とまったく同じコードなので、出品できません。`,
+          code: "same_code",
+          other: { app_id: other.id, title: other.title, creator_name: other.creator_name },
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  // 「このアプリをもとに作る」から作ったとき：もとのアプリが公開中なら覚えておく（新規のときだけ）
+  let remixOf: { id: string; title: string; creator_id: string | null } | null = null;
+  const remixId = (body.remix_of ?? "").trim();
+  if (remixId && !overwriteAppId && /^[0-9a-f-]{36}$/i.test(remixId)) {
+    const { data: src } = await supabase.from("apps").select("id, title, creator_id, status").eq("id", remixId).maybeSingle();
+    if (src && src.status === "active") remixOf = { id: src.id as string, title: (src.title as string) ?? "", creator_id: (src.creator_id as string | null) ?? null };
+  }
 
   // 同じ人が、まったく同じコードのアプリを重ねて公開することはできない
   if (sessionUserId) {
@@ -343,6 +440,20 @@ export async function POST(request: Request) {
       const { error: claimError } = await supabase.from("apps").update({ claim_token_hash: hashClaimToken(token) }).eq("id", appId);
       if (!claimError) claimToken = token;
     }
+  }
+
+  // コードの指紋と、もとにしたアプリを残す（列がまだないとき＝SQL の実行前は、公開は止めずに飛ばす）
+  {
+    const extra: Record<string, string> = { code_hash: hash };
+    if (remixOf) extra.remix_of = remixOf.id;
+    const { error: e1 } = await supabase.from("apps").update(extra).eq("id", appId);
+    if (e1 && remixOf && isMissingColumn(e1.message, "remix_of")) {
+      await supabase.from("apps").update({ code_hash: hash }).eq("id", appId);
+    }
+  }
+  // もとのアプリの作者に、ベルで知らせる（マーケットに出品したときだけ。自分のアプリをもとにしたときは知らせない）
+  if (remixOf && appPayload.is_listed && remixOf.creator_id && remixOf.creator_id !== sessionUserId) {
+    await notifyRemixed({ sourceAppId: remixOf.id, sourceTitle: remixOf.title, sourceCreatorId: remixOf.creator_id, newAppId: appId, newTitle: title, makerName: creatorName });
   }
 
   // ログイン済みならマイプロジェクト・マイライブラリにも登録

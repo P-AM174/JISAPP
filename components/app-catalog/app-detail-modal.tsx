@@ -28,6 +28,7 @@ import { ShareButtonRow } from "@/components/share-button";
 import { CreatorFollowButton } from "@/components/creator-follow-button";
 import { getAppShareUrl } from "@/lib/share";
 import { MiniPreview } from "./mini-preview";
+import { RemixedApps } from "./remixed-apps";
 import { GroupAppNotice } from "./group-app-badge";
 import { displayCreatorName, getCreatorProfilePath } from "./utils";
 import { useLocale, useT } from "@/lib/i18n/client";
@@ -422,6 +423,7 @@ export function AppDetailModal({
                 </span>
               </button>
             )}
+            <RemixedApps appId={String(app.id)} />
             <button
               type="button"
               onClick={() => setReportOpen(true)}

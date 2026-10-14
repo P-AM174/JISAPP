@@ -7598,5 +7598,65 @@
     "vi": "Hãy chọn tên hiển thị trên Jisapp trước",
     "reviewed": false,
     "en": "Choose your name on Jisapp first"
+  },
+  "同じコードのアプリ「{title}」を見る": {
+    "vi": "Xem app có cùng code: “{title}”",
+    "reviewed": false,
+    "en": "See the app with the same code: “{title}”"
+  },
+  "上書きの設定に切りかえました。内容を確かめて「上書きする」を押してください": {
+    "vi": "Đã chuyển sang cập nhật app đó. Kiểm tra lại rồi bấm “Cập nhật”.",
+    "reviewed": false,
+    "en": "Switched to updating that app. Check the details, then tap “Update”."
+  },
+  "「{title}」に上書きする": {
+    "vi": "Cập nhật “{title}”",
+    "reviewed": false,
+    "en": "Update “{title}”"
+  },
+  "名前を変えて出品する": {
+    "vi": "Đăng với tên khác",
+    "reviewed": false,
+    "en": "Publish with a new name"
+  },
+  "このアプリをもとに作られたアプリ": {
+    "vi": "App được làm dựa trên app này",
+    "reviewed": false,
+    "en": "Apps built from this one"
+  },
+  "作：{name}": {
+    "vi": "của {name}",
+    "reviewed": false,
+    "en": "by {name}"
+  },
+  "同じ名前のアプリ「{1}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。": {
+    "vi": "Bạn đã đăng một app tên “{1}”. Hãy cập nhật app đó, hoặc đăng app này với tên khác.",
+    "reviewed": false,
+    "en": "You've already published an app named “{1}”. Update that app, or publish this one with a different name."
+  },
+  "このアプリは、すでに出品されている「{1}」（作者：{2}）とまったく同じコードなので、出品できません。": {
+    "vi": "App này có code giống hệt “{1}” (của {2}) đã được đăng, nên không thể đăng.",
+    "reviewed": false,
+    "en": "This app has exactly the same code as “{1}” (by {2}), which is already listed, so it can't be published."
+  },
+  "{1} さんが、あなたの「{2}」をもとにアプリを作りました！": {
+    "vi": "{1} đã làm một app dựa trên “{2}” của bạn!",
+    "reviewed": false,
+    "en": "{1} built an app based on your “{2}”!"
+  },
+  "新しいアプリ「{1}」が生まれました。あなたのアプリが、誰かの「作りたい」のきっかけになっています。": {
+    "vi": "App mới “{1}” đã ra đời. App của bạn đã truyền cảm hứng cho người khác!",
+    "reviewed": false,
+    "en": "Say hello to “{1}”. Your app inspired someone to build!"
+  },
+  "あなたの「{1}」をもとに、アプリが{2}件作られました！": {
+    "vi": "Đã có {2} app được làm dựa trên “{1}” của bạn!",
+    "reviewed": false,
+    "en": "{2} apps have been built from your “{1}”!"
+  },
+  "最新は {1} さんの「{2}」です。あなたのアプリが、みんなの「作りたい」のきっかけになっています。": {
+    "vi": "Mới nhất: “{2}” của {1}. App của bạn đang truyền cảm hứng cho mọi người!",
+    "reviewed": false,
+    "en": "Latest: “{2}” by {1}. Your app is inspiring people to build!"
   }
 }

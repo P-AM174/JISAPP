@@ -7,6 +7,7 @@ import { buildSrcDoc, injectZisupShim } from "@/lib/products/build-srcdoc";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncInfoModal } from "@/components/sync-info-modal";
+import { appSavesData } from "@/lib/apps/saves-data";
 import { AppDataNotice } from "@/components/app-data-notice";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
@@ -101,13 +102,16 @@ export function AppRunner({
 
   useZisupBridge(iframeRef, appId, enableCloud ? userId : null);
 
+  // 保存の仕組みを使っていないアプリ（保存しないゲームなど）では、保存機能の案内はいらない
+  const savesData = useMemo(() => appSavesData(srcDoc?.trim() ? srcDoc : `${html ?? ""}\n${js ?? ""}`), [srcDoc, html, js]);
+
   useEffect(() => {
-    if (!showSyncModal || !ready || enableCloud) {
+    if (!showSyncModal || !ready || enableCloud || !savesData) {
       setSyncModalOpen(false);
       return;
     }
     setSyncModalOpen(true);
-  }, [showSyncModal, ready, enableCloud, isLoggedIn, inLibrary]);
+  }, [showSyncModal, ready, enableCloud, isLoggedIn, inLibrary, savesData]);
 
   useEffect(() => {
     if (enableCloud) {

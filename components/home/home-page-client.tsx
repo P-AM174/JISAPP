@@ -966,9 +966,11 @@ export function HomePageClient({
   const featuredApps = useMemo(() => withoutGames(initialData.featuredApps), [initialData.featuredApps, gamesVisible]); // eslint-disable-line react-hooks/exhaustive-deps
   const [selectedApp, setSelectedApp]         = useState<ModalApp | null>(null);
 
-  // 新着順（同データを created_at 降順で再ソート）
+  // 新着順（同データを created_at 降順で再ソート）。「このアプリをもとに作る」から作ったアプリは出さない
+  // （公式アプリをほぼそのまま出品したものが並ぶのを防ぐ。もとのアプリの詳しい表示の下・検索・カテゴリ・人気には出る）
   const newApps = useMemo(() =>
     [...playgroundApps]
+      .filter((a) => !a.remix_of)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .filter(a => !query || a.title.includes(query) || (a.description ?? "").includes(query)),
   [playgroundApps, query]);

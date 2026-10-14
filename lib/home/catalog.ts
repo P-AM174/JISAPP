@@ -20,6 +20,8 @@ export type CatalogApp = {
   stamp_count?: number;
   /** グループ共有アプリか */
   group_sharing?: boolean;
+  /** 「このアプリをもとに作る」から作ったとき、もとのアプリの ID（トップの新着・ゲームの列には出さない） */
+  remix_of?: string | null;
 };
 
 type CatalogRow = Omit<CatalogApp, "group_sharing"> & { group_sharing?: boolean | null };
@@ -35,7 +37,7 @@ async function fetchActiveApps(limit = 200): Promise<CatalogApp[]> {
   try {
     let query = supabase
       .from("apps")
-      .select("id, title, description, category, creator_name, creator_id, created_at, group_sharing")
+      .select("id, title, description, category, creator_name, creator_id, created_at, group_sharing, remix_of")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(limit);

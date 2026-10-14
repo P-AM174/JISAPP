@@ -749,6 +749,12 @@ export default function PlaygroundPage() {
   const [publishDesc, setPublishDesc]         = useState("");
   /** 「このアプリをもとに作る」で開いたときの、もとのアプリの名前（新しいアプリとして公開する） */
   const [remixFrom, setRemixFrom]             = useState<string | null>(null);
+  // もとにしたアプリの ID（出品したとき、もとのアプリの下に並べ、作者に知らせるため）
+  const [remixFromId, setRemixFromId]         = useState<string | null>(null);
+  // 出品ルール：同じ名前のアプリがあるときは、上書きか名前の変更を選んでもらう／同じコードの出品済みアプリへのリンク
+  const [sameTitleApp, setSameTitleApp]       = useState<{ app_id: string; project_id: string | null; title: string } | null>(null);
+  const [sameCodeApp, setSameCodeApp]         = useState<{ app_id: string; title: string } | null>(null);
+  const publishTitleRef = useRef<HTMLInputElement>(null);
   const [remixGuideOpen, setRemixGuideOpen]   = useState(false);
   const [remixBannerClosed, setRemixBannerClosed] = useState(false);
   /** 運営モード（?official=1）：ジサップ公式のアカウントとして出品する。運営としてログインしているときだけ */
@@ -907,6 +913,8 @@ export default function PlaygroundPage() {
     setPublishResetUserData(false);
     setPublishUpdateNotes("");
     setPublishError(null);
+    setSameTitleApp(null);
+    setSameCodeApp(null);
     storageWarningAckRef.current = false;
     secretWarningAckRef.current = false;
     // 再公開以外は前回タイトルを入れず空欄から（新規作成のたびに残らないように）
@@ -971,6 +979,8 @@ export default function PlaygroundPage() {
     if (!code.trim() || publishing) return;
     setPublishing(true);
     setPublishError(null);
+    setSameTitleApp(null);
+    setSameCodeApp(null);
     try {
       const overwriting = !!publishContext?.appId;
       const res = await fetch("/api/apps/publish", {
@@ -990,9 +1000,12 @@ export default function PlaygroundPage() {
           project_id: publishContext?.projectId,
           reset_user_data: isRepublish ? publishResetUserData : undefined,
           update_notes: isRepublish ? publishUpdateNotes.trim() || undefined : undefined,
+          remix_of: !overwriting && remixFromId ? remixFromId : undefined,
         }),
       });
       const json = await res.json();
+      if (res.status === 409 && json.code === "same_title" && json.existing) setSameTitleApp(json.existing);
+      if (res.status === 409 && json.code === "same_code" && json.other) setSameCodeApp({ app_id: json.other.app_id, title: json.other.title });
       if (!res.ok) throw new Error(json.error ?? (isRepublish ? t("上書きに失敗しました", "Couldn't update the app") : t("出品に失敗しました", "Couldn't publish the app")));
       const appUrl = `${window.location.origin}${localizePath(`/apps/${json.id}`, locale)}`;
       // ゲストで公開したときは、ログインしたら自分の作品にできるよう、引き継ぎの印を端末に覚えておく
@@ -1123,6 +1136,7 @@ export default function PlaygroundPage() {
           setPreviewHtml(d.html_code);
           setIframeKey((k) => k + 1);
           setRemixFrom(d.title ?? "");
+          setRemixFromId(remixId);
           if (!isRemixGuideHidden()) setRemixGuideOpen(true);
         })
         .catch(() => showToast(t("このアプリのコードは読み込めませんでした", "Couldn't load this app's code")));
@@ -1416,6 +1430,7 @@ export default function PlaygroundPage() {
     setActivePane("editor");
     // 一から作り直すときは、もとにしたアプリとの関係もなくす
     setRemixFrom(null);
+    setRemixFromId(null);
     setPublishDesc("");
   };
 
@@ -2744,9 +2759,10 @@ export default function PlaygroundPage() {
                       {t("アプリ名", "App name")} <span className="text-rose-500">*</span>
                     </label>
                     <input
+                      ref={publishTitleRef}
                       type="text"
                       value={publishTitle}
-                      onChange={(e) => setPublishTitle(e.target.value)}
+                      onChange={(e) => { setPublishTitle(e.target.value); if (sameTitleApp) setSameTitleApp(null); }}
                       placeholder={t("例：タスク管理ツール、計算機アプリ...", "e.g. Task manager, calculator app...")}
                       maxLength={60}
                       autoFocus
@@ -2976,9 +2992,50 @@ export default function PlaygroundPage() {
                     </div>
                   )}
                   {publishError && (
-                    <p role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-xs font-semibold leading-relaxed text-rose-700 ring-1 ring-rose-200">
-                      {publishError}
-                    </p>
+                    <div role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-xs font-semibold leading-relaxed text-rose-700 ring-1 ring-rose-200">
+                      <p>{publishError}</p>
+                      {/* 同じコードのアプリが出品されているとき：どのアプリと同じかを見られるように */}
+                      {sameCodeApp && (
+                        <a
+                          href={localizePath(`/apps/${sameCodeApp.app_id}`, locale)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100"
+                        >
+                          {format(t("同じコードのアプリ「{title}」を見る", "See the app with the same code: “{title}”"), { title: sameCodeApp.title })}
+                        </a>
+                      )}
+                      {/* 同じ名前のアプリがあるとき：上書きするか、名前を変えるかを選ぶ */}
+                      {sameTitleApp && (
+                        <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPublishContext({ projectId: sameTitleApp.project_id ?? undefined, appId: sameTitleApp.app_id });
+                              setPublishTitle(sameTitleApp.title);
+                              setSameTitleApp(null);
+                              setPublishError(null);
+                              showToast(t("上書きの設定に切りかえました。内容を確かめて「上書きする」を押してください", "Switched to updating that app. Check the details, then tap “Update”."));
+                            }}
+                            className="flex-1 rounded-xl bg-rose-600 px-3 py-2.5 text-xs font-black text-white hover:bg-rose-700"
+                          >
+                            {format(t("「{title}」に上書きする", "Update “{title}”"), { title: sameTitleApp.title })}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSameTitleApp(null);
+                              setPublishError(null);
+                              publishTitleRef.current?.focus();
+                              publishTitleRef.current?.select();
+                            }}
+                            className="flex-1 rounded-xl bg-white px-3 py-2.5 text-xs font-black text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100"
+                          >
+                            {t("名前を変えて出品する", "Publish with a new name")}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                   <div className="flex gap-3 pt-1">
                     <button

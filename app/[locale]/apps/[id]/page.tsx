@@ -56,6 +56,7 @@ import { useT } from "@/lib/i18n/client";
 import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons";
 import { format } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
+import { appSavesData } from "@/lib/apps/saves-data";
 
 
 
@@ -116,13 +117,16 @@ function SupabaseAppPage({ id }: { id: string }) {
     typeof window !== "undefined" && new URLSearchParams(window.location.search).has("g")
   );
 
+  // 保存の仕組みを使っていないアプリ（保存しないゲームなど）では、保存機能の案内はいらない
+  const savesData = useMemo(() => (app ? appSavesData(`${app.html_code ?? ""}\n${app.js_code ?? ""}`) : false), [app]);
+
   useEffect(() => {
-    if (!syncReady || enableCloud || group || cameFromInviteRef.current) {
+    if (!syncReady || enableCloud || group || cameFromInviteRef.current || !savesData) {
       setSyncModalOpen(false);
       return;
     }
     setSyncModalOpen(true);
-  }, [syncReady, enableCloud, isLoggedIn, inLibrary, group]);
+  }, [syncReady, enableCloud, isLoggedIn, inLibrary, group, savesData]);
 
   useEffect(() => {
     if (enableCloud) setIframeKey((k) => k + 1);

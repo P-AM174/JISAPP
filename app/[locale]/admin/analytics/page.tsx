@@ -10,6 +10,18 @@ import { JisappLogo } from "@/components/jisapp-logo";
  */
 type Row = { name: string; locale: string; utm_source: string; events: number; sessions: number };
 type VnRow = { month: string; visits: number; page_views: number };
+type SourceRow = { name: string; kind: string; visits: number; paste: number; publish: number; signup: number };
+
+const KIND_LABEL: Record<string, string> = { ai: "AI", search: "検索", sns: "SNS・動画", share: "共有ボタン", direct: "直接・不明", other: "そのほかのサイト" };
+const KIND_COLOR: Record<string, string> = {
+  ai: "bg-violet-100 text-violet-800",
+  search: "bg-sky-100 text-sky-800",
+  sns: "bg-rose-100 text-rose-800",
+  share: "bg-emerald-100 text-emerald-800",
+  direct: "bg-gray-100 text-gray-600",
+  other: "bg-amber-100 text-amber-800",
+};
+const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "-");
 
 const FUNNEL: { name: string; label: string }[] = [
   { name: "page_view", label: "ページ表示" },
@@ -32,6 +44,8 @@ export default function AdminAnalyticsPage() {
   const [vn, setVn] = useState<VnRow[]>([]);
   const [pastes, setPastes] = useState<Record<string, number>>({});
   const [countries, setCountries] = useState<{ country: string; views: number; visits: number }[]>([]);
+  const [sources, setSources] = useState<SourceRow[]>([]);
+  const [aiByDay, setAiByDay] = useState<{ day: string; counts: Record<string, number> }[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +60,8 @@ export default function AdminAnalyticsPage() {
       setVn(json.vnMonthly);
       setPastes(json.pasteBreakdown ?? {});
       setCountries(json.countries ?? []);
+      setSources(json.sources ?? []);
+      setAiByDay(json.aiByDay ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "読み込めませんでした");
     } finally {
@@ -205,6 +221,61 @@ export default function AdminAnalyticsPage() {
                   </ul>
                 );
               })()}
+            </section>
+
+            <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
+              <h2 className="font-bold text-gray-900">どこから来たか（訪問ごと）</h2>
+              <p className="mt-1 text-xs text-gray-500">
+                訪問の最初に記録した utm_source と、参照元のドメインで分けています。参照元は 2026-10-15 から記録しているので、それより前の訪問の多くは「直接・不明」になります。
+                動画の説明欄のURLには ?utm_source=tiktok / youtube をつけてください。
+              </p>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead className="text-left text-xs text-gray-500">
+                    <tr><th className="py-1">流入元</th><th>種類</th><th>訪問</th><th>貼り付け</th><th>公開</th><th>登録</th></tr>
+                  </thead>
+                  <tbody>
+                    {sources.map((r) => (
+                      <tr key={r.name} className="border-t border-gray-100">
+                        <td className="py-1.5 font-semibold">{r.name}</td>
+                        <td><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${KIND_COLOR[r.kind] ?? KIND_COLOR.other}`}>{KIND_LABEL[r.kind] ?? r.kind}</span></td>
+                        <td className="tabular-nums">{r.visits.toLocaleString()}</td>
+                        <td className="tabular-nums">{r.paste} <span className="text-xs text-gray-400">{pct(r.paste, r.visits)}</span></td>
+                        <td className="tabular-nums">{r.publish} <span className="text-xs text-gray-400">{pct(r.publish, r.visits)}</span></td>
+                        <td className="tabular-nums">{r.signup} <span className="text-xs text-gray-400">{pct(r.signup, r.visits)}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {sources.length === 0 && <p className="mt-2 text-sm text-gray-500">まだ記録がありません</p>}
+              </div>
+
+              <h3 className="mt-5 text-sm font-bold text-gray-900">AIからの流入（日ごとの訪問）</h3>
+              {aiByDay.length === 0 ? (
+                <p className="mt-2 text-sm text-gray-500">まだ記録がありません</p>
+              ) : (
+                <div className="mt-2 overflow-x-auto">
+                  {(() => {
+                    const names = [...new Set(aiByDay.flatMap((d) => Object.keys(d.counts)))].sort();
+                    return (
+                      <table className="w-full min-w-[360px] text-sm">
+                        <thead className="text-left text-xs text-gray-500">
+                          <tr><th className="py-1">日付</th>{names.map((n) => <th key={n}>{n}</th>)}<th>合計</th></tr>
+                        </thead>
+                        <tbody>
+                          {aiByDay.map((d) => (
+                            <tr key={d.day} className="border-t border-gray-100">
+                              <td className="py-1.5 tabular-nums">{d.day}</td>
+                              {names.map((n) => <td key={n} className="tabular-nums">{d.counts[n] ?? 0}</td>)}
+                              <td className="font-bold tabular-nums">{Object.values(d.counts).reduce((a, b) => a + b, 0)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    );
+                  })()}
+                </div>
+              )}
             </section>
 
             <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">

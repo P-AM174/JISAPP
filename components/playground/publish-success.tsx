@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { signIn } from "next-auth/react";
-import { ArrowRight, Check, CheckCircle2, Copy, LogIn, MessageCircle, PartyPopper, Smartphone, User, Users } from "lucide-react";
+import { ArrowRight, Check, Copy, LogIn, MessageCircle, PartyPopper, Smartphone, User, Users, X } from "lucide-react";
 import Link from "@/lib/i18n/navigation";
 import { LineBrandIcon, ShareButton, XBrandIcon } from "@/components/share-button";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
@@ -165,6 +165,46 @@ export function PublishSuccess({
           <p className="text-center text-[11px] text-gray-400">{t("URLを知っている人なら誰でもアクセス・使用できます", "Anyone with the URL can open and use it")}</p>
         </div>
 
+        {/* ゲストで公開した人へ：このままだと困ることを具体的に伝え、Google で1タップのログインを勧める。
+            送るボタンのすぐ下に置く（下にあるとスクロールしないと見えず、押されていなかった：ChatGPT から来て公開した人の登録が0件だった） */}
+        {isGuest && !overwrite && (
+          <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <p className="text-sm font-black leading-snug text-amber-950">
+              {t("ログインしないと、このあと困ること", "If you don't sign in")}
+            </p>
+            <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-amber-950">
+              {[
+                t("直したくなっても、このアプリは直せません", "You can't edit this app later, even if you want to"),
+                ...(listed ? [] : [t("2か月だれも開かないと、アプリが消えます", "The app is deleted if nobody opens it for 2 months")]),
+                t("ほかのスマホやパソコンでは、続きを使えません", "You can't pick up where you left off on another phone or computer"),
+              ].map((x) => (
+                <li key={x} className="flex gap-1.5">
+                  <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-500" strokeWidth={3} />
+                  {x}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2.5 text-xs font-bold text-amber-900">
+              {t("Googleで1タップ・無料。ログインすると、このアプリはそのままあなたの作品になります。", "One tap with Google, free. Sign in and this app becomes yours as it is.")}
+            </p>
+            <button
+              type="button"
+              onClick={loginAndKeep}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-sm font-black text-white shadow-sm hover:bg-amber-600"
+            >
+              <LogIn className="h-4 w-4" />
+              {t("Googleでログインして、自分の作品にする", "Sign in with Google and keep it")}
+            </button>
+            <Link
+              href={`/login?callbackUrl=${encodeURIComponent("/playground?load=1")}`}
+              onClick={() => { try { sessionStorage.setItem("jisapp_signup_from", "publish_done"); } catch { /* noop */ } }}
+              className="mt-2 block text-center text-xs font-bold text-amber-800 underline"
+            >
+              {t("メールアドレスでログイン・登録する", "Sign in or sign up with email")}
+            </Link>
+          </div>
+        )}
+
         {/* 誰と使う？（選んだ人に、使い方のコツを出す。上書きのときは聞かない） */}
         {!overwrite && (
           <div className="rounded-2xl bg-emerald-50/60 p-4 ring-1 ring-emerald-100">
@@ -266,43 +306,6 @@ export function PublishSuccess({
           </button>
           <p className="whitespace-pre-line rounded-xl bg-gray-50 px-3 py-2 text-[11px] leading-relaxed text-gray-500">{postText}</p>
         </div>
-
-        {/* ゲストで公開した人へ：ログインしないと、あとから直せない */}
-        {isGuest && !overwrite && (
-          <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
-            <p className="text-sm font-black leading-snug text-amber-950">
-              {t("ログインしないと、このアプリはあとから直せません", "Without signing in, you can't edit this app later")}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-amber-900">
-              {t("今ログインすると、このアプリはそのままあなたの作品になります。", "Sign in now and this app becomes yours as it is.")}
-            </p>
-            <ul className="mt-2 space-y-1 text-xs text-amber-900">
-              {[
-                t("あとから直して、同じURLのまま上書きできる", "Edit it later and update it at the same URL"),
-                t("作ったアプリを、マイプロジェクトでまとめて管理できる", "Keep all your apps in My projects"),
-                t("アプリのデータが、ほかの端末にも残る", "Your app data stays on your other devices too"),
-                t("応援バッジをもらうと、お知らせが届く", "Get notified when people cheer for your app"),
-              ].map((x) => (
-                <li key={x} className="flex gap-1.5"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />{x}</li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={loginAndKeep}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-sm font-black text-white shadow-sm hover:bg-amber-600"
-            >
-              <LogIn className="h-4 w-4" />
-              {t("Googleでログインして、自分の作品にする", "Sign in with Google and keep it")}
-            </button>
-            <Link
-              href={`/login?callbackUrl=${encodeURIComponent("/playground?load=1")}`}
-              onClick={() => { try { sessionStorage.setItem("jisapp_signup_from", "publish_done"); } catch { /* noop */ } }}
-              className="mt-2 block text-center text-xs font-bold text-amber-800 underline"
-            >
-              {t("メールアドレスでログイン・登録する", "Sign in or sign up with email")}
-            </Link>
-          </div>
-        )}
 
         <div className="flex gap-3">
           <button onClick={onKeepEditing} className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">

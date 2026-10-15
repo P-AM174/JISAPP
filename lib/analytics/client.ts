@@ -72,9 +72,32 @@ function currentUtm(): Utm {
   }
 }
 
+const REF_SENT_KEY = "jisapp:analytics:ref_sent";
+
+/**
+ * 訪問の最初のページ表示にだけ、どのサイトから来たか（参照元のドメイン）をつける。
+ * Gemini・Claude・検索・TikTok などは utm をつけないので、これで見分ける。ドメイン名だけを残し、URL の中身（検索した言葉など）は残さない
+ */
+function entryReferrer(): string | null {
+  const store = safeSession();
+  if (store?.getItem(REF_SENT_KEY) === "1") return null;
+  store?.setItem(REF_SENT_KEY, "1");
+  try {
+    if (!document.referrer) return null;
+    const host = new URL(document.referrer).hostname;
+    return host && host !== window.location.hostname ? host.slice(0, 64) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function trackEvent(name: AnalyticsEvent, props?: Record<string, string | number | boolean>) {
   if (typeof window === "undefined") return;
   try {
+    if (name === "page_view") {
+      const ref = entryReferrer();
+      if (ref) props = { ...(props ?? {}), ref };
+    }
     const body = JSON.stringify({
       name,
       locale: localeFromPath(window.location.pathname) ?? "ja",

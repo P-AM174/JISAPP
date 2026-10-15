@@ -119,6 +119,11 @@
     "reviewed": false,
     "en": "2. Press “Create a group” in the bar at the top (you need to sign in)"
   },
+  "2か月だれも開かないと、アプリが消えます": {
+    "vi": "App sẽ bị xóa nếu không ai mở trong 2 tháng",
+    "reviewed": false,
+    "en": "The app is deleted if nobody opens it for 2 months"
+  },
   "3. ChatGPT が書いたコードをコピーして、ここに貼る": {
     "vi": "3. Sao chép code ChatGPT viết và dán vào đây",
     "reviewed": false,
@@ -613,6 +618,11 @@
     "vi": "Tiếp tục với Google",
     "reviewed": false,
     "en": "Continue with Google"
+  },
+  "Googleで1タップ・無料。ログインすると、このアプリはそのままあなたの作品になります。": {
+    "vi": "Chỉ một chạm với Google, miễn phí. Đăng nhập là app này trở thành của bạn.",
+    "reviewed": false,
+    "en": "One tap with Google, free. Sign in and this app becomes yours as it is."
   },
   "Googleでログインして、自分の作品にする": {
     "vi": "Đăng nhập bằng Google và giữ app này",
@@ -2083,6 +2093,11 @@
     "vi": "Mỗi người dùng riêng",
     "reviewed": false,
     "en": "Everyone uses it on their own"
+  },
+  "ほかのスマホやパソコンでは、続きを使えません": {
+    "vi": "Không thể dùng tiếp trên điện thoại hay máy tính khác",
+    "reviewed": false,
+    "en": "You can't pick up where you left off on another phone or computer"
   },
   "ほかの方法で送る": {
     "vi": "Gửi bằng cách khác",
@@ -4799,6 +4814,11 @@
     "reviewed": false,
     "en": "Sign in to sync"
   },
+  "ログインしないと、このあと困ること": {
+    "vi": "Nếu không đăng nhập",
+    "reviewed": false,
+    "en": "If you don't sign in"
+  },
   "ログインしないと、このアプリはあとから直せません": {
     "vi": "Nếu không đăng nhập, bạn sẽ không sửa được app này sau này",
     "reviewed": false,
@@ -7173,6 +7193,11 @@
     "vi": "Muốn sửa? Nhờ AI rồi dán lại code mới",
     "reviewed": false,
     "en": "Want changes? Ask the AI and paste the new code"
+  },
+  "直したくなっても、このアプリは直せません": {
+    "vi": "Sau này muốn sửa cũng không sửa được app này",
+    "reviewed": false,
+    "en": "You can't edit this app later, even if you want to"
   },
   "直したものなら、上書きがおすすめです。URLが変わらないので、送った人もそのまま新しい版を使えます。": {
     "vi": "Nếu đây là bản đã sửa, nên cập nhật app đó. URL không đổi nên những người bạn đã gửi vẫn dùng được bản mới.",

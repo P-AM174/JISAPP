@@ -29,6 +29,11 @@
     "reviewed": false,
     "en": " Try it out, and if it works, press “Mark as received”."
   },
+  "#ジサップ #個人開発": {
+    "vi": "#Jisapp",
+    "reviewed": false,
+    "en": "#Jisapp #buildinpublic"
+  },
   "/ クリエイター評価（応援数ベース）": {
     "vi": "/ đánh giá nhà sáng tạo (dựa trên lượt cổ vũ)",
     "reviewed": false,
@@ -48,6 +53,16 @@
     "vi": "1 / 2 Mô tả thứ bạn muốn làm",
     "reviewed": false,
     "en": "1 / 2 Describe what you want"
+  },
+  "1. 下のボタンで、AIに送るプロンプトを作る": {
+    "vi": "1. Tạo prompt gửi cho AI bằng nút bên dưới",
+    "reviewed": false,
+    "en": "1. Make a prompt with the button below"
+  },
+  "1. 下のボタンで、AIに送る文をコピー": {
+    "vi": "1. Sao chép tin nhắn gửi cho AI bằng nút bên dưới",
+    "reviewed": false,
+    "en": "1. Copy the message for the AI with the button below"
   },
   "1. 下のボタンでアプリのページを開く": {
     "vi": "1. Mở trang app bằng nút bên dưới",
@@ -79,10 +94,20 @@
     "reviewed": false,
     "en": "2 / 2 Send it to the AI"
   },
+  "2. AIのチャットに貼って送る（コードを最初から最後まで出し直してくれます）": {
+    "vi": "2. Dán vào khung chat với AI và gửi (AI sẽ viết lại toàn bộ code từ đầu đến cuối)",
+    "reviewed": false,
+    "en": "2. Paste it into the AI chat and send it (the AI writes the whole code again)"
+  },
   "2. 「必須ルールだけコピー」を押す": {
     "vi": "2. Nhấn “Chỉ sao chép quy tắc bắt buộc”",
     "reviewed": false,
     "en": "2. Press “Copy just the required rules”"
+  },
+  "2. そのプロンプトを ChatGPT に貼って送る": {
+    "vi": "2. Dán prompt đó vào ChatGPT và gửi",
+    "reviewed": false,
+    "en": "2. Paste that prompt into ChatGPT and send it"
   },
   "2. グループを作ると招待リンクが出ます。LINEなどでメンバーに送ります。": {
     "vi": "2. Tạo nhóm xong bạn sẽ có link mời. Gửi cho các thành viên qua Zalo, Messenger...",
@@ -94,6 +119,11 @@
     "reviewed": false,
     "en": "2. Press “Create a group” in the bar at the top (you need to sign in)"
   },
+  "3. ChatGPT が書いたコードをコピーして、ここに貼る": {
+    "vi": "3. Sao chép code ChatGPT viết và dán vào đây",
+    "reviewed": false,
+    "en": "3. Copy the code ChatGPT writes and paste it here"
+  },
   "3. メンバーはリンクを開いて表示名を入れるだけで参加できます（ログイン不要）。同じデータを見たり書き込んだりできます。": {
     "vi": "3. Thành viên chỉ cần mở link và nhập tên hiển thị là vào được (không cần đăng nhập). Mọi người cùng xem và ghi chung một dữ liệu.",
     "reviewed": false,
@@ -103,6 +133,11 @@
     "vi": "3. Gửi link mời cho các thành viên qua Zalo, Messenger...",
     "reviewed": false,
     "en": "3. Send the invite link to your members by message"
+  },
+  "3. 書き終わったら、新しいコードをコピーしてここに貼る": {
+    "vi": "3. Khi AI viết xong, sao chép code mới và dán vào đây",
+    "reviewed": false,
+    "en": "3. When it's done, copy the new code and paste it here"
   },
   "3. 要望文のあとに貼り付けて送信": {
     "vi": "3. Dán vào sau yêu cầu rồi gửi",
@@ -138,6 +173,11 @@
     "vi": "Đang hiện <b>{n}</b> app",
     "reviewed": false,
     "en": "Showing <b>{n}</b> apps"
+  },
+  "<b>コードの枠の右上の「コピー」</b>を押します。": {
+    "vi": "bấm <b>“Sao chép” ở góc trên bên phải khung code</b>.",
+    "reviewed": false,
+    "en": "press <b>“Copy” at the top right of the code box</b>."
   },
   "<t0>Googleスプレッドシートの場合</t0>：「ファイル」→「コピーを作成」を押して、ご自身のGoogleドライブにコピーしてください。": {
     "vi": "<t0>Google Sheets</t0>: chọn “Tệp” → “Tạo bản sao” để sao chép vào Google Drive của bạn.",
@@ -178,6 +218,21 @@
     "vi": "Tự động thêm vào <t0>Thư viện của tôi</t0> (app có lưu dữ liệu chạy ngay)",
     "reviewed": false,
     "en": "Added to <t0>My library</t0> automatically (apps that save data just work)"
+  },
+  "AIがコードを<b>最後まで書き終わるのを待って</b>から、": {
+    "vi": "<b>Chờ AI viết xong toàn bộ code</b>, rồi ",
+    "reviewed": false,
+    "en": "<b>Wait until the AI has finished writing</b> the code, then "
+  },
+  "AIがコードを<b>最後まで書き終わるのを待って</b>から、コードの枠の右上の「コピー」を押し、{tag} から始まるコードを貼り直してください。": {
+    "vi": "<b>Chờ AI viết xong</b> toàn bộ code, rồi bấm \"Sao chép\" ở góc trên bên phải khung code và dán lại đoạn code bắt đầu bằng {tag}.",
+    "reviewed": false,
+    "en": "<b>Wait until the AI has finished writing</b> all the code, then press “Copy” at the top right of the code box and paste the code that starts with {tag}."
+  },
+  "AIがコードを<b>最後まで書き終わるのを待つ</b>": {
+    "vi": "<b>Chờ AI viết xong</b> toàn bộ code",
+    "reviewed": false,
+    "en": "<b>Wait until the AI has finished writing</b> all the code"
   },
   "AIがコードを書いている途中でコピーしたか、AIの出力が途中で止まったようです。": {
     "vi": "Có thể bạn sao chép khi AI vẫn đang viết, hoặc AI đã dừng giữa chừng.",
@@ -224,6 +279,16 @@
     "reviewed": false,
     "en": "The AI has stopped writing (wait until it does)"
   },
+  "AIが書き終わったら、返ってきたコードを全部コピーして、ジサップに戻って貼り付ける": {
+    "vi": "Khi AI viết xong, sao chép toàn bộ code trả về, quay lại Jisapp và dán vào",
+    "reviewed": false,
+    "en": "When the AI has finished, copy all the code it returns, come back to Jisapp and paste it"
+  },
+  "AIが書き終わる前に、コピーを押したようです": {
+    "vi": "Có vẻ bạn đã bấm sao chép trước khi AI viết xong",
+    "reviewed": false,
+    "en": "It looks like you pressed copy before the AI finished"
+  },
   "AIが生成したHTML": {
     "vi": "HTML do AI viết",
     "reviewed": false,
@@ -238,6 +303,11 @@
     "vi": "Vừa trò chuyện với AI vừa hoàn thiện app của riêng bạn!",
     "reviewed": false,
     "en": "Chat with the AI to finish your very own app!"
+  },
+  "AIに、変えたいところと一緒に送る": {
+    "vi": "Gửi cho AI cùng với chỗ muốn sửa",
+    "reviewed": false,
+    "en": "Send it to the AI with your changes"
   },
   "AIにアイデアを伝えてコードを生成 → 開発スタジオに貼るだけ。サーバーもDBも設定不要です。": {
     "vi": "Kể ý tưởng cho AI để có code → dán vào Studio. Không cần server hay cơ sở dữ liệu.",
@@ -304,6 +374,11 @@
     "reviewed": false,
     "en": "What you'll send to the AI"
   },
+  "AIに送る文をコピー": {
+    "vi": "Sao chép tin nhắn gửi cho AI",
+    "reviewed": false,
+    "en": "Copy the message for the AI"
+  },
   "AIに送る文をコピーしました": {
     "vi": "Đã sao chép câu gửi cho AI",
     "reviewed": false,
@@ -329,10 +404,45 @@
     "reviewed": false,
     "en": "Paste the AI's code and it runs right here."
   },
+  "AIのチャットで、コードを書き終わるまで待ってからコピーしてください": {
+    "vi": "Trong khung chat AI, hãy chờ code được viết xong rồi mới sao chép nhé",
+    "reviewed": false,
+    "en": "In the AI chat, wait until the code is finished, then copy it"
+  },
+  "AIのチャットで、自分が送った文章のコピーボタンを押していませんか？": {
+    "vi": "Có phải bạn đã bấm nút sao chép dưới tin nhắn mình gửi trong khung chat AI không?",
+    "reviewed": false,
+    "en": "Did you press the copy button under your own message in the AI chat?"
+  },
+  "AIのチャットに戻る": {
+    "vi": "Quay lại khung chat AI",
+    "reviewed": false,
+    "en": "Go back to the AI chat"
+  },
+  "AIの文字が動かなくなった": {
+    "vi": "Chữ của AI đã ngừng chạy",
+    "reviewed": false,
+    "en": "The AI's text has stopped moving"
+  },
   "AIの画面で、コードが最後まで出力されたか確認してください": {
     "vi": "Kiểm tra trong app AI xem code đã được viết hết chưa",
     "reviewed": false,
     "en": "Check in the AI app that all the code has been written"
+  },
+  "AIの返事が途中で止まっていたら": {
+    "vi": "Nếu câu trả lời của AI bị dừng giữa chừng",
+    "reviewed": false,
+    "en": "If the AI stopped partway"
+  },
+  "AIの返事のコードをコピーする": {
+    "vi": "Sao chép code trong câu trả lời của AI",
+    "reviewed": false,
+    "en": "Copy the code from the AI's reply"
+  },
+  "AIの返事の中にある、<b>コードの枠の右上の「コピー」</b>を押す": {
+    "vi": "Trong câu trả lời của AI, bấm <b>nút \"Sao chép\" ở góc trên bên phải khung code</b>",
+    "reviewed": false,
+    "en": "Press the <b>“Copy” button at the top right of the code box</b> in the AI’s reply"
   },
   "AIコードを貼るだけ": {
     "vi": "Chỉ cần dán code AI",
@@ -419,6 +529,16 @@
     "reviewed": false,
     "en": "Authorization header written in the code"
   },
+  "ChatGPT から来た方へ：使い方は3ステップです": {
+    "vi": "Bạn đến từ ChatGPT? Chỉ cần 3 bước",
+    "reviewed": false,
+    "en": "Coming from ChatGPT? It works in 3 steps"
+  },
+  "ChatGPT などのAIのチャットに<b>コピーしたコードを貼り</b>、その下に<b>変えたいところ</b>を書いて送ります。": {
+    "vi": "Trong khung chat AI như ChatGPT, <b>dán code đã sao chép</b>, rồi viết <b>chỗ bạn muốn sửa</b> bên dưới và gửi đi.",
+    "reviewed": false,
+    "en": "In an AI chat such as ChatGPT, <b>paste the code you copied</b> and write <b>what you want to change</b> below it, then send."
+  },
   "ChatGPT、Claude、Gemini など、HTMLとして出力できるAIであれば利用できます。ジサップの開発スタジオに、生成されたコードを貼り付けて動かします。": {
     "vi": "AI nào xuất được HTML đều dùng được — ChatGPT, Claude, Gemini và nhiều AI khác. Dán code vào Studio của Jisapp để chạy.",
     "reviewed": false,
@@ -459,6 +579,11 @@
     "reviewed": false,
     "en": "Any AI works — ChatGPT, Gemini, Claude and more"
   },
+  "Chrome の右上の {icon} を押す": {
+    "vi": "Nhấn {icon} ở góc trên bên phải của Chrome",
+    "reviewed": false,
+    "en": "Tap {icon} at the top right of Chrome"
+  },
   "GET する": {
     "vi": "Lấy app",
     "reviewed": false,
@@ -488,6 +613,11 @@
     "vi": "Tiếp tục với Google",
     "reviewed": false,
     "en": "Continue with Google"
+  },
+  "Googleでログインして、自分の作品にする": {
+    "vi": "Đăng nhập bằng Google và giữ app này",
+    "reviewed": false,
+    "en": "Sign in with Google and keep it"
   },
   "Googleドライブにアプリをコピーする（ワンタッチ）": {
     "vi": "Sao chép app vào Google Drive của bạn (một chạm)",
@@ -569,6 +699,11 @@
     "reviewed": false,
     "en": "Fork the code on Replit"
   },
+  "SNSに投稿する文をコピー": {
+    "vi": "Sao chép nội dung để đăng mạng xã hội",
+    "reviewed": false,
+    "en": "Copy a post for social media"
+  },
   "SNS・メッセージで共有": {
     "vi": "Chia sẻ lên mạng xã hội hoặc qua tin nhắn",
     "reviewed": false,
@@ -578,6 +713,11 @@
     "vi": "Mạng xã hội",
     "reviewed": false,
     "en": "Social media"
+  },
+  "Safari の共有ボタン {icon} を押す（画面の下か上にあります）": {
+    "vi": "Nhấn nút Chia sẻ {icon} trong Safari (ở cuối hoặc đầu màn hình)",
+    "reviewed": false,
+    "en": "Tap the Share button {icon} in Safari (at the bottom or top of the screen)"
   },
   "TODOリスト": {
     "vi": "Danh sách việc cần làm",
@@ -629,6 +769,11 @@
     "reviewed": false,
     "en": "URL copied!"
   },
+  "URLを発行しました": {
+    "vi": "Đã tạo URL",
+    "reviewed": false,
+    "en": "Your URL is ready"
+  },
   "URLを発行しました！": {
     "vi": "Link của bạn đã sẵn sàng!",
     "reviewed": false,
@@ -653,6 +798,11 @@
     "vi": "Ai có link đều mở và dùng được",
     "reviewed": false,
     "en": "Anyone with the URL can open and use it"
+  },
+  "URLを覚えていなくても、アイコンから開けます。": {
+    "vi": "Không cần nhớ URL, chỉ cần mở từ biểu tượng.",
+    "reviewed": false,
+    "en": "You can open it from an icon without remembering the URL."
   },
   "URLパラメータ": {
     "vi": "Tham số URL",
@@ -683,6 +833,11 @@
     "vi": "Không cần VPS, tài khoản cloud hay tên miền. App chạy ngay khi bạn dán code — cũng chẳng cần Vercel hay Heroku.",
     "reviewed": false,
     "en": "No VPS, cloud account or domain needed. Your app runs the moment you paste the code — no Vercel or Heroku either."
+  },
+  "Xでシェア": {
+    "vi": "Chia sẻ lên X",
+    "reviewed": false,
+    "en": "Share on X"
   },
   "Xでシェアする": {
     "vi": "Chia sẻ lên X",
@@ -734,6 +889,11 @@
     "reviewed": false,
     "en": "x-api-key header written in the code"
   },
+  "{1} さんが、あなたの「{2}」をもとにアプリを作りました！": {
+    "vi": "{1} đã làm một app dựa trên “{2}” của bạn!",
+    "reviewed": false,
+    "en": "{1} built an app based on your “{2}”!"
+  },
   "{1} さんが「{2}」を押しました。": {
     "vi": "{1} đã gửi “{2}”.",
     "reviewed": false,
@@ -758,6 +918,11 @@
     "vi": "Đã thêm {added}. Dữ liệu cũ vẫn dùng được. Nếu bạn cố ý thêm thì cứ đăng bình thường.",
     "reviewed": false,
     "en": "{added} was added. Existing data still works. If you meant to add it, it's fine to publish as is."
+  },
+  "{ai}が最後まで書き終わってから、返事にあるコードを全部コピー": {
+    "vi": "Khi {ai} đã viết xong hoàn toàn, sao chép toàn bộ code trong câu trả lời",
+    "reviewed": false,
+    "en": "Once {ai} has completely finished, copy all the code in its reply"
   },
   "{ai}の返事にあるコードを、最初から最後まで全部コピー": {
     "vi": "Sao chép toàn bộ code trong câu trả lời của {ai}, từ đầu đến cuối",
@@ -899,6 +1064,11 @@
     "reviewed": false,
     "en": "{title} | a free app made on Jisapp"
   },
+  "{title}（アレンジ）": {
+    "vi": "{title} (bản của tôi)",
+    "reviewed": false,
+    "en": "{title} (remix)"
+  },
   "© 2026 ジサップ — AIコードを貼るだけの開発スタジオ": {
     "vi": "© 2026 Jisapp — Nơi code AI thành app · Made in Japan",
     "reviewed": false,
@@ -908,6 +1078,11 @@
     "vi": "* Xem nội dung là miễn phí. Có thể bạn cần tài khoản của dịch vụ bên ngoài.",
     "reviewed": false,
     "en": "* Viewing the content is free. You may need an account for the external service."
+  },
+  "↑ コピーしたコードを貼る": {
+    "vi": "↑ Dán code đã sao chép",
+    "reviewed": false,
+    "en": "↑ Paste the code you copied"
   },
   "① アイデア": {
     "vi": "① Ý tưởng",
@@ -943,6 +1118,11 @@
     "vi": "“Chỉ tạo link” dùng được mà không cần chọn danh mục",
     "reviewed": false,
     "en": "“URL only” works without choosing a category"
+  },
+  "「{1}」、その後どうですか？": {
+    "vi": "“{1}” dùng thế nào rồi?",
+    "reviewed": false,
+    "en": "How's “{1}” going?"
   },
   "「{1}」にスタンプが{2}件届きました": {
     "vi": "“{1}” nhận được {2} sticker",
@@ -1049,6 +1229,16 @@
     "reviewed": false,
     "en": "Delete all the data you've saved in “{title}”? This can't be undone. The app itself stays."
   },
+  "「{title}」に上書きする": {
+    "vi": "Cập nhật “{title}”",
+    "reviewed": false,
+    "en": "Update “{title}”"
+  },
+  "「{title}」に上書きする（URLはそのまま）": {
+    "vi": "Cập nhật “{title}” (giữ nguyên URL)",
+    "reviewed": false,
+    "en": "Update “{title}” (same URL)"
+  },
   "「{title}」の出品を取り下げますか？\nトップページの一覧から非表示になります（URLは引き続き使えます）。": {
     "vi": "Gỡ “{title}” khỏi Chợ app?\nApp sẽ bị ẩn khỏi trang chủ (link vẫn dùng được).",
     "reviewed": false,
@@ -1058,6 +1248,31 @@
     "vi": "Mình vừa cùng AI làm app “{title}” và đăng lên rồi\n#Jisapp #AI",
     "reviewed": false,
     "en": "I made “{title}” with AI and published it\n#Jisapp #buildinpublic"
+  },
+  "「{title}」をあなたの作品にしました": {
+    "vi": "“{title}” giờ là app của bạn",
+    "reviewed": false,
+    "en": "“{title}” is now yours"
+  },
+  "「{title}」をもとに、自分用のアプリを作れます。<b>元のアプリは変わりません。</b>": {
+    "vi": "Bạn có thể làm app của riêng mình dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
+    "reviewed": false,
+    "en": "You can make your own app based on “{title}”. <b>The original app stays as it is.</b>"
+  },
+  "「{title}」をもとに作っています。<b>元のアプリは変わりません。</b>": {
+    "vi": "Bạn đang làm dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
+    "reviewed": false,
+    "en": "You're building on “{title}”. <b>The original app stays as it is.</b>"
+  },
+  "「{title}」を作ったよ。使ってみて": {
+    "vi": "Mình đã làm “{title}”. Dùng thử nhé",
+    "reviewed": false,
+    "en": "I made “{title}”. Try it"
+  },
+  "「{title}」を作りました。ここから使ってください": {
+    "vi": "Mình đã làm “{title}”. Mọi người dùng ở đây nhé",
+    "reviewed": false,
+    "en": "I made “{title}”. Please use it here"
   },
   "「{title}」を保存しました": {
     "vi": "Đã lưu “{title}”",
@@ -1094,6 +1309,16 @@
     "reviewed": false,
     "en": "“Use brighter colors”"
   },
+  "「ジサップ公式」など、運営とまぎらわしい名前は使えません": {
+    "vi": "Không thể dùng tên dễ nhầm với đội ngũ Jisapp (như “Jisapp Official”)",
+    "reviewed": false,
+    "en": "Names that look like the Jisapp team (such as “Jisapp Official”) can't be used"
+  },
+  "「ホーム画面に追加」を押す": {
+    "vi": "Nhấn “Thêm vào màn hình chính”",
+    "reviewed": false,
+    "en": "Tap “Add to Home screen”"
+  },
   "「マイプロジェクト」ページへ移動": {
     "vi": "Vào trang “Dự án của tôi”",
     "reviewed": false,
@@ -1103,6 +1328,31 @@
     "vi": "Chọn “Để sau” để tiếp tục dùng phiên bản hiện tại. Bạn có thể cập nhật bất cứ lúc nào.",
     "reviewed": false,
     "en": "Choose “Later” to keep using the current version. You can update anytime."
+  },
+  "「追加」を押す": {
+    "vi": "Nhấn “Thêm”",
+    "reviewed": false,
+    "en": "Tap “Add”"
+  },
+  "『{title}』をもとに作りました。": {
+    "vi": "Làm dựa trên “{title}”.",
+    "reviewed": false,
+    "en": "Based on “{title}”."
+  },
+  "あとから直して、同じURLのまま上書きできる": {
+    "vi": "Sửa sau và cập nhật mà vẫn giữ nguyên URL",
+    "reviewed": false,
+    "en": "Edit it later and update it at the same URL"
+  },
+  "あなたの「{1}」が開かれました（{2}回）": {
+    "vi": "“{1}” của bạn đã được mở ({2} lần)",
+    "reviewed": false,
+    "en": "Your “{1}” was opened ({2} times)"
+  },
+  "あなたの「{1}」をもとに、アプリが{2}件作られました！": {
+    "vi": "Đã có {2} app được làm dựa trên “{1}” của bạn!",
+    "reviewed": false,
+    "en": "{2} apps have been built from your “{1}”!"
   },
   "あなたのアプリ": {
     "vi": "App của bạn",
@@ -1168,6 +1418,11 @@
     "vi": "Trong đó {playgroundBytes} là dữ liệu lưu khi chạy thử trong Studio",
     "reviewed": false,
     "en": "Including {playgroundBytes} saved while testing in the Studio"
+  },
+  "うまくいかないときは、運営が代わりにアプリにします（無料）": {
+    "vi": "Làm không được? Đội ngũ Jisapp sẽ làm giúp (miễn phí)",
+    "reviewed": false,
+    "en": "Stuck? The Jisapp team can build it for you (free)"
   },
   "おかえりなさい": {
     "vi": "Chào mừng bạn quay lại",
@@ -1289,6 +1544,11 @@
     "reviewed": false,
     "en": "Paste here"
   },
+  "ここに貼る（コードは {tag} などで始まります）": {
+    "vi": "Dán vào đây (code bắt đầu bằng {tag} hoặc tương tự)",
+    "reviewed": false,
+    "en": "Paste it here (code starts with something like {tag})"
+  },
   "こだわり・機能の希望": {
     "vi": "Chi tiết hoặc tính năng bạn muốn",
     "reviewed": false,
@@ -1314,6 +1574,11 @@
     "reviewed": false,
     "en": "If you publish as is, saved data won't load"
   },
+  "このまま動かす": {
+    "vi": "Vẫn chạy như vậy",
+    "reviewed": false,
+    "en": "Run it anyway"
+  },
   "このまま戻るとコードが失われます。": {
     "vi": "Nếu quay lại bây giờ, code của bạn sẽ mất.",
     "reviewed": false,
@@ -1323,6 +1588,11 @@
     "vi": "app này",
     "reviewed": false,
     "en": "this app"
+  },
+  "このアプリ、誰と使う？": {
+    "vi": "Bạn sẽ dùng app này với ai?",
+    "reviewed": false,
+    "en": "Who will use this app?"
   },
   "このアプリで何ができるか簡単に説明してください...": {
     "vi": "Mô tả ngắn app này làm được gì...",
@@ -1338,6 +1608,11 @@
     "vi": "Bạn chưa lưu dữ liệu nào trong app này",
     "reviewed": false,
     "en": "You haven't saved any data in this app yet"
+  },
+  "このアプリのコードは読み込めませんでした": {
+    "vi": "Không tải được code của app này",
+    "reviewed": false,
+    "en": "Couldn't load this app's code"
   },
   "このアプリのソースコードは公開されていません": {
     "vi": "Mã nguồn của app này không công khai",
@@ -1364,10 +1639,30 @@
     "reviewed": false,
     "en": "Data saved in this app"
   },
+  "このアプリの変え方": {
+    "vi": "Cách sửa app này",
+    "reviewed": false,
+    "en": "How to change this app"
+  },
   "このアプリは localStorage で保存しているため、データは同じ端末のブラウザにしか残りません。別の端末でも残すには <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0> を使います。": {
     "vi": "App này lưu bằng localStorage nên dữ liệu chỉ nằm trong trình duyệt của thiết bị này. Muốn giữ trên nhiều thiết bị, hãy dùng <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>.",
     "reviewed": false,
     "en": "This app saves with localStorage, so data only stays in this browser on this device. To keep it across devices, use <t0>window.Jisapp.saveData</t0> / <t0>loadData</t0>."
+  },
+  "このアプリは、すでに出品されている「{1}」（作者：{2}）とまったく同じコードなので、出品できません。": {
+    "vi": "App này có code giống hệt “{1}” (của {2}) đã được đăng, nên không thể đăng.",
+    "reviewed": false,
+    "en": "This app has exactly the same code as “{1}” (by {2}), which is already listed, so it can't be published."
+  },
+  "このアプリは、データが一人ひとりの端末に保存される作りです。出欠や集金のように「みんなで同じデータを見たい」ときは、AIに次の文を送って作り直すと、グループで使えるようになります。": {
+    "vi": "App này lưu dữ liệu riêng trên thiết bị của từng người. Nếu muốn mọi người cùng xem một dữ liệu (như điểm danh hay thu tiền), hãy gửi tin nhắn dưới đây cho AI để làm lại app, khi đó cả nhóm có thể dùng chung.",
+    "reviewed": false,
+    "en": "This app saves data separately on each person's device. If everyone should see the same data (like attendance or payments), send the message below to the AI and rebuild it to use it as a group."
+  },
+  "このアプリはジサップで作られました。あなたも無料で作れる": {
+    "vi": "App này được làm bằng Jisapp. Bạn cũng làm được, miễn phí",
+    "reviewed": false,
+    "en": "Made with Jisapp. You can make one too, free"
   },
   "このアプリは外部サービスのAPIキーを使います": {
     "vi": "App này dùng API key của dịch vụ bên ngoài",
@@ -1378,6 +1673,26 @@
     "vi": "App này đã bị đội ngũ Jisapp gỡ",
     "reviewed": false,
     "en": "This app was removed by the Jisapp team"
+  },
+  "このアプリをもとに、自分用のアプリを作ります（元のアプリは変わりません）": {
+    "vi": "Làm app của riêng bạn dựa trên app này (app gốc không bị thay đổi)",
+    "reviewed": false,
+    "en": "Make your own version of this app (the original stays as it is)"
+  },
+  "このアプリをもとに、自分用のアプリを作れます。元のアプリは変わりません。": {
+    "vi": "Bạn có thể làm app của riêng mình dựa trên app này. App gốc không bị thay đổi.",
+    "reviewed": false,
+    "en": "You can make your own app based on this one. The original stays as it is."
+  },
+  "このアプリをもとに作られたアプリ": {
+    "vi": "App được làm dựa trên app này",
+    "reviewed": false,
+    "en": "Apps built from this one"
+  },
+  "このアプリをもとに作る": {
+    "vi": "Làm app của riêng bạn từ app này",
+    "reviewed": false,
+    "en": "Make your own version"
   },
   "このアプリをマイページに追加しますか？": {
     "vi": "Thêm app này vào Trang của tôi?",
@@ -1464,6 +1779,11 @@
     "reviewed": false,
     "en": "This code doesn't use group sharing yet"
   },
+  "このコードを、次のように変えてください。": {
+    "vi": "Hãy sửa code này như sau:",
+    "reviewed": false,
+    "en": "Please change this code like this:"
+  },
   "このブラウザでは保存できないため、コードをコピーしました。メモアプリに貼り付けてください": {
     "vi": "Trình duyệt này không lưu được file nên mình đã sao chép code. Hãy dán vào app ghi chú",
     "reviewed": false,
@@ -1489,6 +1809,21 @@
     "reviewed": false,
     "en": "Anyone you send this link to can join “{groupName}” just by entering a display name."
   },
+  "この名前にする": {
+    "vi": "Dùng tên này",
+    "reviewed": false,
+    "en": "Use this name"
+  },
+  "この名前はほかの人が使っています。別の名前にしてください": {
+    "vi": "Tên này đã có người dùng. Hãy chọn tên khác",
+    "reviewed": false,
+    "en": "Someone else is using this name. Please choose another"
+  },
+  "この名前は使えません": {
+    "vi": "Không thể dùng tên này",
+    "reviewed": false,
+    "en": "This name can't be used"
+  },
   "この名前（__ で始まる名前）では保存できません": {
     "vi": "Không lưu được với tên bắt đầu bằng __",
     "reviewed": false,
@@ -1498,6 +1833,11 @@
     "vi": "Mục này hiện không lấy được",
     "reviewed": false,
     "en": "This item isn't available right now"
+  },
+  "この案内を閉じる": {
+    "vi": "Đóng thông báo này",
+    "reviewed": false,
+    "en": "Close this note"
   },
   "この注意を閉じる": {
     "vi": "Đóng lưu ý này",
@@ -1539,10 +1879,20 @@
     "reviewed": false,
     "en": "This sample was made by AI. You can make your own app the same way"
   },
+  "これはコードではなく、AIに送った文章のようです": {
+    "vi": "Có vẻ đây không phải code mà là đoạn văn bạn đã gửi cho AI",
+    "reviewed": false,
+    "en": "This looks like the message you sent to the AI, not code"
+  },
   "これまではジサップ側にデータを保存していましたが、新しいコードはスマホやパソコンの中だけに保存しようとしています。これまでのデータは表示されなくなり、別の端末で開いたときにも引き継がれなくなります。": {
     "vi": "Trước đây dữ liệu được lưu trên Jisapp, nhưng code mới lại lưu chỉ trong điện thoại hoặc máy tính. Dữ liệu cũ sẽ không hiện nữa và không chuyển sang thiết bị khác.",
     "reviewed": false,
     "en": "Data used to be saved on Jisapp, but the new code tries to save it only on the phone or computer. Existing data will stop showing up, and it won't carry over to other devices."
+  },
+  "これをもとに作る": {
+    "vi": "Làm từ app này",
+    "reviewed": false,
+    "en": "Make your own"
   },
   "これ以上追加できません（上限に達しました）": {
     "vi": "Không thêm được nữa (đã đạt giới hạn)",
@@ -1669,6 +2019,11 @@
     "reviewed": false,
     "en": "Who will use the app?"
   },
+  "できあがりを受け取るメールアドレス": {
+    "vi": "Email để nhận app khi xong",
+    "reviewed": false,
+    "en": "Email to receive your app"
+  },
   "どうすればいいか": {
     "vi": "Nên làm gì",
     "reviewed": false,
@@ -1729,6 +2084,11 @@
     "reviewed": false,
     "en": "Everyone uses it on their own"
   },
+  "ほかの方法で送る": {
+    "vi": "Gửi bằng cách khác",
+    "reviewed": false,
+    "en": "Other ways to send"
+  },
   "まずはここから": {
     "vi": "Bắt đầu từ đây",
     "reviewed": false,
@@ -1764,6 +2124,11 @@
     "reviewed": false,
     "en": "You haven't got any apps yet"
   },
+  "まだ{ai}に送っていないなら": {
+    "vi": "Nếu bạn chưa gửi cho {ai}",
+    "reviewed": false,
+    "en": "If you haven't sent it to {ai} yet"
+  },
   "まだお気に入りに追加したアプリはありません": {
     "vi": "Chưa có app yêu thích nào",
     "reviewed": false,
@@ -1788,6 +2153,11 @@
     "vi": "Chưa có nhóm nào.",
     "reviewed": false,
     "en": "No groups yet."
+  },
+  "まだコードではなく文章が入っています。AIが最後まで書き終わってから、返事のコードをコピーして貼り直してください。": {
+    "vi": "Đây vẫn là văn bản, chưa phải code. Hãy chờ AI viết xong, rồi sao chép code trong câu trả lời và dán lại.",
+    "reviewed": false,
+    "en": "This is still text, not code. Wait until the AI has finished, then copy the code from its reply and paste it again."
   },
   "まだフォロー中のクリエイターはいません": {
     "vi": "Bạn chưa theo dõi ai",
@@ -1889,6 +2259,11 @@
     "reviewed": false,
     "en": "Type it again"
   },
+  "もう出さない": {
+    "vi": "Không hiện lại",
+    "reviewed": false,
+    "en": "Don't show again"
+  },
   "もっとおしゃれにして": {
     "vi": "Làm cho đẹp hơn",
     "reviewed": false,
@@ -1898,6 +2273,16 @@
     "vi": "Tìm thêm app",
     "reviewed": false,
     "en": "Find more apps"
+  },
+  "もとに作る": {
+    "vi": "Làm từ app này",
+    "reviewed": false,
+    "en": "Remix"
+  },
+  "やり方": {
+    "vi": "Cách làm",
+    "reviewed": false,
+    "en": "How"
   },
   "やり直す": {
     "vi": "Làm lại",
@@ -1923,6 +2308,16 @@
     "vi": "Mở nhiều nhất",
     "reviewed": false,
     "en": "Most opened"
+  },
+  "わかった": {
+    "vi": "Đã hiểu",
+    "reviewed": false,
+    "en": "Got it"
+  },
+  "わかった、はじめる": {
+    "vi": "Đã hiểu, bắt đầu thôi",
+    "reviewed": false,
+    "en": "Got it, let's start"
   },
   "アイデアをリクエストすると、他のジサップユーザーがAIを使って作って返信してくれます。": {
     "vi": "Đăng ý tưởng của bạn, những người dùng Jisapp khác có thể nhờ AI làm ra và trả lời bạn.",
@@ -2019,10 +2414,20 @@
     "reviewed": false,
     "en": "App URL"
   },
+  "アプリのようにアイコンから開けるようになります。データはそのまま使えます。": {
+    "vi": "Bạn có thể mở từ biểu tượng như một app. Dữ liệu vẫn được giữ nguyên.",
+    "reviewed": false,
+    "en": "You can open it from an icon like an app. Your data stays as it is."
+  },
   "アプリのタイトル": {
     "vi": "Tên app",
     "reviewed": false,
     "en": "App title"
+  },
+  "アプリのデータが、ほかの端末にも残る": {
+    "vi": "Dữ liệu app được giữ cả trên thiết bị khác",
+    "reviewed": false,
+    "en": "Your app data stays on your other devices too"
   },
   "アプリの使い方や特徴を簡単に説明...": {
     "vi": "Mô tả ngắn cách dùng và điểm đặc biệt...",
@@ -2093,6 +2498,11 @@
     "vi": "Tạo app",
     "reviewed": false,
     "en": "Make an app"
+  },
+  "アプリを公開したときの作者名などに使います。Google の名前は表示されません。": {
+    "vi": "Tên này dùng làm tên người tạo khi bạn đăng app. Tên Google của bạn sẽ không hiển thị.",
+    "reviewed": false,
+    "en": "It's shown as the creator name when you publish apps. Your Google name is never shown."
   },
   "アプリを公開する": {
     "vi": "Đăng app",
@@ -2459,6 +2869,26 @@
     "reviewed": false,
     "en": "Couldn't go back to the group"
   },
+  "グループのLINEにリンクを送ろう": {
+    "vi": "Gửi link vào nhóm chat",
+    "reviewed": false,
+    "en": "Send the link to your group chat"
+  },
+  "グループのLINEに送る": {
+    "vi": "Gửi vào nhóm LINE",
+    "reviewed": false,
+    "en": "Send to the group on LINE"
+  },
+  "グループのデータを読み込めていないため、みんなのデータを上書きしないよう保存を止めました。通信を確かめてから、ページを読み込み直してください": {
+    "vi": "Chưa tải được dữ liệu của nhóm nên đã dừng lưu để không ghi đè dữ liệu của mọi người. Hãy kiểm tra kết nối rồi tải lại trang",
+    "reviewed": false,
+    "en": "The group's data couldn't be loaded, so saving was stopped to avoid overwriting everyone's data. Check your connection and reload the page"
+  },
+  "グループのトークにURLを送ろう": {
+    "vi": "Gửi URL vào nhóm chat",
+    "reviewed": false,
+    "en": "Send the URL to your group chat"
+  },
   "グループのメンバーと同じデータを使えます": {
     "vi": "Dùng chung dữ liệu với các thành viên trong nhóm",
     "reviewed": false,
@@ -2619,10 +3049,20 @@
     "reviewed": false,
     "en": "Copied"
   },
+  "コピーしました。AIに貼って送ってください": {
+    "vi": "Đã sao chép. Hãy dán vào AI và gửi",
+    "reviewed": false,
+    "en": "Copied. Paste it to the AI and send"
+  },
   "コピーしました。AIに送ってください": {
     "vi": "Đã sao chép. Hãy gửi cho AI",
     "reviewed": false,
     "en": "Copied. Send it to the AI"
+  },
+  "コピーしました。SNSに貼って投稿できます": {
+    "vi": "Đã sao chép. Dán vào bài đăng mạng xã hội nhé",
+    "reviewed": false,
+    "en": "Copied. Paste it into a post"
   },
   "コピーしました。最後に今のコードを貼って、AIに送ってください": {
     "vi": "Đã sao chép. Dán code hiện tại vào cuối rồi gửi cho AI",
@@ -2638,6 +3078,11 @@
     "vi": "Mình đã sao chép lại — dán lần nữa",
     "reviewed": false,
     "en": "I copied it again — paste again"
+  },
+  "コピーする前に、AIが<b>最後まで書き終わった</b>か確かめる": {
+    "vi": "Trước khi sao chép, hãy chắc chắn AI đã <b>viết xong hoàn toàn</b>",
+    "reviewed": false,
+    "en": "Before copying, make sure the AI has <b>completely finished</b>"
   },
   "コピーできませんでした": {
     "vi": "Không sao chép được",
@@ -2709,6 +3154,16 @@
     "reviewed": false,
     "en": "Don't write the key in the code — register it from “Register API key” in the “…” menu at the top right, using the same secret name the AI used in the code (e.g. secret: &apos;WEATHER&apos;)."
   },
+  "コードの右上の<b>「全部コピー」</b>を押すと、このアプリのコードがまるごとコピーされます。": {
+    "vi": "Bấm <b>“Sao chép hết”</b> ở góc trên bên phải phần code để sao chép toàn bộ code của app này.",
+    "reviewed": false,
+    "en": "Press <b>“Copy all”</b> at the top right of the code to copy the whole app."
+  },
+  "コードの最後が {tag} で終わっている": {
+    "vi": "Code kết thúc bằng {tag}",
+    "reviewed": false,
+    "en": "The code ends with {tag}"
+  },
   "コードの最後が {tag} で終わっているか": {
     "vi": "Code kết thúc bằng {tag}",
     "reviewed": false,
@@ -2753,6 +3208,11 @@
     "vi": "Đã sao chép toàn bộ code",
     "reviewed": false,
     "en": "Copied all the code"
+  },
+  "コードを全部コピーする": {
+    "vi": "Sao chép toàn bộ code",
+    "reviewed": false,
+    "en": "Copy all the code"
   },
   "コードを全部コピー（AIに修正を頼むときに）": {
     "vi": "Sao chép toàn bộ code (để nhờ AI sửa)",
@@ -2864,6 +3324,11 @@
     "reviewed": false,
     "en": "Sample: Reaction Tap"
   },
+  "サークルの集金表（誰が払ったか分かる）": {
+    "vi": "Bảng thu quỹ nhóm (biết ai đã đóng)",
+    "reviewed": false,
+    "en": "A team fee tracker (see who has paid)"
+  },
   "サーバーやデータベースの契約は必要ですか？": {
     "vi": "Có cần server hay cơ sở dữ liệu không?",
     "reviewed": false,
@@ -2954,6 +3419,31 @@
     "reviewed": false,
     "en": "Make and publish a web app on Jisapp. Upload HTML code and share it right away."
   },
+  "ジサップで「{title}」を作った！使ってみて": {
+    "vi": "Mình đã làm “{title}” trên Jisapp! Dùng thử nhé",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it"
+  },
+  "ジサップで「{title}」を作った！使ってみて👇\n{url}\n#ジサップ #個人開発": {
+    "vi": "Mình đã làm “{title}” trên Jisapp! Dùng thử nhé 👇\n{url}\n#Jisapp",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it 👇\n{url}\n#Jisapp #buildinpublic"
+  },
+  "ジサップで「{title}」を作った！遊んでみて": {
+    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it"
+  },
+  "ジサップで「{title}」を作った！遊んでみて👇\n#ジサップ #個人開発": {
+    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé 👇\n#Jisapp",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it 👇\n#Jisapp #buildinpublic"
+  },
+  "ジサップで「{title}」を作った！遊んでみて👇\n{url}\n#ジサップ #個人開発": {
+    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé 👇\n{url}\n#Jisapp",
+    "reviewed": false,
+    "en": "I made “{title}” on Jisapp! Try it 👇\n{url}\n#Jisapp #buildinpublic"
+  },
   "ジサップでアプリを作って公開する": {
     "vi": "Làm và đăng app với Jisapp",
     "reviewed": false,
@@ -2989,6 +3479,16 @@
     "reviewed": false,
     "en": "Run it on Jisapp and fine-tune it with AI!"
   },
+  "ジサップで表示する名前": {
+    "vi": "Tên hiển thị trên Jisapp",
+    "reviewed": false,
+    "en": "Your name on Jisapp"
+  },
+  "ジサップで表示する名前を決めてください": {
+    "vi": "Hãy chọn tên hiển thị trên Jisapp",
+    "reviewed": false,
+    "en": "Choose your name on Jisapp"
+  },
   "ジサップとは": {
     "vi": "Jisapp là gì",
     "reviewed": false,
@@ -2998,6 +3498,16 @@
     "vi": "Jisapp là gì?",
     "reviewed": false,
     "en": "What is Jisapp?"
+  },
+  "ジサップに戻って<b>「貼り直す」</b>を押すと、変えたアプリがすぐに動きます。うまくいったら公開しましょう。": {
+    "vi": "Quay lại Jisapp và bấm <b>“Dán lại”</b>, app đã sửa sẽ chạy ngay. Nếu ổn thì hãy đăng app nhé.",
+    "reviewed": false,
+    "en": "Come back to Jisapp and press <b>“Paste again”</b>. Your changed app runs right away. When you're happy with it, publish it."
+  },
+  "ジサップに戻って「貼り直す」": {
+    "vi": "Quay lại Jisapp và bấm “Dán lại”",
+    "reviewed": false,
+    "en": "Come back to Jisapp and press “Paste again”"
   },
   "ジサップのアプリ": {
     "vi": "Một app trên Jisapp",
@@ -3113,6 +3623,11 @@
     "vi": "Biến ý tưởng thành app — chỉ với chiếc điện thoại.",
     "reviewed": false,
     "en": "Turn an idea into an app — with just your phone."
+  },
+  "スマホでこのアプリのURLを開いて、ホーム画面に追加すると、アプリのようにすぐ開けます。パソコンでは、ブックマーク（Ctrl+D／⌘+D）に入れておくと便利です。": {
+    "vi": "Mở URL của app này trên điện thoại và thêm vào màn hình chính để mở nhanh như một app. Trên máy tính, hãy lưu dấu trang (Ctrl+D / ⌘+D).",
+    "reviewed": false,
+    "en": "Open this app's URL on your phone and add it to your home screen to open it like an app. On a computer, bookmark it (Ctrl+D / ⌘+D)."
   },
   "スマホの幅で表示": {
     "vi": "Khổ điện thoại",
@@ -3354,6 +3869,21 @@
     "reviewed": false,
     "en": "Chats & timeline"
   },
+  "ニックネーム": {
+    "vi": "Biệt danh",
+    "reviewed": false,
+    "en": "Nickname"
+  },
+  "ニックネームは20文字以内にしてください": {
+    "vi": "Biệt danh tối đa 20 ký tự",
+    "reviewed": false,
+    "en": "Nicknames can be up to 20 characters"
+  },
+  "ニックネームを入力してください": {
+    "vi": "Hãy nhập biệt danh",
+    "reviewed": false,
+    "en": "Please enter a nickname"
+  },
   "ニックネーム（任意）": {
     "vi": "Biệt danh (không bắt buộc)",
     "reviewed": false,
@@ -3584,10 +4114,20 @@
     "reviewed": false,
     "en": "View profile & apps"
   },
+  "プロンプトそのものをここに貼っても、アプリは動きません。": {
+    "vi": "Dán chính prompt vào đây sẽ không tạo ra app.",
+    "reviewed": false,
+    "en": "Pasting the prompt itself here won't make an app."
+  },
   "プロンプトにも「APIキーをコードに書かない」ルールが入っています。AIがコードを出したら、右上の「…」メニューの「APIキーの登録」から登録してください。": {
     "vi": "Câu lệnh đã có sẵn quy tắc “không viết API key vào code”. Khi AI đưa code, hãy đăng ký key ở “Đăng ký API key” trong menu “…” góc trên bên phải.",
     "reviewed": false,
     "en": "The prompt also includes the rule “never write API keys in the code”. After the AI gives you code, register your key from “Register API key” in the “…” menu at the top right."
+  },
+  "プロンプトは、ここではなく{ai}に貼って送るものです。{ai}がコードを書き終わったら、そのコードをコピーしてここに戻ってきてください。": {
+    "vi": "Prompt là thứ để dán và gửi cho {ai}, không phải dán vào đây. Khi {ai} viết xong code, hãy sao chép code đó rồi quay lại đây.",
+    "reviewed": false,
+    "en": "The prompt goes to {ai}, not here. Once {ai} has written the code, copy that code and come back here."
   },
   "プロンプトをもう一度コピー": {
     "vi": "Sao chép lại câu lệnh",
@@ -3604,10 +4144,20 @@
     "reviewed": false,
     "en": "Copy prompt"
   },
+  "プロンプトをコピーして{ai}を開く": {
+    "vi": "Sao chép prompt và mở {ai}",
+    "reviewed": false,
+    "en": "Copy the prompt and open {ai}"
+  },
   "プロンプトをコピーしました": {
     "vi": "Đã sao chép câu lệnh",
     "reviewed": false,
     "en": "Prompt copied"
+  },
+  "プロンプトをコピーしました。{ai}に貼って送ってください": {
+    "vi": "Đã sao chép prompt. Hãy dán vào {ai} và gửi",
+    "reviewed": false,
+    "en": "Copied the prompt. Paste it into {ai} and send it"
   },
   "プロンプトをテンプレートから作る": {
     "vi": "Tạo câu lệnh từ mẫu",
@@ -3649,10 +4199,40 @@
     "reviewed": false,
     "en": "Tap an app on the home page and choose “Add to my library”!"
   },
+  "ホーム画面に置いて、すぐ開けるようにしよう": {
+    "vi": "Thêm vào màn hình chính để mở nhanh bất cứ lúc nào",
+    "reviewed": false,
+    "en": "Put it on your home screen so you can open it any time"
+  },
+  "ホーム画面に置いて、毎日すぐ開けるようにしよう": {
+    "vi": "Thêm vào màn hình chính để mở bất cứ lúc nào",
+    "reviewed": false,
+    "en": "Put it on your home screen so you can open it any time"
+  },
+  "ホーム画面に置くと、次からすぐ開けます": {
+    "vi": "Thêm vào màn hình chính để lần sau mở nhanh",
+    "reviewed": false,
+    "en": "Add it to your home screen to open it quickly next time"
+  },
+  "ホーム画面に置くと、次からすぐ開けます。「こうしたいけど、どうしたらいい？」など、困ったことは運営になんでも聞いてください。": {
+    "vi": "Thêm vào màn hình chính để lần sau mở nhanh. Có gì vướng mắc hay muốn hỏi “làm thế này thì sao?”, cứ hỏi đội ngũ Jisapp nhé.",
+    "reviewed": false,
+    "en": "Add it to your home screen to open it in one tap. Stuck, or wondering how to do something? Ask the Jisapp team anything."
+  },
+  "ホーム画面に置くと、次からすぐ開けます。友だちや部活のメンバーに送ると、一緒に使えます。": {
+    "vi": "Thêm vào màn hình chính để lần sau mở nhanh. Gửi cho bạn bè hoặc thành viên CLB để dùng cùng nhau.",
+    "reviewed": false,
+    "en": "Add it to your home screen to open it quickly. Send it to friends or your team to use it together."
+  },
   "ホーム画面に追加しよう！": {
     "vi": "Thêm vào màn hình chính nhé!",
     "reviewed": false,
     "en": "Add it to your home screen!"
+  },
+  "ホーム画面に追加する": {
+    "vi": "Thêm vào màn hình chính",
+    "reviewed": false,
+    "en": "Add to your home screen"
   },
   "ボタンを押すと Google のコピー画面が開き、あなたのドライブに複製できます": {
     "vi": "Mở màn hình sao chép của Google để nhân bản vào Drive của bạn",
@@ -3669,10 +4249,20 @@
     "reviewed": false,
     "en": "My projects"
   },
+  "マイプロジェクトから、あとで直して上書き公開できます。": {
+    "vi": "Bạn có thể sửa và cập nhật sau trong Dự án của tôi.",
+    "reviewed": false,
+    "en": "You can edit and update it later from My projects."
+  },
   "マイプロジェクトに保存されるよ": {
     "vi": "App sẽ được lưu vào Dự án của tôi",
     "reviewed": false,
     "en": "It's saved to My projects"
+  },
+  "マイプロジェクトへ": {
+    "vi": "Đến Dự án của tôi",
+    "reviewed": false,
+    "en": "Go to My projects"
   },
   "マイプロジェクトページに表示される名前です": {
     "vi": "Tên này sẽ hiện trong trang Dự án của tôi",
@@ -3834,6 +4424,11 @@
     "reviewed": false,
     "en": "Type a message…"
   },
+  "メッセージを送る": {
+    "vi": "Gửi tin nhắn",
+    "reviewed": false,
+    "en": "Send a message"
+  },
   "メニュー": {
     "vi": "Menu",
     "reviewed": false,
@@ -3929,6 +4524,11 @@
     "reviewed": false,
     "en": "Email"
   },
+  "メールアドレスでログイン・登録する": {
+    "vi": "Đăng nhập hoặc đăng ký bằng email",
+    "reviewed": false,
+    "en": "Sign in or sign up with email"
+  },
   "メールアドレスまたはパスワードが正しくありません": {
     "vi": "Email hoặc mật khẩu không đúng",
     "reviewed": false,
@@ -3963,6 +4563,11 @@
     "vi": "Người chọn cập nhật sẽ được báo rằng dữ liệu đã lưu có thể bị xóa",
     "reviewed": false,
     "en": "People who choose to update are told their saved data may be erased"
+  },
+  "ユーザーが見つかりません": {
+    "vi": "Không tìm thấy người dùng",
+    "reviewed": false,
+    "en": "User not found"
   },
   "ユーザーはアップデートの確認後、保存データを維持したまま新しいコードを選べます": {
     "vi": "Sau khi xác nhận cập nhật, người dùng chuyển sang code mới mà vẫn giữ dữ liệu",
@@ -4124,6 +4729,11 @@
     "reviewed": false,
     "en": "Sign out"
   },
+  "ログアウトする": {
+    "vi": "Đăng xuất",
+    "reviewed": false,
+    "en": "Sign out"
+  },
   "ログイン": {
     "vi": "Đăng nhập",
     "reviewed": false,
@@ -4138,6 +4748,16 @@
     "vi": "Đăng nhập và thêm app vào thư viện để <t0>đồng bộ dữ liệu giữa các thiết bị</t0>.",
     "reviewed": false,
     "en": "Sign in and add this app to your library to <t0>sync your data across devices</t0>."
+  },
+  "ログインしていないので、作者名は「<b>{name}（ゲスト）</b>」と表示されます。本名は入れないでください。": {
+    "vi": "Bạn chưa đăng nhập nên tên người tạo sẽ hiển thị là “<b>{name} (Khách)</b>”. Đừng dùng tên thật nhé.",
+    "reviewed": false,
+    "en": "You're not signed in, so the creator name shows as “<b>{name} (Guest)</b>”. Don't use your real name."
+  },
+  "ログインしている場合、うまく作れなかったときの文章は、頼まなくても運営が確認してお届けすることがあります。": {
+    "vi": " Khi bạn đã đăng nhập, đội ngũ có thể xem nội dung chưa chạy được và gửi app cho bạn dù bạn không nhờ.",
+    "reviewed": false,
+    "en": " When you're signed in, the team may also check text that didn't work and send you an app."
   },
   "ログインしてグループを作る": {
     "vi": "Đăng nhập để tạo nhóm",
@@ -4178,6 +4798,11 @@
     "vi": "Đăng nhập để đồng bộ",
     "reviewed": false,
     "en": "Sign in to sync"
+  },
+  "ログインしないと、このアプリはあとから直せません": {
+    "vi": "Nếu không đăng nhập, bạn sẽ không sửa được app này sau này",
+    "reviewed": false,
+    "en": "Without signing in, you can't edit this app later"
   },
   "ログインしない場合": {
     "vi": "Nếu không đăng nhập",
@@ -4269,6 +4894,11 @@
     "reviewed": false,
     "en": "• Apps published <t0>by URL only</t0> are <t0>deleted automatically if nobody opens them for 2 months</t0> (apps listed in the market are kept)."
   },
+  "・メモを書く欄を足したい": {
+    "vi": "・Thêm ô để ghi chú",
+    "reviewed": false,
+    "en": "・Add a field for notes"
+  },
   "・下書きは<t0>このブラウザだけ</t0>に保存されます。別端末や再インストール後は<t0>続きから編集できません</t0>。": {
     "vi": "• Bản nháp chỉ được lưu <t0>trong trình duyệt này</t0>. Bạn <t0>không thể sửa tiếp</t0> trên thiết bị khác hoặc sau khi cài lại.",
     "reviewed": false,
@@ -4288,6 +4918,26 @@
     "vi": "• Khi muốn thay đổi",
     "reviewed": false,
     "en": "• When you want changes"
+  },
+  "・色を青っぽくしたい": {
+    "vi": "・Đổi màu sang tông xanh dương",
+    "reviewed": false,
+    "en": "・Make the colours bluish"
+  },
+  "上の「LINEで送る」で、トークにそのまま送れます。一緒に使う人がいると、アプリはずっと使われ続けます。": {
+    "vi": "Gửi bằng các nút ở trên. Khi có người dùng cùng, app sẽ được dùng lâu dài.",
+    "reviewed": false,
+    "en": "Send it from the buttons above. Apps keep getting used when someone uses them with you."
+  },
+  "上のボタンから送れます。一緒に使う人がいると、アプリはずっと使われ続けます。": {
+    "vi": "Gửi bằng các nút ở trên. Khi có người dùng cùng, app sẽ được dùng lâu dài.",
+    "reviewed": false,
+    "en": "Send it from the buttons above. Apps keep getting used when someone uses them with you."
+  },
+  "上書きしました": {
+    "vi": "Đã cập nhật",
+    "reviewed": false,
+    "en": "Updated"
   },
   "上書きしました！": {
     "vi": "Đã cập nhật!",
@@ -4309,6 +4959,11 @@
     "reviewed": false,
     "en": "Couldn't update: {1}"
   },
+  "上書きの設定に切りかえました。内容を確かめて「上書きする」を押してください": {
+    "vi": "Đã chuyển sang cập nhật app đó. Kiểm tra lại rồi bấm “Cập nhật”.",
+    "reviewed": false,
+    "en": "Switched to updating that app. Check the details, then tap “Update”."
+  },
   "上書き中…": {
     "vi": "Đang cập nhật…",
     "reviewed": false,
@@ -4323,6 +4978,16 @@
     "vi": "Không giới hạn",
     "reviewed": false,
     "en": "No limit"
+  },
+  "下にスクロールして「ホーム画面に追加」{icon} を押す": {
+    "vi": "Cuộn xuống và nhấn “Thêm vào MH chính” {icon}",
+    "reviewed": false,
+    "en": "Scroll down and tap “Add to Home Screen” {icon}"
+  },
+  "下の「アプリを開く」でアプリを開く": {
+    "vi": "Mở app bằng nút “Mở app” bên dưới",
+    "reviewed": false,
+    "en": "Open the app with “Open app” below"
   },
   "下の「コードを貼り付けて動かす」を押す": {
     "vi": "Nhấn “Dán code và chạy thử” bên dưới",
@@ -4429,6 +5094,11 @@
     "reviewed": false,
     "en": "Start making"
   },
+  "今ログインすると、このアプリはそのままあなたの作品になります。": {
+    "vi": "Đăng nhập ngay bây giờ, app này sẽ trở thành của bạn.",
+    "reviewed": false,
+    "en": "Sign in now and this app becomes yours as it is."
+  },
   "今日開いた": {
     "vi": "Đã mở hôm nay",
     "reviewed": false,
@@ -4504,6 +5174,16 @@
     "reviewed": false,
     "en": "Do I need to sign up?"
   },
+  "似たアプリ「{1}」をすでに公開しています。直したものなら、そのアプリに上書きするとURLが変わらず、送った人もそのまま新しい版を使えます。": {
+    "vi": "Bạn đã đăng một app tương tự: “{1}”. Nếu đây là bản đã sửa, hãy cập nhật app đó — URL không đổi nên những người bạn đã gửi sẽ dùng được bản mới.",
+    "reviewed": false,
+    "en": "You've already published a similar app: “{1}”. If this is a fixed version, update that app instead — the URL stays the same, so people you sent it to get the new version."
+  },
+  "似たアプリ「{title}」をすでに公開しています": {
+    "vi": "Bạn đã đăng một app tương tự: “{title}”",
+    "reviewed": false,
+    "en": "You've already published a similar app: “{title}”"
+  },
   "何を作りますか。": {
     "vi": "Bạn muốn làm gì?",
     "reviewed": false,
@@ -4523,6 +5203,11 @@
     "vi": "Làm sao để đăng app?",
     "reviewed": false,
     "en": "How do I publish my app?"
+  },
+  "作ったアプリを、マイプロジェクトでまとめて管理できる": {
+    "vi": "Quản lý tất cả app đã làm trong Dự án của tôi",
+    "reviewed": false,
+    "en": "Keep all your apps in My projects"
   },
   "作ったアプリをそのまま公開・シェア": {
     "vi": "Đăng và chia sẻ ngay thứ bạn làm",
@@ -4624,6 +5309,11 @@
     "reviewed": false,
     "en": "The creator deleted this app. The copy saved in your library still works."
   },
+  "作：{name}": {
+    "vi": "của {name}",
+    "reviewed": false,
+    "en": "by {name}"
+  },
   "使い方": {
     "vi": "Cách dùng",
     "reviewed": false,
@@ -4654,6 +5344,16 @@
     "reviewed": false,
     "en": "Yes. Jisapp started in Japan — use the language button (English / 日本語) to switch to the Japanese site."
   },
+  "使ったお金を入れると、月の合計が出る家計簿": {
+    "vi": "Sổ chi tiêu hiện tổng theo tháng khi nhập số tiền đã tiêu",
+    "reviewed": false,
+    "en": "An expense tracker that shows the monthly total"
+  },
+  "使ってくれる人がいると、アプリは続きます。今すぐ送ってみよう。": {
+    "vi": "App sẽ được dùng lâu dài khi có người dùng nó. Gửi ngay nhé.",
+    "reviewed": false,
+    "en": "Apps keep going when someone uses them. Send it now."
+  },
   "使ってみた感想、導入のしやすさ、活用シーンなど何でも書いてください": {
     "vi": "Bạn thấy thế nào? Dễ cài không, bạn dùng vào việc gì — viết gì cũng được",
     "reviewed": false,
@@ -4679,6 +5379,11 @@
     "reviewed": false,
     "en": "e.g. key, appid, api_key"
   },
+  "例から選ぶ（押すと入ります）": {
+    "vi": "Chọn một ví dụ (nhấn để điền)",
+    "reviewed": false,
+    "en": "Pick an example (tap to fill in)"
+  },
   "例：4人の割り勘を一瞬で出すアプリ": {
     "vi": "Ví dụ: App chia tiền cho 4 người trong nháy mắt",
     "reviewed": false,
@@ -4693,6 +5398,11 @@
     "vi": "Ví dụ: Minh",
     "reviewed": false,
     "en": "e.g. Sam"
+  },
+  "例：たろう、ハルの工房": {
+    "vi": "Ví dụ: Minh, Xưởng của Lan",
+    "reviewed": false,
+    "en": "e.g. Alex, Haru's workshop"
   },
   "例：サークルの出欠表（練習日ごとに出欠を入れる）": {
     "vi": "Ví dụ: Bảng điểm danh câu lạc bộ (điểm danh theo từng buổi tập)",
@@ -4889,6 +5599,11 @@
     "reviewed": false,
     "en": "Couldn't delete the saved data"
   },
+  "保存データを読み込めていないため、元のデータを上書きしないよう保存を止めました。通信を確かめてから、ページを読み込み直してください": {
+    "vi": "Chưa tải được dữ liệu đã lưu nên đã dừng lưu để không ghi đè dữ liệu cũ. Hãy kiểm tra kết nối rồi tải lại trang",
+    "reviewed": false,
+    "en": "Your saved data couldn't be loaded, so saving was stopped to avoid overwriting it. Check your connection and reload the page"
+  },
   "保存データを読み込めませんでした": {
     "vi": "Không tải được dữ liệu đã lưu",
     "reviewed": false,
@@ -4954,6 +5669,11 @@
     "reviewed": false,
     "en": "Paste the AI's code first"
   },
+  "先に、ジサップで表示する名前を決めてください": {
+    "vi": "Hãy chọn tên hiển thị trên Jisapp trước",
+    "reviewed": false,
+    "en": "Choose your name on Jisapp first"
+  },
   "全部コピー": {
     "vi": "Sao chép hết",
     "reviewed": false,
@@ -4973,6 +5693,16 @@
     "vi": "Tài khoản chính thức",
     "reviewed": false,
     "en": "Official accounts"
+  },
+  "公式アカウントがまだありません。運営画面の承認キューから作ってください": {
+    "vi": "Chưa có tài khoản chính thức. Hãy tạo từ hàng chờ duyệt trong trang quản trị",
+    "reviewed": false,
+    "en": "There's no official account yet. Create it from the admin approval queue"
+  },
+  "公式アカウントの名前は変えられません": {
+    "vi": "Không thể đổi tên tài khoản chính thức",
+    "reviewed": false,
+    "en": "The official account's name can't be changed"
   },
   "公開してURLを共有する": {
     "vi": "Đăng và chia sẻ link",
@@ -4994,6 +5724,11 @@
     "reviewed": false,
     "en": "If you publish, people who open the app may be able to use the key"
   },
+  "公開する前に、ジサップで表示する名前を決めてください": {
+    "vi": "Hãy chọn tên hiển thị trên Jisapp trước khi đăng",
+    "reviewed": false,
+    "en": "Choose your name on Jisapp before publishing"
+  },
   "公開アプリを探す": {
     "vi": "Khám phá app đã đăng",
     "reviewed": false,
@@ -5003,6 +5738,16 @@
     "vi": "Đang hoạt động",
     "reviewed": false,
     "en": "Live"
+  },
+  "公開済みのアプリの作者名も、新しい名前になります。": {
+    "vi": "Tên người tạo trên các app đã đăng cũng sẽ đổi theo.",
+    "reviewed": false,
+    "en": "The creator name on your published apps changes too."
+  },
+  "共有": {
+    "vi": "Chia sẻ",
+    "reviewed": false,
+    "en": "Share"
   },
   "共有する": {
     "vi": "Chia sẻ",
@@ -5053,6 +5798,11 @@
     "vi": "Nội dung",
     "reviewed": false,
     "en": "Message"
+  },
+  "内容が短すぎます": {
+    "vi": "Nội dung quá ngắn",
+    "reviewed": false,
+    "en": "The text is too short"
   },
   "内容は1〜2000文字で入力してください": {
     "vi": "Nội dung phải từ 1–2.000 ký tự",
@@ -5123,6 +5873,11 @@
     "vi": "App bạn đã đăng",
     "reviewed": false,
     "en": "Your listings"
+  },
+  "出品しました": {
+    "vi": "Đã đăng",
+    "reviewed": false,
+    "en": "Published"
   },
   "出品しました！": {
     "vi": "Đã đăng!",
@@ -5233,6 +5988,11 @@
     "vi": "Chào đón người mới",
     "reviewed": false,
     "en": "Beginners welcome"
+  },
+  "別のアプリとして公開する": {
+    "vi": "Đăng thành một app khác",
+    "reviewed": false,
+    "en": "Publish as a separate app"
   },
   "別の返信をする": {
     "vi": "Gửi trả lời khác",
@@ -5369,6 +6129,16 @@
     "reviewed": false,
     "en": "Joined"
   },
+  "友だちに送って遊んでもらう": {
+    "vi": "Gửi cho bạn bè chơi thử",
+    "reviewed": false,
+    "en": "Send it to friends to try"
+  },
+  "友だち・家族": {
+    "vi": "Bạn bè & gia đình",
+    "reviewed": false,
+    "en": "Friends & family"
+  },
   "取り下げに失敗しました": {
     "vi": "Không gỡ được app",
     "reviewed": false,
@@ -5419,6 +6189,11 @@
     "reviewed": false,
     "en": "Number of apps you got"
   },
+  "受け付けました。運営がアプリにして、できあがったらメールでお知らせします。": {
+    "vi": "Đã nhận. Đội ngũ Jisapp sẽ làm app và gửi email cho bạn khi xong.",
+    "reviewed": false,
+    "en": "Got it. The Jisapp team will build it and email you when it's ready."
+  },
   "受取・動作確認完了": {
     "vi": "Đã nhận & chạy tốt",
     "reviewed": false,
@@ -5434,10 +6209,30 @@
     "reviewed": false,
     "en": "Oldest"
   },
+  "右上の「追加」を押す": {
+    "vi": "Nhấn “Thêm” ở góc trên bên phải",
+    "reviewed": false,
+    "en": "Tap “Add” at the top right"
+  },
+  "右上（または右下）のメニューから「Safariで開く」を選ぶ": {
+    "vi": "Từ menu ở góc trên (hoặc dưới) bên phải, chọn “Mở bằng Safari”",
+    "reviewed": false,
+    "en": "From the menu at the top (or bottom) right, choose “Open in Safari”"
+  },
   "同じURLで内容が更新されました": {
     "vi": "Link cũ giờ hiển thị phiên bản mới",
     "reviewed": false,
     "en": "The same URL now shows the new version"
+  },
+  "同じコードのアプリ「{title}」を見る": {
+    "vi": "Xem app có cùng code: “{title}”",
+    "reviewed": false,
+    "en": "See the app with the same code: “{title}”"
+  },
+  "同じ名前のアプリ「{1}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。": {
+    "vi": "Bạn đã đăng một app tên “{1}”. Hãy cập nhật app đó, hoặc đăng app này với tên khác.",
+    "reviewed": false,
+    "en": "You've already published an app named “{1}”. Update that app, or publish this one with a different name."
   },
   "同意して進む（外部リンクを開く）": {
     "vi": "Đồng ý và tiếp tục (mở link)",
@@ -5449,6 +6244,11 @@
     "reviewed": false,
     "en": "About syncing"
   },
+  "名前は20文字以内にしてください": {
+    "vi": "Tên tối đa 20 ký tự",
+    "reviewed": false,
+    "en": "Names can be up to 20 characters"
+  },
   "名前はコードの secret 名と一致するため変更できません": {
     "vi": "Tên này khớp với tên secret trong code nên không đổi được",
     "reviewed": false,
@@ -5458,6 +6258,16 @@
     "vi": "Tên bắt đầu bằng chữ in hoa và chỉ gồm chữ in hoa, số và dấu gạch dưới (tối đa 32 ký tự)",
     "reviewed": false,
     "en": "Names start with an uppercase letter and use only uppercase letters, numbers and underscores (32 max)"
+  },
+  "名前を入力してください": {
+    "vi": "Hãy nhập tên",
+    "reviewed": false,
+    "en": "Please enter a name"
+  },
+  "名前を変えて出品する": {
+    "vi": "Đăng với tên khác",
+    "reviewed": false,
+    "en": "Publish with a new name"
   },
   "名前（大文字）": {
     "vi": "Tên (VIẾT HOA)",
@@ -5518,6 +6328,26 @@
     "vi": "Hãy chọn lý do",
     "reviewed": false,
     "en": "Please choose a reason"
+  },
+  "変えたあとのコードを、最初から最後まで全部書いてください。": {
+    "vi": "Hãy viết toàn bộ code sau khi sửa, từ đầu đến cuối.",
+    "reviewed": false,
+    "en": "Write the whole updated code from start to finish."
+  },
+  "変え方を見る": {
+    "vi": "Xem cách sửa",
+    "reviewed": false,
+    "en": "How to change it"
+  },
+  "変更したコードです。": {
+    "vi": "Đây là code đã sửa.",
+    "reviewed": false,
+    "en": "Here's the updated code."
+  },
+  "変更する": {
+    "vi": "Thay đổi",
+    "reviewed": false,
+    "en": "Change"
   },
   "外す": {
     "vi": "Xóa",
@@ -5634,6 +6464,11 @@
     "reviewed": false,
     "en": "Anyone can use your app from its URL. List it in the market so everyone can try it."
   },
+  "完成！": {
+    "vi": "Hoàn thành!",
+    "reviewed": false,
+    "en": "It's done!"
+  },
   "実行するコードがありません": {
     "vi": "Không có code để chạy",
     "reviewed": false,
@@ -5643,6 +6478,11 @@
     "vi": "Không có code để chạy",
     "reviewed": false,
     "en": "There's no runnable code"
+  },
+  "家族の買い物リスト（みんなで追加・チェック）": {
+    "vi": "Danh sách mua sắm gia đình (mọi người cùng thêm và đánh dấu)",
+    "reviewed": false,
+    "en": "A family shopping list (everyone can add and tick)"
   },
   "家計簿": {
     "vi": "Sổ chi tiêu",
@@ -5728,6 +6568,11 @@
     "vi": "Nhiều cổ vũ nhất trước · làm và đăng từ Studio",
     "reviewed": false,
     "en": "Most cheered first · made and published in the Studio"
+  },
+  "応援バッジをもらうと、お知らせが届く": {
+    "vi": "Nhận thông báo khi có người cổ vũ app của bạn",
+    "reviewed": false,
+    "en": "Get notified when people cheer for your app"
   },
   "応援バッジを送る": {
     "vi": "Gửi huy hiệu cổ vũ",
@@ -5849,6 +6694,11 @@
     "reviewed": false,
     "en": "Enter a new API key, or go back to keeping the current one"
   },
+  "新しいアプリ「{1}」が生まれました。あなたのアプリが、誰かの「作りたい」のきっかけになっています。": {
+    "vi": "App mới “{1}” đã ra đời. App của bạn đã truyền cảm hứng cho người khác!",
+    "reviewed": false,
+    "en": "Say hello to “{1}”. Your app inspired someone to build!"
+  },
   "新しいグループを作る": {
     "vi": "Tạo nhóm mới",
     "reviewed": false,
@@ -5899,6 +6749,11 @@
     "reviewed": false,
     "en": "{1} new followers"
   },
+  "新しくなりました！": {
+    "vi": "Đã cập nhật xong!",
+    "reviewed": false,
+    "en": "It's updated!"
+  },
   "新しくフォローされました": {
     "vi": "Bạn có người theo dõi mới",
     "reviewed": false,
@@ -5944,6 +6799,11 @@
     "reviewed": false,
     "en": "Diary"
   },
+  "昨日作った「{1}」、使ってみましたか？": {
+    "vi": "Bạn đã dùng thử “{1}” làm hôm qua chưa?",
+    "reviewed": false,
+    "en": "Have you tried “{1}” since yesterday?"
+  },
   "更新しました": {
     "vi": "Đã cập nhật",
     "reviewed": false,
@@ -5978,6 +6838,21 @@
     "vi": "Phần “Có gì mới” tối đa 200 ký tự",
     "reviewed": false,
     "en": "What's new must be 200 characters or fewer"
+  },
+  "書いている途中 → まだ": {
+    "vi": "Đang viết → chưa được",
+    "reviewed": false,
+    "en": "Still writing → wait"
+  },
+  "書いている途中にコピーを押すと、コピーできていません。そのまま貼ると、前にコピーしたもの（プロンプトなど）が貼られます。": {
+    "vi": "Nếu bấm sao chép khi AI vẫn đang viết thì sẽ không sao chép được, và khi dán sẽ dán nội dung bạn đã sao chép trước đó (như câu lệnh).",
+    "reviewed": false,
+    "en": "If you press copy while it's still writing, nothing is copied, and you'll paste whatever you copied before (like the prompt)."
+  },
+  "書き終わった → コピーOK": {
+    "vi": "Viết xong → sao chép được",
+    "reviewed": false,
+    "en": "Finished → copy now"
   },
   "書き終わってから、コードの欄のコピーボタンを押す": {
     "vi": "Chỉ nhấn nút sao chép của khung code sau khi AI viết xong",
@@ -6014,6 +6889,11 @@
     "reviewed": false,
     "en": "Latest: “{2}” from {1}."
   },
+  "最新は {1} さんの「{2}」です。あなたのアプリが、みんなの「作りたい」のきっかけになっています。": {
+    "vi": "Mới nhất: “{2}” của {1}. App của bạn đang truyền cảm hứng cho mọi người!",
+    "reviewed": false,
+    "en": "Latest: “{2}” by {1}. Your app is inspiring people to build!"
+  },
   "最近開いた順": {
     "vi": "Mở gần đây",
     "reviewed": false,
@@ -6048,6 +6928,11 @@
     "vi": "Đã xác minh",
     "reviewed": false,
     "en": "Verified"
+  },
+  "本名ではなく、ニックネームがおすすめです（20文字まで・あとから変えられます）": {
+    "vi": "Nên dùng biệt danh thay vì tên thật (tối đa 20 ký tự, có thể đổi sau)",
+    "reviewed": false,
+    "en": "We recommend a nickname rather than your real name (up to 20 characters, changeable later)"
   },
   "案内に戻る": {
     "vi": "Quay lại hướng dẫn",
@@ -6099,6 +6984,11 @@
     "reviewed": false,
     "en": "Next"
   },
+  "次回から表示しない": {
+    "vi": "Không hiện lại lần sau",
+    "reviewed": false,
+    "en": "Don't show this again"
+  },
   "欲しいアプリのアイデアを投稿・閲覧できる掲示板。クリエイターがアプリを作って応えます。": {
     "vi": "Bảng để đăng và xem ý tưởng về những app bạn muốn có. Các nhà sáng tạo sẽ làm app để đáp lại.",
     "reviewed": false,
@@ -6118,6 +7008,11 @@
     "vi": "Nếu có gì muốn giữ lại, hãy ghi chép lại trước khi cập nhật.",
     "reviewed": false,
     "en": "If there's anything you want to keep, write it down before updating."
+  },
+  "毎日の勉強時間を記録して、週の合計を出す": {
+    "vi": "Ghi lại thời gian học mỗi ngày và xem tổng theo tuần",
+    "reviewed": false,
+    "en": "Log study time every day and show the weekly total"
   },
   "気になるアプリを探してみましょう": {
     "vi": "Tìm một app bạn thích nhé",
@@ -6279,6 +7174,11 @@
     "reviewed": false,
     "en": "Want changes? Ask the AI and paste the new code"
   },
+  "直したものなら、上書きがおすすめです。URLが変わらないので、送った人もそのまま新しい版を使えます。": {
+    "vi": "Nếu đây là bản đã sửa, nên cập nhật app đó. URL không đổi nên những người bạn đã gửi vẫn dùng được bản mới.",
+    "reviewed": false,
+    "en": "If this is a fixed version, update that app instead. The URL stays the same, so people you sent it to get the new version."
+  },
   "相談中": {
     "vi": "Đang trao đổi",
     "reviewed": false,
@@ -6288,6 +7188,11 @@
     "vi": "Gửi email xác minh",
     "reviewed": false,
     "en": "Send verification email"
+  },
+  "筋トレの記録（種目・回数・重さ）": {
+    "vi": "Nhật ký tập gym (bài tập, số lần, mức tạ)",
+    "reviewed": false,
+    "en": "A workout log (exercise, reps, weight)"
   },
   "管理": {
     "vi": "Quản lý",
@@ -6359,6 +7264,11 @@
     "reviewed": false,
     "en": "Made by me"
   },
+  "自分が送った文章の下のコピーボタンではありません。": {
+    "vi": "Không phải nút sao chép bên dưới tin nhắn bạn đã gửi.",
+    "reviewed": false,
+    "en": "Not the copy button under the message you sent."
+  },
   "自分が開いた": {
     "vi": "Bạn đã mở",
     "reviewed": false,
@@ -6378,6 +7288,11 @@
     "vi": "Lưu cả dữ liệu riêng",
     "reviewed": false,
     "en": "Also save personal data"
+  },
+  "自分でも作る": {
+    "vi": "Tự làm app",
+    "reviewed": false,
+    "en": "Make one"
   },
   "自分でも作れます": {
     "vi": "Bạn cũng tự làm được",
@@ -6424,6 +7339,11 @@
     "reviewed": false,
     "en": "Apps you made"
   },
+  "自分用に作り変えられます。元のアプリは変わりません": {
+    "vi": "Bạn có thể sửa thành app của riêng mình. App gốc không bị thay đổi",
+    "reviewed": false,
+    "en": "Make it your own. The original app stays as it is"
+  },
   "自動でコピーできませんでした": {
     "vi": "Không tự sao chép được",
     "reviewed": false,
@@ -6459,6 +7379,11 @@
     "reviewed": false,
     "en": "Send the invite link to your members"
   },
+  "表示する名前": {
+    "vi": "Tên hiển thị",
+    "reviewed": false,
+    "en": "Display name"
+  },
   "表示する幅": {
     "vi": "Độ rộng xem trước",
     "reviewed": false,
@@ -6473,6 +7398,11 @@
     "vi": "Hãy nhập tên hiển thị",
     "reviewed": false,
     "en": "Please enter a display name"
+  },
+  "表示名を変える": {
+    "vi": "Đổi tên hiển thị",
+    "reviewed": false,
+    "en": "Change your display name"
   },
   "要望は自由に書いてOKです。末尾に「必須ルールだけ」を貼ると、保存先やAPIキーの扱いも正しくなります。チャットなら質問に答えるだけで指示文ができます。": {
     "vi": "Bạn cứ viết yêu cầu theo ý mình. Dán “chỉ các quy tắc bắt buộc” vào cuối để việc lưu dữ liệu và API key được xử lý đúng. Dùng chat thì chỉ cần trả lời câu hỏi.",
@@ -6619,15 +7549,30 @@
     "reviewed": false,
     "en": "Loading…"
   },
+  "誰かがあなたのアプリを使っています。直したくなったら、開発スタジオで上書きすると同じURLのまま新しくなります。": {
+    "vi": "Có người đang dùng app của bạn. Muốn sửa? Hãy cập nhật trong Studio, URL vẫn giữ nguyên.",
+    "reviewed": false,
+    "en": "Someone is using your app. Want to change it? Update it in the Studio and the URL stays the same."
+  },
   "販売中": {
     "vi": "Đang hoạt động",
     "reviewed": false,
     "en": "Live"
   },
+  "貼った文章を運営が確認して、アプリにしてお届けします。": {
+    "vi": "Đội ngũ Jisapp sẽ đọc nội dung bạn đã dán và gửi app cho bạn.",
+    "reviewed": false,
+    "en": "The team will read the text you pasted and send you the app."
+  },
   "貼って動かす": {
     "vi": "Dán và chạy",
     "reviewed": false,
     "en": "Paste and run"
+  },
+  "貼られたのは、さっきジサップでコピーしたプロンプトです。AIが書いている途中にコピーを押すとコピーできず、前にコピーしたものが貼られます。": {
+    "vi": "Nội dung vừa dán là câu lệnh bạn đã sao chép từ Jisapp. Nếu bấm sao chép khi AI đang viết thì sẽ không sao chép được, nên nội dung cũ bị dán vào.",
+    "reviewed": false,
+    "en": "What got pasted is the prompt you copied from Jisapp. If you press copy while the AI is still writing, nothing is copied, so the previous copy gets pasted."
   },
   "貼り付けたのは、AIに送ったプロンプトです": {
     "vi": "Bạn vừa dán câu lệnh đã gửi cho AI",
@@ -6774,6 +7719,16 @@
     "reviewed": false,
     "en": "Former member"
   },
+  "送っています…": {
+    "vi": "Đang gửi…",
+    "reviewed": false,
+    "en": "Sending…"
+  },
+  "送れませんでした。少し待ってからもう一度お試しください。": {
+    "vi": "Không gửi được. Hãy thử lại sau ít phút.",
+    "reviewed": false,
+    "en": "Couldn't send. Please try again in a moment."
+  },
   "送信": {
     "vi": "Gửi",
     "reviewed": false,
@@ -6788,6 +7743,11 @@
     "vi": "Không gửi được. Hãy thử lại.",
     "reviewed": false,
     "en": "Couldn't send. Please try again."
+  },
+  "送信ボタンが「■（停止）」から元の「↑」に戻った": {
+    "vi": "Nút gửi đã trở lại “↑” (không còn là “■” dừng)",
+    "reviewed": false,
+    "en": "The send button is back to “↑” (not “■” stop)"
   },
   "送信中...": {
     "vi": "Đang gửi...",
@@ -6844,6 +7804,11 @@
     "reviewed": false,
     "en": "Hand-picked by the Jisapp team"
   },
+  "運営にアプリを作ってもらう": {
+    "vi": "Nhờ đội ngũ Jisapp làm app",
+    "reviewed": false,
+    "en": "Ask the team to build it"
+  },
   "運営の設定により、保存容量の上限はかかりません。": {
     "vi": "Jisapp đã bỏ giới hạn dung lượng cho tài khoản của bạn.",
     "reviewed": false,
@@ -6853,6 +7818,31 @@
     "vi": "Liên hệ với chúng tôi",
     "reviewed": false,
     "en": "Contact us"
+  },
+  "運営モードを使うには、先に運営画面にログインしてください": {
+    "vi": "Để dùng chế độ vận hành, hãy đăng nhập trang quản trị trước",
+    "reviewed": false,
+    "en": "Sign in to the admin page first to use operator mode"
+  },
+  "運営モード：「{name}」として出品します（コードは公開されます）": {
+    "vi": "Chế độ vận hành: đăng với tên “{name}” (code sẽ được công khai)",
+    "reviewed": false,
+    "en": "Operator mode: publishing as “{name}” (code will be public)"
+  },
+  "選ぶと、使い方のコツが出ます": {
+    "vi": "Chọn để xem mẹo sử dụng",
+    "reviewed": false,
+    "en": "Pick one to see tips"
+  },
+  "部活の出欠表（練習日ごとに出欠を入れる）": {
+    "vi": "Bảng điểm danh CLB (điểm danh theo từng buổi tập)",
+    "reviewed": false,
+    "en": "A club attendance sheet (mark attendance for each practice)"
+  },
+  "部活・グループ": {
+    "vi": "CLB hoặc nhóm",
+    "reviewed": false,
+    "en": "Club or group"
   },
   "閉じてエディタに直接貼る": {
     "vi": "Đóng và dán thẳng vào trình soạn",
@@ -7028,635 +8018,5 @@
     "vi": ") mà các app của nhà sáng tạo nhận được. Số người theo dõi là số người đang theo dõi nhà sáng tạo này.",
     "reviewed": false,
     "en": ") the creator's apps have received. The follower count is the number of people following this creator."
-  },
-  "これはコードではなく、AIに送った文章のようです": {
-    "vi": "Có vẻ đây không phải code mà là đoạn văn bạn đã gửi cho AI",
-    "reviewed": false,
-    "en": "This looks like the message you sent to the AI, not code"
-  },
-  "AIのチャットで、自分が送った文章のコピーボタンを押していませんか？": {
-    "vi": "Có phải bạn đã bấm nút sao chép dưới tin nhắn mình gửi trong khung chat AI không?",
-    "reviewed": false,
-    "en": "Did you press the copy button under your own message in the AI chat?"
-  },
-  "AIがコードを<b>最後まで書き終わるのを待つ</b>": {
-    "vi": "<b>Chờ AI viết xong</b> toàn bộ code",
-    "reviewed": false,
-    "en": "<b>Wait until the AI has finished writing</b> all the code"
-  },
-  "AIの返事の中にある、<b>コードの枠の右上の「コピー」</b>を押す": {
-    "vi": "Trong câu trả lời của AI, bấm <b>nút \"Sao chép\" ở góc trên bên phải khung code</b>",
-    "reviewed": false,
-    "en": "Press the <b>“Copy” button at the top right of the code box</b> in the AI’s reply"
-  },
-  "ここに貼る（コードは {tag} などで始まります）": {
-    "vi": "Dán vào đây (code bắt đầu bằng {tag} hoặc tương tự)",
-    "reviewed": false,
-    "en": "Paste it here (code starts with something like {tag})"
-  },
-  "AIのチャットに戻る": {
-    "vi": "Quay lại khung chat AI",
-    "reviewed": false,
-    "en": "Go back to the AI chat"
-  },
-  "このまま動かす": {
-    "vi": "Vẫn chạy như vậy",
-    "reviewed": false,
-    "en": "Run it anyway"
-  },
-  "AIのチャットで、コードを書き終わるまで待ってからコピーしてください": {
-    "vi": "Trong khung chat AI, hãy chờ code được viết xong rồi mới sao chép nhé",
-    "reviewed": false,
-    "en": "In the AI chat, wait until the code is finished, then copy it"
-  },
-  "AIがコードを<b>最後まで書き終わるのを待って</b>から、コードの枠の右上の「コピー」を押し、{tag} から始まるコードを貼り直してください。": {
-    "vi": "<b>Chờ AI viết xong</b> toàn bộ code, rồi bấm \"Sao chép\" ở góc trên bên phải khung code và dán lại đoạn code bắt đầu bằng {tag}.",
-    "reviewed": false,
-    "en": "<b>Wait until the AI has finished writing</b> all the code, then press “Copy” at the top right of the code box and paste the code that starts with {tag}."
-  },
-  "このアプリをもとに作る": {
-    "vi": "Làm app của riêng bạn từ app này",
-    "reviewed": false,
-    "en": "Make your own version"
-  },
-  "自分用に作り変えられます。元のアプリは変わりません": {
-    "vi": "Bạn có thể sửa thành app của riêng mình. App gốc không bị thay đổi",
-    "reviewed": false,
-    "en": "Make it your own. The original app stays as it is"
-  },
-  "このアプリをもとに、自分用のアプリを作ります（元のアプリは変わりません）": {
-    "vi": "Làm app của riêng bạn dựa trên app này (app gốc không bị thay đổi)",
-    "reviewed": false,
-    "en": "Make your own version of this app (the original stays as it is)"
-  },
-  "もとに作る": {
-    "vi": "Làm từ app này",
-    "reviewed": false,
-    "en": "Remix"
-  },
-  "{title}（アレンジ）": {
-    "vi": "{title} (bản của tôi)",
-    "reviewed": false,
-    "en": "{title} (remix)"
-  },
-  "『{title}』をもとに作りました。": {
-    "vi": "Làm dựa trên “{title}”.",
-    "reviewed": false,
-    "en": "Based on “{title}”."
-  },
-  "このアプリのコードは読み込めませんでした": {
-    "vi": "Không tải được code của app này",
-    "reviewed": false,
-    "en": "Couldn't load this app's code"
-  },
-  "「{title}」をもとに作っています。<b>元のアプリは変わりません。</b>": {
-    "vi": "Bạn đang làm dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
-    "reviewed": false,
-    "en": "You're building on “{title}”. <b>The original app stays as it is.</b>"
-  },
-  "変え方を見る": {
-    "vi": "Xem cách sửa",
-    "reviewed": false,
-    "en": "How to change it"
-  },
-  "この案内を閉じる": {
-    "vi": "Đóng thông báo này",
-    "reviewed": false,
-    "en": "Close this note"
-  },
-  "↑ コピーしたコードを貼る": {
-    "vi": "↑ Dán code đã sao chép",
-    "reviewed": false,
-    "en": "↑ Paste the code you copied"
-  },
-  "このコードを、次のように変えてください。": {
-    "vi": "Hãy sửa code này như sau:",
-    "reviewed": false,
-    "en": "Please change this code like this:"
-  },
-  "・色を青っぽくしたい": {
-    "vi": "・Đổi màu sang tông xanh dương",
-    "reviewed": false,
-    "en": "・Make the colours bluish"
-  },
-  "・メモを書く欄を足したい": {
-    "vi": "・Thêm ô để ghi chú",
-    "reviewed": false,
-    "en": "・Add a field for notes"
-  },
-  "変えたあとのコードを、最初から最後まで全部書いてください。": {
-    "vi": "Hãy viết toàn bộ code sau khi sửa, từ đầu đến cuối.",
-    "reviewed": false,
-    "en": "Write the whole updated code from start to finish."
-  },
-  "メッセージを送る": {
-    "vi": "Gửi tin nhắn",
-    "reviewed": false,
-    "en": "Send a message"
-  },
-  "変更したコードです。": {
-    "vi": "Đây là code đã sửa.",
-    "reviewed": false,
-    "en": "Here's the updated code."
-  },
-  "コードを全部コピーする": {
-    "vi": "Sao chép toàn bộ code",
-    "reviewed": false,
-    "en": "Copy all the code"
-  },
-  "コードの右上の<b>「全部コピー」</b>を押すと、このアプリのコードがまるごとコピーされます。": {
-    "vi": "Bấm <b>“Sao chép hết”</b> ở góc trên bên phải phần code để sao chép toàn bộ code của app này.",
-    "reviewed": false,
-    "en": "Press <b>“Copy all”</b> at the top right of the code to copy the whole app."
-  },
-  "AIに、変えたいところと一緒に送る": {
-    "vi": "Gửi cho AI cùng với chỗ muốn sửa",
-    "reviewed": false,
-    "en": "Send it to the AI with your changes"
-  },
-  "ChatGPT などのAIのチャットに<b>コピーしたコードを貼り</b>、その下に<b>変えたいところ</b>を書いて送ります。": {
-    "vi": "Trong khung chat AI như ChatGPT, <b>dán code đã sao chép</b>, rồi viết <b>chỗ bạn muốn sửa</b> bên dưới và gửi đi.",
-    "reviewed": false,
-    "en": "In an AI chat such as ChatGPT, <b>paste the code you copied</b> and write <b>what you want to change</b> below it, then send."
-  },
-  "AIの返事のコードをコピーする": {
-    "vi": "Sao chép code trong câu trả lời của AI",
-    "reviewed": false,
-    "en": "Copy the code from the AI's reply"
-  },
-  "AIがコードを<b>最後まで書き終わるのを待って</b>から、": {
-    "vi": "<b>Chờ AI viết xong toàn bộ code</b>, rồi ",
-    "reviewed": false,
-    "en": "<b>Wait until the AI has finished writing</b> the code, then "
-  },
-  "<b>コードの枠の右上の「コピー」</b>を押します。": {
-    "vi": "bấm <b>“Sao chép” ở góc trên bên phải khung code</b>.",
-    "reviewed": false,
-    "en": "press <b>“Copy” at the top right of the code box</b>."
-  },
-  "自分が送った文章の下のコピーボタンではありません。": {
-    "vi": "Không phải nút sao chép bên dưới tin nhắn bạn đã gửi.",
-    "reviewed": false,
-    "en": "Not the copy button under the message you sent."
-  },
-  "ジサップに戻って「貼り直す」": {
-    "vi": "Quay lại Jisapp và bấm “Dán lại”",
-    "reviewed": false,
-    "en": "Come back to Jisapp and press “Paste again”"
-  },
-  "ジサップに戻って<b>「貼り直す」</b>を押すと、変えたアプリがすぐに動きます。うまくいったら公開しましょう。": {
-    "vi": "Quay lại Jisapp và bấm <b>“Dán lại”</b>, app đã sửa sẽ chạy ngay. Nếu ổn thì hãy đăng app nhé.",
-    "reviewed": false,
-    "en": "Come back to Jisapp and press <b>“Paste again”</b>. Your changed app runs right away. When you're happy with it, publish it."
-  },
-  "このアプリの変え方": {
-    "vi": "Cách sửa app này",
-    "reviewed": false,
-    "en": "How to change this app"
-  },
-  "「{title}」をもとに、自分用のアプリを作れます。<b>元のアプリは変わりません。</b>": {
-    "vi": "Bạn có thể làm app của riêng mình dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
-    "reviewed": false,
-    "en": "You can make your own app based on “{title}”. <b>The original app stays as it is.</b>"
-  },
-  "次回から表示しない": {
-    "vi": "Không hiện lại lần sau",
-    "reviewed": false,
-    "en": "Don't show this again"
-  },
-  "わかった、はじめる": {
-    "vi": "Đã hiểu, bắt đầu thôi",
-    "reviewed": false,
-    "en": "Got it, let's start"
-  },
-  "このアプリをもとに、自分用のアプリを作れます。元のアプリは変わりません。": {
-    "vi": "Bạn có thể làm app của riêng mình dựa trên app này. App gốc không bị thay đổi.",
-    "reviewed": false,
-    "en": "You can make your own app based on this one. The original stays as it is."
-  },
-  "運営モード：「{name}」として出品します（コードは公開されます）": {
-    "vi": "Chế độ vận hành: đăng với tên “{name}” (code sẽ được công khai)",
-    "reviewed": false,
-    "en": "Operator mode: publishing as “{name}” (code will be public)"
-  },
-  "運営モードを使うには、先に運営画面にログインしてください": {
-    "vi": "Để dùng chế độ vận hành, hãy đăng nhập trang quản trị trước",
-    "reviewed": false,
-    "en": "Sign in to the admin page first to use operator mode"
-  },
-  "公式アカウントがまだありません。運営画面の承認キューから作ってください": {
-    "vi": "Chưa có tài khoản chính thức. Hãy tạo từ hàng chờ duyệt trong trang quản trị",
-    "reviewed": false,
-    "en": "There's no official account yet. Create it from the admin approval queue"
-  },
-  "「ジサップ公式」など、運営とまぎらわしい名前は使えません": {
-    "vi": "Không thể dùng tên dễ nhầm với đội ngũ Jisapp (như “Jisapp Official”)",
-    "reviewed": false,
-    "en": "Names that look like the Jisapp team (such as “Jisapp Official”) can't be used"
-  },
-  "ニックネーム": {
-    "vi": "Biệt danh",
-    "reviewed": false,
-    "en": "Nickname"
-  },
-  "ログインしていないので、作者名は「<b>{name}（ゲスト）</b>」と表示されます。本名は入れないでください。": {
-    "vi": "Bạn chưa đăng nhập nên tên người tạo sẽ hiển thị là “<b>{name} (Khách)</b>”. Đừng dùng tên thật nhé.",
-    "reviewed": false,
-    "en": "You're not signed in, so the creator name shows as “<b>{name} (Guest)</b>”. Don't use your real name."
-  },
-  "ジサップで表示する名前": {
-    "vi": "Tên hiển thị trên Jisapp",
-    "reviewed": false,
-    "en": "Your name on Jisapp"
-  },
-  "ジサップで表示する名前を決めてください": {
-    "vi": "Hãy chọn tên hiển thị trên Jisapp",
-    "reviewed": false,
-    "en": "Choose your name on Jisapp"
-  },
-  "表示名を変える": {
-    "vi": "Đổi tên hiển thị",
-    "reviewed": false,
-    "en": "Change your display name"
-  },
-  "アプリを公開したときの作者名などに使います。Google の名前は表示されません。": {
-    "vi": "Tên này dùng làm tên người tạo khi bạn đăng app. Tên Google của bạn sẽ không hiển thị.",
-    "reviewed": false,
-    "en": "It's shown as the creator name when you publish apps. Your Google name is never shown."
-  },
-  "公開済みのアプリの作者名も、新しい名前になります。": {
-    "vi": "Tên người tạo trên các app đã đăng cũng sẽ đổi theo.",
-    "reviewed": false,
-    "en": "The creator name on your published apps changes too."
-  },
-  "例：たろう、ハルの工房": {
-    "vi": "Ví dụ: Minh, Xưởng của Lan",
-    "reviewed": false,
-    "en": "e.g. Alex, Haru's workshop"
-  },
-  "表示する名前": {
-    "vi": "Tên hiển thị",
-    "reviewed": false,
-    "en": "Display name"
-  },
-  "本名ではなく、ニックネームがおすすめです（20文字まで・あとから変えられます）": {
-    "vi": "Nên dùng biệt danh thay vì tên thật (tối đa 20 ký tự, có thể đổi sau)",
-    "reviewed": false,
-    "en": "We recommend a nickname rather than your real name (up to 20 characters, changeable later)"
-  },
-  "この名前にする": {
-    "vi": "Dùng tên này",
-    "reviewed": false,
-    "en": "Use this name"
-  },
-  "変更する": {
-    "vi": "Thay đổi",
-    "reviewed": false,
-    "en": "Change"
-  },
-  "ログアウトする": {
-    "vi": "Đăng xuất",
-    "reviewed": false,
-    "en": "Sign out"
-  },
-  "名前を入力してください": {
-    "vi": "Hãy nhập tên",
-    "reviewed": false,
-    "en": "Please enter a name"
-  },
-  "名前は20文字以内にしてください": {
-    "vi": "Tên tối đa 20 ký tự",
-    "reviewed": false,
-    "en": "Names can be up to 20 characters"
-  },
-  "この名前は使えません": {
-    "vi": "Không thể dùng tên này",
-    "reviewed": false,
-    "en": "This name can't be used"
-  },
-  "この名前はほかの人が使っています。別の名前にしてください": {
-    "vi": "Tên này đã có người dùng. Hãy chọn tên khác",
-    "reviewed": false,
-    "en": "Someone else is using this name. Please choose another"
-  },
-  "公式アカウントの名前は変えられません": {
-    "vi": "Không thể đổi tên tài khoản chính thức",
-    "reviewed": false,
-    "en": "The official account's name can't be changed"
-  },
-  "公開する前に、ジサップで表示する名前を決めてください": {
-    "vi": "Hãy chọn tên hiển thị trên Jisapp trước khi đăng",
-    "reviewed": false,
-    "en": "Choose your name on Jisapp before publishing"
-  },
-  "ニックネームを入力してください": {
-    "vi": "Hãy nhập biệt danh",
-    "reviewed": false,
-    "en": "Please enter a nickname"
-  },
-  "ニックネームは20文字以内にしてください": {
-    "vi": "Biệt danh tối đa 20 ký tự",
-    "reviewed": false,
-    "en": "Nicknames can be up to 20 characters"
-  },
-  "ユーザーが見つかりません": {
-    "vi": "Không tìm thấy người dùng",
-    "reviewed": false,
-    "en": "User not found"
-  },
-  "書き終わった → コピーOK": {
-    "vi": "Viết xong → sao chép được",
-    "reviewed": false,
-    "en": "Finished → copy now"
-  },
-  "書いている途中 → まだ": {
-    "vi": "Đang viết → chưa được",
-    "reviewed": false,
-    "en": "Still writing → wait"
-  },
-  "コピーする前に、AIが<b>最後まで書き終わった</b>か確かめる": {
-    "vi": "Trước khi sao chép, hãy chắc chắn AI đã <b>viết xong hoàn toàn</b>",
-    "reviewed": false,
-    "en": "Before copying, make sure the AI has <b>completely finished</b>"
-  },
-  "AIの文字が動かなくなった": {
-    "vi": "Chữ của AI đã ngừng chạy",
-    "reviewed": false,
-    "en": "The AI's text has stopped moving"
-  },
-  "送信ボタンが「■（停止）」から元の「↑」に戻った": {
-    "vi": "Nút gửi đã trở lại “↑” (không còn là “■” dừng)",
-    "reviewed": false,
-    "en": "The send button is back to “↑” (not “■” stop)"
-  },
-  "コードの最後が {tag} で終わっている": {
-    "vi": "Code kết thúc bằng {tag}",
-    "reviewed": false,
-    "en": "The code ends with {tag}"
-  },
-  "書いている途中にコピーを押すと、コピーできていません。そのまま貼ると、前にコピーしたもの（プロンプトなど）が貼られます。": {
-    "vi": "Nếu bấm sao chép khi AI vẫn đang viết thì sẽ không sao chép được, và khi dán sẽ dán nội dung bạn đã sao chép trước đó (như câu lệnh).",
-    "reviewed": false,
-    "en": "If you press copy while it's still writing, nothing is copied, and you'll paste whatever you copied before (like the prompt)."
-  },
-  "ジサップで「{title}」を作った！遊んでみて👇\n{url}\n#ジサップ #個人開発": {
-    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé 👇\n{url}\n#Jisapp",
-    "reviewed": false,
-    "en": "I made “{title}” on Jisapp! Try it 👇\n{url}\n#Jisapp #buildinpublic"
-  },
-  "上書きしました": {
-    "vi": "Đã cập nhật",
-    "reviewed": false,
-    "en": "Updated"
-  },
-  "出品しました": {
-    "vi": "Đã đăng",
-    "reviewed": false,
-    "en": "Published"
-  },
-  "URLを発行しました": {
-    "vi": "Đã tạo URL",
-    "reviewed": false,
-    "en": "Your URL is ready"
-  },
-  "新しくなりました！": {
-    "vi": "Đã cập nhật xong!",
-    "reviewed": false,
-    "en": "It's updated!"
-  },
-  "完成！": {
-    "vi": "Hoàn thành!",
-    "reviewed": false,
-    "en": "It's done!"
-  },
-  "ジサップで「{title}」を作った！遊んでみて": {
-    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé",
-    "reviewed": false,
-    "en": "I made “{title}” on Jisapp! Try it"
-  },
-  "友だちに送って遊んでもらう": {
-    "vi": "Gửi cho bạn bè chơi thử",
-    "reviewed": false,
-    "en": "Send it to friends to try"
-  },
-  "コピーしました。SNSに貼って投稿できます": {
-    "vi": "Đã sao chép. Dán vào bài đăng mạng xã hội nhé",
-    "reviewed": false,
-    "en": "Copied. Paste it into a post"
-  },
-  "SNSに投稿する文をコピー": {
-    "vi": "Sao chép nội dung để đăng mạng xã hội",
-    "reviewed": false,
-    "en": "Copy a post for social media"
-  },
-  "ログインしないと、このアプリはあとから直せません": {
-    "vi": "Nếu không đăng nhập, bạn sẽ không sửa được app này sau này",
-    "reviewed": false,
-    "en": "Without signing in, you can't edit this app later"
-  },
-  "今ログインすると、このアプリはそのままあなたの作品になります。": {
-    "vi": "Đăng nhập ngay bây giờ, app này sẽ trở thành của bạn.",
-    "reviewed": false,
-    "en": "Sign in now and this app becomes yours as it is."
-  },
-  "あとから直して、同じURLのまま上書きできる": {
-    "vi": "Sửa sau và cập nhật mà vẫn giữ nguyên URL",
-    "reviewed": false,
-    "en": "Edit it later and update it at the same URL"
-  },
-  "作ったアプリを、マイプロジェクトでまとめて管理できる": {
-    "vi": "Quản lý tất cả app đã làm trong Dự án của tôi",
-    "reviewed": false,
-    "en": "Keep all your apps in My projects"
-  },
-  "アプリのデータが、ほかの端末にも残る": {
-    "vi": "Dữ liệu app được giữ cả trên thiết bị khác",
-    "reviewed": false,
-    "en": "Your app data stays on your other devices too"
-  },
-  "応援バッジをもらうと、お知らせが届く": {
-    "vi": "Nhận thông báo khi có người cổ vũ app của bạn",
-    "reviewed": false,
-    "en": "Get notified when people cheer for your app"
-  },
-  "Googleでログインして、自分の作品にする": {
-    "vi": "Đăng nhập bằng Google và giữ app này",
-    "reviewed": false,
-    "en": "Sign in with Google and keep it"
-  },
-  "メールアドレスでログイン・登録する": {
-    "vi": "Đăng nhập hoặc đăng ký bằng email",
-    "reviewed": false,
-    "en": "Sign in or sign up with email"
-  },
-  "ジサップで「{title}」を作った！遊んでみて👇\n#ジサップ #個人開発": {
-    "vi": "Mình vừa làm “{title}” trên Jisapp! Thử chơi nhé 👇\n#Jisapp",
-    "reviewed": false,
-    "en": "I made “{title}” on Jisapp! Try it 👇\n#Jisapp #buildinpublic"
-  },
-  "受け付けました。運営がアプリにして、できあがったらメールでお知らせします。": {
-    "vi": "Đã nhận. Đội ngũ Jisapp sẽ làm app và gửi email cho bạn khi xong.",
-    "reviewed": false,
-    "en": "Got it. The Jisapp team will build it and email you when it's ready."
-  },
-  "うまくいかないときは、運営が代わりにアプリにします（無料）": {
-    "vi": "Làm không được? Đội ngũ Jisapp sẽ làm giúp (miễn phí)",
-    "reviewed": false,
-    "en": "Stuck? The Jisapp team can build it for you (free)"
-  },
-  "できあがりを受け取るメールアドレス": {
-    "vi": "Email để nhận app khi xong",
-    "reviewed": false,
-    "en": "Email to receive your app"
-  },
-  "送っています…": {
-    "vi": "Đang gửi…",
-    "reviewed": false,
-    "en": "Sending…"
-  },
-  "運営にアプリを作ってもらう": {
-    "vi": "Nhờ đội ngũ Jisapp làm app",
-    "reviewed": false,
-    "en": "Ask the team to build it"
-  },
-  "送れませんでした。少し待ってからもう一度お試しください。": {
-    "vi": "Không gửi được. Hãy thử lại sau ít phút.",
-    "reviewed": false,
-    "en": "Couldn't send. Please try again in a moment."
-  },
-  "貼った文章を運営が確認して、アプリにしてお届けします。": {
-    "vi": "Đội ngũ Jisapp sẽ đọc nội dung bạn đã dán và gửi app cho bạn.",
-    "reviewed": false,
-    "en": "The team will read the text you pasted and send you the app."
-  },
-  "ログインしている場合、うまく作れなかったときの文章は、頼まなくても運営が確認してお届けすることがあります。": {
-    "vi": " Khi bạn đã đăng nhập, đội ngũ có thể xem nội dung chưa chạy được và gửi app cho bạn dù bạn không nhờ.",
-    "reviewed": false,
-    "en": " When you're signed in, the team may also check text that didn't work and send you an app."
-  },
-  "「{title}」をあなたの作品にしました": {
-    "vi": "“{title}” giờ là app của bạn",
-    "reviewed": false,
-    "en": "“{title}” is now yours"
-  },
-  "マイプロジェクトから、あとで直して上書き公開できます。": {
-    "vi": "Bạn có thể sửa và cập nhật sau trong Dự án của tôi.",
-    "reviewed": false,
-    "en": "You can edit and update it later from My projects."
-  },
-  "マイプロジェクトへ": {
-    "vi": "Đến Dự án của tôi",
-    "reviewed": false,
-    "en": "Go to My projects"
-  },
-  "{ai}が最後まで書き終わってから、返事にあるコードを全部コピー": {
-    "vi": "Khi {ai} đã viết xong hoàn toàn, sao chép toàn bộ code trong câu trả lời",
-    "reviewed": false,
-    "en": "Once {ai} has completely finished, copy all the code in its reply"
-  },
-  "AIが書き終わったら、返ってきたコードを全部コピーして、ジサップに戻って貼り付ける": {
-    "vi": "Khi AI viết xong, sao chép toàn bộ code trả về, quay lại Jisapp và dán vào",
-    "reviewed": false,
-    "en": "When the AI has finished, copy all the code it returns, come back to Jisapp and paste it"
-  },
-  "AIが書き終わる前に、コピーを押したようです": {
-    "vi": "Có vẻ bạn đã bấm sao chép trước khi AI viết xong",
-    "reviewed": false,
-    "en": "It looks like you pressed copy before the AI finished"
-  },
-  "貼られたのは、さっきジサップでコピーしたプロンプトです。AIが書いている途中にコピーを押すとコピーできず、前にコピーしたものが貼られます。": {
-    "vi": "Nội dung vừa dán là câu lệnh bạn đã sao chép từ Jisapp. Nếu bấm sao chép khi AI đang viết thì sẽ không sao chép được, nên nội dung cũ bị dán vào.",
-    "reviewed": false,
-    "en": "What got pasted is the prompt you copied from Jisapp. If you press copy while the AI is still writing, nothing is copied, so the previous copy gets pasted."
-  },
-  "まだコードではなく文章が入っています。AIが最後まで書き終わってから、返事のコードをコピーして貼り直してください。": {
-    "vi": "Đây vẫn là văn bản, chưa phải code. Hãy chờ AI viết xong, rồi sao chép code trong câu trả lời và dán lại.",
-    "reviewed": false,
-    "en": "This is still text, not code. Wait until the AI has finished, then copy the code from its reply and paste it again."
-  },
-  "このアプリはジサップで作られました。あなたも無料で作れる": {
-    "vi": "App này được làm bằng Jisapp. Bạn cũng làm được, miễn phí",
-    "reviewed": false,
-    "en": "Made with Jisapp. You can make one too, free"
-  },
-  "これをもとに作る": {
-    "vi": "Làm từ app này",
-    "reviewed": false,
-    "en": "Make your own"
-  },
-  "自分でも作る": {
-    "vi": "Tự làm app",
-    "reviewed": false,
-    "en": "Make one"
-  },
-  "内容が短すぎます": {
-    "vi": "Nội dung quá ngắn",
-    "reviewed": false,
-    "en": "The text is too short"
-  },
-  "先に、ジサップで表示する名前を決めてください": {
-    "vi": "Hãy chọn tên hiển thị trên Jisapp trước",
-    "reviewed": false,
-    "en": "Choose your name on Jisapp first"
-  },
-  "同じコードのアプリ「{title}」を見る": {
-    "vi": "Xem app có cùng code: “{title}”",
-    "reviewed": false,
-    "en": "See the app with the same code: “{title}”"
-  },
-  "上書きの設定に切りかえました。内容を確かめて「上書きする」を押してください": {
-    "vi": "Đã chuyển sang cập nhật app đó. Kiểm tra lại rồi bấm “Cập nhật”.",
-    "reviewed": false,
-    "en": "Switched to updating that app. Check the details, then tap “Update”."
-  },
-  "「{title}」に上書きする": {
-    "vi": "Cập nhật “{title}”",
-    "reviewed": false,
-    "en": "Update “{title}”"
-  },
-  "名前を変えて出品する": {
-    "vi": "Đăng với tên khác",
-    "reviewed": false,
-    "en": "Publish with a new name"
-  },
-  "このアプリをもとに作られたアプリ": {
-    "vi": "App được làm dựa trên app này",
-    "reviewed": false,
-    "en": "Apps built from this one"
-  },
-  "作：{name}": {
-    "vi": "của {name}",
-    "reviewed": false,
-    "en": "by {name}"
-  },
-  "同じ名前のアプリ「{1}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。": {
-    "vi": "Bạn đã đăng một app tên “{1}”. Hãy cập nhật app đó, hoặc đăng app này với tên khác.",
-    "reviewed": false,
-    "en": "You've already published an app named “{1}”. Update that app, or publish this one with a different name."
-  },
-  "このアプリは、すでに出品されている「{1}」（作者：{2}）とまったく同じコードなので、出品できません。": {
-    "vi": "App này có code giống hệt “{1}” (của {2}) đã được đăng, nên không thể đăng.",
-    "reviewed": false,
-    "en": "This app has exactly the same code as “{1}” (by {2}), which is already listed, so it can't be published."
-  },
-  "{1} さんが、あなたの「{2}」をもとにアプリを作りました！": {
-    "vi": "{1} đã làm một app dựa trên “{2}” của bạn!",
-    "reviewed": false,
-    "en": "{1} built an app based on your “{2}”!"
-  },
-  "新しいアプリ「{1}」が生まれました。あなたのアプリが、誰かの「作りたい」のきっかけになっています。": {
-    "vi": "App mới “{1}” đã ra đời. App của bạn đã truyền cảm hứng cho người khác!",
-    "reviewed": false,
-    "en": "Say hello to “{1}”. Your app inspired someone to build!"
-  },
-  "あなたの「{1}」をもとに、アプリが{2}件作られました！": {
-    "vi": "Đã có {2} app được làm dựa trên “{1}” của bạn!",
-    "reviewed": false,
-    "en": "{2} apps have been built from your “{1}”!"
-  },
-  "最新は {1} さんの「{2}」です。あなたのアプリが、みんなの「作りたい」のきっかけになっています。": {
-    "vi": "Mới nhất: “{2}” của {1}. App của bạn đang truyền cảm hứng cho mọi người!",
-    "reviewed": false,
-    "en": "Latest: “{2}” by {1}. Your app is inspiring people to build!"
   }
 }

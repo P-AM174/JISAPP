@@ -193,6 +193,11 @@ const PATTERNS: Pattern[] = [
     en: "You've already published an app with exactly the same code: “{1}”. You can't publish the same app twice. To change it, update that app from My projects.",
   },
   {
+    re: /^似たアプリ「(.+)」をすでに公開しています。/,
+    ja: "似たアプリ「{1}」をすでに公開しています。直したものなら、そのアプリに上書きするとURLが変わらず、送った人もそのまま新しい版を使えます。",
+    en: "You've already published a similar app: “{1}”. If this is a fixed version, update that app instead — the URL stays the same, so people you sent it to get the new version.",
+  },
+  {
     re: /^同じ名前のアプリ「(.+)」をすでに公開しています。/,
     ja: "同じ名前のアプリ「{1}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。",
     en: "You've already published an app named “{1}”. Update that app, or publish this one with a different name.",
@@ -211,6 +216,11 @@ const PATTERNS: Pattern[] = [
   { re: /^保存に失敗しました: ([\s\S]*)$/, ja: "保存に失敗しました: {1}", en: "Couldn't save: {1}" },
   { re: /^アプリの準備に失敗しました: ([\s\S]*)$/, ja: "アプリの準備に失敗しました: {1}", en: "Couldn't prepare the app: {1}" },
   // お知らせ（DB には日本語で保存されている）
+  // 作者が戻ってくるきっかけのお知らせ（lib/notifications/comeback-notices.ts）
+  { re: /^あなたの「([\s\S]+)」が開かれました（(\d+)回）$/, ja: "あなたの「{1}」が開かれました（{2}回）", en: "Your “{1}” was opened ({2} times)" },
+  { re: /^誰かがあなたのアプリを使っています。直したくなったら、開発スタジオで上書きすると同じURLのまま新しくなります。$/, ja: "誰かがあなたのアプリを使っています。直したくなったら、開発スタジオで上書きすると同じURLのまま新しくなります。", en: "Someone is using your app. Want to change it? Update it in the Studio and the URL stays the same." },
+  { re: /^「([\s\S]+)」、その後どうですか？$/, ja: "「{1}」、その後どうですか？", en: "How's “{1}” going?" },
+  { re: /^ホーム画面に置くと、次からすぐ開けます。「こうしたいけど、どうしたらいい？」など、困ったことは運営になんでも聞いてください。$/, ja: "ホーム画面に置くと、次からすぐ開けます。「こうしたいけど、どうしたらいい？」など、困ったことは運営になんでも聞いてください。", en: "Add it to your home screen to open it in one tap. Stuck, or wondering how to do something? Ask the Jisapp team anything." },
   { re: /^「([\s\S]+)」に返信がありました$/, ja: "「{1}」に返信がありました", en: "New reply to “{1}”" },
   { re: /^([\s\S]+) さんが「作ってみました」と報告しました$/, ja: "{1} さんが「作ってみました」と報告しました", en: "{1} says they made it" },
   { re: /^「([\s\S]+)」のコードが更新されました$/, ja: "「{1}」のコードが更新されました", en: "“{1}” was updated" },

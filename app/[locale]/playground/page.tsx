@@ -534,6 +534,8 @@ function PasteIssueModal({
   onCopyRetry,
   onDiscard,
   ownPrompt = false,
+  aiName,
+  onSendToAi,
   extra,
 }: {
   issue: CodeIssue;
@@ -544,6 +546,10 @@ function PasteIssueModal({
   onDiscard: () => void;
   /** 貼ったのが、さっきジサップでコピーしたプロンプトそのものだった（AIが書き終わる前にコピーを押した） */
   ownPrompt?: boolean;
+  /** プロンプトを送る先のAIの名前（ChatGPT など） */
+  aiName?: string;
+  /** プロンプトをまだAIに送っていない人向け：プロンプトをコピーし直してAIを開く */
+  onSendToAi?: () => void;
   /** 下に足す内容（運営にアプリを作ってもらう、など） */
   extra?: ReactNode;
 }) {
@@ -584,6 +590,22 @@ function PasteIssueModal({
             <p className="mt-1 text-sm text-white/90">{lead}</p>
           </div>
           <div className="min-h-0 space-y-4 overflow-y-auto p-6">
+            {/* プロンプトはジサップに貼るものではなく、AIに送るもの。まだ送っていない人が多い（英語の人の失敗の大半） */}
+            {ownPrompt && onSendToAi && (
+              <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200">
+                <p className="text-sm font-black text-sky-950">{format(t("まだ{ai}に送っていないなら", "If you haven't sent it to {ai} yet"), { ai: aiName ?? "AI" })}</p>
+                <p className="mt-1 text-xs leading-relaxed text-sky-900">
+                  {format(t("プロンプトは、ここではなく{ai}に貼って送るものです。{ai}がコードを書き終わったら、そのコードをコピーしてここに戻ってきてください。", "The prompt goes to {ai}, not here. Once {ai} has written the code, copy that code and come back here."), { ai: aiName ?? "AI" })}
+                </p>
+                <button
+                  type="button"
+                  onClick={onSendToAi}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 text-sm font-black text-white shadow-sm hover:bg-sky-700"
+                >
+                  {format(t("プロンプトをコピーして{ai}を開く", "Copy the prompt and open {ai}"), { ai: aiName ?? "AI" })}
+                </button>
+              </div>
+            )}
             <DoneSigns compact={!ownPrompt} />
             <ol className="space-y-3 text-sm text-slate-700">
               <li className="flex gap-2.5">
@@ -641,13 +663,21 @@ function PasteIssueModal({
         <div className="space-y-4 p-6">
           <DoneSigns compact />
           {issue === "truncated" && (
-            <button
-              type="button"
-              onClick={onCopyRetry}
-              className="w-full rounded-xl bg-amber-50 py-2.5 text-xs font-bold text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100"
-            >
-              {t("途中で止まっていたら：AIに続きを頼む文をコピー", "If it stopped partway: copy a message asking the AI to finish")}
-            </button>
+            <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+              <p className="text-sm font-black text-amber-950">{t("AIの返事が途中で止まっていたら", "If the AI stopped partway")}</p>
+              <ol className="mt-1.5 space-y-1 text-xs leading-relaxed text-amber-900">
+                <li>{t("1. 下のボタンで、AIに送る文をコピー", "1. Copy the message for the AI with the button below")}</li>
+                <li>{t("2. AIのチャットに貼って送る（コードを最初から最後まで出し直してくれます）", "2. Paste it into the AI chat and send it (the AI writes the whole code again)")}</li>
+                <li>{t("3. 書き終わったら、新しいコードをコピーしてここに貼る", "3. When it's done, copy the new code and paste it here")}</li>
+              </ol>
+              <button
+                type="button"
+                onClick={onCopyRetry}
+                className="mt-3 w-full rounded-xl bg-amber-500 py-3 text-sm font-black text-white shadow-sm hover:bg-amber-600"
+              >
+                {t("AIに送る文をコピー", "Copy the message for the AI")}
+              </button>
+            </div>
           )}
           <div className="flex flex-col gap-2">
             <button
@@ -670,7 +700,7 @@ function PasteIssueModal({
 
 /** 最後に作ったプロンプト（「さっきのプロンプトを貼った」の見分けに使う） */
 const LAST_PROMPT_KEY = "jisapp_last_prompt";
-const squash = (s: string) => s.replace(/s+/g, "");
+const squash = (s: string) => s.replace(/\s+/g, "");
 /** 貼ったものが、ジサップで作ったプロンプト（の一部）か */
 function isOwnPrompt(pasted: string): boolean {
   let last = "";
@@ -754,6 +784,9 @@ export default function PlaygroundPage() {
   // 出品ルール：同じ名前のアプリがあるときは、上書きか名前の変更を選んでもらう／同じコードの出品済みアプリへのリンク
   const [sameTitleApp, setSameTitleApp]       = useState<{ app_id: string; project_id: string | null; title: string } | null>(null);
   const [sameCodeApp, setSameCodeApp]         = useState<{ app_id: string; title: string } | null>(null);
+  /** 同じ人の似たアプリ（上書きを勧める）。「別のアプリとして公開」を選んだら allowNewRef を立てて出し直す */
+  const [similarApp, setSimilarApp]           = useState<{ app_id: string; project_id: string | null; title: string } | null>(null);
+  const allowNewRef = useRef(false);
   const publishTitleRef = useRef<HTMLInputElement>(null);
   const [remixGuideOpen, setRemixGuideOpen]   = useState(false);
   const [remixBannerClosed, setRemixBannerClosed] = useState(false);
@@ -981,6 +1014,7 @@ export default function PlaygroundPage() {
     setPublishError(null);
     setSameTitleApp(null);
     setSameCodeApp(null);
+    setSimilarApp(null);
     try {
       const overwriting = !!publishContext?.appId;
       const res = await fetch("/api/apps/publish", {
@@ -1001,9 +1035,16 @@ export default function PlaygroundPage() {
           reset_user_data: isRepublish ? publishResetUserData : undefined,
           update_notes: isRepublish ? publishUpdateNotes.trim() || undefined : undefined,
           remix_of: !overwriting && remixFromId ? remixFromId : undefined,
+          allow_new: !overwriting && allowNewRef.current ? true : undefined,
         }),
       });
       const json = await res.json();
+      // 似たアプリがある：エラーではなく「上書きしますか？」として見せる
+      if (res.status === 409 && json.code === "similar" && json.existing) {
+        setSimilarApp(json.existing);
+        return;
+      }
+      allowNewRef.current = false;
       if (res.status === 409 && json.code === "same_title" && json.existing) setSameTitleApp(json.existing);
       if (res.status === 409 && json.code === "same_code" && json.other) setSameCodeApp({ app_id: json.other.app_id, title: json.other.title });
       if (!res.ok) throw new Error(json.error ?? (isRepublish ? t("上書きに失敗しました", "Couldn't update the app") : t("出品に失敗しました", "Couldn't publish the app")));
@@ -2157,6 +2198,19 @@ export default function PlaygroundPage() {
         <PasteIssueModal
           issue={pasteIssue}
           ownPrompt={pastedOwnPrompt}
+          aiName={findStudioAi(aiId).url ? findStudioAi(aiId).name : undefined}
+          onSendToAi={() => {
+            // 貼られたのはプロンプトそのもの：コピーし直してAIを開き、コードを待つ画面に戻す
+            const prompt = code;
+            const ai = findStudioAi(aiId);
+            const ok = copyTextNow(prompt);
+            setPasteIssue(null);
+            applyCode("");
+            setPreviewHtml("");
+            setAwaitingCode(true);
+            if (ai.url) window.open(ai.url, "_blank", "noopener,noreferrer");
+            showToast(ok ? format(t("プロンプトをコピーしました。{ai}に貼って送ってください", "Copied the prompt. Paste it into {ai} and send it"), { ai: ai.url ? ai.name : "AI" }) : t("コピーできませんでした", "Couldn't copy"));
+          }}
           extra={(pasteIssue === "prompt" || pasteIssue === "not_html") ? <StuckRequest prompt={code} isLoggedIn={isLoggedIn} /> : undefined}
           onClose={() => setPasteIssue(null)}
           onPasteAgain={() => {
@@ -2657,6 +2711,7 @@ export default function PlaygroundPage() {
                 overwrite={lastPublishWasOverwrite}
                 listed={publishListed}
                 isGuest={!isLoggedIn && !officialMode}
+                sharesData={!!(publishGroupSharing ?? sharesData)}
                 groupBlock={
                   (publishGroupSharing ?? sharesData) && (
                       <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
@@ -2989,6 +3044,39 @@ export default function PlaygroundPage() {
                   {!isLoggedIn && !publishListed && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
                       {rich(t("未ログインで URL のみ発行したアプリは、<t0>2か月間誰も開かないと自動削除</t0>されます。ログインするとマイページから管理できます。", "Apps published by URL only without signing in are <t0>deleted automatically if nobody opens them for 2 months</t0>. Sign in to manage them from My page."), { t0: (c) => <strong>{c}</strong> })}
+                    </div>
+                  )}
+                  {similarApp && (
+                    <div className="rounded-xl bg-sky-50 px-4 py-3 text-xs leading-relaxed text-sky-950 ring-1 ring-sky-200">
+                      <p className="text-sm font-black">{format(t("似たアプリ「{title}」をすでに公開しています", "You've already published a similar app: “{title}”"), { title: similarApp.title })}</p>
+                      <p className="mt-1">
+                        {t("直したものなら、上書きがおすすめです。URLが変わらないので、送った人もそのまま新しい版を使えます。", "If this is a fixed version, update that app instead. The URL stays the same, so people you sent it to get the new version.")}
+                      </p>
+                      <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPublishContext({ projectId: similarApp.project_id ?? undefined, appId: similarApp.app_id });
+                            setPublishTitle(similarApp.title);
+                            setSimilarApp(null);
+                            showToast(t("上書きの設定に切りかえました。内容を確かめて「上書きする」を押してください", "Switched to updating that app. Check the details, then tap “Update”."));
+                          }}
+                          className="flex-1 rounded-xl bg-sky-600 px-3 py-2.5 text-xs font-black text-white hover:bg-sky-700"
+                        >
+                          {format(t("「{title}」に上書きする（URLはそのまま）", "Update “{title}” (same URL)"), { title: similarApp.title })}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            allowNewRef.current = true;
+                            setSimilarApp(null);
+                            void executePublish();
+                          }}
+                          className="flex-1 rounded-xl bg-white px-3 py-2.5 text-xs font-black text-sky-800 ring-1 ring-sky-200 hover:bg-sky-100"
+                        >
+                          {t("別のアプリとして公開する", "Publish as a separate app")}
+                        </button>
+                      </div>
                     </div>
                   )}
                   {publishError && (

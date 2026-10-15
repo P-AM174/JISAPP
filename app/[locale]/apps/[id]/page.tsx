@@ -57,6 +57,7 @@ import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons"
 import { format } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
 import { appSavesData } from "@/lib/apps/saves-data";
+import { HomeScreenNudge } from "@/components/add-to-home-guide";
 
 
 
@@ -418,6 +419,9 @@ ${app.js_code ?? ""}`)}
           onDecline={() => handleUpdateAction("decline")}
         />
       )}
+
+      {/* ホーム画面に置いてもらう（また開くきっかけを作る）。「保存機能について」の案内が出ているあいだは出さない */}
+      <HomeScreenNudge appId={id} enabled={!syncModalOpen} />
 
       {/* 作った本人以外に：このアプリはジサップで作られた・あなたも作れる（共有されたアプリが、次の作り手を呼ぶ） */}
       {!madeWithClosed && !(app.creator_id && app.creator_id === (session?.user as { id?: string } | undefined)?.id) && (

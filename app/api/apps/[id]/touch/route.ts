@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { touchAppLastAccessed } from "@/lib/apps/access";
 import { recordUserAppOpen } from "@/lib/apps/user-opens";
+import { notifyAppOpened } from "@/lib/notifications/comeback-notices";
 
 /**
  * アプリを開いたことを記録する: POST /api/apps/:id/touch  body: { count?: boolean }
@@ -27,6 +28,8 @@ export async function POST(
   await Promise.all([
     count ? touchAppLastAccessed(id) : Promise.resolve(),
     userId ? recordUserAppOpen(userId, id, count) : Promise.resolve(),
+    // 作者に「あなたのアプリが開かれました」と知らせる（作者が戻ってくるきっかけ）
+    count ? notifyAppOpened({ appId: id, openerId: userId }) : Promise.resolve(),
   ]);
   return NextResponse.json({ ok: true });
 }

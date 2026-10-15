@@ -26,6 +26,7 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import { format, pick, toLocale } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
 import { DoneSigns } from "@/components/playground/done-signs";
+import { visitSource } from "@/lib/analytics/client";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
 
@@ -261,6 +262,40 @@ const GHOST_LINES: { w: number; indent: number; tone: string }[] = [
   { w: 14, indent: 0, tone: "bg-sky-100" },
 ];
 
+/**
+ * アイデアの例（プロンプト作成の「何を作りますか」）。
+ * 調査（2026-10-15）：続けて使われたのは、くり返しの用事があり、グループで同じデータを見るアプリだった
+ */
+function ideaExamples(t: (ja: string, en: string) => string): { label: string; shared: boolean }[] {
+  return [
+    { label: t("部活の出欠表（練習日ごとに出欠を入れる）", "A club attendance sheet (mark attendance for each practice)"), shared: true },
+    { label: t("サークルの集金表（誰が払ったか分かる）", "A team fee tracker (see who has paid)"), shared: true },
+    { label: t("家族の買い物リスト（みんなで追加・チェック）", "A family shopping list (everyone can add and tick)"), shared: true },
+    { label: t("毎日の勉強時間を記録して、週の合計を出す", "Log study time every day and show the weekly total"), shared: false },
+    { label: t("使ったお金を入れると、月の合計が出る家計簿", "An expense tracker that shows the monthly total"), shared: false },
+    { label: t("筋トレの記録（種目・回数・重さ）", "A workout log (exercise, reps, weight)"), shared: false },
+  ];
+}
+
+/** ChatGPT から来た人へ：ジサップはアプリを作るのではなく、AIが書いたコードを動かす場所だと先に伝える */
+function FromChatGptGuide() {
+  const t = useT();
+  const [show, setShow] = useState(false);
+  useEffect(() => setShow(/chatgpt|openai/i.test(visitSource() ?? "")), []);
+  if (!show) return null;
+  return (
+    <div className="mb-3 rounded-xl bg-sky-50 px-3 py-2.5 text-xs leading-relaxed text-sky-950 ring-1 ring-sky-200">
+      <p className="font-black">{t("ChatGPT から来た方へ：使い方は3ステップです", "Coming from ChatGPT? It works in 3 steps")}</p>
+      <ol className="mt-1 space-y-0.5">
+        <li>{t("1. 下のボタンで、AIに送るプロンプトを作る", "1. Make a prompt with the button below")}</li>
+        <li>{t("2. そのプロンプトを ChatGPT に貼って送る", "2. Paste that prompt into ChatGPT and send it")}</li>
+        <li>{t("3. ChatGPT が書いたコードをコピーして、ここに貼る", "3. Copy the code ChatGPT writes and paste it here")}</li>
+      </ol>
+      <p className="mt-1 text-sky-800">{t("プロンプトそのものをここに貼っても、アプリは動きません。", "Pasting the prompt itself here won't make an app.")}</p>
+    </div>
+  );
+}
+
 export function EditorStart({
   waitingForAi,
   returned,
@@ -419,6 +454,7 @@ export function EditorStart({
                   </>
                 ) : (
                   <>
+                    <FromChatGptGuide />
                     <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-teal-700">
                       <Code2 className="h-3.5 w-3.5" />
                       {t("コードエディタ", "Code editor")}
@@ -678,6 +714,35 @@ export function PromptTemplateModal({
                 )}
               />
               {ideaError && <p className="mt-1.5 text-xs font-semibold text-rose-600">{ideaError}</p>}
+
+              {/* アイデアの例：何を作ればいいか迷う人向け。続けて使われやすい「くり返し使うもの」「グループで使うもの」を並べる */}
+              {!idea.trim() && (
+                <div className="mt-3">
+                  <p className="text-[11px] font-semibold text-slate-400">{t("例から選ぶ（押すと入ります）", "Pick an example (tap to fill in)")}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {ideaExamples(t).map((ex) => {
+                      const label = ex.label;
+                      return (
+                        <button
+                          key={ex.label}
+                          type="button"
+                          onClick={() => {
+                            onIdeaChange(label);
+                            if (ex.shared !== options.shared) onOptionsChange({ ...options, shared: ex.shared });
+                          }}
+                          className={cn(
+                            "rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition touch-manipulation",
+                            ex.shared ? "bg-sky-50 text-sky-800 ring-sky-200 hover:bg-sky-100" : "bg-white text-slate-700 ring-slate-200 hover:bg-emerald-50"
+                          )}
+                        >
+                          {ex.shared && <Users className="mr-1 inline h-3 w-3 align-[-1px]" />}
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 space-y-4 rounded-2xl bg-white p-4 shadow-sm shadow-slate-900/5 ring-1 ring-slate-200">
                 <div>

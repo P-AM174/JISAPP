@@ -17,6 +17,7 @@ const FUNNEL: { name: string; label: string }[] = [
   { name: "studio_paste", label: "スタジオに貼り付け" },
   { name: "preview", label: "プレビュー表示" },
   { name: "publish", label: "公開" },
+  { name: "audience", label: "誰と使うかを選んだ" },
   { name: "share", label: "共有" },
   { name: "signup", label: "新規登録" },
 ];

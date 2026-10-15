@@ -14,7 +14,9 @@ export type AnalyticsEvent =
   | "preview"
   | "publish"
   | "share"
-  | "signup";
+  | "signup"
+  /** 公開した直後に選んだ「誰と使う？」（me / friends / group） */
+  | "audience";
 
 const SESSION_KEY = "jisapp:analytics:session";
 const UTM_KEY = "jisapp:analytics:utm";
@@ -38,6 +40,16 @@ function sessionId(): string {
     store?.setItem(SESSION_KEY, id);
   }
   return id;
+}
+
+/** この訪問がどこから来たか（utm_source）。ChatGPT から来た人に、使い方を先に見せるために使う */
+export function visitSource(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return currentUtm().utm_source ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** 最初に来たときの UTM を覚えておき、その訪問のあいだのイベントにつける */

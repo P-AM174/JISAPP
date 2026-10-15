@@ -14,7 +14,7 @@ import {
   upsertLibrarySnapshot,
 } from "@/lib/library/snapshots";
 import { normalizeFields } from "@/lib/i18n/text";
-import { codeHash, normalizeCode, normalizeTitle } from "@/lib/apps/code-hash";
+import { codeHash, codeSimilarity, normalizeCode, normalizeTitle, titleSimilarity } from "@/lib/apps/code-hash";
 import { notifyRemixed } from "@/lib/notifications/remix-notices";
 import {
   queueLibraryUpdatesOnRepublish,
@@ -143,6 +143,44 @@ async function findSameTitleApp(
 }
 
 /**
+ * 同じ人が公開している、似たアプリ（名前が似ている、またはコードの多くが同じ）を返す。
+ * 調査（2026-10-15）：直すたびに新しく公開して、1日に14個出した人がいた。URL が変わると、送ったリンクが古いまま残る。
+ * 似たアプリがあれば「上書き（URL はそのまま）」を勧める。本人が「別のアプリとして公開」を選べばそのまま出せる
+ */
+async function findSimilarOwnApp(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  userId: string,
+  title: string,
+  html: string
+): Promise<{ appId: string; projectId: string | null; title: string } | null> {
+  const { data: published } = await supabase
+    .from("user_projects")
+    .select("id, app_id")
+    .eq("user_id", userId)
+    .in("status", ["listed", "url_only"])
+    .not("app_id", "is", null);
+  const projectOf = new Map<string, string>();
+  for (const p of published ?? []) if (p.app_id) projectOf.set(p.app_id as string, p.id as string);
+  if (projectOf.size === 0) return null;
+  const { data } = await supabase
+    .from("apps")
+    .select("id, title, html_code, created_at")
+    .in("id", [...projectOf.keys()])
+    .eq("creator_id", userId)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  let best: { id: string; title: string; score: number } | null = null;
+  for (const a of data ?? []) {
+    const t = titleSimilarity(title, (a.title as string) ?? "");
+    const c = codeSimilarity(html, (a.html_code as string) ?? "");
+    const score = Math.max(t >= 0.5 ? t : 0, c >= 0.45 ? c : 0);
+    if (score > 0 && (!best || score > best.score)) best = { id: a.id as string, title: (a.title as string) ?? "", score };
+  }
+  return best ? { appId: best.id, projectId: projectOf.get(best.id) ?? null, title: best.title } : null;
+}
+
+/**
  * 誰かがマーケットに出品しているアプリに、まったく同じコードのものがあれば返す（出品するときだけ調べる）。
  * 出品ルール：まったく同じコードのアプリは、作者に関係なく出品できない（URL だけの公開は対象外）。
  * code_hash 列がまだないとき（scripts/add-code-hash-and-remix.sql の実行前）は調べない
@@ -198,6 +236,8 @@ export async function POST(request: Request) {
     as_official?: boolean;
     /** 「このアプリをもとに作る」から作ったとき、もとのアプリの ID */
     remix_of?: string;
+    /** 似たアプリがあっても、別のアプリとして公開する（本人が選んだとき） */
+    allow_new?: boolean;
   };
 
   try {
@@ -307,6 +347,21 @@ export async function POST(request: Request) {
           error: `同じ名前のアプリ「${sameTitle.title}」をすでに公開しています。そのアプリに上書きするか、名前を変えて出品してください。`,
           code: "same_title",
           existing: { app_id: sameTitle.appId, project_id: sameTitle.projectId, title: sameTitle.title },
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  // 似たアプリがあれば、上書きを勧める（本人が「別のアプリとして公開」を選んだときはそのまま出す）
+  if (sessionUserId && !overwriteAppId && !body.allow_new && !body.as_official) {
+    const similar = await findSimilarOwnApp(supabase, sessionUserId, title, html_code);
+    if (similar) {
+      return NextResponse.json(
+        {
+          error: `似たアプリ「${similar.title}」をすでに公開しています。直したものなら、そのアプリに上書きするとURLが変わらず、送った人もそのまま新しい版を使えます。`,
+          code: "similar",
+          existing: { app_id: similar.appId, project_id: similar.projectId, title: similar.title },
         },
         { status: 409 }
       );

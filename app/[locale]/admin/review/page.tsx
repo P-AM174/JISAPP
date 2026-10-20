@@ -841,6 +841,14 @@ export default function AdminDashboard() {
               <LayoutTemplate className="h-4 w-4" />
               <span className="hidden md:inline">ヒーロー編集</span>
             </Link>
+            <Link
+              href="/admin/analytics"
+              title="計測"
+              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-sky-50 hover:text-sky-700 hover:ring-sky-200"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden md:inline">計測</span>
+            </Link>
             <button
               type="button"
               onClick={refresh}

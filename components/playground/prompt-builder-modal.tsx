@@ -30,14 +30,14 @@ const APP_EXAMPLES_VI = ["Sổ chi tiêu", "Danh sách việc cần làm", "Th�
 const QUESTIONS_EN = [
   "What app do you want to make?",
   "Tell us about its details, specs, design, features or anything you care about. If there's nothing, send “None”.",
-  "Use Jisapp's original design?\nThis asks for a clear, frosted-glass look (the AI picks colors to suit your app). Choose “No” if you want to decide the design yourself.",
+  "Use Jisapp's original design?\nThis asks for a clean look with white cards and bold colors (the AI picks colors to suit your app). Choose “No” if you want to decide the design yourself.",
   "Does it need to save data?\n“Yes” keeps your records on other devices when you're signed in. “No” keeps them only in this browser on this phone or computer.",
 ] as const;
 
 const QUESTIONS = [
   "作りたいアプリは何ですか。",
   "そのアプリの詳細や仕様、デザイン、機能、こだわりについて教えてください。ない場合は「なし」と送ってください。",
-  "ジサップのオリジナルデザインで作りますか？\nすりガラス風の、透明感のある見た目を指定します（配色はアプリに合わせてAIが決めます）。自分でデザインを決めたいときは「いいえ」です。",
+  "ジサップのオリジナルデザインで作りますか？\n白いカードとくっきりした配色の、すっきりした見た目を指定します（配色はアプリに合わせてAIが決めます）。自分でデザインを決めたいときは「いいえ」です。",
   "データの保存機能は必要ですか？\n「はい」は、ログインすると別の端末でも記録が残ります。「いいえ」は、同じスマホ・パソコンのブラウザの中だけ残します。",
 ] as const;
 

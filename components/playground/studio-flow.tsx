@@ -761,7 +761,7 @@ export function PromptTemplateModal({
                 <div className="h-px bg-slate-100" />
                 <ToggleRow
                   label={t("ジサップのデザインで作る", "Use the Jisapp design")}
-                  description={t("すりガラス風の、透明感のあるデザイン（配色はアプリに合わせてAIが決めます）", "A clear, frosted-glass look (the AI picks colors to suit your app)")}
+                  description={t("白いカードとくっきりした配色の、すっきりしたデザイン（配色はアプリに合わせてAIが決めます）", "A clean look with white cards and bold colors (the AI picks colors to suit your app)")}
                   checked={options.useJisappDesign}
                   onChange={(v) => onOptionsChange({ ...options, useJisappDesign: v })}
                 />

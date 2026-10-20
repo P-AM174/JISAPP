@@ -1984,10 +1984,10 @@
     "reviewed": false,
     "en": "See all →"
   },
-  "すりガラス風の、透明感のあるデザイン（配色はアプリに合わせてAIが決めます）": {
-    "vi": "Phong cách kính mờ trong trẻo (màu sắc do AI chọn cho hợp với app)",
+  "白いカードとくっきりした配色の、すっきりしたデザイン（配色はアプリに合わせてAIが決めます）": {
+    "vi": "Thiết kế gọn gàng với thẻ trắng và màu sắc nổi bật (màu sắc do AI chọn cho hợp với app)",
     "reviewed": false,
-    "en": "A clear, frosted-glass look (the AI picks colors to suit your app)"
+    "en": "A clean look with white cards and bold colors (the AI picks colors to suit your app)"
   },
   "するとクラウドに安全に保存されます。": {
     "vi": " để lưu an toàn trên đám mây.",
@@ -3529,10 +3529,10 @@
     "reviewed": false,
     "en": "A Jisapp app"
   },
-  "ジサップのオリジナルデザインで作りますか？\nすりガラス風の、透明感のある見た目を指定します（配色はアプリに合わせてAIが決めます）。自分でデザインを決めたいときは「いいえ」です。": {
-    "vi": "Dùng thiết kế riêng của Jisapp?\nApp sẽ có phong cách kính mờ trong trẻo (màu sắc do AI chọn cho hợp với app). Chọn “Không” nếu bạn muốn tự quyết thiết kế.",
+  "ジサップのオリジナルデザインで作りますか？\n白いカードとくっきりした配色の、すっきりした見た目を指定します（配色はアプリに合わせてAIが決めます）。自分でデザインを決めたいときは「いいえ」です。": {
+    "vi": "Dùng thiết kế riêng của Jisapp?\nApp sẽ có thiết kế gọn gàng với thẻ trắng và màu sắc nổi bật (màu sắc do AI chọn cho hợp với app). Chọn “Không” nếu bạn muốn tự quyết thiết kế.",
     "reviewed": false,
-    "en": "Use Jisapp's original design?\nThis asks for a clear, frosted-glass look (the AI picks colors to suit your app). Choose “No” if you want to decide the design yourself."
+    "en": "Use Jisapp's original design?\nThis asks for a clean look with white cards and bold colors (the AI picks colors to suit your app). Choose “No” if you want to decide the design yourself."
   },
   "ジサップのデザインで作る": {
     "vi": "Dùng thiết kế Jisapp",

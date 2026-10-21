@@ -50,6 +50,24 @@ export function readActiveGroup(appId: string): GroupSession | null {
   }
 }
 
+/** この端末で、このアプリについて参加したことのあるグループ（「参加していたグループに戻る」用） */
+export function listLocalSessions(appId: string): GroupSession[] {
+  const result: GroupSession[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith("jisapp_group:")) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const session = JSON.parse(raw) as GroupSession;
+      if (session && session.appId === appId && session.memberKey) result.push(session);
+    }
+  } catch {
+    /* noop */
+  }
+  return result;
+}
+
 /** グループを抜ける（この端末から外す）。forget=true なら鍵も消す */
 export function leaveActiveGroup(appId: string, forget = false) {
   try {

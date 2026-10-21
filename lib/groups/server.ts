@@ -129,6 +129,43 @@ export async function reissueMemberForUser(input: {
   return { member: data as MemberRow, memberKey };
 }
 
+/** ログインしないで参加したメンバー（招待リンクから入り直すとき「前に参加した人」として選べる） */
+export async function listGuestMembers(groupId: string): Promise<{ id: string; name: string }[]> {
+  const { data } = await db()
+    .from("app_group_members")
+    .select("id, display_name")
+    .eq("group_id", groupId)
+    .is("user_id", null)
+    .order("created_at", { ascending: true })
+    .limit(50);
+  return ((data ?? []) as { id: string; display_name: string }[]).map((m) => ({ id: m.id, name: m.display_name }));
+}
+
+/**
+ * 前に参加した人として入り直す（ブラウザの保存が消えた・別のブラウザで開いたとき）。
+ * ログインしないで参加したメンバーだけが対象。鍵を作り直すので、前の端末はもう一度選び直す。
+ * ログインしていれば、そのメンバーをアカウントにつなぐ（次からは別の端末でも同じ人になる）
+ */
+export async function reclaimGuestMember(input: {
+  groupId: string;
+  memberId: string;
+  userId: string | null;
+}): Promise<{ member: MemberRow; memberKey: string } | null> {
+  const memberKey = newToken(24);
+  const update: Record<string, string> = { member_key_hash: hashMemberKey(memberKey) };
+  if (input.userId) update.user_id = input.userId;
+  const { data, error } = await db()
+    .from("app_group_members")
+    .update(update)
+    .eq("id", input.memberId)
+    .eq("group_id", input.groupId)
+    .is("user_id", null)
+    .select("id, group_id, display_name, user_id, is_owner")
+    .maybeSingle();
+  if (error || !data) return null;
+  return { member: data as MemberRow, memberKey };
+}
+
 export function toPublicGroup(group: GroupRow) {
   return { id: group.id, appId: group.app_id, name: group.name };
 }

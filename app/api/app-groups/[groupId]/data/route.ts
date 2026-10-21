@@ -4,6 +4,7 @@ import {
   WRITE_LIMITS,
   allowWrite,
   authenticateMember,
+  cleanName,
   touchGroupActivity,
   db,
   findGroupById,
@@ -21,12 +22,14 @@ type Ctx = { params: Promise<{ groupId: string }> };
 
 type Body = {
   memberKey?: string;
-  op?: "me" | "group" | "get" | "set" | "list" | "add" | "remove" | "versions";
+  op?: "me" | "group" | "get" | "set" | "list" | "add" | "remove" | "versions" | "rename";
   key?: string;
   keys?: string[];
   /** JSON 文字列（アプリ側で JSON.stringify 済み） */
   value?: string;
   itemId?: string;
+  /** rename：新しい表示名 */
+  name?: string;
 };
 
 type ItemRow = { id: string; data_value: string; author_id: string | null; created_at: string };
@@ -112,6 +115,15 @@ export async function POST(req: Request, ctx: Ctx) {
   switch (body.op) {
     case "me":
       return NextResponse.json({ result: toPublicMember(member) });
+
+    // 自分の表示名を変える（グループの帯の「○○として参加中」から）
+    case "rename": {
+      const name = cleanName(body.name, GROUP_LIMITS.displayName);
+      if (!name) return fail("名前を入力してください");
+      const { error: renameError } = await client.from("app_group_members").update({ display_name: name }).eq("id", member.id);
+      if (renameError) return fail("名前を変えられませんでした", 500);
+      return NextResponse.json({ result: { ...toPublicMember(member), name } });
+    }
 
     case "group":
       return NextResponse.json({ result: toPublicGroup(group) });

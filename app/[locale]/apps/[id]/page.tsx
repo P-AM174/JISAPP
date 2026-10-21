@@ -106,6 +106,10 @@ function SupabaseAppPage({ id }: { id: string }) {
   // 参加しているグループ（グループ共有を使うアプリ用）
   const [group, setGroup] = useState<GroupSession | null>(null);
   const [groupManageOpen, setGroupManageOpen] = useState(false);
+  /** 上の「招待」が押された回数（グループの帯が、招待リンクか「グループを作る」を開く） */
+  const [inviteRequest, setInviteRequest] = useState(0);
+  /** 招待リンクから来て、参加の画面を出しているあいだはアプリを開かない */
+  const [invitePending, setInvitePending] = useState(false);
   useEffect(() => {
     setGroup(readActiveGroup(id));
   }, [id]);
@@ -335,14 +339,26 @@ ${app.js_code ?? ""}`);
                 <span className="sm:hidden">{t("管理", "Manage")}</span>
               </button>
             )}
-            <ShareButton
-              url={getAppShareUrl(id)}
-              title={app.title}
-              text={format(t("{title} | ジサップで作った無料アプリ", "{title} | a free app made on Jisapp"), { title: app.title })}
-              variant="outline"
-              className="w-auto"
-              compactOnMobile
-            />
+            {appUsesShared ? (
+              // グループ共有アプリでは、アプリのURLではなくグループの招待リンクを送る（アプリのURLだとデータが共有されない）
+              <button
+                type="button"
+                onClick={() => setInviteRequest((n) => n + 1)}
+                className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 sm:px-3"
+              >
+                <Users className="h-3.5 w-3.5" />
+                {t("招待", "Invite")}
+              </button>
+            ) : (
+              <ShareButton
+                url={getAppShareUrl(id)}
+                title={app.title}
+                text={format(t("{title} | ジサップで作った無料アプリ", "{title} | a free app made on Jisapp"), { title: app.title })}
+                variant="outline"
+                className="w-auto"
+                compactOnMobile
+              />
+            )}
           </div>
         </div>
       </header>
@@ -366,6 +382,8 @@ ${app.js_code ?? ""}`);
         onGroupChange={setGroup}
         manageOpen={groupManageOpen}
         onManageClose={() => setGroupManageOpen(false)}
+        inviteRequest={inviteRequest}
+        onInvitePendingChange={setInvitePending}
       />
 
       {/* アプリ実行エリア（残りの高さいっぱい。スクロールは iframe の中だけ） */}
@@ -411,11 +429,11 @@ ${app.js_code ?? ""}`);
             ) : null}
           </div>
         )}
-        {syncReady ? (
+        {syncReady && !invitePending ? (
           <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
             <iframe
               ref={iframeRef}
-              key={`${id}-${enableCloud ? userId : "local"}-${group?.groupId ?? "solo"}-${iframeKey}`}
+              key={`${id}-${enableCloud ? userId : "local"}-${group?.groupId ?? "solo"}-${group?.displayName ?? ""}-${iframeKey}`}
               srcDoc={srcDoc}
               sandbox={APP_IFRAME_SANDBOX}
               className="h-full w-full border-0 bg-white"

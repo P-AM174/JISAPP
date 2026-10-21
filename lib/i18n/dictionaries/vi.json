@@ -964,6 +964,11 @@
     "reviewed": false,
     "en": "Opened {days} days ago"
   },
+  "{displayName}として参加中": {
+    "vi": "Đang tham gia với tên {displayName}",
+    "reviewed": false,
+    "en": "Joined as {displayName}"
+  },
   "{fileName} を保存しました": {
     "vi": "Đã lưu {fileName}",
     "reviewed": false,
@@ -1189,6 +1194,16 @@
     "reviewed": false,
     "en": "Let's use “{appTitle}” together in “{groupName}”. Join with this link (no sign-up needed)\n"
   },
+  "「{groupName}」のメンバーに表示される名前です。": {
+    "vi": "Tên hiển thị cho các thành viên của “{groupName}”.",
+    "reviewed": false,
+    "en": "The name members of “{groupName}” see."
+  },
+  "「{name}」として参加します。名前はあとから変えられます。": {
+    "vi": "Bạn sẽ tham gia với tên “{name}”. Có thể đổi tên sau.",
+    "reviewed": false,
+    "en": "You'll join as “{name}”. You can change it later."
+  },
   "「{name}」にあなたが保存したデータをすべて消しますか？元に戻せません。アプリはライブラリに残ります。": {
     "vi": "Xóa toàn bộ dữ liệu bạn đã lưu trong “{name}”? Không thể hoàn tác. App vẫn còn trong thư viện.",
     "reviewed": false,
@@ -1319,6 +1334,11 @@
     "reviewed": false,
     "en": "“Use brighter colors”"
   },
+  "「グループを作る」を押します（作る人はログインが必要です）": {
+    "vi": "Nhấn “Tạo nhóm” (người tạo cần đăng nhập)",
+    "reviewed": false,
+    "en": "Tap “Create a group” (the creator needs to log in)"
+  },
   "「ジサップ公式」など、運営とまぎらわしい名前は使えません": {
     "vi": "Không thể dùng tên dễ nhầm với đội ngũ Jisapp (như “Jisapp Official”)",
     "reviewed": false,
@@ -1354,6 +1374,11 @@
     "reviewed": false,
     "en": "Edit it later and update it at the same URL"
   },
+  "あなた": {
+    "vi": "bạn",
+    "reviewed": false,
+    "en": "you"
+  },
   "あなたの「{1}」が開かれました（{2}回）": {
     "vi": "“{1}” của bạn đã được mở ({2} lần)",
     "reviewed": false,
@@ -1378,6 +1403,16 @@
     "vi": "Biệt danh của bạn",
     "reviewed": false,
     "en": "Your nickname"
+  },
+  "あなたの名前": {
+    "vi": "Tên của bạn",
+    "reviewed": false,
+    "en": "Your name"
+  },
+  "あなたの名前を選んでください": {
+    "vi": "Chọn tên của bạn",
+    "reviewed": false,
+    "en": "Pick your name"
   },
   "あなたの表示名": {
     "vi": "Tên hiển thị của bạn",
@@ -1669,6 +1704,11 @@
     "reviewed": false,
     "en": "This app saves data separately on each person's device. If everyone should see the same data (like attendance or payments), send the message below to the AI and rebuild it to use it as a group."
   },
+  "このアプリはジサップで作られました": {
+    "vi": "App này được làm bằng Jisapp",
+    "reviewed": false,
+    "en": "This app was made with Jisapp"
+  },
   "このアプリはジサップで作られました。あなたも無料で作れる": {
     "vi": "App này được làm bằng Jisapp. Bạn cũng làm được, miễn phí",
     "reviewed": false,
@@ -1813,6 +1853,11 @@
     "vi": "Email này đã được đăng ký",
     "reviewed": false,
     "en": "This email address is already registered"
+  },
+  "このリンクを送ると、名前を入れるだけで「{groupName}」に参加できます。": {
+    "vi": "Ai nhận được link này chỉ cần nhập tên là tham gia “{groupName}”.",
+    "reviewed": false,
+    "en": "Anyone you send this link to can join “{groupName}” just by entering their name."
   },
   "このリンクを送ると、表示名を入れるだけで「{groupName}」に参加できます。": {
     "vi": "Ai nhận được link này chỉ cần nhập tên hiển thị là vào được “{groupName}”.",
@@ -1984,11 +2029,6 @@
     "reviewed": false,
     "en": "See all →"
   },
-  "白いカードとくっきりした配色の、すっきりしたデザイン（配色はアプリに合わせてAIが決めます）": {
-    "vi": "Thiết kế gọn gàng với thẻ trắng và màu sắc nổi bật (màu sắc do AI chọn cho hợp với app)",
-    "reviewed": false,
-    "en": "A clean look with white cards and bold colors (the AI picks colors to suit your app)"
-  },
   "するとクラウドに安全に保存されます。": {
     "vi": " để lưu an toàn trên đám mây.",
     "reviewed": false,
@@ -2083,6 +2123,11 @@
     "vi": "Đăng app đầu tiên",
     "reviewed": false,
     "en": "Publish your first app"
+  },
+  "はじめて参加する": {
+    "vi": "Tôi mới tham gia",
+    "reviewed": false,
+    "en": "I'm new here"
   },
   "ひとつ前に戻る": {
     "vi": "Quay lại một bước",
@@ -2233,6 +2278,11 @@
     "vi": "App này cho phép cả nhóm dùng chung dữ liệu.",
     "reviewed": false,
     "en": "This app lets a group share data."
+  },
+  "みんなで使うアプリです": {
+    "vi": "App dùng chung với nhóm",
+    "reviewed": false,
+    "en": "An app to use with a group"
   },
   "みんなで同じデータを見たり書き込んだりできます": {
     "vi": "Mọi người cùng xem và ghi chung một dữ liệu",
@@ -2414,6 +2464,11 @@
     "reviewed": false,
     "en": "Times opened"
   },
+  "アプリだけを紹介する（データは共有されません）": {
+    "vi": "Chỉ giới thiệu app (không chia sẻ dữ liệu)",
+    "reviewed": false,
+    "en": "Just share the app (data isn't shared)"
+  },
   "アプリに保存しているデータが {1} / {2} になりました。": {
     "vi": "Dữ liệu app bạn đã lưu giờ là {1} / {2}. Khi đầy sẽ không lưu thêm được. Nên xóa dữ liệu của những app không dùng nữa.",
     "reviewed": false,
@@ -2443,6 +2498,11 @@
     "vi": "Dữ liệu app được giữ cả trên thiết bị khác",
     "reviewed": false,
     "en": "Your app data stays on your other devices too"
+  },
+  "アプリのリンクをコピーしました": {
+    "vi": "Đã sao chép link app",
+    "reviewed": false,
+    "en": "App link copied"
   },
   "アプリの使い方や特徴を簡単に説明...": {
     "vi": "Mô tả ngắn cách dùng và điểm đặc biệt...",
@@ -2819,6 +2879,11 @@
     "reviewed": false,
     "en": "Group"
   },
+  "グループ {n}つ": {
+    "vi": "{n} nhóm",
+    "reviewed": false,
+    "en": "{n} groups"
+  },
   "グループ「{groupName}」から外れました。参加するには招待リンクが必要です": {
     "vi": "Bạn không còn ở trong “{groupName}”. Cần link mời để tham gia lại",
     "reviewed": false,
@@ -2878,6 +2943,11 @@
     "vi": "Tham gia nhóm",
     "reviewed": false,
     "en": "Join the group"
+  },
+  "グループに戻る": {
+    "vi": "Quay lại nhóm",
+    "reviewed": false,
+    "en": "Go back"
   },
   "グループに戻れませんでした": {
     "vi": "Không quay lại được nhóm",
@@ -3254,6 +3324,11 @@
     "reviewed": false,
     "en": "Clear code"
   },
+  "コードを見る": {
+    "vi": "Xem mã",
+    "reviewed": false,
+    "en": "View the code"
+  },
   "コードを見直す（AIへの指示をコピー）": {
     "vi": "Sửa code (sao chép câu lệnh cho AI)",
     "reviewed": false,
@@ -3524,6 +3599,11 @@
     "reviewed": false,
     "en": "Come back to Jisapp and press “Paste again”"
   },
+  "ジサップに戻る": {
+    "vi": "Quay lại Jisapp",
+    "reviewed": false,
+    "en": "Back to Jisapp"
+  },
   "ジサップのアプリ": {
     "vi": "Một app trên Jisapp",
     "reviewed": false,
@@ -3598,6 +3678,11 @@
     "vi": "Jisapp là studio làm app miễn phí cho mọi người: dán code bạn làm bằng ChatGPT, Claude hoặc Gemini là có ngay app chạy trên trình duyệt để đăng và chia sẻ. Không cần cài server hay cơ sở dữ liệu.",
     "reviewed": false,
     "en": "Jisapp is a free app studio for everyone: paste the code you made with ChatGPT, Claude or Gemini, and it runs as a real app in the browser that you can publish and share. No servers or databases to set up."
+  },
+  "スタジオで開いて、自分用に作り変えることもできます": {
+    "vi": "Mở trong Studio, bạn cũng có thể sửa thành phiên bản của riêng mình",
+    "reviewed": false,
+    "en": "Opens in the Studio, where you can also make your own version"
   },
   "スタジオアプリ": {
     "vi": "App từ Studio",
@@ -5214,6 +5299,11 @@
     "reviewed": false,
     "en": "Created"
   },
+  "作ったら、招待リンクを送るだけ": {
+    "vi": "Tạo nhóm rồi chỉ cần gửi link mời",
+    "reviewed": false,
+    "en": "Create one, then send the invite link"
+  },
   "作ったアプリのURL": {
     "vi": "Link app bạn đã làm",
     "reviewed": false,
@@ -5303,6 +5393,11 @@
     "vi": "Tạo",
     "reviewed": false,
     "en": "Make"
+  },
+  "作ると、メンバーに送る招待リンクが出ます": {
+    "vi": "Tạo xong sẽ có link mời để gửi cho thành viên",
+    "reviewed": false,
+    "en": "You'll get an invite link to send to members"
   },
   "作るもの：": {
     "vi": "Đang làm: ",
@@ -5469,6 +5564,11 @@
     "reviewed": false,
     "en": "e.g. Job hunt tracker"
   },
+  "例：山本": {
+    "vi": "VD: Lan",
+    "reviewed": false,
+    "en": "e.g. Sam"
+  },
   "例：日記アプリ": {
     "vi": "Ví dụ: App nhật ký",
     "reviewed": false,
@@ -5538,6 +5638,11 @@
     "vi": "Dữ liệu đã lưu nằm ở đâu?",
     "reviewed": false,
     "en": "Where is my saved data stored?"
+  },
+  "保存しています…": {
+    "vi": "Đang lưu…",
+    "reviewed": false,
+    "en": "Saving…"
   },
   "保存しているデータの合計が、もうすぐ上限（全アプリで10MB）に届きます": {
     "vi": "Tổng dữ liệu bạn đã lưu sắp chạm giới hạn (10MB cho tất cả app)",
@@ -5999,6 +6104,11 @@
     "reviewed": false,
     "en": "About the creator"
   },
+  "出欠や当番などで、誰の分かわかるように使います。ログインはいりません。": {
+    "vi": "Dùng để mọi người biết câu trả lời nào là của ai. Không cần đăng nhập.",
+    "reviewed": false,
+    "en": "Used so everyone can tell whose answer is whose. No sign-in needed."
+  },
   "出欠表・連絡板・当番表など": {
     "vi": "Điểm danh, bảng tin, lịch trực, v.v.",
     "reviewed": false,
@@ -6063,6 +6173,21 @@
     "vi": "Không xóa được",
     "reviewed": false,
     "en": "Couldn't delete"
+  },
+  "前と同じ人として戻ります。出欠や書き込みもそのまま使えます": {
+    "vi": "Bạn sẽ quay lại như trước, giữ nguyên câu trả lời và bài viết",
+    "reviewed": false,
+    "en": "You'll come back as the same person, with your answers and posts"
+  },
+  "前に参加したことがある": {
+    "vi": "Tôi đã tham gia trước đây",
+    "reviewed": false,
+    "en": "I've joined before"
+  },
+  "前に参加したグループに戻れます": {
+    "vi": "Quay lại nhóm bạn đã tham gia",
+    "reviewed": false,
+    "en": "Go back to the group you joined"
   },
   "前のスライド": {
     "vi": "Slide trước",
@@ -6138,6 +6263,11 @@
     "vi": "Đang tham gia…",
     "reviewed": false,
     "en": "Joining…"
+  },
+  "参加する": {
+    "vi": "Tham gia",
+    "reviewed": false,
+    "en": "Join"
   },
   "参加できませんでした": {
     "vi": "Không tham gia được",
@@ -6288,6 +6418,16 @@
     "vi": "Đăng với tên khác",
     "reviewed": false,
     "en": "Publish with a new name"
+  },
+  "名前を変えられませんでした": {
+    "vi": "Không đổi được tên",
+    "reviewed": false,
+    "en": "Couldn't change your name"
+  },
+  "名前を変える": {
+    "vi": "Đổi tên",
+    "reviewed": false,
+    "en": "Change your name"
   },
   "名前（大文字）": {
     "vi": "Tên (VIẾT HOA)",
@@ -6638,6 +6778,11 @@
     "vi": "App mà chỉ những thành viên bạn mời mới cùng xem và ghi chung dữ liệu — hợp để điểm danh câu lạc bộ, ghi điểm cho đội, v.v.",
     "reviewed": false,
     "en": "An app where only the members you invite can see and edit the same data — great for club attendance sheets, team score logs, and more."
+  },
+  "招待する": {
+    "vi": "Mời",
+    "reviewed": false,
+    "en": "Invite"
   },
   "招待リンクが無効です": {
     "vi": "Link mời không hợp lệ",
@@ -7189,6 +7334,11 @@
     "reviewed": false,
     "en": "You're all set!"
   },
+  "白いカードとくっきりした配色の、すっきりしたデザイン（配色はアプリに合わせてAIが決めます）": {
+    "vi": "Thiết kế gọn gàng với thẻ trắng và màu sắc nổi bật (màu sắc do AI chọn cho hợp với app)",
+    "reviewed": false,
+    "en": "A clean look with white cards and bold colors (the AI picks colors to suit your app)"
+  },
   "直したいところはAIに頼んで、コードを貼り直すだけ": {
     "vi": "Muốn sửa? Nhờ AI rồi dán lại code mới",
     "reviewed": false,
@@ -7553,6 +7703,11 @@
     "vi": "Lỗi khi tải",
     "reviewed": false,
     "en": "Load error"
+  },
+  "読み込み中": {
+    "vi": "Đang tải",
+    "reviewed": false,
+    "en": "Loading"
   },
   "読み込み中...": {
     "vi": "Đang tải...",

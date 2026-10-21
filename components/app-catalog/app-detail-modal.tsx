@@ -20,7 +20,7 @@ import {
   Palette,
   AlertTriangle,
   Smartphone,
-  Wand2,
+  Code2,
 } from "lucide-react";
 import { AppReportModal } from "./app-report-modal";
 import { cn } from "@/lib/utils";
@@ -415,11 +415,11 @@ export function AppDetailModal({
                 className="flex w-full flex-col items-center justify-center rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-violet-700 hover:bg-violet-100 active:scale-[0.98] transition-all"
               >
                 <span className="flex items-center gap-2 text-sm font-bold">
-                  <Wand2 className="h-4 w-4" />
-                  {t("このアプリをもとに作る", "Make your own version")}
+                  <Code2 className="h-4 w-4" />
+                  {t("コードを見る", "View the code")}
                 </span>
                 <span className="text-[11px] font-medium text-violet-500">
-                  {t("自分用に作り変えられます。元のアプリは変わりません", "Make it your own. The original app stays as it is")}
+                  {t("スタジオで開いて、自分用に作り変えることもできます", "Opens in the Studio, where you can also make your own version")}
                 </span>
               </button>
             )}

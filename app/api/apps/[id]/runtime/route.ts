@@ -93,6 +93,8 @@ export async function GET(
         code_public: app.code_public,
         status: "deleted",
         code_version: snap.code_version,
+
+        group_sharing: app.group_sharing ?? null,
       },
       source: "snapshot",
       inLibrary: true,
@@ -123,6 +125,8 @@ export async function GET(
           code_public: app.code_public,
           status: app.status,
           code_version: snap.code_version,
+
+          group_sharing: app.group_sharing ?? null,
         },
         source: "snapshot",
         inLibrary: true,
@@ -147,6 +151,8 @@ export async function GET(
       code_public: app.code_public,
       status: app.status,
       code_version: app.code_version ?? 1,
+
+      group_sharing: app.group_sharing ?? null,
     },
     source: "live",
     inLibrary,

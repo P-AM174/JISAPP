@@ -100,6 +100,25 @@ html[lang="vi"] {
   height: 100dvh;
 }
 
+/*
+ * アプリのページ用：画面にぴったり固定する。
+ * iPhone の Safari で、アプリの中をスクロールした勢いでページ全体が動いたり、
+ * キーボードを閉じたあとにページがずれたままになったりして、下に余白が出るのを防ぐ。
+ */
+.app-viewport-fixed {
+  position: fixed;
+  inset: 0;
+  height: auto;
+  overscroll-behavior: none;
+}
+html.app-page-lock,
+html.app-page-lock body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #fff;
+}
+
 html {
   scroll-behavior: smooth;
   overscroll-behavior-y: none;

@@ -70,5 +70,6 @@ export function inviteUrl(appId: string, inviteToken: string): string {
 
 /** コードがグループ共有（Jisapp.shared／旧名 Zisup.shared）を使っているか */
 export function usesSharedData(code: string): boolean {
-  return /(?:Jisapp|Zisup)\s*\.\s*shared\s*\./.test(code);
+  // window.Jisapp.shared.add(...) のほか、const shared = Jisapp.shared; や J.shared.list(...) のような書き方も見つける
+  return /(?:Jisapp|Zisup)\s*\.\s*shared\b|\.shared\s*\.\s*(?:add|list|remove|save|load|onChange)\s*\(/.test(code);
 }

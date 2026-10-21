@@ -47,6 +47,7 @@ export function AppGroupPanel({
   appTitle,
   usesShared,
   isLoggedIn,
+  sessionReady = true,
   isAppOwner = false,
   userName,
   loginCallbackUrl,
@@ -60,6 +61,8 @@ export function AppGroupPanel({
   /** アプリがグループ共有（Jisapp.shared）を使っているか */
   usesShared: boolean;
   isLoggedIn: boolean;
+  /** ログイン状態がわかったか（わかるまでは、ログインしていない扱いにしない） */
+  sessionReady?: boolean;
   /** 見ている人が、このアプリを出した本人か */
   isAppOwner?: boolean;
   userName: string | null;
@@ -207,6 +210,23 @@ export function AppGroupPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingManage, group?.isOwner, isLoggedIn, myGroupsLoaded, myGroups, appId]);
 
+  // アプリの詳細モーダルの「グループを作る」（?create=1）から来たとき：ログインしていれば作る画面を開き、していなければログインへ
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("create") !== "1") return;
+    if (!usesShared || !sessionReady) return;
+    url.searchParams.delete("create");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    markGroupIntroShown(appId);
+    if (isLoggedIn) {
+      setCreating(true);
+    } else {
+      goLogin(true);
+    }
+    // ログイン状態がわかってから1回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usesShared, isLoggedIn, sessionReady]);
+
   // アプリを出した本人がまだグループを作っていなければ、最初に開いたときに1回だけ「グループを作る」を開く
   useEffect(() => {
     if (!isAppOwner || !usesShared || !isLoggedIn || !myGroupsLoaded) return;
@@ -259,13 +279,15 @@ export function AppGroupPanel({
     };
   }, [menuOpen]);
 
-  const goLogin = () => {
+  /** ログインへ。create のときは、戻ってきたらそのまま「グループを作る」を開く */
+  const goLogin = (create = false) => {
+    const back = create ? `${loginCallbackUrl}${loginCallbackUrl.includes("?") ? "&" : "?"}create=1` : loginCallbackUrl;
     try {
-      sessionStorage.setItem("jisapp_login_return", loginCallbackUrl);
+      sessionStorage.setItem("jisapp_login_return", back);
     } catch {
       /* noop */
     }
-    router.push(`/login?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`);
+    router.push(`/login?callbackUrl=${encodeURIComponent(back)}`);
   };
 
   const regenerate = async () => {
@@ -323,22 +345,24 @@ export function AppGroupPanel({
       )}
 
       {showBar && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-sky-50 px-4 py-2 text-xs">
-          <Users className="h-4 w-4 shrink-0 text-emerald-700" />
+        <div className="flex shrink-0 items-center gap-2 border-b border-emerald-100 bg-emerald-50 px-3 py-2 text-xs sm:px-4">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-emerald-700 ring-1 ring-emerald-200">
+            <Users className="h-4 w-4" />
+          </span>
           {group ? (
             <>
-              <p className="min-w-0 flex-1 truncate text-emerald-950">
-                <span className="font-bold">{group.groupName}</span>
-                <span className="text-emerald-800/70">{format(t(" ・ {displayName}として参加中", " · joined as {displayName}"), { displayName: group.displayName })}</span>
+              <p className="min-w-0 flex-1 leading-snug text-emerald-950">
+                <span className="block truncate font-bold">{group.groupName}</span>
+                <span className="block truncate text-[11px] text-emerald-800/70">{format(t("{displayName}として参加中", "Joined as {displayName}"), { displayName: group.displayName })}</span>
               </p>
               {group.inviteToken && (
                 <button
                   type="button"
                   onClick={() => setSharing(group)}
-                  className="flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-600 px-3.5 py-2 font-black text-white shadow-sm shadow-emerald-600/25 hover:bg-emerald-700 active:scale-[0.97]"
                 >
                   <Share2 className="h-3.5 w-3.5" />
-                  {t("招待", "Invite")}
+                  {t("招待する", "Invite")}
                 </button>
               )}
               <div className="relative shrink-0" ref={menuRef}>
@@ -377,25 +401,25 @@ export function AppGroupPanel({
             </>
           ) : (
             <>
-              <p className="min-w-0 flex-1 text-emerald-950">
-                <span className="font-bold">{t("みんなでデータを共有できるアプリです。", "This app lets a group share data.")}</span>
-                <span className="hidden text-emerald-800/70 sm:inline">{t(" グループを作って、招待リンクをメンバーに送りましょう", " Create a group and send the invite link to your members")}</span>
+              <p className="min-w-0 flex-1 leading-snug text-emerald-950">
+                <span className="block font-bold">{t("みんなで使うアプリです", "An app to use with a group")}</span>
+                <span className="block text-[11px] text-emerald-800/70">{t("作ったら、招待リンクを送るだけ", "Create one, then send the invite link")}</span>
               </p>
               {myGroups.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setChoosing(true)}
-                  className="shrink-0 rounded-lg bg-white px-2.5 py-1.5 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                  className="shrink-0 rounded-full bg-white px-3 py-2 font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50"
                 >
-                  {format(t("自分のグループ（{count}）", "My groups ({count})"), { count: myGroups.length })}
+                  {format(t("自分の（{count}）", "Mine ({count})"), { count: myGroups.length })}
                 </button>
               )}
               <button
                 type="button"
-                onClick={() => (isLoggedIn ? setCreating(true) : goLogin())}
-                className="shrink-0 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 font-bold text-white shadow-sm hover:from-emerald-700 hover:to-teal-700"
+                onClick={() => (isLoggedIn ? setCreating(true) : goLogin(true))}
+                className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-2 font-black text-white shadow-sm shadow-emerald-600/25 hover:bg-emerald-700 active:scale-[0.97]"
               >
-                {isLoggedIn ? t("グループを作る", "Create a group") : t("ログインしてグループを作る", "Sign in to create a group")}
+                {t("グループを作る", "Create a group")}
               </button>
             </>
           )}

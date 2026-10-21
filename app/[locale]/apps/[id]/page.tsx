@@ -35,7 +35,6 @@ import {
   Link2,
   Lightbulb,
   FileSpreadsheet,
-  ChevronLeft,
   Wand2,
 } from "lucide-react";
 import { type AppRow } from "@/lib/supabase";
@@ -45,6 +44,7 @@ import { readAppStorageSnapshot } from "@/lib/apps/app-storage";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
 import { useZisupBridge } from "@/lib/hooks/use-zisup-bridge";
 import { useLibrarySync } from "@/lib/hooks/use-library-sync";
+import { backTargetSkippingLogin, hasPreviousInJisapp } from "@/lib/nav-history";
 import { SyncLoginButton } from "@/components/app-runner";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { AppDataNotice } from "@/components/app-data-notice";
@@ -57,7 +57,6 @@ import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons"
 import { format } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
 import { appSavesData } from "@/lib/apps/saves-data";
-import { HomeScreenNudge } from "@/components/add-to-home-guide";
 
 
 
@@ -68,6 +67,7 @@ function isUUID(s: string) {
 
 // ─── Supabase 版の専用実行画面 ────────────────────────────────
 function SupabaseAppPage({ id }: { id: string }) {
+  const router = useRouter();
   const [app, setApp]     = useState<AppRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -120,18 +120,42 @@ function SupabaseAppPage({ id }: { id: string }) {
 
   // 保存の仕組みを使っていないアプリ（保存しないゲームなど）では、保存機能の案内はいらない
   const savesData = useMemo(() => (app ? appSavesData(`${app.html_code ?? ""}\n${app.js_code ?? ""}`) : false), [app]);
+  // グループ共有アプリでは、ひとりで使うための「同期機能について」は出さない（グループの帯から作る・参加する）
+  const isGroupApp = useMemo(
+    () => (app ? app.group_sharing ?? usesSharedData(`${app.html_code ?? ""}\n${app.js_code ?? ""}`) : false),
+    [app]
+  );
 
   useEffect(() => {
-    if (!syncReady || enableCloud || group || cameFromInviteRef.current || !savesData) {
+    if (!syncReady || enableCloud || group || cameFromInviteRef.current || !savesData || isGroupApp) {
       setSyncModalOpen(false);
       return;
     }
     setSyncModalOpen(true);
-  }, [syncReady, enableCloud, isLoggedIn, inLibrary, group, savesData]);
+  }, [syncReady, enableCloud, isLoggedIn, inLibrary, group, savesData, isGroupApp]);
 
   useEffect(() => {
     if (enableCloud) setIframeKey((k) => k + 1);
   }, [enableCloud]);
+
+  // スマホでページ全体が動かないように固定する。キーボードを閉じたあとなどにずれたら元に戻す（下に余白が残るのを防ぐ）
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("app-page-lock");
+    const reset = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
+    };
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", reset);
+    window.addEventListener("scroll", reset, { passive: true });
+    window.addEventListener("focusout", reset);
+    return () => {
+      root.classList.remove("app-page-lock");
+      vv?.removeEventListener("resize", reset);
+      window.removeEventListener("scroll", reset);
+      window.removeEventListener("focusout", reset);
+    };
+  }, []);
 
   // アプリの localStorage の中身（枠を作り直すときだけ読み直す。毎回読むと再描画のたびにアプリが再起動してしまう）
   const appStorage = useMemo(
@@ -252,19 +276,29 @@ function SupabaseAppPage({ id }: { id: string }) {
   }
 
   const srcDoc = buildAppSrcDoc(app.html_code ?? "", app.css_code, app.js_code, appStorage);
+  const appUsesShared = app.group_sharing ?? usesSharedData(`${app.html_code ?? ""}
+${app.js_code ?? ""}`);
 
   return (
-    <div className="app-viewport flex flex-col overflow-hidden bg-white">
+    <div className="app-viewport app-viewport-fixed flex flex-col overflow-hidden bg-white">
       {/* ヘッダー */}
       <header className="shrink-0 border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="mx-auto flex h-13 max-w-5xl items-center gap-3 px-4 py-2">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-emerald-600"
+        <div className="mx-auto flex h-13 max-w-5xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
+          {/* アプリの中の「戻る」と間違えないよう、矢印ではなくジサップのロゴにする。ジサップの中から来たときは来たページへ戻る */}
+          <button
+            type="button"
+            onClick={() => {
+              const skipLogin = backTargetSkippingLogin();
+              if (skipLogin) router.push(skipLogin);
+              else if (hasPreviousInJisapp()) router.back();
+              else router.push("/");
+            }}
+            aria-label={t("ジサップに戻る", "Back to Jisapp")}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 py-1 pl-1 pr-2.5 text-xs font-black text-gray-700 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
           >
-            <ChevronLeft className="h-4 w-4" />
-            {t("トップへ", "Home")}
-          </Link>
+            <JisappLogoIcon className="h-6 w-6" />
+            {t("ジサップ", "Jisapp")}
+          </button>
           <div className="flex flex-1 flex-col min-w-0">
             <h1 className="truncate text-sm font-black text-gray-900">{app.title}</h1>
             {app.description && (
@@ -275,7 +309,7 @@ function SupabaseAppPage({ id }: { id: string }) {
             <span className="hidden sm:inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
               {t("スタジオアプリ", "Studio app")}
             </span>
-            {sessionStatus !== "loading" && !isLoggedIn && (
+            {sessionStatus !== "loading" && !isLoggedIn && !appUsesShared && (
               <SyncLoginButton callbackUrl={loginCallbackUrl} />
             )}
             {app.code_public && (
@@ -283,10 +317,10 @@ function SupabaseAppPage({ id }: { id: string }) {
                 type="button"
                 onClick={loadSourceCode}
                 disabled={codeLoading}
-                className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50 sm:px-3"
+                className="hidden items-center gap-1.5 rounded-lg border border-violet-200 sm:flex bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50 sm:px-3"
               >
                 <Code2 className="h-3.5 w-3.5" />
-                {codeLoading ? t("読込中…", "Loading…") : codePanelOpen ? t("コードを閉じる", "Hide code") : t("コード", "Code")}
+                <span className="hidden sm:inline">{codeLoading ? t("読込中…", "Loading…") : codePanelOpen ? t("コードを閉じる", "Hide code") : t("コード", "Code")}</span>
               </button>
             )}
             {group?.isOwner && (
@@ -322,9 +356,9 @@ function SupabaseAppPage({ id }: { id: string }) {
       <AppGroupPanel
         appId={id}
         appTitle={app.title}
-        usesShared={app.group_sharing ?? usesSharedData(`${app.html_code ?? ""}
-${app.js_code ?? ""}`)}
+        usesShared={appUsesShared}
         isLoggedIn={isLoggedIn}
+        sessionReady={sessionStatus !== "loading"}
         isAppOwner={!!app.creator_id && app.creator_id === (session?.user as { id?: string } | undefined)?.id}
         userName={session?.user?.name ?? null}
         loginCallbackUrl={loginCallbackUrl}
@@ -378,7 +412,7 @@ ${app.js_code ?? ""}`)}
           </div>
         )}
         {syncReady ? (
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
             <iframe
               ref={iframeRef}
               key={`${id}-${enableCloud ? userId : "local"}-${group?.groupId ?? "solo"}-${iframeKey}`}
@@ -420,21 +454,12 @@ ${app.js_code ?? ""}`)}
         />
       )}
 
-      {/* ホーム画面に置いてもらう（また開くきっかけを作る）。「保存機能について」の案内が出ているあいだは出さない */}
-      <HomeScreenNudge appId={id} enabled={!syncModalOpen} />
 
       {/* 作った本人以外に：このアプリはジサップで作られた・あなたも作れる（共有されたアプリが、次の作り手を呼ぶ） */}
       {!madeWithClosed && !(app.creator_id && app.creator_id === (session?.user as { id?: string } | undefined)?.id) && (
         <div className="flex shrink-0 items-center gap-2 border-t border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
           <JisappLogoIcon className="h-5 w-5 shrink-0" />
-          <p className="min-w-0 flex-1 truncate font-semibold">{t("このアプリはジサップで作られました。あなたも無料で作れる", "Made with Jisapp. You can make one too, free")}</p>
-          <Link
-            href={app.code_public ? `/playground?remix=${id}` : "/playground"}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700"
-          >
-            {app.code_public ? t("これをもとに作る", "Make your own") : t("自分でも作る", "Make one")}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <p className="min-w-0 flex-1 truncate font-semibold">{t("このアプリはジサップで作られました", "This app was made with Jisapp")}</p>
           <button
             type="button"
             onClick={() => {

@@ -50,3 +50,15 @@ export function backTargetSkippingLogin(): string | null {
   }
   return "/";
 }
+
+/**
+ * このタブで、今のページより前にジサップのページを見ていたか。
+ * アプリのページの「ジサップ」ボタンで、来たページ（一覧・検索など）へ戻ってよいかを決める。
+ * LINE や SNS のリンクから直接来たときは false（トップへ移る）。
+ */
+export function hasPreviousInJisapp(): boolean {
+  const list = read();
+  if (list.length < 2) return false;
+  const current = pathOnly(list[list.length - 1]);
+  return list.slice(0, -1).some((p) => pathOnly(p) !== current && !AUTH_PATH.test(p));
+}

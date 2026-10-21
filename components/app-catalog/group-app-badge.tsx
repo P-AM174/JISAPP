@@ -24,12 +24,12 @@ export function GroupAppBadge({ className }: { className?: string }) {
 }
 
 /** アプリの詳細モーダルに出す「グループ共有アプリ」の帯と、説明・使い方 */
-export function GroupAppNotice() {
+export function GroupAppNotice({ onCreate }: { onCreate?: () => void }) {
   const t = useT();
   const [open, setOpen] = useState(false);
 
   const steps = [
-    t("アプリを開いて「グループを作る」を押します（作る人はログインが必要です）", "Open the app and tap “Create a group” (the creator needs to log in)"),
+    t("「グループを作る」を押します（作る人はログインが必要です）", "Tap “Create a group” (the creator needs to log in)"),
     t("表示された招待リンクを、メンバーに送ります", "Send the invite link to your members"),
     t("メンバーはリンクを開いて表示名を入れるだけで参加できます（ログインは不要）", "Members open the link and enter a display name to join (no login needed)"),
     t("みんなで同じデータを見たり書き込んだりできます", "Everyone sees and edits the same data"),
@@ -48,6 +48,22 @@ export function GroupAppNotice() {
           </p>
         </div>
       </div>
+
+      {onCreate && (
+        <>
+          <button
+            type="button"
+            onClick={onCreate}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-3 py-3 text-sm font-black text-white shadow-md shadow-sky-200 transition-all hover:bg-sky-700 active:scale-[0.98]"
+          >
+            <Users className="h-4 w-4" strokeWidth={2.5} />
+            {t("グループを作る", "Create a group")}
+          </button>
+          <p className="mt-1.5 text-center text-[11px] text-sky-800/80">
+            {t("作ると、メンバーに送る招待リンクが出ます", "You'll get an invite link to send to members")}
+          </p>
+        </>
+      )}
 
       <button
         type="button"

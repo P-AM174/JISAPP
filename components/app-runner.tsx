@@ -55,9 +55,11 @@ export function SyncLoginButton({
       )}
       title={t("ログインしてデータをクラウドに保存する", "Sign in to save your data in the cloud")}
     >
-      <Cloud className="h-3.5 w-3.5" />
+      <Cloud className="hidden h-3.5 w-3.5 sm:block" />
       <LogIn className="h-3 w-3" />
-      <span>{t("ログインして同期", "Sign in to sync")}</span>
+      {/* スマホでは短くして、アプリの名前が見える幅を残す */}
+      <span className="hidden sm:inline">{t("ログインして同期", "Sign in to sync")}</span>
+      <span className="sm:hidden">{t("ログイン", "Sign in")}</span>
     </button>
   );
 }

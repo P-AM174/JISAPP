@@ -289,7 +289,10 @@ export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 
 1. 全体コンセプト
 ・グラデーションに頼らない、色のついた洗練されたデザイン。「うすく色のついた土台」の上に「白いカード」を浮かせ、深い「メイン色」と明るい「アクセント色」でメリハリをつける。
-・【禁止】グラデーション（linear-gradient / radial-gradient）、backdrop-filter（すりガラス）、虹色のような多色づかい。
+・【禁止】グラデーション（linear-gradient / radial-gradient）、虹色のような多色づかい。カードや画面全体の背景にすりガラスは使わない（すりガラスは下の「すりガラスを使う場所」だけ）。
+・すりガラスを使う場所：中身の上に重なって浮く部品だけに使う（スクロールしても上に残るヘッダー、下に固定したタブやボタン、Toast、Bottom Sheet・モーダル・メニューを出したときの後ろ）。
+  浮く部品は background: rgba(255,255,255,.72); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); に 1px の rgba(255,255,255,.6) の線をつける。
+  Bottom Sheet・モーダル・メニューの後ろは background: rgba(17,24,39,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); にする。
 
 2. 配色（4つの役割を必ず決める）
 ・土台：画面全体の背景。メイン色をごくうすくした色（例 #eaf0e1）。
@@ -326,7 +329,7 @@ export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 ・タブは、うすい背景の中で選択中だけ白く浮かぶ「セグメント型」にする。
 
 8. ヘッダー
-・背景は透明（土台の色のまま）。左に 36px のメイン色の四角いアイコン（角丸 10px、中に白いSVG）、アプリ名は 16〜18px・800。右に自分の名前のピル。
+・position: sticky; top: 0; でスクロールしても上に残し、背景はすりガラス（1番の指定）にする。左に 36px のメイン色の四角いアイコン（角丸 10px、中に白いSVG）、アプリ名は 16〜18px・800。右に自分の名前のピル。
 
 9. アイコン【厳守】
 ・絵文字（📱や✨など）や記号の文字（★●✓など）は一切使用禁止。すべてのアイコンは、線の太さ（stroke-width="2"〜"2.6"）と丸い線端（stroke-linecap="round"）を統一したインラインSVGを使用すること。
@@ -335,14 +338,36 @@ export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 10. レイアウトとアニメーション
 ・モバイルファースト設計（max-width: 640px; margin: 0 auto;）。左右の余白 16px、カードどうしの間隔 12px。
 ・コンテンツ表示時に下から少しフェードインするCSSアニメーション（@keyframes fadeIn）。追加した項目は下からふわっと出す。並んだ項目は 70ms ずつずらして出す。
-・ボタンやカードの状態の変化は transition: all .2s; で滑らかにする。`;
+・ボタンやカードの状態の変化は transition: all .2s; で滑らかにする。
+
+11. 部品（アプリに合うものだけ使う。全部は入れない）
+・コードを短く保つため、そのアプリで本当に役立つ部品だけを使うこと。使わない部品のコードは書かない。
+
+【ほぼ毎回使う】
+・Toast：保存・追加・削除・コピーなどのあとに、画面の下に「保存しました」のように短く出す。暗いすりガラス（background: rgba(17,24,39,.8); backdrop-filter: blur(16px);）に白い文字、角丸 999px。下から少し浮き上がって出て、2秒ほどで消える。一度に出すのは1つだけ。
+・UI/UX アニメーション：「10. レイアウトとアニメーション」のとおり。動きは0.2〜0.3秒にし、ゆっくりすぎる動きや画面が揺れる動きはしない。prefers-reduced-motion が有効なときは動きを止める。
+・ラジオボタン：標準の丸い見た目は使わず、選択肢をピル型のチップかセグメント型で並べる。選んだものはメイン色の塗りに白い文字。中身は input type="radio" で作り、label で包んでタップしやすくする。
+・プルダウンメニュー（select）：入力欄と同じ見た目（枠線なし・背景 #f4f5f2・角丸 14px）にし、右に下向きの矢印（インラインSVG）をつける。選択肢が4つ以下なら、プルダウンにせずチップで並べる。
+
+【場面が合えば使う】
+・Bottom Sheet：スマホで、詳細の表示・入力フォーム・選択肢の一覧を出すときは、中央のモーダルよりこちらを優先する。画面の下から出てくる白いシート（上の角だけ角丸 24px、上部に横長のつまみ）。後ろは1番の指定で暗くぼかし、後ろのタップか下へのスワイプで閉じる。
+・モーダル：削除の確認など、短い確認にだけ使う。中央に白いカード（角丸 24px）。ボタンは「キャンセル」（サブボタン）と「削除する」（うすい赤の背景に赤い文字）を横に並べる。後ろは1番の指定で暗くぼかし、Esc キーと後ろのタップで閉じる。
+・アコーディオン：長い説明・よくある質問・過去の記録など、ふだんは畳んでおきたいものに使う。見出しの行をタップで開閉し、右の矢印（SVG）が回転する。開閉は高さのアニメーションで滑らかに。
+・Skeleton Screen：グループで共有するデータなど、読み込みに時間がかかるところでは、文字の代わりに灰色の角丸の箱（#eceee8、明るさがゆっくり変わる）を出し、読み込み中も画面の形がわかるようにする。読み込みが一瞬で終わるところには使わない。
+・Autocomplete：メンバーの名前・場所・品名など、前に入れたものをまた入れることが多い欄で使う。入力に合う候補を、入力欄のすぐ下に白いカードで最大5件出し、タップで入力される。候補は今までの入力やデータから作る。
+・Swipe Action：一覧の項目を左へスワイプすると「削除」（赤）などのボタンが出る。スワイプに気づかない人のために、同じ操作ができるボタンも必ず残す。
+・カルーセル：カードを横に並べてスワイプで見せたいとき（今週の予定、おすすめなど）に使う。scroll-snap で1枚ずつ止まり、次のカードが少し見えるようにする。下に今の位置を示す点を出す。自動では動かさない。
+・ハンバーガーメニュー：画面が5つ以上あってタブに収まらないときに使う（4つ以下ならセグメント型のタブにする）。ヘッダーの右に置き、開くと右から白いパネル（角丸 24px）が出る。今いる画面の項目は、うすいメイン色の背景にする。後ろは1番の指定で暗くぼかし、後ろのタップか Esc キーで閉じる。`;
 
 export const PROMPT_JISAPP_DESIGN_EN = `[UI/UX design]
 Build the design with Vanilla CSS only, following the spec below. Don't use external frameworks (Tailwind, etc.).
 
 1. Overall concept
 - A polished, colored design that doesn't rely on gradients. White cards float on a lightly tinted base, with a deep "main" color and a bright "accent" color for contrast.
-- [Banned] Gradients (linear-gradient / radial-gradient), backdrop-filter (frosted glass), and rainbow-like use of many colors.
+- [Banned] Gradients (linear-gradient / radial-gradient) and rainbow-like use of many colors. Don't use frosted glass on cards or the whole-screen background (use frosted glass only in the places listed below).
+- Where to use frosted glass: only on parts that float over the content (a header that stays at the top while scrolling, tabs or buttons fixed to the bottom, toasts, and the backdrop behind bottom sheets, modals, and menus).
+  Floating parts use background: rgba(255,255,255,.72); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); with a 1px rgba(255,255,255,.6) border.
+  The backdrop behind bottom sheets, modals, and menus uses background: rgba(17,24,39,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 
 2. Colors (always decide these 4 roles)
 - Base: the whole-screen background. A very light tint of the main color (e.g. #eaf0e1).
@@ -379,7 +404,7 @@ Build the design with Vanilla CSS only, following the spec below. Don't use exte
 - Tabs are a "segmented control": a light track where only the selected tab floats in white.
 
 8. Header
-- Transparent background (the base color). On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16 to 18px/800. On the right, a pill with the user's name.
+- Keep it at the top while scrolling with position: sticky; top: 0; and give it a frosted glass background (as in section 1). On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16 to 18px/800. On the right, a pill with the user's name.
 
 9. Icons [strict]
 - No emoji at all (like 📱 or ✨) and no symbol characters (like ★●✓). Every icon must be an inline SVG with a consistent stroke width (stroke-width="2" to "2.6") and round line caps (stroke-linecap="round").
@@ -388,7 +413,26 @@ Build the design with Vanilla CSS only, following the spec below. Don't use exte
 10. Layout and animation
 - Mobile-first (max-width: 640px; margin: 0 auto;). 16px side gutters, 12px gaps between cards.
 - Content fades in slightly from below when shown (CSS animation @keyframes fadeIn). Newly added items rise in from below. Items in a list appear staggered by 70ms.
-- Buttons and cards change state smoothly with transition: all .2s;`;
+- Buttons and cards change state smoothly with transition: all .2s;
+
+11. Components (use only what fits the app; don't include them all)
+- To keep the code short, use only the components that are truly useful for this app. Don't write code for components you don't use.
+
+[Use in almost every app]
+- Toast: after saving, adding, deleting, copying, etc., show a short message like "Saved" near the bottom of the screen. Dark frosted glass (background: rgba(17,24,39,.8); backdrop-filter: blur(16px);) with white text, border-radius 999px. It rises in slightly from below and disappears after about 2 seconds. Show only one at a time.
+- UI/UX animation: as in "10. Layout and animation". Keep motion to 0.2 to 0.3s; no overly slow or shaking motion. Stop motion when prefers-reduced-motion is on.
+- Radio buttons: don't use the default round look. Show the options as pill-shaped chips or a segmented control; the selected one is filled with the main color with white text. Build them with input type="radio" wrapped in a label so they are easy to tap.
+- Dropdown (select): same look as inputs (no border, background #f4f5f2, border-radius 14px), with a downward arrow (inline SVG) on the right. If there are 4 options or fewer, show chips instead of a dropdown.
+
+[Use when the situation fits]
+- Bottom sheet: on phones, prefer this over a centered modal for showing details, input forms, and lists of choices. A white sheet that slides up from the bottom (top corners radius 24px, a small horizontal handle at the top). Dim and blur the background as in section 1; close by tapping the background or swiping down.
+- Modal: only for short confirmations such as confirming a delete. A centered white card (radius 24px) with "Cancel" (secondary button) and "Delete" (red text on light red) side by side. Dim and blur the background as in section 1; close with the Esc key or by tapping the background.
+- Accordion: for things usually kept folded, such as long explanations, FAQs, or past records. Tap the heading row to open or close; the arrow (SVG) on the right rotates. Animate the height smoothly.
+- Skeleton screen: where loading takes time, such as group-shared data, show gray rounded boxes (#eceee8, slowly changing brightness) in place of text so the layout is visible while loading. Don't use it where loading is instant.
+- Autocomplete: for fields where people often re-enter the same things, such as member names, places, or item names. Show up to 5 matching suggestions in a white card right below the field; tapping one fills it in. Build suggestions from past input and existing data.
+- Swipe action: swiping a list item left reveals buttons such as "Delete" (red). Always keep a button that does the same thing, for people who don't notice the swipe.
+- Carousel: when you want to show cards side by side with swiping (this week's events, recommendations, etc.). Use scroll-snap so it stops one card at a time, with the next card slightly visible. Show dots for the current position below. Don't auto-advance.
+- Hamburger menu: use when there are 5 or more screens that don't fit in tabs (with 4 or fewer, use segmented tabs). Put it on the right of the header; it opens a white panel (radius 24px) from the right. Highlight the current screen with the light main color. Dim and blur the background as in section 1; close by tapping the background or pressing Esc.`;
 
 type BuildPromptOptions = {
   /** ジサップオリジナルデザインの指定を差し込むか */

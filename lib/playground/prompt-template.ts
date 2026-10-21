@@ -296,7 +296,7 @@ export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 
 2. 配色（4つの役割を必ず決める）
 ・土台：画面全体の背景。メイン色をごくうすくした色（例 #eaf0e1）。
-・メイン：濃く深い色。ヒーローカード・メインボタン・見出しのアイコンに使う。
+・メイン：濃く深い色。（あれば）ヒーローカード・メインボタン・見出しのアイコンに使う。
 ・アクセント：明るい差し色。ヒーローの中のラベル・強調・選択中の印に使う。
 ・うすいメイン：メイン色を10%ほどにした色。サブボタン・選択中の背景・チップに使う。
 ・カードは白（#fff）。文字は #111827、補足は #6b7280、さらに弱い文字は #a1a1aa。
@@ -305,10 +305,11 @@ export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 ・アプリの題材に合わせて選ぶ例（土台 / メイン / アクセント）：
   スポーツ #eaf0e1 / #14532d / #d9f35f、学校・当番 #e6efeb / #0f4c47 / #ffd447、仕事・手帳 #e9ebf2 / #1f2b5c / #f3c552、ノート・記録 #f1ebe0 / #5b3a1f / #e7b93c、お金 #eef1ea / #1e3a2f / #f2c14e、食べ物・お店 #f6ece4 / #7c2d12 / #ffb703、健康 #e8eef6 / #0b3a63 / #ff7a59、勉強 #ecebf6 / #312e81 / #fbbf24、推し活 #f6e9ef / #701a46 / #f9d5e5、旅行 #e7f1f4 / #0e4a5c / #ffcf56、家族 #f4efe6 / #3f4a2b / #f4a261、ゲーム #e9e7f5 / #1e1b4b / #22d3ee
 
-3. ヒーローカード（画面のいちばん上）
-・いちばん大事な情報（次の予定・今日の数字など）を、メイン色の塗りのカードで大きく見せる。角丸 24px、余白 18px、文字は白。
+3. ヒーローカード（合うアプリだけ）
+・開いたときにまず知りたい情報（次の予定・残り日数・今日の合計・自分の番など）があるアプリでは、画面のいちばん上にメイン色の塗りのカードで大きく見せる。角丸 24px、余白 18px、文字は白。
 ・上にアクセント色のピル型ラベル（例「次の当番」）、その下に 44px・font-weight 800 の大きな数字や日付、下に白14%の背景のチップを並べる。
 ・題材に合ったモチーフ（線・図形）をインラインSVGで背景に薄く描く（opacity .06〜.15）。例：コートの線、方眼、罫線。
+・そういう情報がないアプリ（電卓・タイマーなどの道具、入力が中心のアプリ、ゲームなど）では使わず、いちばんよく使う操作（入力欄・メインのボタン・ゲームの画面）を上に置く。
 
 4. カード
 ・白、枠線なし、角丸 20px、余白 16px。
@@ -329,7 +330,7 @@ export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 ・タブは、うすい背景の中で選択中だけ白く浮かぶ「セグメント型」にする。
 
 8. ヘッダー
-・position: sticky; top: 0; でスクロールしても上に残し、背景はすりガラス（1番の指定）にする。左に 36px のメイン色の四角いアイコン（角丸 10px、中に白いSVG）、アプリ名は 16〜18px・800。右に自分の名前のピル。
+・position: sticky; top: 0; でスクロールしても上に残し、背景はすりガラス（1番の指定）にする。左に 36px のメイン色の四角いアイコン（角丸 10px、中に白いSVG）、アプリ名は 16〜18px・800。グループで共有するアプリでは、右に自分の名前のピル。
 
 9. アイコン【厳守】
 ・絵文字（📱や✨など）や記号の文字（★●✓など）は一切使用禁止。すべてのアイコンは、線の太さ（stroke-width="2"〜"2.6"）と丸い線端（stroke-linecap="round"）を統一したインラインSVGを使用すること。
@@ -371,7 +372,7 @@ Build the design with Vanilla CSS only, following the spec below. Don't use exte
 
 2. Colors (always decide these 4 roles)
 - Base: the whole-screen background. A very light tint of the main color (e.g. #eaf0e1).
-- Main: a deep, dark color. Used for the hero card, main buttons, and heading icons.
+- Main: a deep, dark color. Used for the hero card (if any), main buttons, and heading icons.
 - Accent: a bright highlight color. Used for labels inside the hero, emphasis, and selected marks.
 - Light main: the main color at about 10%. Used for secondary buttons, selected backgrounds, and chips.
 - Cards are white (#fff). Text #111827, secondary text #6b7280, faint text #a1a1aa.
@@ -380,10 +381,11 @@ Build the design with Vanilla CSS only, following the spec below. Don't use exte
 - Examples to pick from by theme (base / main / accent):
   Sports #eaf0e1 / #14532d / #d9f35f, School/duty #e6efeb / #0f4c47 / #ffd447, Work/planner #e9ebf2 / #1f2b5c / #f3c552, Notes/records #f1ebe0 / #5b3a1f / #e7b93c, Money #eef1ea / #1e3a2f / #f2c14e, Food/shop #f6ece4 / #7c2d12 / #ffb703, Health #e8eef6 / #0b3a63 / #ff7a59, Study #ecebf6 / #312e81 / #fbbf24, Fandom #f6e9ef / #701a46 / #f9d5e5, Travel #e7f1f4 / #0e4a5c / #ffcf56, Family #f4efe6 / #3f4a2b / #f4a261, Game #e9e7f5 / #1e1b4b / #22d3ee
 
-3. Hero card (top of the screen)
-- Show the most important information (next event, today's number, etc.) large, on a card filled with the main color. Border-radius 24px, padding 18px, white text.
+3. Hero card (only when it fits)
+- If the app has information people want to see first when opening it (next event, days left, today's total, whose turn it is, etc.), show it large at the top of the screen on a card filled with the main color. Border-radius 24px, padding 18px, white text.
 - At the top, an accent-colored pill label (e.g. "Next duty"); below it a big 44px, font-weight 800 number or date; below that, chips on a 14% white background.
 - Draw a faint motif that fits the theme (lines, shapes) as an inline SVG in the background (opacity .06 to .15). For example: court lines, a grid, ruled lines.
+- If there is no such information (tools like calculators or timers, input-centered apps, games, etc.), don't use it; put the most-used action (the input field, the main button, or the game screen) at the top instead.
 
 4. Cards
 - White, no border, border-radius 20px, padding 16px.
@@ -404,7 +406,7 @@ Build the design with Vanilla CSS only, following the spec below. Don't use exte
 - Tabs are a "segmented control": a light track where only the selected tab floats in white.
 
 8. Header
-- Keep it at the top while scrolling with position: sticky; top: 0; and give it a frosted glass background (as in section 1). On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16 to 18px/800. On the right, a pill with the user's name.
+- Keep it at the top while scrolling with position: sticky; top: 0; and give it a frosted glass background (as in section 1). On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16 to 18px/800. In group-shared apps, a pill with the user's name on the right.
 
 9. Icons [strict]
 - No emoji at all (like 📱 or ✨) and no symbol characters (like ★●✓). Every icon must be an inline SVG with a consistent stroke width (stroke-width="2" to "2.6") and round line caps (stroke-linecap="round").

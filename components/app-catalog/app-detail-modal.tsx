@@ -223,7 +223,13 @@ export function AppDetailModal({
             )}
           </div>
 
-          {app.groupSharing && <GroupAppNotice onCreate={() => router.push(`/apps/${app.id}?create=1`)} />}
+          {app.groupSharing && (
+            <GroupAppNotice
+              appId={String(app.id)}
+              onCreate={() => router.push(`/apps/${app.id}?create=1`)}
+              onNavigate={(p) => router.push(p)}
+            />
+          )}
 
           {showCreator && (
             <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-4 shadow-sm">

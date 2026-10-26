@@ -1799,6 +1799,11 @@
     "reviewed": false,
     "en": "Join this group"
   },
+  "このグループのアプリを開く": {
+    "vi": "Mở app trong nhóm này",
+    "reviewed": false,
+    "en": "Open the app in this group"
+  },
   "このグループのデータがいっぱいです。不要な項目を消してください": {
     "vi": "Dữ liệu của nhóm này đã đầy. Hãy xóa những mục không cần",
     "reviewed": false,
@@ -6123,6 +6128,11 @@
     "vi": "Đăng thành một app khác",
     "reviewed": false,
     "en": "Publish as a separate app"
+  },
+  "別のグループを作る": {
+    "vi": "Tạo nhóm khác",
+    "reviewed": false,
+    "en": "Create another group"
   },
   "別の返信をする": {
     "vi": "Gửi trả lời khác",

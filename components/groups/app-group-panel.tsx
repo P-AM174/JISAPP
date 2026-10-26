@@ -313,6 +313,25 @@ export function AppGroupPanel({
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
   }, [group?.groupId, group?.inviteToken, invite, inviteResolved]);
 
+  // モーダルの「（グループ名）のアプリを開く」（?group=）から来たとき：そのグループで開く
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const gid = url.searchParams.get("group");
+    if (!gid) return;
+    const local = readGroupSession(gid);
+    if (!local && (!sessionReady || (isLoggedIn && !myGroupsLoaded))) return;
+    url.searchParams.delete("group");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    if (local) {
+      saveGroupSession(local);
+      onGroupChange(local);
+      return;
+    }
+    const mine = myGroups.find((g) => g.id === gid);
+    if (mine) void switchTo(mine);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionReady, isLoggedIn, myGroupsLoaded]);
+
   // この端末で前に参加したグループ
   useEffect(() => {
     setLocalSessions(listLocalSessions(appId));

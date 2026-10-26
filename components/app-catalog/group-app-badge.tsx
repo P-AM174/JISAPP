@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, HelpCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
+import { GroupShortcuts } from "@/components/groups/group-shortcuts";
 
 // グループ共有アプリの色は水色（sky）にそろえる（カード・モーダル・運営画面で同じ色）
 
@@ -24,9 +25,20 @@ export function GroupAppBadge({ className }: { className?: string }) {
 }
 
 /** アプリの詳細モーダルに出す「グループ共有アプリ」の帯と、説明・使い方 */
-export function GroupAppNotice({ onCreate }: { onCreate?: () => void }) {
+export function GroupAppNotice({
+  appId,
+  onCreate,
+  onNavigate,
+}: {
+  appId?: string;
+  onCreate?: () => void;
+  /** 参加中のグループで開く・別のグループを作る（モーダルを閉じてページを移る） */
+  onNavigate?: (path: string) => void;
+}) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  /** 参加中のグループがあれば、「グループを作る」のかわりに「（グループ名）のアプリを開く」を出す */
+  const [hasGroups, setHasGroups] = useState(false);
 
   const steps = [
     t("「グループを作る」を押します（作る人はログインが必要です）", "Tap “Create a group” (the creator needs to log in)"),
@@ -49,7 +61,13 @@ export function GroupAppNotice({ onCreate }: { onCreate?: () => void }) {
         </div>
       </div>
 
-      {onCreate && (
+      {appId && onNavigate && (
+        <div className={hasGroups ? "mt-3" : "hidden"}>
+          <GroupShortcuts appId={appId} onNavigate={onNavigate} onHasGroups={setHasGroups} />
+        </div>
+      )}
+
+      {onCreate && !hasGroups && (
         <>
           <button
             type="button"

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "@/lib/i18n/navigation";
+import { useRouter } from "@/lib/i18n/navigation";
+import { GroupShortcuts } from "@/components/groups/group-shortcuts";
 import { ChevronRight, Database, ExternalLink, Pin, PinOff, Trash2, X } from "lucide-react";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
@@ -48,6 +50,7 @@ export function LibraryDetailSheet({
   onRemove: () => void;
 }) {
   const t = useT();
+  const router = useRouter();
   const locale = useLocale();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [failed, setFailed] = useState(false);
@@ -177,6 +180,9 @@ export function LibraryDetailSheet({
           {failed && (
             <p className="text-center text-xs text-gray-400">{t("詳しい情報を読み込めませんでした", "Couldn't load the details")}</p>
           )}
+
+          {/* 参加中のグループがあれば、そのグループで開く・別のグループを作る */}
+          <GroupShortcuts appId={entry.appId} onNavigate={(p) => router.push(p)} />
 
           <div className="flex items-center gap-2">
             <button

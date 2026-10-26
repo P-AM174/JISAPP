@@ -142,22 +142,35 @@ function SupabaseAppPage({ id }: { id: string }) {
     if (enableCloud) setIframeKey((k) => k + 1);
   }, [enableCloud]);
 
-  // スマホでページ全体が動かないように固定する。キーボードを閉じたあとなどにずれたら元に戻す（下に余白が残るのを防ぐ）
+  // スマホでページ全体が動かないように固定する。キーボードを閉じたあとにずれが残ったら元に戻す（下に余白が残るのを防ぐ）。
+  // キーボードが開いているあいだは戻さない（iPhone が入力欄を見せるためにページを動かすので、戻すとぶつかってアプリが少しずつ下がる）
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add("app-page-lock");
-    const reset = () => {
-      if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
-    };
     const vv = window.visualViewport;
-    vv?.addEventListener("resize", reset);
-    window.addEventListener("scroll", reset, { passive: true });
-    window.addEventListener("focusout", reset);
+    const keyboardOpen = () => !!vv && vv.height < window.innerHeight - 120;
+    let timer: number | undefined;
+    const resetLater = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (keyboardOpen()) return;
+        if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
+      }, 250);
+    };
+    let lastHeight = vv?.height ?? window.innerHeight;
+    // 画面の高さが大きく戻った＝キーボードを閉じた
+    const onResize = () => {
+      const h = vv?.height ?? window.innerHeight;
+      if (h > lastHeight + 80) resetLater();
+      lastHeight = h;
+    };
+    vv?.addEventListener("resize", onResize);
+    window.addEventListener("focusout", resetLater);
     return () => {
+      window.clearTimeout(timer);
       root.classList.remove("app-page-lock");
-      vv?.removeEventListener("resize", reset);
-      window.removeEventListener("scroll", reset);
-      window.removeEventListener("focusout", reset);
+      vv?.removeEventListener("resize", onResize);
+      window.removeEventListener("focusout", resetLater);
     };
   }, []);
 

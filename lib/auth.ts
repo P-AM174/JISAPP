@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { findUserByEmail, upsertOAuthUser } from "@/lib/services/store";
+import { clearHits, clientIp, countHit, isLimited } from "@/lib/security/rate-limit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,12 +18,20 @@ export const authOptions: NextAuthOptions = {
         email: { label: "メールアドレス", type: "email" },
         password: { label: "パスワード", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
+        // 総当たり対策：同じメールアドレスで10回、同じ送り元で30回まちがえたら、15分は試せない
+        const emailKey = `login:email:${credentials.email.trim().toLowerCase()}`;
+        const ipKey = `login:ip:${clientIp(req?.headers as Record<string, string | string[] | undefined>)}`;
+        if ((await isLimited(emailKey, 10)).limited || (await isLimited(ipKey, 30)).limited) return null;
         const user = await findUserByEmail(credentials.email);
-        if (!user?.passwordHash) return null;
-        const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!valid) return null;
+        const valid = !!user?.passwordHash && (await bcrypt.compare(credentials.password, user.passwordHash));
+        if (!user || !valid) {
+          await countHit(emailKey, 15 * 60);
+          await countHit(ipKey, 15 * 60);
+          return null;
+        }
+        await clearHits(emailKey);
         return { id: user.id, name: user.name, email: user.email };
       },
     }),

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clientIp, countHit, isLimited, TOO_MANY_ATTEMPTS } from "@/lib/security/rate-limit";
 import { isReservedOfficialName } from "@/lib/official-name";
 import { Resend } from "resend";
 import bcrypt from "bcryptjs";
@@ -169,6 +170,15 @@ function fromAddress(foreign: boolean): string {
 export async function POST(req: NextRequest) {
   try {
     const { name, email, password, locale } = await req.json();
+
+    // メールの送りすぎ（いたずら・費用）対策：同じメールアドレスへ1時間に5回、同じ送り元から20回まで
+    const emailKey = `sendcode:email:${String(email ?? "").trim().toLowerCase()}`;
+    const ipKey = `sendcode:ip:${clientIp(req.headers)}`;
+    if ((await isLimited(emailKey, 5)).limited || (await isLimited(ipKey, 20)).limited) {
+      return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+    }
+    await countHit(emailKey, 60 * 60);
+    await countHit(ipKey, 60 * 60);
     // ベトナム語は文言だけ差し替えた英語版のメール、それ以外の外国語は英語のメール
     const en = locale === "en" || locale === "vi";
     const vi = locale === "vi";
@@ -180,8 +190,8 @@ export async function POST(req: NextRequest) {
     if (isReservedOfficialName(name)) {
       return NextResponse.json({ error: "「ジサップ公式」など、運営とまぎらわしい名前は使えません" }, { status: 400 });
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: "パスワードは6文字以上にしてください" }, { status: 400 });
+    if (password.length < 8) {
+      return NextResponse.json({ error: "パスワードは8文字以上にしてください" }, { status: 400 });
     }
     if (await findUserByEmail(email)) {
       return NextResponse.json({ error: "このメールアドレスはすでに登録されています" }, { status: 409 });

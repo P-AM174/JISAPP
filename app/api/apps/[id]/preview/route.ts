@@ -1,5 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+
+/**
+ * 利用者が作ったアプリの中身は、ジサップ本体と同じ場所（jisapp.app）として動かさない。
+ * sandbox を付けると、このページを直接開かれても、アプリのコードは
+ * ジサップのログイン状態や保存データ（グループの鍵など）にさわれない
+ */
+const APP_HTML_HEADERS = {
+  "Content-Type": "text/html; charset=utf-8",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Content-Security-Policy": "sandbox allow-scripts allow-forms allow-modals",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "no-referrer",
+  "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+};
 import { buildSrcDoc } from "@/lib/products/build-srcdoc";
 import { touchAppLastAccessed } from "@/lib/apps/access";
 import { buildMediaPosterHtml, detectMediaUsage } from "@/lib/apps/media-usage";
@@ -11,7 +25,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const { data, error } = await supabase
+  const { data, error } = await createServerSupabaseClient()
     .from("apps")
     .select("title, html_code, css_code, js_code, status")
     .eq("id", id)
@@ -32,13 +46,7 @@ export async function GET(
     const media = detectMediaUsage(code);
     const still = media ? buildMediaPosterHtml(media) : uses3D(code) ? buildStillPreviewHtml(id, data.title ?? "") : null;
     if (still) {
-      return new NextResponse(still, {
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          "X-Frame-Options": "SAMEORIGIN",
-          "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
-        },
-      });
+      return new NextResponse(still, { headers: APP_HTML_HEADERS });
     }
   }
 
@@ -52,11 +60,5 @@ export async function GET(
     return new NextResponse("No content", { status: 204 });
   }
 
-  return new NextResponse(html, {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "X-Frame-Options": "SAMEORIGIN",
-      "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
-    },
-  });
+  return new NextResponse(html, { headers: APP_HTML_HEADERS });
 }

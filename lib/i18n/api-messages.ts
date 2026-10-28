@@ -8,6 +8,9 @@ import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, GROUP_QUOTA_MESSAGE } from 
 
 const EXACT: Record<string, string> = {
   ログインが必要です: "Please sign in",
+  "試した回数が多すぎます。しばらく待ってから、もう一度試してください": "Too many attempts. Please wait a while and try again",
+  "そのメンバーとしては入り直せませんでした。名前を入れて参加してください": "Couldn't rejoin as that member. Enter your name to join",
+  名前を変えられませんでした: "Couldn't change your name",
   AI審査機能が設定されていません: "AI review isn't set up",
   コードが必要です: "Code is required",
   AI審査に失敗しました: "AI review failed",
@@ -71,7 +74,7 @@ const EXACT: Record<string, string> = {
   "メール送信に失敗しました。再度お試しください。": "Couldn't send the email. Please try again.",
   "このエンドポイントは無効化されています。メール認証をご利用ください。": "This endpoint is disabled. Please use email verification.",
   必須項目が不足しています: "Some required fields are missing",
-  パスワードは6文字以上にしてください: "Your password needs at least 6 characters",
+  パスワードは8文字以上にしてください: "Your password needs at least 8 characters",
   "リンクが無効または期限切れです。再度パスワードリセットを行ってください。":
     "This link is invalid or has expired. Please request a password reset again.",
   このメールアドレスはすでに登録されています: "This email address is already registered",

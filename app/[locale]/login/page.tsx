@@ -102,8 +102,8 @@ function LoginContent() {
     if (!regName.trim() || !regEmail.trim() || !regPw.trim()) {
       setError(t("すべての項目を入力してください", "Please fill in every field")); return;
     }
-    if (regPw.length < 6) {
-      setError(t("パスワードは6文字以上にしてください", "Your password needs at least 6 characters")); return;
+    if (regPw.length < 8) {
+      setError(t("パスワードは8文字以上にしてください", "Your password needs at least 8 characters")); return;
     }
     setLoading(true);
     try {
@@ -469,7 +469,7 @@ function LoginContent() {
                   placeholder="your@email.com"
                 />
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("パスワード（6文字以上）", "Password (6+ characters)")}</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("パスワード（8文字以上）", "Password (8+ characters)")}</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input

@@ -6,21 +6,28 @@ import { prisma } from "@/lib/db";
 
 const ADMIN_COOKIE = "jisapp_admin_session";
 
-function signAdminToken(): string {
+/** 管理者の入場券の有効時間（盗まれても、この時間がたてば使えない） */
+const ADMIN_TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
+
+function signAdminToken(expiresAt: number): string {
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) throw new Error("NEXTAUTH_SECRET is not set");
-  return createHmac("sha256", secret).update("jisapp-admin").digest("hex");
+  return createHmac("sha256", secret).update(`jisapp-admin:${expiresAt}`).digest("hex");
 }
 
+/** 「期限.署名」の形。毎回ちがう値になり、期限を過ぎると使えない */
 export function createAdminSessionCookie(): string {
-  return signAdminToken();
+  const expiresAt = Date.now() + ADMIN_TOKEN_TTL_MS;
+  return `${expiresAt}.${signAdminToken(expiresAt)}`;
 }
 
 export function verifyAdminToken(token: string): boolean {
   try {
-    const expected = signAdminToken();
-    const a = Buffer.from(token);
-    const b = Buffer.from(expected);
+    const [exp, sig] = token.split(".");
+    const expiresAt = Number(exp);
+    if (!sig || !Number.isFinite(expiresAt) || expiresAt < Date.now() || expiresAt > Date.now() + ADMIN_TOKEN_TTL_MS) return false;
+    const a = Buffer.from(sig);
+    const b = Buffer.from(signAdminToken(expiresAt));
     if (a.length !== b.length) return false;
     return timingSafeEqual(a, b);
   } catch {

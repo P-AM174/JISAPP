@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
     if (!token || !password) {
       return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: "パスワードは6文字以上にしてください" }, { status: 400 });
+    if (password.length < 8) {
+      return NextResponse.json({ error: "パスワードは8文字以上にしてください" }, { status: 400 });
     }
 
     const row = await consumePasswordResetToken(token);

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { usesSharedData } from "@/lib/groups/client";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 /**
  * 一覧に出すアプリがグループ共有アプリかどうか（サーバー側）。
@@ -19,7 +20,9 @@ export async function resolveGroupSharing(
   if (unknownIds.length === 0) return result;
 
   try {
-    const { data } = await client.from("apps").select("id, html_code, js_code").in("id", unknownIds);
+    // アプリのコードは、公開用の鍵では読めないようにしているので、サーバー専用の鍵で読む
+    void client;
+    const { data } = await createServerSupabaseClient().from("apps").select("id, html_code, js_code").in("id", unknownIds);
     for (const app of (data ?? []) as { id: string; html_code: string | null; js_code: string | null }[]) {
       result[app.id] = usesSharedData(`${app.html_code ?? ""}\n${app.js_code ?? ""}`);
     }

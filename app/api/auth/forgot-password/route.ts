@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clientIp, countHit, isLimited } from "@/lib/security/rate-limit";
 import { Resend } from "resend";
 import { randomBytes } from "crypto";
 import { findUserByEmail, storePasswordResetToken } from "@/lib/services/store";
@@ -164,6 +165,15 @@ export async function POST(req: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "メールアドレスを入力してください" }, { status: 400 });
     }
+
+    // メールの送りすぎ対策：同じメールアドレスへ1時間に3回、同じ送り元から10回まで（超えても同じ応答にする）
+    const emailKey = `forgot:email:${String(email).trim().toLowerCase()}`;
+    const ipKey = `forgot:ip:${clientIp(req.headers)}`;
+    if ((await isLimited(emailKey, 3)).limited || (await isLimited(ipKey, 10)).limited) {
+      return NextResponse.json({ ok: true });
+    }
+    await countHit(emailKey, 60 * 60);
+    await countHit(ipKey, 60 * 60);
 
     const user = await findUserByEmail(email);
     // ユーザーが存在しなくても同じレスポンスを返す（メールアドレス列挙攻撃対策）

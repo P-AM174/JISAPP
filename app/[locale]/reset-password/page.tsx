@@ -42,8 +42,8 @@ function ResetPasswordContent() {
     if (password !== password2) {
       setError(t("パスワードが一致しません", "The passwords don't match")); return;
     }
-    if (password.length < 6) {
-      setError(t("パスワードは6文字以上にしてください", "Your password needs at least 6 characters")); return;
+    if (password.length < 8) {
+      setError(t("パスワードは8文字以上にしてください", "Your password needs at least 8 characters")); return;
     }
     setLoading(true);
     try {
@@ -84,7 +84,7 @@ function ResetPasswordContent() {
         </div>
       )}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("新しいパスワード（6文字以上）", "New password (6+ characters)")}</label>
+        <label className="mb-1.5 block text-xs font-semibold text-gray-600">{t("新しいパスワード（8文字以上）", "New password (8+ characters)")}</label>
         <div className="relative">
           <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -149,7 +149,7 @@ export default function ResetPasswordPage() {
               <Lock className="h-7 w-7 text-emerald-600" />
             </div>
             <h1 className="text-2xl font-black text-gray-900">{t("新しいパスワードを設定", "Set a new password")}</h1>
-            <p className="mt-1.5 text-sm text-gray-500">{t("6文字以上で設定してください", "Use at least 6 characters")}</p>
+            <p className="mt-1.5 text-sm text-gray-500">{t("8文字以上で設定してください", "Use at least 8 characters")}</p>
           </div>
 
           <div className="rounded-3xl bg-white p-8 shadow-xl ring-1 ring-black/5">

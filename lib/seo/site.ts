@@ -10,14 +10,14 @@ export const SITE_TAGLINE = "無料個人アプリ開発ならジサップ";
 export const SITE_TITLE = `${SITE_TAGLINE}（Jisapp）`;
 
 export const SITE_DESCRIPTION =
-  "ChatGPT・Claude・Geminiで作ったコードを貼るだけ。サーバー設定不要で、誰でも無料でアプリを作って公開・共有できます。";
+  "ChatGPT・Claude・Geminiで作ったコードを貼るだけ。サーバー設定不要で、データの保存も、グループのみんなでデータを共有するアプリも無料で作れます。";
 
 /** 英語版の表記。英語ではカタカナを使わず Jisapp に統一する */
 export const SITE_NAME_EN = "Jisapp";
 export const SITE_TAGLINE_EN = "Turn AI-made code into your own app — free";
 export const SITE_TITLE_EN = `Jisapp — ${SITE_TAGLINE_EN}`;
 export const SITE_DESCRIPTION_EN =
-  "Paste code from ChatGPT, Claude or Gemini and it becomes a real app. No servers, no setup — anyone can make, publish and share apps for free.";
+  "Paste code from ChatGPT, Claude or Gemini and it becomes a real app — with free data saving and group sharing, so your whole team can use the same data. No servers, no setup.";
 
 /**
  * ベトナム語版の表記（機械翻訳・ネイティブ未確認）。ブランド名はラテン文字の Jisapp。
@@ -26,7 +26,7 @@ export const SITE_DESCRIPTION_EN =
 export const SITE_TAGLINE_VI = "Biến code do AI viết thành app của riêng bạn — miễn phí";
 export const SITE_TITLE_VI = `Jisapp — ${SITE_TAGLINE_VI}`;
 export const SITE_DESCRIPTION_VI =
-  "Dán code từ ChatGPT, Claude hoặc Gemini là có ngay một app thật. Không cần server, không cần cài đặt — ai cũng có thể tạo, đăng và chia sẻ app miễn phí.";
+  "Dán code từ ChatGPT, Claude hoặc Gemini là có ngay một app thật — lưu dữ liệu và chia sẻ dữ liệu trong nhóm miễn phí, cả nhóm dùng chung một dữ liệu. Không cần server, không cần cài đặt.";
 
 export function siteName(locale: Locale): string {
   return locale === "ja" ? SITE_NAME : SITE_NAME_EN;

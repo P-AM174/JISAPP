@@ -48,6 +48,8 @@ export async function proxyExternalFetch(input: {
   method?: string;
   headers?: Record<string, string>;
   body?: string | null;
+  /** false のときは転送（3xx）についていかない（APIキーを付けたときに使う） */
+  followRedirects?: boolean;
 }): Promise<{ ok: boolean; status: number; contentType: string | null; body: unknown }> {
   validateExternalFetchUrl(input.url);
 
@@ -78,7 +80,7 @@ export async function proxyExternalFetch(input: {
       headers,
       body: method === "GET" || method === "HEAD" ? undefined : input.body ?? undefined,
       signal: controller.signal,
-      redirect: "follow",
+      redirect: input.followRedirects === false ? "error" : "follow",
     });
 
     const contentType = res.headers.get("content-type");

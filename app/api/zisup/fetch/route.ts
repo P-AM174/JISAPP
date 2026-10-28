@@ -47,12 +47,28 @@ export async function POST(request: Request) {
     const supabase = createServerSupabaseClient();
     const { data: app } = await supabase
       .from("apps")
-      .select("id, admin_deleted, status")
+      .select("id, admin_deleted, status, html_code, js_code, css_code")
       .eq("id", appId)
       .maybeSingle();
 
     if (!app || app.admin_deleted) {
       return NextResponse.json({ error: "アプリが見つかりません" }, { status: 404 });
+    }
+
+    // APIキーを盗まれないように：送り先が、そのアプリのコード（持ち主が書いたもの）に書かれているときだけキーを付ける。
+    // 攻撃者が「このアプリのキーを付けて、自分のサーバーへ送れ」と頼んでも、自分のサーバーはアプリのコードにないので断られる
+    let targetHost = "";
+    try {
+      targetHost = new URL(fetchUrl).hostname.toLowerCase();
+    } catch {
+      return NextResponse.json({ error: "URLが不正です" }, { status: 400 });
+    }
+    const appCode = `${app.html_code ?? ""}\n${app.js_code ?? ""}\n${app.css_code ?? ""}`.toLowerCase();
+    if (!targetHost || !appCode.includes(targetHost)) {
+      return NextResponse.json(
+        { error: "このアプリのコードに書かれていない送り先には、APIキーを付けて送れません。送り先を変えたときは、アプリを公開し直してください" },
+        { status: 403 }
+      );
     }
 
     const secretConfig = await getAppSecretConfig(appId, secretName);
@@ -71,6 +87,8 @@ export async function POST(request: Request) {
       method: body.method,
       headers,
       body: body.body ?? null,
+      // APIキーを付けたときは、ほかの送り先への転送にはついていかない（キーが別のサーバーに渡らないように）
+      followRedirects: !secretName,
     });
     return NextResponse.json(result);
   } catch (err) {

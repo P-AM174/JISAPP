@@ -13,7 +13,14 @@ function generateCode(): string {
 }
 
 /** HTMLメールテンプレート */
-function buildEmailHtml(name: string, code: string): string {
+
+/** メールの HTML に入れる文字を逃がす（名前に HTML を仕込まれても、ただの文字として出す） */
+function escapeHtml(value: string): string {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+}
+
+function buildEmailHtml(rawName: string, code: string): string {
+  const name = escapeHtml(rawName);
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -106,7 +113,8 @@ const EMAIL_VI: EmailStrings = {
   noAccount: "Sẽ không có tài khoản nào được tạo.",
 };
 
-function buildEmailHtmlEn(name: string, code: string, s: EmailStrings = EMAIL_EN): string {
+function buildEmailHtmlEn(rawName: string, code: string, s: EmailStrings = EMAIL_EN): string {
+  const name = escapeHtml(rawName);
   return `<!DOCTYPE html>
 <html lang="${s.lang}">
 <head>

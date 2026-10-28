@@ -6,7 +6,14 @@ import { findUserByEmail, storePasswordResetToken } from "@/lib/services/store";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-function buildResetEmailHtml(name: string, resetUrl: string): string {
+
+/** メールの HTML に入れる文字を逃がす（名前に HTML を仕込まれても、ただの文字として出す） */
+function escapeHtml(value: string): string {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+}
+
+function buildResetEmailHtml(rawName: string, resetUrl: string): string {
+  const name = escapeHtml(rawName);
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -92,7 +99,8 @@ const EMAIL_VI: EmailStrings = {
   ignore: "Nếu bạn không yêu cầu, hãy bỏ qua email này.",
 };
 
-function buildResetEmailHtmlEn(name: string, resetUrl: string, s: EmailStrings = EMAIL_EN): string {
+function buildResetEmailHtmlEn(rawName: string, resetUrl: string, s: EmailStrings = EMAIL_EN): string {
+  const name = escapeHtml(rawName);
   return `<!DOCTYPE html>
 <html lang="${s.lang}">
 <head>

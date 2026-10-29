@@ -12,6 +12,13 @@ export const PROMPT_APP_NAME_PLACEHOLDER_EN = "[PUT THE APP YOU WANT TO MAKE HER
 
 export const PROMPT_STORAGE_MARKER = "【データ保存】";
 
+/**
+ * CDN 禁止のルールの例外：デザインの指定（表情を出す書体）で使う Google Fonts だけは読み込んでよい。
+ * ベトナム語版では声調記号が崩れないように Web フォントを使わないので、ベトナム語のプロンプトからは消す
+ */
+const GOOGLE_FONTS_OK_JA = "ただし、デザインの指定で使う Google Fonts（fonts.googleapis.com）を <link> で読み込むことだけは例外として使ってよい（読み込めなくても崩れないよう、後ろに本文の書体を続けて書く）。";
+const GOOGLE_FONTS_OK_EN = " The only exception: loading Google Fonts (fonts.googleapis.com) with a <link> tag, as the design spec asks, is allowed (always list the body font after it so nothing breaks if it doesn't load).";
+
 /** 端末をまたいで残す（ジサップの保存機能） */
 export const PROMPT_STORAGE_ZISUP = `【データ保存（ジサップの保存機能を使う）】
 ・入力した内容・記録は、次回開いても残るようにする。
@@ -167,7 +174,7 @@ export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優
 CSSもJavaScriptもファイル分割せず、すべて1つの「index.html」ファイルの中に丸ごと埋め込んでください。
 
 【CDN・外部CSSフレームワークは一切使用禁止（重要）】
-Tailwind CSSやBootstrapなどのCDN（外部読み込み）は、環境制限によりデザインが反映されない・エラーになるため絶対に使用しないでください。
+Tailwind CSSやBootstrapなどのCDN（外部読み込み）は、環境制限によりデザインが反映されない・エラーになるため絶対に使用しないでください。${GOOGLE_FONTS_OK_JA}
 デザインはすべて「生のCSS（Vanilla CSS）」で記述し、CSS変数（:root）などを活用して、初心者向けに明るく爽やかで洗練されたモダンなUI（ライトモード）を実装してください。
 
 ${PROMPT_STORAGE_MARKER}
@@ -241,7 +248,7 @@ Strictly follow these Jisapp rules and put everything into a single index.html.
 Don't split CSS or JavaScript into other files. Embed everything in one "index.html" file.
 
 [No CDNs or external CSS frameworks at all (important)]
-Never use CDNs such as Tailwind CSS or Bootstrap — because of environment limits, the design won't apply or it will error.
+Never use CDNs such as Tailwind CSS or Bootstrap — because of environment limits, the design won't apply or it will error.${GOOGLE_FONTS_OK_EN}
 Write all design in plain CSS (Vanilla CSS), use CSS variables (:root) and so on, and build a bright, fresh, polished, modern UI (light mode) that's friendly for beginners.
 
 ${PROMPT_STORAGE_MARKER}
@@ -286,155 +293,393 @@ After outputting the HTML, always finish with short steps like these (match the 
  */
 export const PROMPT_JISAPP_DESIGN = `【UI/UXデザインの指定】
 以下の仕様に従って、Vanilla CSSのみでデザインを構築してください。外部フレームワーク（Tailwind等）は使用しないでください。
+ねらいは「整っているけど、どこかで見たAIっぽい画面」にしないこと。題材らしさと、触りたくなる楽しさのある画面にする。
 
+【優先順位】迷ったり、ルールどうしがぶつかったりしたら、この順に従う。
+  読みやすさ・使いやすさ ＞ 禁止事項（グラデーション・絵文字など） ＞ 題材らしさ ＞ 飾り
+
+====================================================
+0. 最初に決めること（作り始める前に、この3つを短く書き出してから作る）
+====================================================
+・題材のメタファー：このアプリは現実の何に似ているか。例：日記→手帳、家計簿→レシート・財布、筋トレ→トレーニングノート、旅行→チケット・パスポート、当番表→黒板・掲示板、推し活→チケット・トレカ、勉強→単語カード・ノート、お店→メニュー・伝票。
+・主役のデータ：画面でいちばん多く出てくる情報は何か（日付・人・金額・回数・場所・進み具合など）。
+・使う人の気分：開いたときにどう感じてほしいか（落ち着く／元気が出る／きちんとする／わくわくする）。
+この3つから、配色・書体・素材・最初の主役の形を選ぶ。決めたものは、選んだ理由と一緒にコードの先頭にコメントで残す。
+・題材が現実の物に例えにくいとき（ToDo・設定・ツール系など）は、無理にメタファーを作らない。主役は「中身から始める」か「大きな文字だけ」（3番）にし、個性は書体と色と言葉づかいで出す。
+
+====================================================
 1. 全体コンセプト
-・グラデーションに頼らない、色のついた洗練されたデザイン。「うすく色のついた土台」の上に「白いカード」を浮かせ、深い「メイン色」と明るい「アクセント色」でメリハリをつける。
-・【禁止】グラデーション（linear-gradient / radial-gradient）、虹色のような多色づかい。カードや画面全体の背景にすりガラスは使わない（すりガラスは下の「すりガラスを使う場所」だけ）。
-・すりガラスを使う場所：中身の上に重なって浮く部品だけに使う（スクロールしても上に残るヘッダー、下に固定したタブやボタン、Toast、Bottom Sheet・モーダル・メニューを出したときの後ろ）。
+====================================================
+・グラデーションに頼らない、色のついた洗練されたデザイン。「うすく色のついた土台」の上に「白いカード」を浮かせ、「メイン色」と「アクセント色」でメリハリをつける。
+・そのうえで、題材のメタファーを「素材」と「形」で少しだけ取り入れ、ただの白い箱の羅列にしない（3番・4番）。
+・【禁止】グラデーション（linear-gradient / radial-gradient / conic-gradient、ぼかした色の円で作るにじみ表現も含む）、虹色のような多色づかい。カードや画面全体の背景にすりガラスは使わない。
+・すりガラスを使う場所：中身の上に重なって浮く部品だけ（スクロールしても上に残るヘッダー、下に固定したタブやボタン、Toast、Bottom Sheet・モーダル・メニューを出したときの後ろ）。
   浮く部品は background: rgba(255,255,255,.72); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); に 1px の rgba(255,255,255,.6) の線をつける。
   Bottom Sheet・モーダル・メニューの後ろは background: rgba(17,24,39,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); にする。
 
-2. 配色（4つの役割を必ず決める）
-・土台：画面全体の背景。メイン色をごくうすくした色（例 #eaf0e1）。
-・メイン：濃く深い色。（あれば）ヒーローカード・メインボタン・見出しのアイコンに使う。
-・アクセント：明るい差し色。ヒーローの中のラベル・強調・選択中の印に使う。
-・うすいメイン：メイン色を10%ほどにした色。サブボタン・選択中の背景・チップに使う。
-・カードは白（#fff）。文字は #111827、補足は #6b7280、さらに弱い文字は #a1a1aa。
+====================================================
+2. 配色
+====================================================
+・役割を必ず決める。すべて :root の CSS 変数にまとめ、コードの中に色を直接書かない（テーマを差し替えられるようにするため）。
+  土台（--base）：画面全体の背景。メイン色をごくうすくした色。
+  メイン（--main）：主役の強調・メインボタン・見出しのアイコン・題材の素材の色（しおり・帯など）に使う。
+  メインの文字用（--main-ink）：白い背景の上にメイン色の文字を置くときの、少し濃いメイン色。
+  アクセント（--accent）：明るい差し色。ラベル・強調・選択中の印・付箋などに使う。
+  うすいメイン（--main-l）：メイン色を10%ほどにした色。サブボタン・選択中の背景・チップに使う。
+・あか抜けて見せるコツ：原色を避け、少し灰色を混ぜた「くすみ色」を選ぶ。メインとアクセントは補色に近い組み合わせ（緑×からし、青×黄、ピンク×黄、赤茶×黄など）にするとメリハリが出る。
+・白文字を乗せるメイン色は、白とのコントラスト比 3:1 以上（できれば 4.5:1 以上）にする。明るい色をメインにしたいときは、上に乗せる文字を白ではなく濃い色にする。
+・文字のグレーは、メインの色相に少し寄せる（暖色のアプリは茶色寄り、寒色のアプリは青寄り）。真っ黒・無彩色のグレー（#111827 / #6b7280 など）をそのまま使うと冷たく、機械的に見える。
+  目安：文字＝メインの色相でごく濃い色、補足＝彩度の低い中間色、弱い文字＝それをさらに薄く。
+・入力欄の背景（--field）も土台に寄せた色にする（例：暖色なら #f7f1ea、緑系なら #f1f4ee）。
+・カードは白（#fff）。
 ・状態の色は使ってよい：注意・削除は赤（#be123c、背景 #fdecef）、変更・未対応はオレンジ（#d97706、背景 #fef3c7）、情報は青（#2563eb、背景 #e8effd）。
-・種類分けが必要なら、追加の色は3色まで（どれも落ち着いた色にする）。
-・アプリの題材に合わせて選ぶ例（土台 / メイン / アクセント）：
-  スポーツ #eaf0e1 / #14532d / #d9f35f、学校・当番 #e6efeb / #0f4c47 / #ffd447、仕事・手帳 #e9ebf2 / #1f2b5c / #f3c552、ノート・記録 #f1ebe0 / #5b3a1f / #e7b93c、お金 #eef1ea / #1e3a2f / #f2c14e、食べ物・お店 #f6ece4 / #7c2d12 / #ffb703、健康 #e8eef6 / #0b3a63 / #ff7a59、勉強 #ecebf6 / #312e81 / #fbbf24、推し活 #f6e9ef / #701a46 / #f9d5e5、旅行 #e7f1f4 / #0e4a5c / #ffcf56、家族 #f4efe6 / #3f4a2b / #f4a261、ゲーム #e9e7f5 / #1e1b4b / #22d3ee
+・種類分けが必要なら、追加の色は3色まで。メイン色と似た色相は避け、どれも落ち着いた色にする。
+・配色は、下の例をそのまま使わず、題材と使う人の気分から決める。決めた色と理由（例：「お金のアプリなので、信頼感のある深い緑。差し色は小銭の金色」）をコメントに書く。指定の色があればそれを優先する。
+  【指定の色】（空欄なら自分で決める）土台：　　メイン：　　アクセント：
+・配色の例（考えるときの参考。どれも少しくすませてある）：
+  コーラル #fdf4ea / #e05a43 / #ffd447、セージ #f2f4ee / #5f8a6e / #f2c66d、スモーキーブルー #eff3f8 / #4f78a8 / #f4c95d、くすみローズ #fbf1f2 / #c0627d / #f6cf7a、インクネイビー #f1f2f6 / #2f5a8c / #ffcf56、テラコッタ #f8efe8 / #b5603c / #f2c14e、ディープグリーン #eef2ea / #2f5a3f / #e9c46a、プラム #f4eef4 / #6e4a7e / #f3b562、チャコール #f2f1ee / #3a3a3a / #f2b33d、ティール #eaf3f1 / #2f7f7a / #ffcc66
+・必要なら、設定からテーマカラーを選べるようにする（変数を差し替えるだけで全体が変わる作りにしておく）。
 
-3. ヒーローカード（合うアプリだけ）
-・開いたときにまず知りたい情報（次の予定・残り日数・今日の合計・自分の番など）があるアプリでは、画面のいちばん上にメイン色の塗りのカードで大きく見せる。角丸 24px、余白 18px、文字は白。
-・上にアクセント色のピル型ラベル（例「次の当番」）、その下に 44px・font-weight 800 の大きな数字や日付、下に白14%の背景のチップを並べる。
-・題材に合ったモチーフ（線・図形）をインラインSVGで背景に薄く描く（opacity .06〜.15）。例：コートの線、方眼、罫線。
-・そういう情報がないアプリ（電卓・タイマーなどの道具、入力が中心のアプリ、ゲームなど）では使わず、いちばんよく使う操作（入力欄・メインのボタン・ゲームの画面）を上に置く。
+====================================================
+3. 最初の主役（ヒーローは「必要なときだけ」）
+====================================================
+・画面ごとに「開いた瞬間に目が最初に行く主役」を1つだけ決める。主役の役目は、「今どういう状態か」か「次に何をすればいいか」が一目でわかること。
+・ヒーロー（メイン色の塗りのカードに、大きな数字とチップ）は、主役の形の選択肢の1つ。禁止ではないが、「どの画面にも必ず置く決まった部品」にはしない。毎回同じ形で始まると、題材が違ってもどのアプリも同じ顔になり、単調で、どこかで見たAIっぽい画面になるため。
+・まず、その画面で一番大事なものが何かで決める。
+  ・一番大事なのが「1つの数字や状態」（予算の残り・連続記録日数・次の予定まであと何日・今日の達成率など）→ ヒーローが合う。塗りで大きく見せるのが一番伝わる。
+  ・一番大事なのが「中身そのもの」（書く欄・明細・一覧・カレンダーなど）→ ヒーローは使わず、下の1〜5から選ぶ。
+・主役の形の選択肢（0番の「題材のメタファー」とあわせて、上から当てはまるものを考える）：
+  1. 題材の物そのもの：その画面の主役を、現実の物の形で見せる。
+     例：日記→開いた手帳の今日のページ（大きな日付＋罫線の書く欄）、家計簿→今月のレシート、貯める系→通帳（日付・項目・残高の行と、二重線の付いた合計）、旅行→次の旅のチケット、筋トレ→今日のメニュー表、当番表→黒板、勉強→単語カードの束、お店→伝票。
+  2. 中身から始める：書く欄・カレンダー・一覧など、その画面でいちばん使うもの自体を一番上に置き、それを主役にする。
+  3. 大きな文字だけ：カードで囲まず、土台の上に数字や日付を雑誌の見出しのように直接大きく置く（48〜72px）。下に小さな数字を2〜3個、点線の区切りで並べる。
+  4. 絵：題材の線画を大きく見せる。
+  5. 主役を作らない：一覧・検索・設定などの画面は、小さな見出しだけにしてすぐ中身に入る。
+  6. ヒーロー：メイン色の塗り、角丸 24px、余白 18px。上にアクセント色のピル型ラベル（例「今月のこり」「次の当番」）、その下に 40〜48px・太字の大きな数字、下に白14%の背景のチップを2〜3個。押せるチップは関係する画面へ移れるようにする。題材のモチーフ（罫線・方眼・コートの線など）をインラインSVGで背景に薄く描く（opacity .06〜.15）。
+     見た目は「塗り／うすい（--main-l の背景にメインの文字）／白（白いカードに大きな数字だけ）」の3段階から選べる。
+・題材の物の形とヒーローは組み合わせてよい（例：家計簿のレシートの中で「のこり ¥11,740」だけを大きく見せる。チケットの形をしたヒーロー）。題材の形をまとったヒーローは、同じ顔になりにくい。
+・同じアプリの中でも、画面ごとに主役の形を変える（例：トップは手帳のページ、人の画面は通帳、統計は大きな文字とマス目）。どの画面も同じ形で始まらないようにする。
+・ヒーローを使うのは、1つのアプリで多くても2画面まで（ホームと、そのアプリの主役の画面など）。主役が2つ並ぶとどこを見ればいいか迷うので、ヒーローを置いた画面には、ほかに大きな主役（大きなレシート・大きな見出しなど）を置かない。
+・中身は状態で変える。例：未記入なら「まだ白紙です」と書く欄、記入済みなら「書いたページを開いています」。朝と夜で言葉を変える。数字が0や空のときの見せ方も必ず用意する。
+・大きさ：最初に見える画面の 1/2 くらいまで。主役の下の中身が、スクロールしなくても少し見えるようにする（ただし、書く欄そのものが主役のときはこの限りではない）。
+・主役の中の数字や日付は、表情を出す書体（4-3）で大きく。押せる要約（「今年の出会い 46人」など）は小さなチップにし、関係する画面へ移れるようにする。
 
-4. カード
-・白、枠線なし、角丸 20px、余白 16px。
-・影は box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+====================================================
+4. 個性の出し方（ここが「シンプルすぎてつまらない」を防ぐ部分）
+====================================================
+次の4つのうち、2〜3つを取り入れる。迷ったら少ないほうにする（4-5を守る）。全部を全画面に入れない。
+
+4-1. 主役のデータに「形」を与える
+・主役のデータを、ただの文字ではなく、題材らしい小さな部品にして見せる。
+  日付→カレンダーをめくったようなスタンプ（月を英字の小さな帯、日を大きな数字、曜日を小さく。土曜は青・日曜は赤）
+  人→名前の頭文字を丸に入れたアバター（種類ごとに色分け）
+  金額→大きな数字＋小さな通貨記号、レシート風の明細
+  回数・連続日数→小さなバーやドットの並び
+  場所→ピンのアイコン付きのチップ
+  進み具合→リングかバー
+  時間→時計の文字盤風、または時刻を大きく
+・同じデータは、どの画面でも同じ形で見せる。
+
+4-2. カードの種類を3つ以上に分ける
+・画面の上から下まで同じ白いカードが続かないようにする。役割ごとに見た目を変える。
+  主役：3番で決めた形（題材の物そのもの・大きな文字など）。
+  標準のカード：白、角丸 20px、余白 16px、影 box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+  題材の素材を使ったカード：付箋・チケット・レシート・名刺・単語カード・メモ用紙など。題材に合うものを1〜2種類だけ選び、「おすすめ」「ピックアップ」「過去の記録」など特別な役割のものに使う。
+    付箋：アクセント色をうすくした背景、上にマスキングテープ、ほんの少し傾ける（±1°まで）
+    チケット：左右の端に半円の切り欠き（mask か clip-path、または土台と同じ色の丸い要素を重ねる）、真ん中に点線の区切り（border-top: 2px dashed）
+    レシート：下の端をギザギザに（clip-path: polygon() で三角を並べる）、等幅の数字、点線の区切り（border-top: 2px dashed）
+    名刺：左端に種類の色の細い帯
+    メモ用紙：本文の下に罫線（行の高さに合わせる。SVG の data URI を background-image で敷く）
 ・状態はカードの背景色で見せる（自分の分はうすいメイン、変更はオレンジの背景、注意は赤の背景）。
 
-5. 文字
-・フォント: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", Arial, sans-serif。font-feature-settings: "palt"; で字間を整える。
-・数字は 24〜44px・font-weight 800・font-variant-numeric: tabular-nums。見出しは 15px・800、本文は 14px、補足は 12px。
+4-3. 書体を2つ使う
+・本文：-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", Arial, sans-serif。font-feature-settings: "palt"; で字間を整える。
+・表情を出す書体：見出し・大きな数字・日付・名前・ボタンにだけ、題材と気分に合う Google Fonts を1つ使う。読み込めなくても崩れないよう、必ず後ろに本文の書体を続けて書く。
+  やわらかい・親しみ（日記・家族・推し活）：Zen Maru Gothic、M PLUS Rounded 1c、Kiwi Maru
+  きちんと・上品（仕事・お金・読書）：Shippori Mincho、Zen Old Mincho、BIZ UDPGothic
+  元気・ポップ（スポーツ・ゲーム・子ども向け）：Dela Gothic One（見出しだけ）、M PLUS 1p の太字
+  数字や英字だけ目立たせる：Outfit、DM Sans、Space Grotesk（日本語には効かないので、数字・英字の部分だけに使う）
+・文字の大きさ：大きな数字は 24〜48px・太字・font-variant-numeric: tabular-nums、見出し 15〜17px・太字、本文 14px、補足 12px。
 
-6. 見せ方
-・文字の羅列にせず、カレンダー・表・バー・人のアイコン（名前の頭文字を丸に入れたもの。色は落ち着いた中間色）など、見てわかる形にする。
+4-4. 素材感と飾りを1つ入れる
+・土台に、題材のモチーフのごく薄い地模様を敷く（点・方眼・罫線・ドット・ストライプなど）。SVG を data URI にして background-image で敷く。
+・【線・模様の描き方】罫線・ストライプ・ギザギザ・切り欠き・点線は、linear-gradient / repeating-linear-gradient で描かない。使ってよいのは、SVG の data URI、clip-path / mask、border（solid / dashed / dotted / double）、疑似要素だけ。
+・data URI の中では CSS 変数が使えない。テーマを切り替える作りにするときは、模様そのものを CSS 変数（例：--dots: url("data:...")）に入れ、テーマごとに作り直す。
+・飾りは1種類だけ選ぶ：マスキングテープ、スタンプ、ステッチ（点線のふち）、切り欠き、ピン、手書き風の下線など。
+・見出しの横に、点線や短い線などの小さな飾りを入れてもよい。
 
-7. ボタン・入力UI
-・メインボタン：メイン色の塗り、白文字、角丸 16px、横いっぱい、上下の余白 15px、15px・800。押したとき :active で transform: scale(.985)。
-・サブボタンはうすいメインの背景にメイン色の文字。削除などはうすい赤の背景に赤い文字。小さな選択肢はピル型のチップ。
-・入力欄（input, textarea, select）：枠線なし、背景 #f4f5f2、角丸 14px。フォーカス時は背景を白にし、box-shadow: 0 0 0 2px メイン色 のリングを出す。
+4-5. やりすぎ防止のルール
+・1画面で使う素材カードは2種類まで、飾りは1種類まで。
+・傾けるのは ±1° まで。本文が読みにくくなる飾りは入れない。
+・地模様・モチーフの濃さは opacity .06〜.15、または土台よりほんの少し濃い色まで。
+・迷ったら引く。「題材らしさが一目でわかる最小限」をねらう。
+
+====================================================
+5. 見せ方
+====================================================
+・文字の羅列にせず、カレンダー・表・バー・リング・人のアイコンなど、見てわかる形にする。
+・画面のリズムを変える：主役 → 横に並ぶもの（カルーセル・2列のグリッド・チップの列）→ 縦のリスト、のように、同じ並び方が続かないようにする。
+・空っぽの状態（まだ記録がない、検索で見つからないなど）は、題材に合う線画のSVGと、やさしい一言を出す。ただ「データがありません」で終わらせない。
+・言葉づかい：ボタンや案内文は、機械的な言い方より、人に話しかけるような短い言葉にする（例：「データを追加」→「今日のことを書く」、「保存しました」→「書けました」）。ただし、エラーや削除の確認ははっきり書く。
+
+====================================================
+6. ボタン・入力UI
+====================================================
+・メインボタン：メイン色の塗り、白文字（明るいメイン色のときは濃い文字）、角丸 16px、横いっぱい、上下の余白 15px、15px・太字。押したとき :active で transform: scale(.985)。
+・サブボタンはうすいメインの背景に、メインの文字用の色（--main-ink）の文字。削除などはうすい赤の背景に赤い文字。小さな選択肢はピル型のチップ。
+・入力欄（input, textarea, select）：枠線なし、背景は --field、角丸 14px。フォーカス時は背景を白にし、box-shadow: 0 0 0 2px メイン色 のリングを出す。
 ・タブは、うすい背景の中で選択中だけ白く浮かぶ「セグメント型」にする。
 
-8. ヘッダー
-・position: sticky; top: 0; でスクロールしても上に残し、背景はすりガラス（1番の指定）にする。左に 36px のメイン色の四角いアイコン（角丸 10px、中に白いSVG）、アプリ名は 16〜18px・800。グループで共有するアプリでは、右に自分の名前のピル。
+====================================================
+7. ヘッダー
+====================================================
+・position: sticky; top: 0; でスクロールしても上に残し、背景はすりガラス（1番の指定）にする。
+・左に 36px のメイン色の四角いアイコン（角丸 10px、中に白いSVG）、アプリ名は 16〜18px・太字（表情を出す書体）。右に自分の名前のピル。
 
-9. アイコン【厳守】
+====================================================
+8. アイコン【厳守】
+====================================================
 ・絵文字（📱や✨など）や記号の文字（★●✓など）は一切使用禁止。すべてのアイコンは、線の太さ（stroke-width="2"〜"2.6"）と丸い線端（stroke-linecap="round"）を統一したインラインSVGを使用すること。
 ・見出しの横のアイコンはメイン色にする。
 
-10. レイアウトとアニメーション
+====================================================
+9. レイアウトとアニメーション
+====================================================
 ・モバイルファースト設計（max-width: 640px; margin: 0 auto;）。左右の余白 16px、カードどうしの間隔 12px。
+・幅 320px の小さなスマホでも崩れないようにする。グリッドの列は repeat(7, minmax(0, 1fr)) のように minmax(0, 1fr) で指定し、中身に押されて横にはみ出さないようにする。マス目は aspect-ratio に頼らず、clamp() で高さを決める。小さい画面用の上書き（@media (max-width: 400px)）は、CSSの最後に書く。
 ・コンテンツ表示時に下から少しフェードインするCSSアニメーション（@keyframes fadeIn）。追加した項目は下からふわっと出す。並んだ項目は 70ms ずつずらして出す。
 ・ボタンやカードの状態の変化は transition: all .2s; で滑らかにする。
+・動きは0.2〜0.3秒にし、ゆっくりすぎる動きや画面が揺れる動きはしない。prefers-reduced-motion が有効なときは動きを止める。
 
-11. 部品（アプリに合うものだけ使う。全部は入れない）
+====================================================
+10. 部品（アプリに合うものだけ使う。全部は入れない）
+====================================================
 ・コードを短く保つため、そのアプリで本当に役立つ部品だけを使うこと。使わない部品のコードは書かない。
 
 【ほぼ毎回使う】
-・Toast：保存・追加・削除・コピーなどのあとに、画面の下に「保存しました」のように短く出す。暗いすりガラス（background: rgba(17,24,39,.8); backdrop-filter: blur(16px);）に白い文字、角丸 999px。下から少し浮き上がって出て、2秒ほどで消える。一度に出すのは1つだけ。
-・UI/UX アニメーション：「10. レイアウトとアニメーション」のとおり。動きは0.2〜0.3秒にし、ゆっくりすぎる動きや画面が揺れる動きはしない。prefers-reduced-motion が有効なときは動きを止める。
-・ラジオボタン：標準の丸い見た目は使わず、選択肢をピル型のチップかセグメント型で並べる。選んだものはメイン色の塗りに白い文字。中身は input type="radio" で作り、label で包んでタップしやすくする。
-・プルダウンメニュー（select）：入力欄と同じ見た目（枠線なし・背景 #f4f5f2・角丸 14px）にし、右に下向きの矢印（インラインSVG）をつける。選択肢が4つ以下なら、プルダウンにせずチップで並べる。
+・Toast：保存・追加・削除・コピーなどのあとに、画面の下に短く出す。暗いすりガラス（background: rgba(17,24,39,.8); backdrop-filter: blur(16px);）に白い文字、角丸 999px、左に小さなSVGアイコン。下から少し浮き上がって出て、2秒ほどで消える。一度に出すのは1つだけ。
+・ラジオボタン：標準の丸い見た目は使わず、選択肢をピル型のチップかセグメント型で並べる。選んだものはメイン色の塗り。中身は input type="radio" で作り、label で包んでタップしやすくする。
+・プルダウンメニュー（select）：入力欄と同じ見た目にし、右に下向きの矢印（インラインSVG）をつける。選択肢が4つ以下なら、プルダウンにせずチップで並べる。
 
 【場面が合えば使う】
 ・Bottom Sheet：スマホで、詳細の表示・入力フォーム・選択肢の一覧を出すときは、中央のモーダルよりこちらを優先する。画面の下から出てくる白いシート（上の角だけ角丸 24px、上部に横長のつまみ）。後ろは1番の指定で暗くぼかし、後ろのタップか下へのスワイプで閉じる。
-・モーダル：削除の確認など、短い確認にだけ使う。中央に白いカード（角丸 24px）。ボタンは「キャンセル」（サブボタン）と「削除する」（うすい赤の背景に赤い文字）を横に並べる。後ろは1番の指定で暗くぼかし、Esc キーと後ろのタップで閉じる。
-・アコーディオン：長い説明・よくある質問・過去の記録など、ふだんは畳んでおきたいものに使う。見出しの行をタップで開閉し、右の矢印（SVG）が回転する。開閉は高さのアニメーションで滑らかに。
-・Skeleton Screen：グループで共有するデータなど、読み込みに時間がかかるところでは、文字の代わりに灰色の角丸の箱（#eceee8、明るさがゆっくり変わる）を出し、読み込み中も画面の形がわかるようにする。読み込みが一瞬で終わるところには使わない。
-・Autocomplete：メンバーの名前・場所・品名など、前に入れたものをまた入れることが多い欄で使う。入力に合う候補を、入力欄のすぐ下に白いカードで最大5件出し、タップで入力される。候補は今までの入力やデータから作る。
-・Swipe Action：一覧の項目を左へスワイプすると「削除」（赤）などのボタンが出る。スワイプに気づかない人のために、同じ操作ができるボタンも必ず残す。
-・カルーセル：カードを横に並べてスワイプで見せたいとき（今週の予定、おすすめなど）に使う。scroll-snap で1枚ずつ止まり、次のカードが少し見えるようにする。下に今の位置を示す点を出す。自動では動かさない。
-・ハンバーガーメニュー：画面が5つ以上あってタブに収まらないときに使う（4つ以下ならセグメント型のタブにする）。ヘッダーの右に置き、開くと右から白いパネル（角丸 24px）が出る。今いる画面の項目は、うすいメイン色の背景にする。後ろは1番の指定で暗くぼかし、後ろのタップか Esc キーで閉じる。`;
+・モーダル：削除の確認など、短い確認にだけ使う。中央に白いカード（角丸 24px）。ボタンは「キャンセル」（サブボタン）と「削除する」（うすい赤の背景に赤い文字）を横に並べる。Esc キーと後ろのタップで閉じる。
+・アコーディオン：長い説明・よくある質問・過去の記録など、ふだんは畳んでおきたいものに使う。見出しの行をタップで開閉し、右の矢印（SVG）が回転する。
+・Skeleton Screen：読み込みに時間がかかるところでは、灰色の角丸の箱（土台に寄せた色、明るさがゆっくり変わる）を出し、読み込み中も画面の形がわかるようにする。読み込みが一瞬で終わるところには使わない。
+・Autocomplete：名前・場所・品名など、前に入れたものをまた入れることが多い欄で使う。入力に合う候補を、入力欄のすぐ下に白いカードで最大5件出し、タップで入力される。人の候補にはアバターを付ける。
+・Swipe Action：一覧の項目を左へスワイプすると「削除」（赤）などのボタンが出る。同じ操作ができるボタンも必ず残す。
+・カルーセル：カードを横に並べてスワイプで見せたいときに使う。scroll-snap で1枚ずつ止まり、次のカードが少し見えるようにする。下に今の位置を示す点を出す。自動では動かさない。
+・ハンバーガーメニュー：画面が5つ以上あってタブに収まらないときに使う（4つ以下ならセグメント型のタブか、下に固定したタブにする）。ヘッダーの右に置き、開くと右から白いパネル（角丸 24px）が出る。今いる画面の項目は、うすいメイン色の背景にする。
+
+====================================================
+11. 仕上げチェック（出す前に確認する）
+====================================================
+□ 画面を3秒見て、何のアプリか題材がわかるか（ロゴや文字を隠しても）
+□ 上から下まで、同じ白いカードだけが続いていないか
+□ 主役のデータが、ただの文字ではなく形になっているか
+□ ヒーローを置いた画面は、一番大事なのが「1つの数字や状態」の画面か。全部の画面が同じヒーローで始まっていないか
+□ 最初の主役を見て「今の状態」か「次にすること」がわかるか。空っぽのときの見せ方もあるか
+□ 画面ごとに主役の形が違うか
+□ 文字のグレーが無彩色のままになっていないか
+□ グラデーションと、ぼかした色のにじみを使っていないか
+□ 飾りが多すぎて本文が読みにくくなっていないか
+□ 320px・375px・430px の幅で、横にはみ出したり崩れたりしていないか（グリッドの列は minmax(0, 1fr) にする）
+□ 絵文字・記号の文字を使っていないか`;
 
 export const PROMPT_JISAPP_DESIGN_EN = `[UI/UX design]
 Build the design with Vanilla CSS only, following the spec below. Don't use external frameworks (Tailwind, etc.).
+The goal: don't make "a neat screen that looks like every other AI-made app." Make a screen that feels like its subject and is fun to touch.
 
+[Priorities] When unsure, or when rules conflict, follow this order:
+  readability and ease of use > the bans (gradients, emoji, etc.) > feeling like the subject > decoration
+
+====================================================
+0. Decide first (before you start, write these three down briefly, then build)
+====================================================
+- The subject's metaphor: what real-world object is this app like? For example: diary → planner/notebook, budget → receipt or wallet, workouts → training log, travel → ticket or passport, duty roster → chalkboard or notice board, fandom → concert ticket or trading card, study → flashcards or notebook, shop → menu or order slip.
+- The main data: what information appears most on the screen (dates, people, amounts, counts, places, progress, etc.)?
+- The user's mood: how should it feel when they open it (calm / energized / organized / excited)?
+From these three, choose the colors, fonts, materials and the shape of the first main element. Write what you chose, with the reasons, as a comment at the top of the code.
+- If the subject doesn't map to a real object (to-do lists, settings, tools, etc.), don't force a metaphor. Make the main element "start with the content" or "big type only" (section 3), and show personality through fonts, colors and wording.
+
+====================================================
 1. Overall concept
-- A polished, colored design that doesn't rely on gradients. White cards float on a lightly tinted base, with a deep "main" color and a bright "accent" color for contrast.
-- [Banned] Gradients (linear-gradient / radial-gradient) and rainbow-like use of many colors. Don't use frosted glass on cards or the whole-screen background (use frosted glass only in the places listed below).
-- Where to use frosted glass: only on parts that float over the content (a header that stays at the top while scrolling, tabs or buttons fixed to the bottom, toasts, and the backdrop behind bottom sheets, modals, and menus).
+====================================================
+- A polished, colored design that doesn't rely on gradients. White cards float on a lightly tinted base, with a "main" color and an "accent" color for contrast.
+- On top of that, bring in a little of the subject's metaphor through "material" and "shape," so the screen isn't just a stack of white boxes (sections 3 and 4).
+- [Banned] Gradients (linear-gradient / radial-gradient / conic-gradient, including soft blurred color blobs) and rainbow-like use of many colors. Don't use frosted glass on cards or the whole-screen background.
+- Where to use frosted glass: only on parts that float over the content (a header that stays at the top while scrolling, tabs or buttons fixed to the bottom, toasts, and the backdrop behind bottom sheets, modals and menus).
   Floating parts use background: rgba(255,255,255,.72); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); with a 1px rgba(255,255,255,.6) border.
-  The backdrop behind bottom sheets, modals, and menus uses background: rgba(17,24,39,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  The backdrop behind bottom sheets, modals and menus uses background: rgba(17,24,39,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 
-2. Colors (always decide these 4 roles)
-- Base: the whole-screen background. A very light tint of the main color (e.g. #eaf0e1).
-- Main: a deep, dark color. Used for the hero card (if any), main buttons, and heading icons.
-- Accent: a bright highlight color. Used for labels inside the hero, emphasis, and selected marks.
-- Light main: the main color at about 10%. Used for secondary buttons, selected backgrounds, and chips.
-- Cards are white (#fff). Text #111827, secondary text #6b7280, faint text #a1a1aa.
+====================================================
+2. Colors
+====================================================
+- Always decide the roles. Put every color in CSS variables on :root, and never write colors directly elsewhere in the code (so the theme can be swapped).
+  Base (--base): the whole-screen background. A very light tint of the main color.
+  Main (--main): emphasis on the main element, main buttons, heading icons, and the color of the subject's materials (bookmarks, bands, etc.).
+  Main ink (--main-ink): a slightly darker main color for main-colored text on a white background.
+  Accent (--accent): a bright highlight color for labels, emphasis, selected marks, sticky notes, etc.
+  Light main (--main-l): the main color at about 10%. For secondary buttons, selected backgrounds and chips.
+- To look refined: avoid pure primary colors and pick slightly grayed, "muted" colors. Pairing main and accent colors that are close to complementary (green × mustard, blue × yellow, pink × yellow, brick × yellow, etc.) gives good contrast.
+- A main color that carries white text needs a contrast ratio of at least 3:1 with white (4.5:1 or more if possible). If you want a light main color, put dark text on it instead of white.
+- Tint the text grays slightly toward the main hue (brownish for warm apps, bluish for cool apps). Pure black or neutral grays (#111827 / #6b7280, etc.) look cold and mechanical.
+  Rough guide: text = a very dark shade of the main hue; secondary text = a low-saturation mid tone; faint text = lighter still.
+- Make the input background (--field) close to the base too (e.g. #f7f1ea for warm apps, #f1f4ee for green ones).
+- Cards are white (#fff).
 - Status colors are allowed: warning/delete red (#be123c on #fdecef), changed/pending orange (#d97706 on #fef3c7), info blue (#2563eb on #e8effd).
-- If you need category colors, add at most 3 more (all muted).
-- Examples to pick from by theme (base / main / accent):
-  Sports #eaf0e1 / #14532d / #d9f35f, School/duty #e6efeb / #0f4c47 / #ffd447, Work/planner #e9ebf2 / #1f2b5c / #f3c552, Notes/records #f1ebe0 / #5b3a1f / #e7b93c, Money #eef1ea / #1e3a2f / #f2c14e, Food/shop #f6ece4 / #7c2d12 / #ffb703, Health #e8eef6 / #0b3a63 / #ff7a59, Study #ecebf6 / #312e81 / #fbbf24, Fandom #f6e9ef / #701a46 / #f9d5e5, Travel #e7f1f4 / #0e4a5c / #ffcf56, Family #f4efe6 / #3f4a2b / #f4a261, Game #e9e7f5 / #1e1b4b / #22d3ee
+- If you need category colors, add at most 3 more. Avoid hues close to the main color, and keep them all muted.
+- Don't just copy the examples below. Choose colors from the subject and the user's mood, and write the colors and the reason as a comment (e.g. "A money app, so a trustworthy deep green. The accent is the gold of coins."). If colors are specified, use those first.
+  [Specified colors] (leave blank to choose yourself) Base:    Main:    Accent:
+- Example palettes (for reference — all slightly muted) (base / main / accent):
+  Coral #fdf4ea / #e05a43 / #ffd447, Sage #f2f4ee / #5f8a6e / #f2c66d, Smoky blue #eff3f8 / #4f78a8 / #f4c95d, Dusty rose #fbf1f2 / #c0627d / #f6cf7a, Ink navy #f1f2f6 / #2f5a8c / #ffcf56, Terracotta #f8efe8 / #b5603c / #f2c14e, Deep green #eef2ea / #2f5a3f / #e9c46a, Plum #f4eef4 / #6e4a7e / #f3b562, Charcoal #f2f1ee / #3a3a3a / #f2b33d, Teal #eaf3f1 / #2f7f7a / #ffcc66
+- If useful, let users pick a theme color in the settings (build it so swapping the variables changes everything).
 
-3. Hero card (only when it fits)
-- If the app has information people want to see first when opening it (next event, days left, today's total, whose turn it is, etc.), show it large at the top of the screen on a card filled with the main color. Border-radius 24px, padding 18px, white text.
-- At the top, an accent-colored pill label (e.g. "Next duty"); below it a big 44px, font-weight 800 number or date; below that, chips on a 14% white background.
-- Draw a faint motif that fits the theme (lines, shapes) as an inline SVG in the background (opacity .06 to .15). For example: court lines, a grid, ruled lines.
-- If there is no such information (tools like calculators or timers, input-centered apps, games, etc.), don't use it; put the most-used action (the input field, the main button, or the game screen) at the top instead.
+====================================================
+3. The first main element (use a hero only when it's needed)
+====================================================
+- For each screen, decide on exactly one "main element" — the thing the eye goes to the moment it opens. Its job is to make "what the current state is" or "what to do next" clear at a glance.
+- A hero (a card filled with the main color, with a big number and chips) is one option for the main element. It isn't banned, but don't make it "a fixed part every screen must have." If every screen starts with the same shape, every app ends up with the same face no matter the subject — monotonous, and it looks like every other AI-made screen.
+- First decide based on what matters most on that screen.
+  - If what matters most is "one number or state" (budget left, a streak, days until the next event, today's progress, etc.) → a hero fits. Showing it big and filled communicates best.
+  - If what matters most is "the content itself" (a writing area, line items, a list, a calendar, etc.) → don't use a hero; choose from options 1–5 below.
+- Options for the main element (think about them together with the metaphor from section 0, top to bottom):
+  1. The subject's object itself: show the screen's main element in the shape of the real object.
+     For example: diary → today's page of an open planner (a big date plus a ruled writing area), budget → this month's receipt, savings → a bankbook (rows of date, item and balance, with a double-ruled total), travel → the ticket for the next trip, workouts → today's training sheet, duty roster → a chalkboard, study → a stack of flashcards, shop → an order slip.
+  2. Start with the content: put the thing used most on that screen (writing area, calendar, list, etc.) at the very top and make it the main element.
+  3. Big type only: no card around it — set the number or date directly on the base, large like a magazine headline (48–72px). Underneath, line up 2–3 small numbers separated by dotted dividers.
+  4. Illustration: show a line drawing of the subject, large.
+  5. No main element: list, search and settings screens get just a small heading and go straight into the content.
+  6. Hero: filled with the main color, border-radius 24px, padding 18px. At the top, an accent-colored pill label (e.g. "Left this month", "Next duty"); below it a big 40–48px bold number; below that, 2–3 chips on a 14% white background. Tappable chips should lead to the related screen. Draw a faint motif of the subject (ruled lines, a grid, court lines, etc.) as an inline SVG in the background (opacity .06 to .15).
+     You can choose its look from three levels: "filled" / "light" (main-colored text on --main-l) / "white" (just a big number on a white card).
+- You can combine the object's shape with a hero (e.g. inside a budget receipt, show only "$117.40 left" big; a hero shaped like a ticket). A hero that takes the subject's shape is less likely to look like every other app.
+- Within one app, change the main element's shape from screen to screen (e.g. home is a planner page, the people screen is a bankbook, stats are big type and a grid). Don't let every screen start with the same shape.
+- Use a hero on at most 2 screens per app (e.g. home and the app's key screen). Two main elements side by side make it unclear where to look, so on a screen with a hero, don't add another big main element (a big receipt, a big headline, etc.).
+- Change the content with the state. For example: if nothing is written yet, a writing area that says "Still a blank page"; once written, "Here's the page you wrote." Change the wording between morning and night. Always prepare how it looks when a number is 0 or something is empty.
+- Size: up to about half of the first visible screen, so a little of the content below shows without scrolling (except when the writing area itself is the main element).
+- Show numbers and dates in the main element large, in the expressive font (4-3). Tappable summaries (such as "46 people met this year") become small chips that lead to the related screen.
 
-4. Cards
-- White, no border, border-radius 20px, padding 16px.
-- Shadow: box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
-- Show state with the card background (your own items in light main, changes in orange, warnings in red).
+====================================================
+4. Adding personality (this is what keeps it from being "too plain and boring")
+====================================================
+Use 2–3 of the following 4. When unsure, use fewer (follow 4-5). Don't put all of them on every screen.
 
-5. Typography
-- Font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif
-- Numbers 24 to 44px, font-weight 800, font-variant-numeric: tabular-nums. Headings 15px/800, body 14px, notes 12px.
+4-1. Give the main data a "shape"
+- Show the main data not as plain text but as a small part that fits the subject.
+  Dates → a stamp like a tear-off calendar (the month as a small English band, the day as a big number, the weekday small; Saturday in blue, Sunday in red)
+  People → avatars with the name's initial in a circle (color-coded by type)
+  Amounts → a big number with a small currency sign, receipt-style line items
+  Counts and streaks → a row of small bars or dots
+  Places → chips with a pin icon
+  Progress → a ring or a bar
+  Time → a clock-face style, or the time shown big
+- Show the same data in the same shape on every screen.
 
-6. Presentation
-- Don't just list text. Show things visually: calendars, tables, bars, and person avatars (the name's initial in a circle, in a muted neutral color).
+4-2. Use 3 or more kinds of cards
+- Don't let the same white card repeat from top to bottom. Change the look by role.
+  Main element: the shape decided in section 3 (the subject's object itself, big type, etc.).
+  Standard card: white, border-radius 20px, padding 16px, shadow box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+  Cards made of the subject's materials: sticky notes, tickets, receipts, business cards, flashcards, memo paper, etc. Choose only 1–2 kinds that fit the subject, and use them for special roles such as "recommended," "pick-up" or "past records."
+    Sticky note: a light tint of the accent color, masking tape at the top, tilted very slightly (±1° at most)
+    Ticket: half-circle notches on the left and right edges (mask or clip-path, or round elements in the base color laid on top), a dotted divider in the middle (border-top: 2px dashed)
+    Receipt: a zigzag bottom edge (clip-path: polygon() with a row of triangles), monospaced numbers, dotted dividers (border-top: 2px dashed)
+    Business card: a thin band in the category color on the left edge
+    Memo paper: ruled lines under the text (matched to the line height; lay an SVG data URI as background-image)
+- Show state with the card background (your own items in light main, changes on an orange background, warnings on a red background).
 
-7. Buttons and inputs
-- Main button: filled with the main color, white text, border-radius 16px, full width, vertical padding 15px, 15px/800. On :active, transform: scale(.985).
-- Secondary buttons: light main background with main-colored text. Delete etc.: light red background with red text. Small options are pill-shaped chips.
-- Inputs (input, textarea, select): no border, background #f4f5f2, border-radius 14px. On focus, the background turns white with a ring of box-shadow: 0 0 0 2px (main color).
+4-3. Use two fonts
+- Body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif
+- Expressive font: use one Google Font that fits the subject and mood, only for headings, big numbers, dates, names and buttons. Always list the body font after it, so nothing breaks if it doesn't load.
+  Soft and friendly (diaries, family, fandom): Nunito, Quicksand, Fredoka
+  Neat and elegant (work, money, reading): Fraunces, Lora, DM Serif Display
+  Energetic and playful (sports, games, kids): Bricolage Grotesque, Baloo 2, Archivo Black (headings only)
+  Numbers and short labels that should stand out: Outfit, DM Sans, Space Grotesk
+- Sizes: big numbers 24–48px, bold, font-variant-numeric: tabular-nums; headings 15–17px bold; body 14px; notes 12px.
+
+4-4. Add material and one decoration
+- Lay a very faint background pattern of the subject's motif on the base (dots, a grid, ruled lines, polka dots, stripes, etc.), as an SVG data URI in background-image.
+- [How to draw lines and patterns] Don't draw ruled lines, stripes, zigzags, notches or dotted lines with linear-gradient / repeating-linear-gradient. Use only SVG data URIs, clip-path / mask, borders (solid / dashed / dotted / double) and pseudo-elements.
+- CSS variables don't work inside a data URI. If the app can switch themes, put the pattern itself into a CSS variable (e.g. --dots: url("data:...")) and rebuild it for each theme.
+- Choose only one kind of decoration: masking tape, stamps, stitching (a dotted edge), notches, pins, a hand-drawn underline, etc.
+- A small decoration next to headings, such as a dotted or short line, is fine.
+
+4-5. Rules to avoid overdoing it
+- At most 2 kinds of material cards and 1 kind of decoration per screen.
+- Tilt at most ±1°. Don't add decorations that make the text harder to read.
+- Keep background patterns and motifs at opacity .06 to .15, or only slightly darker than the base.
+- When in doubt, take it out. Aim for "the minimum that makes the subject obvious at a glance."
+
+====================================================
+5. Presentation
+====================================================
+- Don't just list text. Show things in shapes you can read at a glance: calendars, tables, bars, rings, person avatars, etc.
+- Vary the rhythm of the screen: main element → something side by side (a carousel, a 2-column grid, a row of chips) → a vertical list, so the same layout doesn't repeat.
+- For empty states (no records yet, nothing found in search, etc.), show a line-drawn SVG that fits the subject and a kind line of text. Don't stop at "No data."
+- Wording: make buttons and guidance short and conversational rather than mechanical (e.g. "Add data" → "Write about today", "Saved" → "All written down"). But keep errors and delete confirmations clear.
+
+====================================================
+6. Buttons and inputs
+====================================================
+- Main button: filled with the main color, white text (dark text on a light main color), border-radius 16px, full width, vertical padding 15px, 15px bold. On :active, transform: scale(.985).
+- Secondary buttons: light main background with text in the main ink color (--main-ink). Delete etc.: light red background with red text. Small options are pill-shaped chips.
+- Inputs (input, textarea, select): no border, background --field, border-radius 14px. On focus, the background turns white with a ring of box-shadow: 0 0 0 2px (main color).
 - Tabs are a "segmented control": a light track where only the selected tab floats in white.
 
-8. Header
-- Keep it at the top while scrolling with position: sticky; top: 0; and give it a frosted glass background (as in section 1). On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16 to 18px/800. In group-shared apps, a pill with the user's name on the right.
+====================================================
+7. Header
+====================================================
+- Keep it at the top while scrolling with position: sticky; top: 0; and give it a frosted glass background (as in section 1).
+- On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16–18px bold (in the expressive font). On the right, a pill with the user's name.
 
-9. Icons [strict]
+====================================================
+8. Icons [strict]
+====================================================
 - No emoji at all (like 📱 or ✨) and no symbol characters (like ★●✓). Every icon must be an inline SVG with a consistent stroke width (stroke-width="2" to "2.6") and round line caps (stroke-linecap="round").
 - Icons next to headings use the main color.
 
-10. Layout and animation
+====================================================
+9. Layout and animation
+====================================================
 - Mobile-first (max-width: 640px; margin: 0 auto;). 16px side gutters, 12px gaps between cards.
+- Don't break on small 320px phones. Define grid columns with minmax(0, 1fr), like repeat(7, minmax(0, 1fr)), so content can't push them wider than the screen. Don't rely on aspect-ratio for grid cells; set their height with clamp(). Put small-screen overrides (@media (max-width: 400px)) at the end of the CSS.
 - Content fades in slightly from below when shown (CSS animation @keyframes fadeIn). Newly added items rise in from below. Items in a list appear staggered by 70ms.
 - Buttons and cards change state smoothly with transition: all .2s;
+- Keep motion to 0.2 to 0.3s; no overly slow or shaking motion. Stop motion when prefers-reduced-motion is on.
 
-11. Components (use only what fits the app; don't include them all)
+====================================================
+10. Components (use only what fits the app; don't include them all)
+====================================================
 - To keep the code short, use only the components that are truly useful for this app. Don't write code for components you don't use.
 
 [Use in almost every app]
-- Toast: after saving, adding, deleting, copying, etc., show a short message like "Saved" near the bottom of the screen. Dark frosted glass (background: rgba(17,24,39,.8); backdrop-filter: blur(16px);) with white text, border-radius 999px. It rises in slightly from below and disappears after about 2 seconds. Show only one at a time.
-- UI/UX animation: as in "10. Layout and animation". Keep motion to 0.2 to 0.3s; no overly slow or shaking motion. Stop motion when prefers-reduced-motion is on.
-- Radio buttons: don't use the default round look. Show the options as pill-shaped chips or a segmented control; the selected one is filled with the main color with white text. Build them with input type="radio" wrapped in a label so they are easy to tap.
-- Dropdown (select): same look as inputs (no border, background #f4f5f2, border-radius 14px), with a downward arrow (inline SVG) on the right. If there are 4 options or fewer, show chips instead of a dropdown.
+- Toast: after saving, adding, deleting, copying, etc., show a short message near the bottom of the screen. Dark frosted glass (background: rgba(17,24,39,.8); backdrop-filter: blur(16px);) with white text, border-radius 999px, and a small SVG icon on the left. It rises in slightly from below and disappears after about 2 seconds. Show only one at a time.
+- Radio buttons: don't use the default round look. Show the options as pill-shaped chips or a segmented control; the selected one is filled with the main color. Build them with input type="radio" wrapped in a label so they are easy to tap.
+- Dropdown (select): same look as inputs, with a downward arrow (inline SVG) on the right. If there are 4 options or fewer, show chips instead of a dropdown.
 
 [Use when the situation fits]
-- Bottom sheet: on phones, prefer this over a centered modal for showing details, input forms, and lists of choices. A white sheet that slides up from the bottom (top corners radius 24px, a small horizontal handle at the top). Dim and blur the background as in section 1; close by tapping the background or swiping down.
-- Modal: only for short confirmations such as confirming a delete. A centered white card (radius 24px) with "Cancel" (secondary button) and "Delete" (red text on light red) side by side. Dim and blur the background as in section 1; close with the Esc key or by tapping the background.
-- Accordion: for things usually kept folded, such as long explanations, FAQs, or past records. Tap the heading row to open or close; the arrow (SVG) on the right rotates. Animate the height smoothly.
-- Skeleton screen: where loading takes time, such as group-shared data, show gray rounded boxes (#eceee8, slowly changing brightness) in place of text so the layout is visible while loading. Don't use it where loading is instant.
-- Autocomplete: for fields where people often re-enter the same things, such as member names, places, or item names. Show up to 5 matching suggestions in a white card right below the field; tapping one fills it in. Build suggestions from past input and existing data.
-- Swipe action: swiping a list item left reveals buttons such as "Delete" (red). Always keep a button that does the same thing, for people who don't notice the swipe.
-- Carousel: when you want to show cards side by side with swiping (this week's events, recommendations, etc.). Use scroll-snap so it stops one card at a time, with the next card slightly visible. Show dots for the current position below. Don't auto-advance.
-- Hamburger menu: use when there are 5 or more screens that don't fit in tabs (with 4 or fewer, use segmented tabs). Put it on the right of the header; it opens a white panel (radius 24px) from the right. Highlight the current screen with the light main color. Dim and blur the background as in section 1; close by tapping the background or pressing Esc.`;
+- Bottom sheet: on phones, prefer this over a centered modal for showing details, input forms and lists of choices. A white sheet that slides up from the bottom (top corners radius 24px, a small horizontal handle at the top). Dim and blur the background as in section 1; close by tapping the background or swiping down.
+- Modal: only for short confirmations such as confirming a delete. A centered white card (radius 24px) with "Cancel" (secondary button) and "Delete" (red text on light red) side by side. Close with the Esc key or by tapping the background.
+- Accordion: for things usually kept folded, such as long explanations, FAQs or past records. Tap the heading row to open or close; the arrow (SVG) on the right rotates.
+- Skeleton screen: where loading takes time, show gray rounded boxes (in a color close to the base, with slowly changing brightness) so the layout is visible while loading. Don't use it where loading is instant.
+- Autocomplete: for fields where people often re-enter the same things, such as names, places or item names. Show up to 5 matching suggestions in a white card right below the field; tapping one fills it in. Give people suggestions an avatar.
+- Swipe action: swiping a list item left reveals buttons such as "Delete" (red). Always keep a button that does the same thing.
+- Carousel: when you want to show cards side by side with swiping. Use scroll-snap so it stops one card at a time, with the next card slightly visible. Show dots for the current position below. Don't auto-advance.
+- Hamburger menu: use when there are 5 or more screens that don't fit in tabs (with 4 or fewer, use segmented tabs or tabs fixed to the bottom). Put it on the right of the header; it opens a white panel (radius 24px) from the right. Highlight the current screen with the light main color.
+
+====================================================
+11. Final check (before you hand it over)
+====================================================
+□ Looking at the screen for 3 seconds, can you tell what the app is about (even with the logo and text hidden)?
+□ Does the same white card repeat from top to bottom?
+□ Is the main data shown as a shape, not just plain text?
+□ Is every screen with a hero a screen where "one number or state" matters most? Do all screens start with the same hero?
+□ Does the first main element show "the current state" or "what to do next"? Is there an empty state?
+□ Does the main element's shape differ from screen to screen?
+□ Are the text grays still neutral gray?
+□ Are there any gradients or soft blurred color blobs?
+□ Are there so many decorations that the text is hard to read?
+□ At 320px, 375px and 430px widths, does anything overflow sideways or break (use minmax(0, 1fr) for grid columns)?
+□ Are there any emoji or symbol characters?`;
 
 type BuildPromptOptions = {
   /** ジサップオリジナルデザインの指定を差し込むか */
@@ -514,7 +759,7 @@ ${extra}
  */
 export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守ってください）】
 ・完成コードは必ず1つの index.html にまとめる（HTML/CSS/JSのファイル分割禁止）
-・Tailwind・Bootstrapなど外部CDNは一切使わない。デザインは生のCSS（Vanilla CSS）で書く
+・Tailwind・Bootstrapなど外部CDNは一切使わない。デザインは生のCSS（Vanilla CSS）で書く。${GOOGLE_FONTS_OK_JA}
 ・最初の返答で完成した index.html を省略せず出力する（保存について質問しない）
 ・別の端末でも残したいデータがある場合は window.Jisapp.saveData / loadData を使う（localStorageは使わない）
   保存: await window.Jisapp.saveData('識別名', データ)
@@ -527,7 +772,7 @@ export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守っ
 
 export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
 - Put the finished code in a single index.html (don't split HTML/CSS/JS into files)
-- Don't use any external CDN such as Tailwind or Bootstrap. Write the design in plain CSS (Vanilla CSS)
+- Don't use any external CDN such as Tailwind or Bootstrap. Write the design in plain CSS (Vanilla CSS).${GOOGLE_FONTS_OK_EN}
 - Output the complete index.html in your first reply without skipping anything (don't ask about saving)
 - Write all text in the app's screens in English
 - If data should stay across devices, use window.Jisapp.saveData / loadData (not localStorage)
@@ -602,14 +847,91 @@ const EN_UI_LINE = "Write all text in the app's screens (labels, buttons, messag
 
 export const PROMPT_TEMPLATE_VI = PROMPT_TEMPLATE_EN.split(PROMPT_APP_NAME_PLACEHOLDER_EN)
   .join(PROMPT_APP_NAME_PLACEHOLDER_VI)
+  .replace(GOOGLE_FONTS_OK_EN, "")
   .replace(EN_UI_LINE, PROMPT_VIETNAMESE_UI);
 
-export const PROMPT_JISAPP_DESIGN_VI = PROMPT_JISAPP_DESIGN_EN.replace(
-  '- Font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
-  '- Font: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (system fonts only, in this order, so Vietnamese diacritics display correctly; never put system-ui first)'
-);
+/**
+ * ベトナム語版のデザインの指定。2026-10-29 に日本語版・英語版を新しい指定（題材らしさ・素材・2つの書体など）に変えたとき、
+ * ベトナム語版は変えないことにしたので、それまでの指定（英語版＋声調記号が崩れない書体への差し替え）をそのまま文として持つ。
+ * ベトナム語は Google Fonts などの Web フォントを使わない（声調記号が崩れないように、端末に入っている書体だけを使う）
+ */
+export const PROMPT_JISAPP_DESIGN_VI = `[UI/UX design]
+Build the design with Vanilla CSS only, following the spec below. Don't use external frameworks (Tailwind, etc.).
 
-export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(
+1. Overall concept
+- A polished, colored design that doesn't rely on gradients. White cards float on a lightly tinted base, with a deep "main" color and a bright "accent" color for contrast.
+- [Banned] Gradients (linear-gradient / radial-gradient) and rainbow-like use of many colors. Don't use frosted glass on cards or the whole-screen background (use frosted glass only in the places listed below).
+- Where to use frosted glass: only on parts that float over the content (a header that stays at the top while scrolling, tabs or buttons fixed to the bottom, toasts, and the backdrop behind bottom sheets, modals, and menus).
+  Floating parts use background: rgba(255,255,255,.72); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); with a 1px rgba(255,255,255,.6) border.
+  The backdrop behind bottom sheets, modals, and menus uses background: rgba(17,24,39,.3); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+
+2. Colors (always decide these 4 roles)
+- Base: the whole-screen background. A very light tint of the main color (e.g. #eaf0e1).
+- Main: a deep, dark color. Used for the hero card (if any), main buttons, and heading icons.
+- Accent: a bright highlight color. Used for labels inside the hero, emphasis, and selected marks.
+- Light main: the main color at about 10%. Used for secondary buttons, selected backgrounds, and chips.
+- Cards are white (#fff). Text #111827, secondary text #6b7280, faint text #a1a1aa.
+- Status colors are allowed: warning/delete red (#be123c on #fdecef), changed/pending orange (#d97706 on #fef3c7), info blue (#2563eb on #e8effd).
+- If you need category colors, add at most 3 more (all muted).
+- Examples to pick from by theme (base / main / accent):
+  Sports #eaf0e1 / #14532d / #d9f35f, School/duty #e6efeb / #0f4c47 / #ffd447, Work/planner #e9ebf2 / #1f2b5c / #f3c552, Notes/records #f1ebe0 / #5b3a1f / #e7b93c, Money #eef1ea / #1e3a2f / #f2c14e, Food/shop #f6ece4 / #7c2d12 / #ffb703, Health #e8eef6 / #0b3a63 / #ff7a59, Study #ecebf6 / #312e81 / #fbbf24, Fandom #f6e9ef / #701a46 / #f9d5e5, Travel #e7f1f4 / #0e4a5c / #ffcf56, Family #f4efe6 / #3f4a2b / #f4a261, Game #e9e7f5 / #1e1b4b / #22d3ee
+
+3. Hero card (only when it fits)
+- If the app has information people want to see first when opening it (next event, days left, today's total, whose turn it is, etc.), show it large at the top of the screen on a card filled with the main color. Border-radius 24px, padding 18px, white text.
+- At the top, an accent-colored pill label (e.g. "Next duty"); below it a big 44px, font-weight 800 number or date; below that, chips on a 14% white background.
+- Draw a faint motif that fits the theme (lines, shapes) as an inline SVG in the background (opacity .06 to .15). For example: court lines, a grid, ruled lines.
+- If there is no such information (tools like calculators or timers, input-centered apps, games, etc.), don't use it; put the most-used action (the input field, the main button, or the game screen) at the top instead.
+
+4. Cards
+- White, no border, border-radius 20px, padding 16px.
+- Shadow: box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 8px 24px rgba(17,24,39,.06);
+- Show state with the card background (your own items in light main, changes in orange, warnings in red).
+
+5. Typography
+- Font: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (system fonts only, in this order, so Vietnamese diacritics display correctly; never put system-ui first)
+- Numbers 24 to 44px, font-weight 800, font-variant-numeric: tabular-nums. Headings 15px/800, body 14px, notes 12px.
+
+6. Presentation
+- Don't just list text. Show things visually: calendars, tables, bars, and person avatars (the name's initial in a circle, in a muted neutral color).
+
+7. Buttons and inputs
+- Main button: filled with the main color, white text, border-radius 16px, full width, vertical padding 15px, 15px/800. On :active, transform: scale(.985).
+- Secondary buttons: light main background with main-colored text. Delete etc.: light red background with red text. Small options are pill-shaped chips.
+- Inputs (input, textarea, select): no border, background #f4f5f2, border-radius 14px. On focus, the background turns white with a ring of box-shadow: 0 0 0 2px (main color).
+- Tabs are a "segmented control": a light track where only the selected tab floats in white.
+
+8. Header
+- Keep it at the top while scrolling with position: sticky; top: 0; and give it a frosted glass background (as in section 1). On the left, a 36px main-colored square icon (radius 10px, white SVG inside); the app name at 16 to 18px/800. In group-shared apps, a pill with the user's name on the right.
+
+9. Icons [strict]
+- No emoji at all (like 📱 or ✨) and no symbol characters (like ★●✓). Every icon must be an inline SVG with a consistent stroke width (stroke-width="2" to "2.6") and round line caps (stroke-linecap="round").
+- Icons next to headings use the main color.
+
+10. Layout and animation
+- Mobile-first (max-width: 640px; margin: 0 auto;). 16px side gutters, 12px gaps between cards.
+- Content fades in slightly from below when shown (CSS animation @keyframes fadeIn). Newly added items rise in from below. Items in a list appear staggered by 70ms.
+- Buttons and cards change state smoothly with transition: all .2s;
+
+11. Components (use only what fits the app; don't include them all)
+- To keep the code short, use only the components that are truly useful for this app. Don't write code for components you don't use.
+
+[Use in almost every app]
+- Toast: after saving, adding, deleting, copying, etc., show a short message like "Saved" near the bottom of the screen. Dark frosted glass (background: rgba(17,24,39,.8); backdrop-filter: blur(16px);) with white text, border-radius 999px. It rises in slightly from below and disappears after about 2 seconds. Show only one at a time.
+- UI/UX animation: as in "10. Layout and animation". Keep motion to 0.2 to 0.3s; no overly slow or shaking motion. Stop motion when prefers-reduced-motion is on.
+- Radio buttons: don't use the default round look. Show the options as pill-shaped chips or a segmented control; the selected one is filled with the main color with white text. Build them with input type="radio" wrapped in a label so they are easy to tap.
+- Dropdown (select): same look as inputs (no border, background #f4f5f2, border-radius 14px), with a downward arrow (inline SVG) on the right. If there are 4 options or fewer, show chips instead of a dropdown.
+
+[Use when the situation fits]
+- Bottom sheet: on phones, prefer this over a centered modal for showing details, input forms, and lists of choices. A white sheet that slides up from the bottom (top corners radius 24px, a small horizontal handle at the top). Dim and blur the background as in section 1; close by tapping the background or swiping down.
+- Modal: only for short confirmations such as confirming a delete. A centered white card (radius 24px) with "Cancel" (secondary button) and "Delete" (red text on light red) side by side. Dim and blur the background as in section 1; close with the Esc key or by tapping the background.
+- Accordion: for things usually kept folded, such as long explanations, FAQs, or past records. Tap the heading row to open or close; the arrow (SVG) on the right rotates. Animate the height smoothly.
+- Skeleton screen: where loading takes time, such as group-shared data, show gray rounded boxes (#eceee8, slowly changing brightness) in place of text so the layout is visible while loading. Don't use it where loading is instant.
+- Autocomplete: for fields where people often re-enter the same things, such as member names, places, or item names. Show up to 5 matching suggestions in a white card right below the field; tapping one fills it in. Build suggestions from past input and existing data.
+- Swipe action: swiping a list item left reveals buttons such as "Delete" (red). Always keep a button that does the same thing, for people who don't notice the swipe.
+- Carousel: when you want to show cards side by side with swiping (this week's events, recommendations, etc.). Use scroll-snap so it stops one card at a time, with the next card slightly visible. Show dots for the current position below. Don't auto-advance.
+- Hamburger menu: use when there are 5 or more screens that don't fit in tabs (with 4 or fewer, use segmented tabs). Put it on the right of the header; it opens a white panel (radius 24px) from the right. Highlight the current screen with the light main color. Dim and blur the background as in section 1; close by tapping the background or pressing Esc.`;
+
+export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(`.${GOOGLE_FONTS_OK_EN}`, "").replace(
   "- Write all text in the app's screens in English",
   `- Write all text in the app's screens in natural Vietnamese with correct diacritics, and set <html lang="vi">
 - Use only system fonts that display Vietnamese, in this order: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (not system-ui). line-height about 1.5

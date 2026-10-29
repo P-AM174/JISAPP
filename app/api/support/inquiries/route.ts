@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { clientIp, countHit, isLimited, TOO_MANY_ATTEMPTS } from "@/lib/security/rate-limit";
 import { normalizeFields } from "@/lib/i18n/text";
 
 export async function POST(request: Request) {
@@ -11,6 +12,13 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }
+
+  // いたずらの問い合わせ対策：同じ送り元から1時間に5回まで
+  const ipKey = `inquiry:ip:${clientIp(request.headers)}`;
+  if ((await isLimited(ipKey, 5)).limited) {
+    return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+  }
+  await countHit(ipKey, 60 * 60);
 
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;

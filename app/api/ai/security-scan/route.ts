@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/api-auth";
+import { countHit, isLimited, TOO_MANY_ATTEMPTS } from "@/lib/security/rate-limit";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -8,6 +9,13 @@ export async function POST(req: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
   }
+
+  // AI の料金がかかるので、1人1時間に20回まで
+  const scanKey = `aiscan:user:${userId}`;
+  if ((await isLimited(scanKey, 20)).limited) {
+    return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+  }
+  await countHit(scanKey, 60 * 60);
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {

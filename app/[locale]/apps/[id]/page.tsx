@@ -1081,7 +1081,8 @@ function MarketplaceAppPage({ id }: { id: string }) {
               <button
                 onClick={() => {
                   const appUrl = (app as { url?: string | null }).url;
-                  if (appUrl) window.open(appUrl, "_blank", "noopener,noreferrer");
+                  // http・https のアドレスだけ開く（javascript: などで、ジサップのページとして動かさない）
+                  if (appUrl && /^https?:\/\//i.test(appUrl)) window.open(appUrl, "_blank", "noopener,noreferrer");
                   setUrlSafetyOpen(false);
                 }}
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 text-sm font-black text-white shadow-md shadow-amber-200 hover:bg-amber-600 active:scale-[0.98] transition-all"

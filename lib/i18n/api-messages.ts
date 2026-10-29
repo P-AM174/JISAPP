@@ -8,6 +8,11 @@ import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, GROUP_QUOTA_MESSAGE } from 
 
 const EXACT: Record<string, string> = {
   ログインが必要です: "Please sign in",
+  メッセージは500文字以内にしてください: "Please keep your message within 500 characters",
+  "このアプリのコードに書かれていない送り先には、APIキーを付けて送れません。送り先を変えたときは、アプリを公開し直してください":
+    "The API key can only be sent to addresses written in this app's code. If you changed the address, publish the app again",
+  この形式の応答は受け取れません: "This response format isn't supported",
+  転送が多すぎます: "Too many redirects",
   "試した回数が多すぎます。しばらく待ってから、もう一度試してください": "Too many attempts. Please wait a while and try again",
   "そのメンバーとしては入り直せませんでした。名前を入れて参加してください": "Couldn't rejoin as that member. Enter your name to join",
   名前を変えられませんでした: "Couldn't change your name",

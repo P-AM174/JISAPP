@@ -319,6 +319,9 @@ export function useZisupBridge(
           d.__zisup_type !== "ls")
       ) return;
       if (e.source !== iframeRef.current?.contentWindow) return;
+      // アプリは権限を切り離した枠（送り元の印が "null"）で動く。アプリの中のリンクで枠が外のサイトに切り替わったときは、
+      // そのサイトから利用者のデータを読み書きさせない
+      if (e.origin !== "null") return;
 
       // アプリの localStorage への書き込み（アプリごとの場所に保存する）
       if (d.__zisup_type === "ls") {

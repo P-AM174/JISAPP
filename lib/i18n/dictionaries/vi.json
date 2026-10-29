@@ -1214,6 +1214,11 @@
     "reviewed": false,
     "en": "“{title}” is now yours"
   },
+  "「{title}」をこの端末に保存しました": {
+    "vi": "Đã lưu “{title}” trên thiết bị này",
+    "reviewed": false,
+    "en": "Saved “{title}” on this device"
+  },
   "「{title}」をもとに、自分用のアプリを作れます。<b>元のアプリは変わりません。</b>": {
     "vi": "Bạn có thể làm app của riêng mình dựa trên “{title}”. <b>App gốc không bị thay đổi.</b>",
     "reviewed": false,
@@ -1574,6 +1579,11 @@
     "reviewed": false,
     "en": "You haven't saved any data in this app yet"
   },
+  "このアプリのコードに書かれていない送り先には、APIキーを付けて送れません。送り先を変えたときは、アプリを公開し直してください": {
+    "vi": "Chỉ có thể gửi khóa API đến các địa chỉ có trong mã của app này. Nếu bạn đổi địa chỉ, hãy đăng lại app",
+    "reviewed": false,
+    "en": "The API key can only be sent to addresses written in this app's code. If you changed the address, publish the app again"
+  },
   "このアプリのコードは読み込めませんでした": {
     "vi": "Không tải được code của app này",
     "reviewed": false,
@@ -1788,6 +1798,11 @@
     "vi": "Mục này hiện không lấy được",
     "reviewed": false,
     "en": "This item isn't available right now"
+  },
+  "この形式の応答は受け取れません": {
+    "vi": "Không nhận được định dạng phản hồi này",
+    "reviewed": false,
+    "en": "This response format isn't supported"
   },
   "この案内を閉じる": {
     "vi": "Đóng thông báo này",
@@ -4343,6 +4358,11 @@
     "vi": "Tin nhắn phải từ 1–200 ký tự",
     "reviewed": false,
     "en": "The message must be 1–200 characters"
+  },
+  "メッセージは500文字以内にしてください": {
+    "vi": "Tin nhắn tối đa 500 ký tự",
+    "reviewed": false,
+    "en": "Please keep your message within 500 characters"
   },
   "メッセージは必須です。": {
     "vi": "Cần có tin nhắn.",
@@ -7558,6 +7578,11 @@
     "vi": "Sở thích",
     "reviewed": false,
     "en": "Hobbies"
+  },
+  "転送が多すぎます": {
+    "vi": "Chuyển hướng quá nhiều lần",
+    "reviewed": false,
+    "en": "Too many redirects"
   },
   "返ってきた新しいコードを開発スタジオに貼り付け直して、もう一度公開する": {
     "vi": "Dán code mới AI trả về vào Studio rồi đăng lại",

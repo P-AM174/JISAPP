@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { clientIp, countHit, isLimited, TOO_MANY_ATTEMPTS } from "@/lib/security/rate-limit";
 
 const supabase = createServerSupabaseClient();
 
@@ -65,6 +66,15 @@ export async function POST(
   if (!message) {
     return NextResponse.json({ error: "メッセージが空です" }, { status: 400 });
   }
+  if (message.length > 500) {
+    return NextResponse.json({ error: "メッセージは500文字以内にしてください" }, { status: 400 });
+  }
+  // いたずらの書き込み対策：同じ送り元から1時間に10回まで
+  const ipKey = `appreq:ip:${clientIp(req.headers)}`;
+  if ((await isLimited(ipKey, 10)).limited) {
+    return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+  }
+  await countHit(ipKey, 60 * 60);
 
   const userId = await getUserId();
   // 未ログインでも送信可（匿名IDとしてタイムスタンプを使用）

@@ -3,6 +3,7 @@ import { isReservedOfficialName } from "@/lib/official-name";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { clientIp, countHit, isLimited, TOO_MANY_ATTEMPTS } from "@/lib/security/rate-limit";
 import { normalizeFields } from "@/lib/i18n/text";
 
 const VALID_CATEGORIES = [
@@ -71,6 +72,13 @@ export async function GET() {
 
 /** 依頼投稿: POST /api/requests */
 export async function POST(req: Request) {
+  // いたずらの書き込み対策：同じ送り元から1時間に10回まで
+  const ipKey = `boardreq:ip:${clientIp(req.headers)}`;
+  if ((await isLimited(ipKey, 10)).limited) {
+    return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+  }
+  await countHit(ipKey, 60 * 60);
+
   const userId = await requireUserId();
   if (!userId) {
     return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });

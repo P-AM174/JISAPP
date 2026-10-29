@@ -45,8 +45,10 @@ function LoginContent() {
       typeof window !== "undefined"
         ? sessionStorage.getItem("jisapp_login_return")
         : null;
-    const url = fromQuery || stored || "/";
-    if (fromQuery) {
+    // 戻り先は、ジサップの中のページ（/ で始まり、// や /\ で始まらない）だけ。外のサイトや javascript: には移らない
+    const isSafe = (u: string | null): u is string => !!u && /^\/(?![\/\\])/.test(u) && !/[\r\n]/.test(u);
+    const url = isSafe(fromQuery) ? fromQuery : isSafe(stored) ? stored : "/";
+    if (isSafe(fromQuery)) {
       try {
         sessionStorage.setItem("jisapp_login_return", fromQuery);
       } catch { /* noop */ }

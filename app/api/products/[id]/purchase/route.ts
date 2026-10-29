@@ -20,6 +20,11 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "この商品は現在取得できません" }, { status: 403 });
   }
 
+  // 支払いの仕組みはまだないので、有料の商品は「購入」にできない（支払わずに買ったことにさせない）
+  if (product.price > 0) {
+    return NextResponse.json({ error: "この商品は現在取得できません" }, { status: 403 });
+  }
+
   await recordPurchase(userId, id);
   return NextResponse.json({ ok: true, productId: id });
 }

@@ -106,6 +106,8 @@ export const ZISUP_SHIM_SCRIPT = `
 
   /* 親からの応答を受信してコールバックを解決 */
   window.addEventListener('message', function (e) {
+    // 親（ジサップの画面）からの応答だけを受け取る（ほかの窓から偽の応答を送り込ませない）
+    if (e.source !== window.parent) return;
     var d = e.data;
     if (d && d.__zisup_type === 'shared_changed' && d.key && _watchers[d.key]) {
       _watchers[d.key].forEach(function (cb) { try { cb(); } catch (err) { console.error(err); } });

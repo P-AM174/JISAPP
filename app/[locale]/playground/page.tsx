@@ -1631,11 +1631,14 @@ export default function PlaygroundPage() {
     setShowSaveModal(false);
     setLastSavedCode(code);   // 保存済みコードを記録
 
+    // ログインしていない人の下書きは、この端末のブラウザにだけ保存する（サーバーには置かない）
+    if (!session?.user) {
+      showToast(format(t("「{title}」をこの端末に保存しました", "Saved “{title}” on this device"), { title }));
+      return;
+    }
+
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.user?.email) {
-        headers["x-user-id"] = session.user.email;
-      }
       const res = await fetch("/api/playground", {
         method: "PUT",
         headers,

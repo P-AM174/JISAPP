@@ -4,6 +4,7 @@ import { getAppSecretConfig } from "@/lib/secrets/app-secrets";
 import { applySecretToRequest } from "@/lib/secrets/apply-secret";
 import { validateSecretName } from "@/lib/secrets/constants";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { clientIp, countHit, isLimited, TOO_MANY_ATTEMPTS } from "@/lib/security/rate-limit";
 
 /** Gemini 等の AI API 呼び出し向け（Vercel Pro 以上推奨） */
 export const maxDuration = 60;
@@ -29,8 +30,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "URLが必要です" }, { status: 400 });
   }
 
+  // ジサップが踏み台に使われないように、同じ送り元からの呼び出しは1分に60回まで
+  const ipKey = `proxy:ip:${clientIp(request.headers)}`;
+  if ((await isLimited(ipKey, 60)).limited) {
+    return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+  }
+  await countHit(ipKey, 60);
+
   let fetchUrl = url;
   let headers = { ...(body.headers ?? {}) };
+  /** APIキーを付けるヘッダー（ふつうは通さない名前でも、今回だけ通す） */
+  const extraAllowedHeaders: string[] = [];
 
   const secretName = (body.secret ?? "").trim();
   if (secretName) {
@@ -76,9 +86,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "シークレットが見つかりません" }, { status: 404 });
     }
 
+    // 持ち主の APIキーの使いすぎ（料金）を防ぐ：同じ送り元から同じアプリのキーを使うのは10分に120回まで
+    const secretKey = `proxy:secret:${appId}:${clientIp(request.headers)}`;
+    if ((await isLimited(secretKey, 120)).limited) {
+      return NextResponse.json({ error: TOO_MANY_ATTEMPTS }, { status: 429 });
+    }
+    await countHit(secretKey, 10 * 60);
+
     const applied = applySecretToRequest(fetchUrl, headers, secretConfig);
     fetchUrl = applied.url;
     headers = applied.headers;
+    if (secretConfig.attach_type !== "query") extraAllowedHeaders.push(secretConfig.header_name?.trim() || "Authorization");
   }
 
   try {
@@ -89,6 +107,7 @@ export async function POST(request: Request) {
       body: body.body ?? null,
       // APIキーを付けたときは、ほかの送り先への転送にはついていかない（キーが別のサーバーに渡らないように）
       followRedirects: !secretName,
+      extraAllowedHeaders,
     });
     return NextResponse.json(result);
   } catch (err) {

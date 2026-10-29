@@ -4,31 +4,24 @@ import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 /**
- * セッションから安全にユーザーキーを取得する。
- * ログイン済みなら userId、未ログインなら "guest" を返す。
- * x-user-id ヘッダーは信頼しない。
+ * ログインしている人の id。ログインしていなければ null。x-user-id ヘッダーは信頼しない。
+ *
+ * 以前は、ログインしていない人を「ブラウザの種類＋言語」から作った印で見分けていた。
+ * 同じ機種・同じ言語の人は同じ印になり、ほかの人の作りかけのコードが見えたり上書きされたりするので、
+ * ログインしていない人の下書きはサーバーに置かない（ブラウザの中にだけ保存される）
  */
-async function getUserKey(request: Request): Promise<string> {
+async function getUserKey(_request: Request): Promise<string | null> {
   try {
     const session = await getServerSession(authOptions);
     const id = (session?.user as { id?: string })?.id;
     if (id) return id;
   } catch { /* noop */ }
-
-  // フォールバック: User-Agent + Accept-Language でゲストキーを生成
-  // （完全な一意性は保証しないが、ヘッダー偽装は防ぐ）
-  const ua = request.headers.get("user-agent") ?? "unknown";
-  const lang = request.headers.get("accept-language") ?? "";
-  // 簡易ハッシュ（セキュリティよりも一意性確保が目的）
-  let hash = 0;
-  for (const ch of ua + lang) {
-    hash = (hash * 31 + ch.charCodeAt(0)) & 0xfffffff;
-  }
-  return `guest_${hash.toString(16)}`;
+  return null;
 }
 
 export async function GET(request: Request) {
   const userId = await getUserKey(request);
+  if (!userId) return NextResponse.json({ html_code: "", css_code: "", js_code: "", updatedAt: null });
   const supabase = createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -52,6 +45,8 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   const userId = await getUserKey(request);
+  // ログインしていない人は、ブラウザの中にだけ保存する（サーバーには置かない）
+  if (!userId) return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
   const supabase = createServerSupabaseClient();
 
   let body: { html_code?: string; css_code?: string; js_code?: string };

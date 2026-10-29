@@ -76,7 +76,8 @@ export function ProductReceiveArea({
   const Icon = cfg.icon;
 
   const handleOpen = () => {
-    window.open(sourceUrl, "_blank", "noopener,noreferrer");
+    // http・https のアドレスだけ開く（javascript: などで、ジサップのページとして動かさない）
+    if (/^https?:\/\//i.test(sourceUrl)) window.open(sourceUrl, "_blank", "noopener,noreferrer");
     setOpened(true);
     setTimeout(() => setOpened(false), 4000);
   };

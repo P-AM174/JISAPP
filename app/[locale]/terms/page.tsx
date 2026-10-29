@@ -108,6 +108,42 @@ function TermsJa() {
           共有できるデータの量には上限があります。法令や本規約に反する利用、迷惑行為、その他運営が不適切と判断した利用があった場合、運営は予告なくグループや共有データを削除することがあります。
         </li>
       </ul>
+      <h2 id="google-drive" className="scroll-mt-6 text-base font-bold text-gray-900">
+        Google ドライブとの連携について
+      </h2>
+      <p>
+        アプリの中で写真・動画・PDF などのファイルを選ぶと、そのファイルをご自身の Google ドライブに保存できます。ご利用にあたり、次の点に同意いただいたものとみなします。
+      </p>
+      <ul className="list-disc space-y-1.5 pl-5">
+        <li>
+          ジサップが Google に求める権限は「drive.file」だけです。ジサップがさわれるのは、ジサップが保存したファイルだけで、Google ドライブのほかのファイルを見たり変えたりすることはありません。
+        </li>
+        <li>
+          ファイルは、お使いの端末から Google に直接送られます。ファイルの中身を、ジサップのサーバーに送ったり保存したりすることはありません。
+        </li>
+        <li>
+          Google の許可（アクセストークン）は、ファイルを保存するためだけに、お使いのブラウザの中で使います。ジサップのサーバーには送らず、保存もしません（ブラウザのタブを閉じると消えます）。
+        </li>
+        <li>
+          保存したファイルは、アプリで表示できるように「リンクを知っている全員が閲覧可」の設定になります。リンクを知っている人なら誰でも見られるため、人に見られて困るファイルは保存しないでください。アプリは、ファイルの情報（ID・名前・種類・大きさ・リンク）を、ほかのデータと同じように保存します。
+        </li>
+        <li>
+          保存したファイルは、ご自身の Google ドライブの「ジサップ」フォルダに入ります。共有の設定の変更や削除は、Google ドライブから行えます。削除すると、アプリからも見られなくなります。
+        </li>
+        <li>許可は、Google アカウントの設定（サードパーティのアプリとサービス）から、いつでも取り消せます。</li>
+        <li>
+          Google API から受け取った情報の使用と、ほかのアプリへの転送は、
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-700 underline underline-offset-2"
+          >
+            Google API サービスのユーザーデータに関するポリシー
+          </a>
+          （限定使用の要件を含む）に従います。
+        </li>
+      </ul>
     </section>
   );
 }
@@ -180,6 +216,49 @@ function TermsEn() {
           There is a limit on how much data can be shared. If a group is used in violation of the law or these terms,
           for nuisance, or in any other way Jisapp considers inappropriate, Jisapp may delete the group or its shared
           data without notice.
+        </li>
+      </ul>
+      <h2 id="google-drive" className="scroll-mt-6 text-base font-bold text-gray-900">
+        Google Drive
+      </h2>
+      <p>
+        When you choose a file such as a photo, video or PDF in an app, you can save it to your own Google Drive. By
+        using this, you are deemed to have agreed to the following.
+      </p>
+      <ul className="list-disc space-y-1.5 pl-5">
+        <li>
+          The only permission Jisapp asks Google for is &quot;drive.file&quot;. Jisapp can only access the files it
+          saved; it never sees or changes any other files in your Google Drive.
+        </li>
+        <li>
+          Files are sent straight from your device to Google. Jisapp never sends the contents of your files to its
+          servers or stores them.
+        </li>
+        <li>
+          Google&apos;s permission (an access token) is used only in your browser, only to save your files. It is never
+          sent to or stored on Jisapp&apos;s servers (it disappears when you close the browser tab).
+        </li>
+        <li>
+          So the app can show them, saved files are set to &quot;Anyone with the link can view&quot;. Anyone who has the
+          link can see the file, so don&apos;t save files you wouldn&apos;t want others to see. The app saves the
+          file&apos;s details (ID, name, type, size and link) like any other data.
+        </li>
+        <li>
+          Saved files go into the &quot;Jisapp&quot; folder in your Google Drive. You can change their sharing or delete
+          them in Google Drive. Once deleted, they can no longer be seen in the app either.
+        </li>
+        <li>You can remove the permission at any time in your Google Account settings (Third-party apps &amp; services).</li>
+        <li>
+          Jisapp&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-700 underline underline-offset-2"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
         </li>
       </ul>
     </section>

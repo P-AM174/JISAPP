@@ -8,6 +8,7 @@ import { getClientLocaleState } from "@/lib/i18n/client";
 import { translateApiMessage } from "@/lib/i18n/api-messages";
 import { APP_DATA_LIMIT_MESSAGES, APP_DATA_WARNINGS, checkAppDataValue, isReservedDataKey, utf8Bytes, type AppDataWarning } from "@/lib/app-data-limits";
 import { compressAppData, decompressAppData } from "@/lib/app-data-codec";
+import { DRIVE_ACCEPTS, DRIVE_KINDS, parseDriveFileId, requestDrive, type DriveRequest } from "@/lib/drive/request";
 
 /** アプリに返すエラー文を、表示中の言語にする */
 function tx(ja: string, en: string): string {
@@ -238,8 +239,14 @@ export function useZisupBridge(
   appId: string,
   cloudUserId: string | null | undefined,
   /** 参加しているグループ。null ならグループ共有はこの端末だけのテスト用データになる */
-  group: GroupSession | null = null
+  group: GroupSession | null = null,
+  /** アプリの名前（Google ドライブに保存するときのフォルダ名） */
+  appTitle = ""
 ) {
+  const appTitleRef = useRef(appTitle);
+  useEffect(() => {
+    appTitleRef.current = appTitle;
+  }, [appTitle]);
   /** アプリが onChange で見張っているキー */
   const watchedKeysRef = useRef<Set<string>>(new Set());
   /**
@@ -316,6 +323,7 @@ export function useZisupBridge(
           d.__zisup_type !== "fetch" &&
           d.__zisup_type !== "shared" &&
           d.__zisup_type !== "shared_watch" &&
+          d.__zisup_type !== "drive" &&
           d.__zisup_type !== "ls")
       ) return;
       if (e.source !== iframeRef.current?.contentWindow) return;
@@ -379,6 +387,48 @@ export function useZisupBridge(
           if (msg.op === "get") loadFailedKeysRef.current.add(sharedKey);
           if (msg.op === "set" || msg.op === "add") notifyAppDataError(message);
           send(id, null, message);
+        }
+        return;
+      }
+
+      // 画像・動画・PDF などのファイル：使う人の Google ドライブに保存する・保存したファイルを見せる（画面は AppDriveSheet）
+      if (d.__zisup_type === "drive") {
+        const msg = d as { op?: string; accept?: string; multiple?: boolean; file?: string; kind?: string; name?: string };
+        let request: DriveRequest | null = null;
+        if (msg.op === "upload") {
+          request = {
+            op: "upload",
+            accept: DRIVE_ACCEPTS.find((a) => a === msg.accept) ?? "any",
+            multiple: msg.multiple === true,
+            folderName: appTitleRef.current,
+          };
+        } else if (msg.op === "open") {
+          // アプリが渡した URL はそのまま開かず、ファイルID から drive.google.com の URL を作り直す
+          const fileId = parseDriveFileId(msg.file);
+          if (!fileId) {
+            send(id, null, tx("Google ドライブのファイルが見つかりません", "Couldn't find that Google Drive file"));
+            return;
+          }
+          request = {
+            op: "open",
+            id: fileId,
+            kind: DRIVE_KINDS.find((k) => k === msg.kind) ?? null,
+            name: String(msg.name ?? "").slice(0, 200),
+          };
+        }
+        if (!request) {
+          send(id, null, tx("不明な操作です", "Unknown operation"));
+          return;
+        }
+        const pending = requestDrive(request);
+        if (!pending) {
+          send(id, null, tx("この画面では Google ドライブを使えません", "Google Drive isn't available on this screen"));
+          return;
+        }
+        try {
+          send(id, JSON.stringify((await pending) ?? null));
+        } catch (err) {
+          send(id, null, err instanceof Error ? err.message : tx("Google ドライブのエラー", "Google Drive error"));
         }
         return;
       }

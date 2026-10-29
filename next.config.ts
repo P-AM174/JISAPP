@@ -20,6 +20,11 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Google ドライブ連携（アプリのファイルを、使う人のドライブに保存する）で、ブラウザから Google の許可の画面を出すのに使う。
+  // クライアントID は秘密の値ではない（Google のログイン画面の URL にも出る）。秘密の値（GOOGLE_CLIENT_SECRET）は渡さない
+  env: {
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "",
+  },
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },

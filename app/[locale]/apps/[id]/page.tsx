@@ -48,6 +48,7 @@ import { backTargetSkippingLogin, hasPreviousInJisapp } from "@/lib/nav-history"
 import { SyncLoginButton } from "@/components/app-runner";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { AppDataNotice } from "@/components/app-data-notice";
+import { AppDriveSheet } from "@/components/app-drive-sheet";
 import { ShareButton } from "@/components/share-button";
 import { getAppShareUrl } from "@/lib/share";
 import { AppGroupPanel } from "@/components/groups/app-group-panel";
@@ -114,7 +115,7 @@ function SupabaseAppPage({ id }: { id: string }) {
     setGroup(readActiveGroup(id));
   }, [id]);
 
-  useZisupBridge(iframeRef, id, enableCloud ? userId : null, group);
+  useZisupBridge(iframeRef, id, enableCloud ? userId : null, group, app?.title ?? "");
 
   // 招待リンクから来た人・グループ参加中の人には、ログインを勧める案内を出さない
   // （グループのデータはログインなしで共有できるため、「ログインが必要」と誤解させない）
@@ -462,6 +463,7 @@ ${app.js_code ?? ""}`);
       </main>
 
       <AppDataNotice />
+      <AppDriveSheet />
 
       <SyncInfoModal
         open={syncModalOpen}

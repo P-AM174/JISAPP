@@ -72,8 +72,9 @@ export const ZISUP_SHIM_SCRIPT = `
 
   var _pending = {};
 
-  /* 親ウィンドウへメッセージを送り、Promise で応答を待つ */
-  function request(msg) {
+  /* 親ウィンドウへメッセージを送り、Promise で応答を待つ。
+     waitForever：使う人の操作を待つもの（Google ドライブにファイルを選んで保存する）は、時間で打ち切らない */
+  function request(msg, waitForever) {
     return new Promise(function (resolve, reject) {
       var id = Math.random().toString(36).slice(2) + Date.now().toString(36);
       _pending[id] = { resolve: resolve, reject: reject };
@@ -85,6 +86,7 @@ export const ZISUP_SHIM_SCRIPT = `
         reject(e);
         return;
       }
+      if (waitForever) return;
       /* タイムアウト（外部APIプロキシの上限15秒 + 余裕） */
       setTimeout(function () {
         if (_pending[id]) {
@@ -97,6 +99,16 @@ export const ZISUP_SHIM_SCRIPT = `
 
   /* グループ共有：他のメンバーの更新を知らせるコールバック（キーごと） */
   var _watchers = {};
+
+  /* Google ドライブ：ファイルID・共有リンク・保存したファイルの情報のどれからでも、ファイルID を取り出す */
+  function driveId(file) {
+    var s = String(file && typeof file === 'object' ? (file.id || file.url || '') : (file || ''));
+    var i = s.indexOf('/d/');
+    if (i >= 0) return s.slice(i + 3).split(/[/?#]/)[0];
+    var j = s.indexOf('id=');
+    if (j >= 0) return s.slice(j + 3).split('&')[0];
+    return s;
+  }
 
   function shared(op, extra) {
     var msg = { __zisup_type: 'shared', op: op };
@@ -218,8 +230,40 @@ export const ZISUP_SHIM_SCRIPT = `
     group: function () {
       return shared('group', {});
     },
+
+    /**
+     * 画像・動画・PDF などのファイル。ジサップには保存できないので、使う人の Google ドライブに保存する。
+     * ファイルを選ぶ画面・Google の許可・保存は、ジサップの画面が行う。
+     */
+    drive: {
+      /**
+       * ファイルを選んでもらい、Google ドライブに保存する。
+       * @param {object} [options] - accept: 'image' | 'video' | 'pdf' | 'any'、multiple: true で複数
+       * @returns {Promise<Array<{id,name,kind,mimeType,size,url,thumbnail,shared}>>} - やめたときは空の配列
+       */
+      upload: function (options) {
+        options = options || {};
+        return request({ __zisup_type: 'drive', op: 'upload', accept: String(options.accept || 'any'), multiple: !!options.multiple }, true);
+      },
+      /** 保存したファイルを、ジサップがアプリの上に重ねて見せる（動画の再生・PDF の表示もこれ） */
+      open: function (file) {
+        var info = file && typeof file === 'object' ? file : {};
+        return request({
+          __zisup_type: 'drive',
+          op: 'open',
+          file: driveId(file),
+          kind: info.kind ? String(info.kind) : '',
+          name: info.name ? String(info.name) : ''
+        }, true);
+      },
+      /** 表紙の画像の URL（width：横の大きさ。動画・PDF も表紙を出せる） */
+      thumbnail: function (file, width) {
+        var w = Math.max(32, Math.min(2000, Math.round(Number(width) || 1000)));
+        return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveId(file)) + '&sz=w' + w;
+      },
+    },
   };
 
-  console.log('[Jisapp] API ready (v4 cloud-sync + external fetch + group shared data)');
+  console.log('[Jisapp] API ready (v5 cloud-sync + external fetch + group shared data + Google Drive files)');
 })();
 `;

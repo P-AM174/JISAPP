@@ -19,6 +19,30 @@ export const PROMPT_STORAGE_MARKER = "【データ保存】";
 const GOOGLE_FONTS_OK_JA = "ただし、デザインの指定で使う Google Fonts（fonts.googleapis.com）を <link> で読み込むことだけは例外として使ってよい（読み込めなくても崩れないよう、後ろに本文の書体を続けて書く）。";
 const GOOGLE_FONTS_OK_EN = " The only exception: loading Google Fonts (fonts.googleapis.com) with a <link> tag, as the design spec asks, is allowed (always list the body font after it so nothing breaks if it doesn't load).";
 
+/**
+ * 写真・動画・PDF などのファイル。ジサップには文字のデータしか保存できないので、
+ * 使う人の Google ドライブに保存し、ファイルの情報（文字）だけをアプリのデータとして残す（window.Jisapp.drive）
+ */
+const PROMPT_DRIVE_FILES = `・写真・動画・PDF などのファイルを残したいときは、window.Jisapp.drive を使う。使う人の Google ドライブに保存される（ファイルを選ぶ画面・Google の許可・保存は、ジサップの画面が行う）。
+  ・保存（ボタンを押したときに呼ぶ）: const files = await window.Jisapp.drive.upload({ accept: 'image' })
+    accept は 'image'（写真）・'video'（動画）・'pdf'・'any'（なんでも）。何枚も選べるようにするときは multiple: true を足す
+    戻り値: [{ id, name, kind, mimeType, size, url, thumbnail }] の配列（kind は 'image'・'video'・'pdf'・'file'。やめたときは空の配列）
+  ・戻り値は文字のデータなので、ほかのデータと同じように保存する（ファイルの中身は保存しない）
+  ・表示: img.src = file.thumbnail（写真はこれで画面に出る。動画・PDF は表紙の画像が出る。大きさを変えるときは window.Jisapp.drive.thumbnail(file, 横の大きさ)）
+  ・開く: await window.Jisapp.drive.open(file)（ジサップがアプリの上に大きく見せる。動画の再生と PDF の表示は、アプリの中ではできないので、必ずこれを使う）
+  ・表紙の画像が出ないとき（保存した直後の動画など）は、img の onerror で種類のアイコンとファイル名を出す
+  ・<input type="file"> や FileReader で読んだファイルの中身（data: URL など）は、保存も共有もしない（できない）`;
+
+const PROMPT_DRIVE_FILES_EN = `- To keep files such as photos, videos or PDFs, use window.Jisapp.drive. They are saved to the user's own Google Drive (Jisapp's own screens handle choosing files, Google's permission and saving).
+  - Save (call it when a button is pressed): const files = await window.Jisapp.drive.upload({ accept: 'image' })
+    accept is 'image' (photos), 'video', 'pdf' or 'any'. Add multiple: true to let people choose several
+    Returns: an array of { id, name, kind, mimeType, size, url, thumbnail } (kind is 'image', 'video', 'pdf' or 'file'; an empty array if they cancel)
+  - The returned values are text, so save them like any other data (never save the file contents)
+  - Show: img.src = file.thumbnail (this shows photos; videos and PDFs show a cover image. For another size, use window.Jisapp.drive.thumbnail(file, width))
+  - Open: await window.Jisapp.drive.open(file) (Jisapp shows it large on top of the app. Videos can't play and PDFs can't be shown inside the app, so always use this)
+  - If the cover image doesn't load (for example, a video right after saving), show a type icon and the file name in the img onerror
+  - Never save or share file contents read with <input type="file"> or FileReader (such as data: URLs); it won't work`;
+
 /** 端末をまたいで残す（ジサップの保存機能） */
 export const PROMPT_STORAGE_ZISUP = `【データ保存（ジサップの保存機能を使う）】
 ・入力した内容・記録は、次回開いても残るようにする。
@@ -28,7 +52,8 @@ export const PROMPT_STORAGE_ZISUP = `【データ保存（ジサップの保存�
 ・識別名は英数字で、アプリ内で一度決めたら変えない。
 ・画面を出す前に、必ず await で読み込みを完了させる。
 ・ログインしていると別の端末でも同じデータが読める。
-・保存できるのは文字のデータだけ。画像・動画・音声は保存できない（画面に表示するだけならよい。写真を残したいときは、題名やメモなど文字だけを保存する）。
+・保存できるのは文字のデータだけ。画像・動画・音声そのものは保存できない（画面に表示するだけならよい）。
+${PROMPT_DRIVE_FILES}
 ・1つの識別名に保存できるのは1MBまで。日記や記録のように増え続けるデータは、年ごとに識別名を分けて保存する（例: diary_2026, diary_2027）。表示するときは必要な年の分だけ読み込む。
 ・saveData が失敗したとき（容量オーバーなど）は、画面に「保存できませんでした」と表示する。`;
 
@@ -40,7 +65,8 @@ export const PROMPT_STORAGE_ZISUP_EN = `[Saving data (use Jisapp's save feature)
 - Key names use letters and numbers only, and never change once chosen.
 - Always finish loading with await before showing the screen.
 - When the user is signed in, the same data can be read on other devices.
-- Only text data can be saved. Images, video and audio cannot be saved (showing them on screen is fine; to keep a photo, save only text such as its title or notes).
+- Only text data can be saved. Images, video and audio themselves cannot be saved (showing them on screen is fine).
+${PROMPT_DRIVE_FILES_EN}
 - Each key can hold up to 1MB. For data that keeps growing, like a diary or log, use a separate key per year (e.g. diary_2026, diary_2027) and load only the years you need.
 - If saveData fails (for example, the storage is full), show "Could not save" on screen.`;
 
@@ -78,10 +104,47 @@ export const PROMPT_STORAGE_SHARED = `【みんなで共有するデータ（ジ
 ・自分の表示名: const me = await window.Jisapp.me()（{ id, name }）
 ・項目には「誰が書いたか」（item.author.name）と日時を表示する。削除ボタンは item.mine の項目にだけ出す。
 ・キー名は英数字（例: attendance, posts）で、アプリ内で一度決めたら変えない。
-・共有できるのは文字のデータだけ。画像・動画・音声は保存できない（画面に表示するだけならよい）。
+・共有できるのは文字のデータだけ。画像・動画・音声そのものは保存できない（画面に表示するだけならよい）。
+${PROMPT_DRIVE_FILES}
 ・グループの作成・招待・参加はジサップの画面が行うので、アプリの中には作らない。`;
 
 export const PROMPT_STORAGE_SHARED_EN = `[Data shared with the whole group (use Jisapp's group sharing)]
+- Everyone in the group sees and writes the same data in this app.
+- Data shared with members must use window.Jisapp.shared (not localStorage or window.Jisapp.saveData).
+- For data members keep adding to (attendance, posts, logs, plans, etc.), use "add":
+  - Add: const item = await window.Jisapp.shared.add('keyName', data)
+    Returns: { id, value, author: { id, name }, createdAt, mine } (mine is true for items you added)
+  - List: const items = await window.Jisapp.shared.list('keyName') (array, oldest first)
+  - Remove: await window.Jisapp.shared.remove('keyName', item.id) (people can remove their own items; the group creator can remove any)
+- For a single value the whole group shares (this month's practice day, a notice, etc.):
+  - Save: await window.Jisapp.shared.save('keyName', data)
+  - Load: await window.Jisapp.shared.load('keyName') (null if nothing yet)
+- Never overwrite a whole list with save (if two people type at once, someone's entry is lost). Always add items with add.
+- Show other members' updates: window.Jisapp.shared.onChange('keyName', () => { reload the list and redraw })
+- Your display name: const me = await window.Jisapp.me() ({ id, name })
+- Show who wrote each item (item.author.name) and when. Only show a delete button on items where item.mine is true.
+- Key names use letters and numbers (e.g. attendance, posts) and never change once chosen.
+- Only text data can be shared. Images, video and audio themselves cannot be saved (showing them on screen is fine).
+${PROMPT_DRIVE_FILES_EN}
+- Creating, inviting to and joining groups is handled by Jisapp's own screens, so do not build that into the app.`;
+
+/**
+ * ベトナム語版の保存・共有の指示文。2026-10-29 に日本語版・英語版へ Google ドライブのファイル保存（window.Jisapp.drive）を足したとき、
+ * ベトナム語版は変えないことにしたので、それまでの英語の文をそのまま持つ
+ */
+const PROMPT_STORAGE_ZISUP_VI = `[Saving data (use Jisapp's save feature)]
+- Whatever the user enters or records must still be there the next time they open the app.
+- Save and load ONLY with window.Jisapp.saveData / window.Jisapp.loadData. Do not use localStorage.
+  - Save: await window.Jisapp.saveData('keyName', data)
+  - Load: await window.Jisapp.loadData('keyName')
+- Key names use letters and numbers only, and never change once chosen.
+- Always finish loading with await before showing the screen.
+- When the user is signed in, the same data can be read on other devices.
+- Only text data can be saved. Images, video and audio cannot be saved (showing them on screen is fine; to keep a photo, save only text such as its title or notes).
+- Each key can hold up to 1MB. For data that keeps growing, like a diary or log, use a separate key per year (e.g. diary_2026, diary_2027) and load only the years you need.
+- If saveData fails (for example, the storage is full), show "Could not save" on screen.`;
+
+const PROMPT_STORAGE_SHARED_VI = `[Data shared with the whole group (use Jisapp's group sharing)]
 - Everyone in the group sees and writes the same data in this app.
 - Data shared with members must use window.Jisapp.shared (not localStorage or window.Jisapp.saveData).
 - For data members keep adding to (attendance, posts, logs, plans, etc.), use "add":
@@ -103,10 +166,11 @@ export const PROMPT_STORAGE_SHARED_EN = `[Data shared with the whole group (use 
 /** 表示言語に合わせた保存の指示文 */
 export function getPromptStorage(locale: Locale = "ja") {
   const en = locale !== "ja";
+  const vi = locale === "vi";
   return {
-    cloud: en ? PROMPT_STORAGE_ZISUP_EN : PROMPT_STORAGE_ZISUP,
+    cloud: vi ? PROMPT_STORAGE_ZISUP_VI : en ? PROMPT_STORAGE_ZISUP_EN : PROMPT_STORAGE_ZISUP,
     local: en ? PROMPT_STORAGE_LOCAL_EN : PROMPT_STORAGE_LOCAL,
-    shared: en ? PROMPT_STORAGE_SHARED_EN : PROMPT_STORAGE_SHARED,
+    shared: vi ? PROMPT_STORAGE_SHARED_VI : en ? PROMPT_STORAGE_SHARED_EN : PROMPT_STORAGE_SHARED,
   };
 }
 
@@ -123,7 +187,7 @@ export function buildSharedConvertMessage(code?: string, locale: Locale = "ja"):
 Keep the current features and look as they are, and switch the saving of data members should share to Jisapp's group sharing feature below.
 Output the finished index.html from start to finish without leaving anything out.
 
-${PROMPT_STORAGE_SHARED_EN}
+${locale === "vi" ? PROMPT_STORAGE_SHARED_VI : PROMPT_STORAGE_SHARED_EN}
 
 ${current}`;
   }
@@ -709,11 +773,13 @@ export function buildPromptFromTemplate(
 
   const storage = getPromptStorage(options?.locale);
   const personalBlock = options?.storage === "local" ? storage.local : storage.cloud;
-  // 共有する場合は共有のルールを先に置く（自分だけの設定などは、これまでの保存を使う）
+  // 共有する場合は共有のルールを先に置く（自分だけの設定などは、これまでの保存を使う）。
+  // ファイル（Google ドライブ）の説明は共有のルールに入っているので、自分だけのデータの側からは外す（同じ説明を2回入れない）
+  const personalForShared = personalBlock.replace(`\n${en ? PROMPT_DRIVE_FILES_EN : PROMPT_DRIVE_FILES}`, "");
   const storageBlock = options?.shared
     ? en
-      ? `${storage.shared}\n\n(For data that is only yours and not shared)\n${personalBlock}`
-      : `${storage.shared}\n\n（共有しない、自分だけのデータがある場合）\n${personalBlock}`
+      ? `${storage.shared}\n\n(For data that is only yours and not shared)\n${personalForShared}`
+      : `${storage.shared}\n\n（共有しない、自分だけのデータがある場合）\n${personalForShared}`
     : personalBlock;
   prompt = prompt.includes(PROMPT_STORAGE_MARKER)
     ? prompt.replace(PROMPT_STORAGE_MARKER, storageBlock)
@@ -764,11 +830,17 @@ export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守っ
 ・別の端末でも残したいデータがある場合は window.Jisapp.saveData / loadData を使う（localStorageは使わない）
   保存: await window.Jisapp.saveData('識別名', データ)
   読込: await window.Jisapp.loadData('識別名')
-  保存できるのは文字のデータだけ（画像・動画は不可）。1つの識別名は1MBまでなので、増え続けるデータは年ごとに識別名を分ける
+  保存できるのは文字のデータだけ。1つの識別名は1MBまでなので、増え続けるデータは年ごとに識別名を分ける
+・写真・動画・PDF などのファイルは、使う人の Google ドライブに保存する: const files = await window.Jisapp.drive.upload({ accept: 'image' })（'video'・'pdf'・'any' も使える。複数は multiple: true）。戻り値の [{ id, name, kind, url, thumbnail }] を保存し、img.src = file.thumbnail で表示、await window.Jisapp.drive.open(file) で開く（動画・PDF はアプリの中では表示できないので、必ず open を使う）
 ・同じ端末だけでよければ localStorage を使う（Jisapp の保存APIは使わない）
 ・APIキー・トークンをコードに絶対に書かない。外部APIは window.Jisapp.fetch(url, { secret: 'NAME' }) を使う
 ・secret 名は大文字英字（例: GEMINI, OPENAI, WEATHER）。キーの値はユーザーがジサップの「APIキー」画面で登録する
 ・コード出力後、APIキーが必要な場合は登録手順を短く案内する`;
+
+/** 短いルールの、Google ドライブのファイル保存の文（ベトナム語版では、元の文 PROMPT_RULES_SHORT_NO_DRIVE_EN に戻す） */
+const PROMPT_RULES_SHORT_DRIVE_EN = `  Only text data can be saved. Each key holds up to 1MB, so split growing data into one key per year
+- Save files such as photos, videos or PDFs to the user's own Google Drive: const files = await window.Jisapp.drive.upload({ accept: 'image' }) ('video', 'pdf' or 'any' also work; multiple: true for several). Save the returned [{ id, name, kind, url, thumbnail }], show it with img.src = file.thumbnail, and open it with await window.Jisapp.drive.open(file) (videos and PDFs can't be shown inside the app, so always use open)`;
+const PROMPT_RULES_SHORT_NO_DRIVE_EN = "  Only text data can be saved (no images or video). Each key holds up to 1MB, so split growing data into one key per year";
 
 export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
 - Put the finished code in a single index.html (don't split HTML/CSS/JS into files)
@@ -778,7 +850,7 @@ export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
 - If data should stay across devices, use window.Jisapp.saveData / loadData (not localStorage)
   Save: await window.Jisapp.saveData('keyName', data)
   Load: await window.Jisapp.loadData('keyName')
-  Only text data can be saved (no images or video). Each key holds up to 1MB, so split growing data into one key per year
+${PROMPT_RULES_SHORT_DRIVE_EN}
 - If the same device is enough, use localStorage (don't use Jisapp's save API)
 - Never write API keys or tokens in the code. Call external APIs with window.Jisapp.fetch(url, { secret: 'NAME' })
 - Secret names are uppercase (e.g. GEMINI, OPENAI, WEATHER). Users register the key's value on Jisapp's "API keys" screen
@@ -931,7 +1003,7 @@ Build the design with Vanilla CSS only, following the spec below. Don't use exte
 - Carousel: when you want to show cards side by side with swiping (this week's events, recommendations, etc.). Use scroll-snap so it stops one card at a time, with the next card slightly visible. Show dots for the current position below. Don't auto-advance.
 - Hamburger menu: use when there are 5 or more screens that don't fit in tabs (with 4 or fewer, use segmented tabs). Put it on the right of the header; it opens a white panel (radius 24px) from the right. Highlight the current screen with the light main color. Dim and blur the background as in section 1; close by tapping the background or pressing Esc.`;
 
-export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(`.${GOOGLE_FONTS_OK_EN}`, "").replace(
+export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(`.${GOOGLE_FONTS_OK_EN}`, "").replace(PROMPT_RULES_SHORT_DRIVE_EN, PROMPT_RULES_SHORT_NO_DRIVE_EN).replace(
   "- Write all text in the app's screens in English",
   `- Write all text in the app's screens in natural Vietnamese with correct diacritics, and set <html lang="vi">
 - Use only system fonts that display Vietnamese, in this order: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (not system-ui). line-height about 1.5

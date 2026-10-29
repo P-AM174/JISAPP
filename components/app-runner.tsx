@@ -9,6 +9,7 @@ import { useLibrarySync } from "@/lib/hooks/use-library-sync";
 import { SyncInfoModal } from "@/components/sync-info-modal";
 import { appSavesData } from "@/lib/apps/saves-data";
 import { AppDataNotice } from "@/components/app-data-notice";
+import { AppDriveSheet } from "@/components/app-drive-sheet";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/client";
 import { APP_IFRAME_SANDBOX } from "@/lib/apps/iframe-sandbox";
@@ -102,7 +103,7 @@ export function AppRunner({
     return buildSrcDoc(html ?? "", css, js, snapshot);
   }, [srcDoc, html, css, js, appId, iframeKey, syncKey]);
 
-  useZisupBridge(iframeRef, appId, enableCloud ? userId : null);
+  useZisupBridge(iframeRef, appId, enableCloud ? userId : null, null, appName ?? title ?? "");
 
   // 保存の仕組みを使っていないアプリ（保存しないゲームなど）では、保存機能の案内はいらない
   const savesData = useMemo(() => appSavesData(srcDoc?.trim() ? srcDoc : `${html ?? ""}\n${js ?? ""}`), [srcDoc, html, js]);
@@ -182,6 +183,7 @@ export function AppRunner({
       </div>
 
       <AppDataNotice />
+      <AppDriveSheet />
 
       <SyncInfoModal
         open={syncModalOpen}

@@ -1057,7 +1057,8 @@ export default function PlaygroundPage() {
       // ゲストで公開したときは、ログインしたら自分の作品にできるよう、引き継ぎの印を端末に覚えておく
       if (json.claim_token) rememberGuestClaim({ appId: json.id, token: json.claim_token, title });
       setPublishedUrl(appUrl);
-      trackEvent("publish", { mode: publishListed ? "listed" : "url_only", overwrite: overwriting });
+      // appId：運営画面で、アプリをどの言語のページで作ったかを分けるため（作成数・2つ目のアプリの言語別）
+      trackEvent("publish", { mode: publishListed ? "listed" : "url_only", overwrite: overwriting, appId: String(json.id) });
       setLastPublishWasOverwrite(overwriting);
       setPublishContext((prev) => ({ projectId: prev?.projectId, appId: json.id }));
       // コードとタイトルをlocalStorageに保存（マイプロジェクトに反映）

@@ -384,7 +384,7 @@ ${app.js_code ?? ""}`);
         </div>
       )}
 
-      <AppRetention appId={id} title={app.title} owner={!!app.creator_id && app.creator_id === (session?.user as {id?:string}|undefined)?.id} enabled={appUsesShared || appSavesData([app.html_code,app.css_code,app.js_code].join('\n'))} />
+      <AppRetention appId={id} title={app.title} owner={!!app.creator_id && app.creator_id === (session?.user as {id?:string}|undefined)?.id} enabled={appUsesShared || appSavesData([app.html_code,app.css_code,app.js_code].join('\n'))} kind={appUsesShared ? 'shared' : appSavesData([app.html_code,app.css_code,app.js_code].join('\n')) ? 'saves' : 'plain'} />
       <AppGroupPanel
         appId={id}
         appTitle={app.title}

@@ -35,47 +35,60 @@ assert.equal(home.homeInstalls.guidedRate.denominator,2);
 assert.equal(home.homeInstalls.usedOnTwoDays,1);
 assert.equal(home.homeInstalls.platforms.ios,2);
 assert.equal(home.apps[0].installs,3);
-// 継続利用・作成数・2つ目のアプリ
+// 継続利用・作成数・2つ目のアプリ（全体・日本語版・英語版）
 const R = load('lib/analytics/retention.ts');
-const NOW = new Date('2026-11-20T03:00:00Z'); // 日本時間 11/20 12:00
-const open = (visitor, day, extra = {}) => ({ created_at: day+'T03:00:00Z', session_id: visitor, props: { action:'app_open', appId:'app-1', visitor, owner:false, ...extra } });
-const ret = R.summarizeRetention([
-  open('a','2026-11-01'), open('a','2026-11-02'),                 // 翌日も開いた
-  open('b','2026-11-01'), open('b','2026-11-06'),                 // 5日後に開いた
-  open('c','2026-11-01'), open('c','2026-11-15'),                 // 7日より後
-  open('d','2026-11-18'), open('d','2026-11-19'),                 // まだ7日たっていない
-  open('o','2026-11-01',{owner:true}), open('o','2026-11-02',{owner:true}),
-  // iPhone：Safari（s）で開き、ホーム画面（h）から別の日に開いた → 同じブラウザとして数える
-  open('s','2026-11-03'),
-  { created_at:'2026-11-04T03:00:00Z', session_id:'h', props:{ action:'home_first_launch', appId:'app-1', visitor:'h', ref:'s' } },
-  { created_at:'2026-11-04T03:00:00Z', session_id:'h', props:{ action:'standalone_open', appId:'app-1', visitor:'h' } },
-], NOW);
-assert.equal(ret.others.d1.numerator, 2);   // a と s
-assert.equal(ret.others.d1.denominator, 4); // a b c s（d はまだ）
-assert.equal(ret.others.d7.numerator, 3);   // a b s
-assert.equal(ret.owners.d1.numerator, 1);
-assert.equal(ret.owners.d1.denominator, 1);
-const apps = [
-  ...Array.from({length:3},()=>({created_at:'2026-11-19T01:00:00Z',creator_id:'u1'})), // 昨日（日本時間 11/19）3件
-  {created_at:'2026-11-18T01:00:00Z',creator_id:'u2'},                                  // 前日 1件
-  ...Array.from({length:2},()=>({created_at:'2026-11-12T01:00:00Z',creator_id:null})),  // 先週の同じ曜日 2件
-  {created_at:'2026-11-20T01:00:00Z',creator_id:'u3'},                                  // 今日
+const NOW = new Date('2026-12-20T03:00:00Z'); // 日本時間 12/20 12:00
+const E = (action, visitor, day, extra = {}, locale = 'ja', app = 'app-1') => ({ name:'engagement', locale, created_at: day+'T03:00:00Z', session_id: visitor, props: { action, appId: app, visitor, ...extra } });
+const open = (v, day, extra = {}, locale = 'ja', app) => E('app_open', v, day, { owner:false, kind:'saves', ...extra }, locale, app);
+const events = [
+  open('a','2026-12-01'), open('a','2026-12-02'), E('data_saved','a','2026-12-01'), E('data_saved','a','2026-12-02'), // 翌日も・保存2日
+  open('b','2026-12-01'), open('b','2026-12-06'), E('data_saved','b','2026-12-01'),                                       // 5日後
+  open('c','2026-12-01'), open('c','2026-12-15'),                                                                         // 7日より後
+  open('d','2026-12-18'), open('d','2026-12-19'),                                                                         // まだ7日たっていない
+  open('o','2026-12-01',{owner:true}), open('o','2026-12-02',{owner:true}),
+  E('publish_shown','o','2026-12-01'), E('share_clicked','o','2026-12-01',{channel:'line'}), E('share_clicked','o','2026-12-01',{channel:'x'}),
+  // iPhone：Safari（s）で案内を見て、ホーム画面（h）から別の日に開いた → 同じブラウザ・追加した
+  open('s','2026-12-03'), E('home_shown','s','2026-12-03'),
+  E('home_first_launch','h','2026-12-04',{ref:'s'}), E('standalone_open','h','2026-12-04'),
+  // 英語版：保存しないアプリ（また開かない）・グループ
+  open('e1','2026-12-01',{kind:'plain'},'en','app-2'), E('publish_shown','e1','2026-12-01',{},'en','app-2'), E('share_clicked','e1','2026-12-01',{channel:'x'},'en','app-2'),
+  E('group_created','e1','2026-12-01',{},'en','app-2'),
+  // 公開の記録（作成数の言語別・2つ目のアプリの言語別）
+  { name:'publish', locale:'ja', created_at:'2026-12-19T01:00:00Z', session_id:'p', props:{ overwrite:false, appId:'x1' } },
+  { name:'publish', locale:'ja', created_at:'2026-12-19T02:00:00Z', session_id:'p', props:{ overwrite:false, appId:'x2' } },
+  { name:'publish', locale:'en', created_at:'2026-12-18T01:00:00Z', session_id:'q', props:{ overwrite:false, appId:'y1' } },
+  { name:'publish', locale:'ja', created_at:'2026-12-19T03:00:00Z', session_id:'p', props:{ overwrite:true, appId:'x1' } },  // 上書きは数えない
 ];
-const cr = R.summarizeCreation(apps, NOW);
-assert.equal(cr.yesterday,3); assert.equal(cr.dayBefore,1); assert.equal(cr.sameDayLastWeek,2); assert.equal(cr.today,1);
-assert.equal(cr.dayOverDay,2);      // 3/1 - 1
-assert.equal(cr.weekOverWeek,0.5);  // 3/2 - 1
-assert.equal(cr.last7,4); assert.equal(cr.prev7,2);
-const sa = R.summarizeSecondApp([
-  {created_at:'2026-11-01T00:00:00Z',creator_id:'p'},{created_at:'2026-11-03T00:00:00Z',creator_id:'p'},  // 2日後に2つ目
-  {created_at:'2026-11-01T00:00:00Z',creator_id:'q'},{created_at:'2026-11-12T00:00:00Z',creator_id:'q'},  // 11日後
-  {created_at:'2026-11-02T00:00:00Z',creator_id:'r'},                                                      // 1つだけ
-  {created_at:'2026-11-18T00:00:00Z',creator_id:'n'},                                                      // まだ7日たっていない
-  {created_at:'2026-11-05T00:00:00Z',creator_id:null},
-], 30, NOW);
-assert.equal(sa.overall.numerator,2); assert.equal(sa.overall.denominator,4);
-assert.equal(sa.within7Days.numerator,1); assert.equal(sa.within7Days.denominator,3);
-assert.equal(sa.avgDaysToSecond,6.5);
+const apps = [
+  { id:'x1', created_at:'2026-12-19T01:00:00Z', creator_id:'u1' }, { id:'x2', created_at:'2026-12-19T02:00:00Z', creator_id:'u1' },
+  { id:'y1', created_at:'2026-12-18T01:00:00Z', creator_id:'u2' }, { id:'z1', created_at:'2026-12-12T01:00:00Z', creator_id:null },
+];
+const G = R.summarizeGoal({ events, apps, periodDays: 30, now: NOW });
+const ja = G.ja, en = G.en, all = G.all;
+assert.equal(ja.retention.others.d1.numerator, 2);   // a と s
+assert.equal(ja.retention.others.d1.denominator, 4); // a b c s（d はまだ）
+assert.equal(ja.retention.others.d7.numerator, 3);   // a b s
+assert.equal(ja.retention.owners.d7.numerator, 1);
+assert.equal(ja.byHome.installed.numerator, 1); assert.equal(ja.byHome.installed.denominator, 1);
+assert.equal(ja.dataSaved.twoDays.numerator, 1); assert.equal(ja.dataSaved.any.numerator, 2);
+assert.equal(ja.bySent.sent.denominator, 5);         // app-1 は送ったアプリ
+assert.equal(ja.rates.sns.numerator, 1); assert.equal(ja.rates.message.numerator, 1); assert.equal(ja.rates.sns.denominator, 1);
+assert.equal(ja.rates.homeAddedAfterGuide.numerator, 1); assert.equal(ja.rates.homeAddedAfterGuide.denominator, 1);
+assert.equal(en.byKind.plain.denominator, 1); assert.equal(en.byKind.plain.numerator, 0);
+assert.equal(en.groups.created, 1); assert.equal(ja.groups.created, 0);
+assert.equal(all.retention.others.d7.denominator, 5);
+// 作成数：全体は apps 表、言語別は公開の記録
+assert.equal(all.creation.yesterday, 2); assert.equal(all.creation.dayBefore, 1); assert.equal(all.creation.sameDayLastWeek, 1);
+assert.equal(all.creation.dayOverDay, 1); assert.equal(all.creation.weekOverWeek, 1);
+assert.equal(en.creation.weekOverWeek, null); // 先週の同じ曜日が0件のときは出さない
+assert.equal(ja.creation.yesterday, 2); assert.equal(en.creation.dayBefore, 1); assert.equal(en.creation.yesterday, 0);
+assert.equal(en.creation.dayOverDay, -1);
+// 2つ目のアプリ：u1 は日本語で2つ、u2 は英語で1つ
+assert.equal(all.secondApp.overall.numerator, 1); assert.equal(all.secondApp.overall.denominator, 2);
+assert.equal(ja.secondApp.overall.numerator, 1); assert.equal(en.secondApp.overall.denominator, 1);
+// D30
+const late = R.summarizeUsage([open('m','2026-10-01'), open('m','2026-11-05')], NOW);
+assert.equal(late.retention.others.d30.numerator, 1);
 const {ICONS,ICON_COLORS,validIcon,autoIcon,normalizeColor,iconColorHex,iconInkHex}=load('lib/apps/icon-catalog.ts');
 assert.equal(ICONS.length,50);
 assert.equal(new Set(ICONS.map(x=>x[0])).size,50);

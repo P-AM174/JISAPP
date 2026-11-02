@@ -5,7 +5,7 @@ import Link from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { EngagementPanel } from '@/components/admin/engagement-panel';
 import type { summarizeEngagement } from '@/lib/analytics/engagement-summary';
-import type { summarizeCreation, summarizeRetention, summarizeSecondApp } from '@/lib/analytics/retention';
+import type { summarizeGoal } from '@/lib/analytics/retention';
 import { RetentionPanel } from '@/components/admin/retention-panel';
 
 /**
@@ -41,7 +41,7 @@ const LOCALES = ["ja", "en"];
 
 export default function AdminAnalyticsPage() {
   const [engagement,setEngagement]=useState<ReturnType<typeof summarizeEngagement>|null>(null);
-  const [goal, setGoal] = useState<{ retention: ReturnType<typeof summarizeRetention> | null; creation: ReturnType<typeof summarizeCreation> | null; secondApp: ReturnType<typeof summarizeSecondApp> | null }>({ retention: null, creation: null, secondApp: null });
+  const [goal, setGoal] = useState<ReturnType<typeof summarizeGoal> | null>(null);
   const [days, setDays] = useState(30);
   const [rows, setRows] = useState<Row[]>([]);
   const [pastes, setPastes] = useState<Record<string, number>>({});
@@ -60,7 +60,7 @@ export default function AdminAnalyticsPage() {
       if (!res.ok) throw new Error(json.error ?? "読み込めませんでした");
       setRows(json.summary);
       setEngagement(json.engagement??null);
-      setGoal({ retention: json.retention ?? null, creation: json.creation ?? null, secondApp: json.secondApp ?? null });
+      setGoal(json.goal ?? null);
       setPastes(json.pasteBreakdown ?? {});
       setCountries(json.countries ?? []);
       setSources(json.sources ?? []);
@@ -120,7 +120,7 @@ export default function AdminAnalyticsPage() {
 
         {!loading && !error && (
           <>
-            <RetentionPanel {...goal} />
+            <RetentionPanel goal={goal} />
             <EngagementPanel data={engagement}/>
 
             <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">

@@ -12,3 +12,16 @@ export function shareLink(url:string,channel:string,kind:string):string {
   u.searchParams.set('share_id',crypto.randomUUID());
   return u.toString();
 }
+
+/**
+ * アプリでデータを保存した（Jisapp.saveData・グループの共有データの書き込み）。
+ * 「開いただけ」ではなく本当に使っているかを見るため、アプリ×ブラウザごとに日本時間の1日1回だけ送る
+ */
+export function recordDataSaved(appId:string,kind:'personal'|'shared') {
+  try {
+    const day=new Date(Date.now()+9*3600000).toISOString().slice(0,10),key=`jisapp:data_saved_day:${appId}`;
+    if(localStorage.getItem(key)===day)return;
+    localStorage.setItem(key,day);
+  } catch {return;}
+  engagement('data_saved',appId,{kind});
+}

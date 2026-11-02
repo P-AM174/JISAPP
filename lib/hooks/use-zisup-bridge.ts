@@ -1,5 +1,6 @@
 "use client";
 
+import { recordDataSaved } from "@/lib/analytics/engagement";
 import { useEffect, useCallback, useRef, type RefObject } from "react";
 import type { GroupSession } from "@/lib/groups/client";
 import { applyAppStorageMessage } from "@/lib/apps/app-storage";
@@ -381,7 +382,10 @@ export function useZisupBridge(
           if (msg.op === "get") loadFailedKeysRef.current.delete(sharedKey);
           send(id, JSON.stringify(result ?? null));
           // 自分が書き込んだら、他のメンバーの返事も来やすいので確認の間隔を短く戻す
-          if (msg.op === "set" || msg.op === "add" || msg.op === "remove") pollNowRef.current?.();
+          if (msg.op === "set" || msg.op === "add" || msg.op === "remove") {
+            pollNowRef.current?.();
+            recordDataSaved(appId, "shared");
+          }
         } catch (err) {
           const message = err instanceof Error ? err.message : tx("共有データのエラー", "Shared data error");
           if (msg.op === "get") loadFailedKeysRef.current.add(sharedKey);
@@ -495,6 +499,7 @@ export function useZisupBridge(
             await saveToCloud(appId, key, value ?? "");
             removeLocalValue(appId, key);
             send(id, value ?? null);
+            recordDataSaved(appId, "personal");
           } catch (err) {
             const message = err instanceof Error ? err.message : tx("保存エラー", "Save error");
             notifyAppDataError(message);
@@ -511,6 +516,7 @@ export function useZisupBridge(
           try {
             localStorage.setItem(localStorageKey(appId, key), value ?? "");
             send(id, value ?? null);
+            recordDataSaved(appId, "personal");
           } catch (err) {
             const message = err instanceof Error ? err.message : tx("保存エラー", "Save error");
             notifyAppDataError("この端末に保存できませんでした。ブラウザの保存領域がいっぱいの可能性があります");

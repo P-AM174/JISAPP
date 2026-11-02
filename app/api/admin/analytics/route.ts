@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { classifySource, type TrafficSource } from "@/lib/analytics/sources";
 import { summarizeEngagement } from '@/lib/analytics/engagement-summary';
-import { summarizeCreation, summarizeRetention, summarizeSecondApp, type CreatedApp } from '@/lib/analytics/retention';
+import { summarizeGoal, type CreatedApp } from '@/lib/analytics/retention';
 import { OFFICIAL_CREATOR_NAME } from '@/lib/agent/official-creator';
 
 /** 運営画面用：計測の集計（継続利用・アプリ作成数・2つ目のアプリ、イベント × 言語 × 流入元） */
@@ -25,15 +25,18 @@ export async function GET(req: NextRequest) {
       { status: 503 }
     );
   }
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  // 作成数の「1週間前との比較」には15日分の記録が要るので、期間が短いときも15日分は読む（継続利用は期間の中だけで数える）
+  const periodSince = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - Math.max(days, 15) * 24 * 60 * 60 * 1000).toISOString();
   type Ev = {
     name: string;
+    locale: string | null;
     created_at: string;
     session_id: string | null;
     country: string | null;
     utm_source: string | null;
     utm_medium: string | null;
-    props: { ref?: string; ok?: boolean; issue?: string } | null;
+    props: ({ ref?: string; ok?: boolean; issue?: string } & Record<string, unknown>) | null;
   };
   // Supabase は1回に1000件までしか返さないので、1000件ずつ読む（最大10万件）。
   // 以前は1回で読んでいたため、1000件を超えると国別の訪問・貼り付けの内訳が途中で切れていた
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
   for (let from = 0; from < 100000; from += 1000) {
     const { data, error } = await supabase
       .from("analytics_events")
-      .select("name, created_at, session_id, country, utm_source, utm_medium, props")
+      .select("name, locale, created_at, session_id, country, utm_source, utm_medium, props")
       .gte("created_at", since)
       .order("created_at", { ascending: true })
       .range(from, from + 999);
@@ -50,9 +53,11 @@ export async function GET(req: NextRequest) {
     if (data.length < 1000) break;
   }
 
+  const allEvs = evs;
+  const periodEvs = evs.filter((e) => new Date(e.created_at).getTime() >= new Date(periodSince).getTime());
   // 開発スタジオの貼り付けの内訳（動いた・さっきのプロンプト・文章・途中で切れた）
   const pasteBreakdown: Record<string, number> = {};
-  for (const r of evs) {
+  for (const r of periodEvs) {
     if (r.name !== "studio_paste") continue;
     // 内訳を数え始める前の記録は「動いた／動かなかった」だけ
     const k = r.props?.issue ?? (r.props?.ok ? "none" : "unknown");
@@ -60,7 +65,7 @@ export async function GET(req: NextRequest) {
   }
   // 国別の訪問
   const byCountry = new Map<string, { views: number; sessions: Set<string> }>();
-  for (const r of evs) {
+  for (const r of periodEvs) {
     if (r.name !== "page_view") continue;
     const c = r.country ?? "??";
     const v = byCountry.get(c) ?? { views: 0, sessions: new Set<string>() };
@@ -75,7 +80,7 @@ export async function GET(req: NextRequest) {
 
   // どこから来たか：訪問（セッション）ごとに、最初のイベントの utm と参照元で決め、その訪問で貼り付け・公開・登録まで進んだかを数える
   const visits = new Map<string, { source: TrafficSource; day: string; paste: boolean; publish: boolean; signup: boolean }>();
-  for (const e of evs) {
+  for (const e of periodEvs) {
     if (!e.session_id) continue;
     let v = visits.get(e.session_id);
     if (!v) {
@@ -114,26 +119,24 @@ export async function GET(req: NextRequest) {
   const sources = [...bySource.values()].sort((a, b) => b.visits - a.visits);
   const aiByDay = [...aiDaily.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([day, counts]) => ({ day, counts }));
 
-  const engagementEvents = evs.filter(e=>e.name==='engagement');
-  const engagement = summarizeEngagement(engagementEvents);
-  const retention = summarizeRetention(engagementEvents);
+  const engagement = summarizeEngagement(periodEvs.filter(e=>e.name==='engagement'));
 
   // アプリの作成数・2つ目のアプリ（apps 表。公式のアプリは除く。消されたアプリは数えられない）
   const apps: CreatedApp[] = [];
   for (let from = 0; from < 200000; from += 1000) {
     const { data, error } = await supabase
       .from("apps")
-      .select("created_at, creator_id, creator_name")
+      .select("id, created_at, creator_id, creator_name")
       .order("created_at", { ascending: true })
       .range(from, from + 999);
     if (error || !data?.length) break;
-    for (const a of data as { created_at: string; creator_id: string | null; creator_name: string | null }[]) {
-      if (a.creator_name !== OFFICIAL_CREATOR_NAME) apps.push({ created_at: a.created_at, creator_id: a.creator_id });
+    for (const a of data as { id: string; created_at: string; creator_id: string | null; creator_name: string | null }[]) {
+      if (a.creator_name !== OFFICIAL_CREATOR_NAME) apps.push({ id: a.id, created_at: a.created_at, creator_id: a.creator_id });
     }
     if (data.length < 1000) break;
   }
-  const creation = summarizeCreation(apps);
-  const secondApp = summarizeSecondApp(apps, days);
+  // 今月の目標（継続利用など）：全体・日本語版・英語版
+  const goal = summarizeGoal({ events: allEvs, apps, periodDays: days });
 
-  return NextResponse.json({ days, summary: summary.data ?? [], pasteBreakdown, countries, sources, aiByDay, engagement, retention, creation, secondApp });
+  return NextResponse.json({ days, summary: summary.data ?? [], pasteBreakdown, countries, sources, aiByDay, engagement, goal });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { localeFromPath } from "@/lib/i18n/config";
+import { EXCLUDED_BROWSER_KEY } from "@/lib/analytics/excluded";
 
 /**
  * 計測（ブラウザ側）。イベントを /api/analytics に送る。
@@ -94,6 +95,10 @@ function entryReferrer(): string | null {
 
 export function trackEvent(name: AnalyticsEvent, props?: Record<string, string | number | boolean>) {
   if (typeof window === "undefined") return;
+  // 運営・本人のブラウザでは送らない（lib/analytics/excluded.ts）
+  try {
+    if (localStorage.getItem(EXCLUDED_BROWSER_KEY) === "1") return;
+  } catch { /* 読めないときは送る（サーバーでもログイン中の運営は捨てる） */ }
   try {
     if (name === "page_view") {
       const ref = entryReferrer();

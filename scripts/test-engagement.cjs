@@ -89,6 +89,27 @@ assert.equal(ja.secondApp.overall.numerator, 1); assert.equal(en.secondApp.overa
 // D30
 const late = R.summarizeUsage([open('m','2026-10-01'), open('m','2026-11-05')], NOW);
 assert.equal(late.retention.others.d30.numerator, 1);
+// 運営・本人を計測から除く
+const X = load('lib/analytics/excluded.ts');
+assert.equal(X.isExcludedAccount({ name:'P-AM' }), true);
+assert.equal(X.isExcludedAccount({ name:'p-am ' }), true);
+assert.equal(X.isExcludedAccount({ name:'taro', role:'ADMIN' }), true);
+assert.equal(X.isExcludedAccount({ name:'taro', role:'USER' }), false);
+assert.equal(X.isExcludedAccount(null), false);
+const ex = (name, session_id, props) => ({ name, session_id, props });
+const kept = X.filterExcludedEvents([
+  ex('publish','s-me',{ appId:'mine', overwrite:false }),
+  ex('page_view','s-me',null),                                                     // 本人の訪問 → 除く
+  ex('engagement','s-me2',{ action:'app_open', appId:'mine', visitor:'v-me', owner:true }),
+  ex('page_view','s-me2',null),                                                    // 本人のブラウザの別の訪問 → 除く
+  ex('engagement','s-home',{ action:'home_first_launch', appId:'mine', visitor:'v-home', ref:'v-me' }), // 本人の iPhone のホーム画面 → 除く
+  ex('engagement','s-home2',{ action:'standalone_open', appId:'mine', visitor:'v-home' }),
+  ex('engagement','s-other',{ action:'app_open', appId:'mine', visitor:'v-other', owner:false }),     // ほかの人が本人のアプリを使う → 残す
+  ex('page_view','s-other',null),
+  ex('publish','s-x',{ appId:'yours', overwrite:false }),                          // ほかの人のアプリ → 残す
+], new Set(['mine']));
+assert.equal(kept.length, 3);
+assert.ok(kept.every(e => ['s-other','s-x'].includes(e.session_id)));
 const {ICONS,ICON_COLORS,validIcon,autoIcon,normalizeColor,iconColorHex,iconInkHex}=load('lib/apps/icon-catalog.ts');
 assert.equal(ICONS.length,50);
 assert.equal(new Set(ICONS.map(x=>x[0])).size,50);
@@ -111,4 +132,4 @@ assert.equal(autoIcon('部活の出欠表').icon,'users');
 assert.equal(autoIcon('なにか').icon,'calendar');
 assert.deepEqual(autoIcon('わんこ日記'),autoIcon('わんこ日記'));
 assert.ok(ICONS.some(x=>x[0]===autoIcon('Habit tracker').icon)&&ICON_COLORS.some(x=>x[0]===autoIcon('Habit tracker').color));
-console.log('Passed: retention, creation, second app, home installs, auto icon, deduplication, share denominators, repeat use, author exclusion, icon catalog validation.');
+console.log('Passed: excluded accounts, retention, creation, second app, home installs, auto icon, deduplication, share denominators, repeat use, author exclusion, icon catalog validation.');

@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { AnalyticsOptOut } from "@/components/analytics/analytics-opt-out";
 import { UsernameSetupGate } from "@/components/username-dialog";
 import { GuestClaimGate } from "@/components/guest-claim-gate";
 import type { Dictionary, Locale } from "@/lib/i18n/config";
@@ -23,6 +24,8 @@ export function Providers({
     <LocaleProvider locale={locale} dict={dict}>
       <PageViewTracker />
       <SessionProvider session={session}>
+        {/* 運営・本人のブラウザは計測しない */}
+        <AnalyticsOptOut />
         {children}
         {/* Google でログインして、まだジサップ用の名前を決めていない人に名前を決めてもらう */}
         <UsernameSetupGate />

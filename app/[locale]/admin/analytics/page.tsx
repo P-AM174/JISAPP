@@ -41,6 +41,7 @@ const LOCALES = ["ja", "en"];
 
 export default function AdminAnalyticsPage() {
   const [engagement,setEngagement]=useState<ReturnType<typeof summarizeEngagement>|null>(null);
+  const [excludedAccounts, setExcludedAccounts] = useState<number | null>(null);
   const [goal, setGoal] = useState<ReturnType<typeof summarizeGoal> | null>(null);
   const [days, setDays] = useState(30);
   const [rows, setRows] = useState<Row[]>([]);
@@ -61,6 +62,7 @@ export default function AdminAnalyticsPage() {
       setRows(json.summary);
       setEngagement(json.engagement??null);
       setGoal(json.goal ?? null);
+      setExcludedAccounts(typeof json.excludedAccounts === 'number' ? json.excludedAccounts : null);
       setPastes(json.pasteBreakdown ?? {});
       setCountries(json.countries ?? []);
       setSources(json.sources ?? []);
@@ -100,7 +102,7 @@ export default function AdminAnalyticsPage() {
       </header>
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-black text-gray-900">計測</h1>
+          <div><h1 className="text-xl font-black text-gray-900">計測</h1><p className="mt-0.5 text-[11px] text-gray-500">運営・本人（P-AM のアカウントと管理者）の操作と、そのアカウントで作ったアプリは、どの数にも入れていません{excludedAccounts !== null && `（見つかったアカウント：${excludedAccounts}件）`}</p></div>
           <div className="flex items-center gap-2 text-sm">
             {[7, 30, 90].map((d) => (
               <button

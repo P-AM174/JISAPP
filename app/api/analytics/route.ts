@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isLocale } from "@/lib/i18n/config";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { isExcludedAccount } from "@/lib/analytics/excluded";
 
 /**
  * 計測イベントを受け取って記録する（scripts/add-analytics-events.sql の表）。
@@ -19,6 +22,10 @@ export async function POST(req: NextRequest) {
     // クローラー・自動操作のブラウザ（動作確認など）は数えない
     const ua = req.headers.get("user-agent") ?? "";
     if (/bot|crawler|spider|preview|facebookexternalhit|zalo|headless/i.test(ua)) return new NextResponse(null, { status: 204 });
+
+    // 運営・本人がログインしているときは数えない（lib/analytics/excluded.ts）
+    const session = await getServerSession(authOptions).catch(() => null);
+    if (isExcludedAccount(session?.user as { name?: string | null; role?: string } | undefined)) return new NextResponse(null, { status: 204 });
 
     const locale = isLocale(data.locale) ? data.locale : null;
     const country = str(req.headers.get("x-vercel-ip-country"), 2);

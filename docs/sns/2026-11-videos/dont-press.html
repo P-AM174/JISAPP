@@ -8,30 +8,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
-  --base: #e9e6df;
+  --base: #0b0d12;
   --panel: #c8ccd1;
   --panel-d: #a3a9b0;
   --red: #e5312b;
-  --ink: #1f2630;
-  --ink-2: #5d6672;
+  --ink: #f4f5f7;
+  --ink-2: #9aa3b2;
+  --yellow: #ffd23f;
+  --pink: #ff3d7f;
   --hazard: #f2c230;
   --led: #ff5a3c;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; overflow: hidden; }
 body { background: var(--base); color: var(--ink); font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif; user-select: none; transition: background .35s; }
-body.dark { background: #20242b; }
+body.dark { background: #2a0d10; }
 .app { position: relative; max-width: 480px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 14px 18px 18px; transition: transform .5s cubic-bezier(.5,1.6,.4,1); }
 .top { width: 100%; display: flex; align-items: center; gap: 8px; }
-.counter { font-family: "Share Tech Mono", monospace; background: #15181d; color: var(--led); border-radius: 10px; padding: 6px 12px; font-size: 18px; letter-spacing: .08em; box-shadow: inset 0 2px 6px rgba(0,0,0,.6); }
+.counter { font-family: "Share Tech Mono", monospace; background: #15181d; border: 2px solid #2a303c; color: var(--led); border-radius: 10px; padding: 6px 12px; font-size: 18px; letter-spacing: .08em; box-shadow: inset 0 2px 6px rgba(0,0,0,.6); }
 .counter small { color: #8c6a63; font-size: 11px; margin-right: 6px; font-family: "M PLUS Rounded 1c"; }
-.mute { margin-left: auto; border: 0; background: rgba(0,0,0,.06); color: var(--ink-2); border-radius: 999px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-body.dark .mute { background: rgba(255,255,255,.1); color: #c9cfd8; }
+.mute { margin-left: auto; width: 40px; height: 40px; border-radius: 12px; border: 2px solid #3a4150; background: transparent; color: #d7dbe3; display: flex; align-items: center; justify-content: center; }
+
 .mute svg { width: 18px; height: 18px; }
-.msg { margin-top: 5vh; text-align: center; font-family: "Dela Gothic One", sans-serif; font-size: clamp(36px, 11vw, 52px); line-height: 1.1; min-height: 2.3em; display: flex; align-items: center; justify-content: center; transition: color .3s; }
-body.dark .msg { color: #fff; }
-.sub { text-align: center; font-size: 16px; font-weight: 700; color: var(--ink-2); min-height: 1.4em; }
-body.dark .sub { color: #c9cfd8; }
+.msg { margin-top: 4vh; text-align: center; font-family: "Dela Gothic One", sans-serif; font-size: clamp(40px, 12.5vw, 58px); line-height: 1.1; min-height: 2.3em; display: flex; align-items: center; justify-content: center; color: var(--yellow); text-shadow: 4px 4px 0 var(--pink), 7px 7px 0 #000; transform: rotate(-4deg); }
+
+.sub { align-self: center; background: #000; color: #fff; font-size: 15px; font-weight: 900; border-radius: 10px; padding: 7px 14px; box-shadow: 0 0 0 2px #2a303c; min-height: 1.4em; }
+.sub:empty { visibility: hidden; }
+
 .field { position: relative; flex: 1; width: 100%; }
 
 /* 金属の板（しま模様のふち） */
@@ -42,7 +45,7 @@ body.dark .sub { color: #c9cfd8; }
 .screw { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--panel-d); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
 .screw::after { content: ""; position: absolute; left: 3px; right: 3px; top: 6px; height: 2px; background: #7e858d; transform: rotate(35deg); }
 .screw.a { left: 12px; top: 12px; } .screw.b { right: 12px; top: 12px; } .screw.c { left: 12px; bottom: 12px; } .screw.d { right: 12px; bottom: 12px; }
-.label { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: #fff; border: 3px solid var(--ink); border-radius: 6px; padding: 2px 12px; font-family: "Dela Gothic One", sans-serif; font-size: 15px; letter-spacing: .1em; white-space: nowrap; }
+.label { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: #fff; color: #111; border: 3px solid #111; border-radius: 6px; padding: 2px 12px; font-family: "Dela Gothic One", sans-serif; font-size: 15px; letter-spacing: .1em; white-space: nowrap; }
 
 /* ボタン（台座＋ドーム） */
 .press { position: relative; width: 68%; aspect-ratio: 1; border: 0; padding: 0; background: none; cursor: pointer; }
@@ -57,17 +60,17 @@ body.dark .sub { color: #c9cfd8; }
 
 /* 逃げるボタン */
 .runner { position: absolute; width: 104px; height: 104px; transform: translate(-50%, -50%); transition: left .26s cubic-bezier(.3,1.5,.5,1), top .26s cubic-bezier(.3,1.5,.5,1); }
-.runner .tag { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 12px; font-weight: 900; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.runner .tag { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); background: var(--yellow); color: #111; border: 2px solid #000; font-size: 12px; font-weight: 900; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
 
 /* 3・2・1（デジタル表示） */
 .led { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .led span { font-family: "Share Tech Mono", monospace; font-size: 46vw; max-width: 100%; color: var(--led); text-shadow: 0 0 22px rgba(255,90,60,.6); background: #15181d; border-radius: 28px; padding: 0 6vw; line-height: 1.05; animation: pop .3s; box-shadow: inset 0 4px 14px rgba(0,0,0,.7); }
 
 .best { text-align: center; font-size: 14px; font-weight: 700; color: var(--ink-2); min-height: 22px; }
-body.dark .best { color: #c9cfd8; }
-.best b { font-family: "Share Tech Mono", monospace; font-size: 20px; color: var(--ink); }
-body.dark .best b { color: #fff; }
-.note { font-size: 11px; color: var(--ink-2); text-align: center; margin-top: 4px; }
+
+.best b { font-family: "Share Tech Mono", monospace; font-size: 20px; color: var(--yellow); }
+
+.note { font-size: 11px; color: #6f7888; text-align: center; margin-top: 4px; }
 .confetti { position: fixed; top: -20px; width: 10px; height: 16px; border-radius: 2px; animation: fall linear forwards; pointer-events: none; z-index: 9; }
 
 @keyframes wobble { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-3deg); } 70% { transform: rotate(3deg); } }

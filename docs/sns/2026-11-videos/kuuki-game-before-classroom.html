@@ -3,113 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>どこに座る？空気読みゲーム</title>
+<title>空気読み戦線 どこに座る？</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@700;800;900&family=Rubik:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --base: #f3efe6;
-  --main: #1f5f66;
-  --accent: #ff6a3d;
-  --main-l: #dcebea;
-  --ink: #1e2d31;
-  --ink-2: #5d6f73;
-  --good: #1f9d63;
-  --bad: #e2463c;
-  --card: #ffffff;
+  --bg: #0b0d12;
+  --panel: #161a22;
+  --line: #2a303c;
+  --text: #f4f5f7;
+  --sub: #9aa3b2;
+  --yellow: #ffd23f;
+  --pink: #ff3d7f;
+  --red: #ff4b3e;
+  --green: #22c55e;
+  --cyan: #38d6f5;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
-body { background: var(--base); color: var(--ink); font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif; overflow: hidden; user-select: none; }
-.app { position: relative; max-width: 480px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; }
-.pop { font-family: "Dela Gothic One", "M PLUS Rounded 1c", sans-serif; font-weight: 400; }
+body { background: var(--bg); color: var(--text); font-family: "M PLUS Rounded 1c", "Hiragino Sans", sans-serif; overflow: hidden; user-select: none; }
+.app { position: relative; max-width: 480px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; padding: 10px 14px 14px; }
+.dela { font-family: "Dela Gothic One", "M PLUS Rounded 1c", sans-serif; font-weight: 400; }
+.en { font-family: "Rubik", sans-serif; font-weight: 800; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
 
-/* 上の帯 */
-.bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px 6px; }
-.place { display: inline-flex; align-items: center; gap: 6px; background: var(--main); color: #fff; border-radius: 999px; padding: 5px 12px 5px 8px; font-weight: 800; font-size: 13px; }
-.place svg { width: 18px; height: 18px; }
-.dots { flex: 1; display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
-.dots i { width: 7px; height: 7px; border-radius: 50%; background: #d9d3c6; }
-.dots i.ok { background: var(--good); } .dots i.ng { background: var(--bad); } .dots i.now { background: var(--accent); transform: scale(1.3); }
-.score { font-weight: 900; font-size: 14px; color: var(--main); min-width: 44px; text-align: right; }
-.icon-btn { border: 0; background: #fff; border-radius: 999px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--ink-2); box-shadow: 0 2px 6px rgba(0,0,0,.06); }
-.icon-btn svg { width: 18px; height: 18px; }
-
-/* 問題 */
-.qwrap { position: relative; padding: 2px 16px 8px; text-align: center; }
-.q { font-size: clamp(26px, 7.6vw, 34px); line-height: 1.15; letter-spacing: .01em; }
-.hint { font-size: 13px; color: var(--ink-2); font-weight: 700; margin-top: 4px; }
-.ring { position: absolute; right: 14px; top: -4px; width: 52px; height: 52px; }
-.ring circle { fill: none; stroke-width: 6; }
-.ring .bg { stroke: #e5dfd2; } .ring .fg { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
-.ring text { font-family: "Dela Gothic One", sans-serif; font-size: 22px; fill: var(--accent); text-anchor: middle; dominant-baseline: central; }
+/* HUD */
+.stage-name { font-size: 12px; color: #6f7888; letter-spacing: .08em; }
+.stage-name b { color: #c9ced8; }
+.hud { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.coin { min-width: 34px; height: 34px; padding: 0 8px; border-radius: 999px; background: #232833; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.count { margin-left: auto; color: var(--sub); font-size: 15px; }
+.sq { width: 40px; height: 40px; border-radius: 12px; border: 2px solid #3a4150; background: transparent; color: #d7dbe3; display: flex; align-items: center; justify-content: center; }
+.progress { height: 8px; border-radius: 99px; background: #232833; margin-top: 10px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--green); border-radius: 99px; transition: width .3s; }
+.qrow { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.qtag { background: var(--yellow); color: #111; border-radius: 10px; padding: 4px 9px; font-size: 18px; box-shadow: 3px 3px 0 #000; transform: rotate(-3deg); }
+.q { font-size: clamp(22px, 6.4vw, 28px); line-height: 1.15; flex: 1; }
+.timer { width: 46px; height: 46px; flex-shrink: 0; }
+.timer circle { fill: none; stroke-width: 6; }
+.timer .bg { stroke: #232833; } .timer .fg { stroke: var(--yellow); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+.timer text { font-family: "Rubik", sans-serif; font-weight: 900; font-size: 20px; fill: var(--yellow); text-anchor: middle; dominant-baseline: central; }
 
 /* 場面 */
-.stage { position: relative; flex: 1; min-height: 0; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
-.stage svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
+.stage { position: relative; flex: 1; min-height: 0; margin-top: 6px; }
+.stage svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .opt { cursor: pointer; }
-.opt .halo { fill: rgba(255,106,61,.16); stroke: var(--accent); stroke-width: 4; stroke-dasharray: 10 8; }
-.opt .badge circle { fill: #fff; stroke: var(--accent); stroke-width: 5; }
-.opt .badge text { font-family: "Dela Gothic One", sans-serif; fill: var(--accent); text-anchor: middle; dominant-baseline: central; }
-.opt.glow .badge circle { fill: var(--accent); } .opt.glow .badge text { fill: #fff; }
-.opt.glow .halo { fill: rgba(255,106,61,.32); }
-.opt.best .halo { stroke: var(--good); fill: rgba(31,157,99,.18); stroke-dasharray: none; }
-.opt.best .badge circle { fill: var(--good); stroke: var(--good); } .opt.best .badge text { fill: #fff; }
-.opt.dim { opacity: .35; }
-.walker { transition: transform .42s linear; }
-.react { animation: popin .3s ease-out both; transform-box: fill-box; transform-origin: center bottom; }
-.bob { animation: bob 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
-.slide { animation: slide 6s linear infinite; }
-.talk { animation: talk 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
-.shake { animation: shake .4s ease-in-out 2; transform-box: fill-box; transform-origin: center; }
+.opt .glowc { fill: rgba(255,210,63,.18); stroke: var(--yellow); stroke-width: 3; stroke-dasharray: 7 6; }
+.opt .pin circle { fill: var(--yellow); stroke: #000; stroke-width: 3.5; }
+.opt .pin path { fill: var(--yellow); stroke: #000; stroke-width: 3.5; stroke-linejoin: round; }
+.opt .pin text { font-family: "Rubik", sans-serif; font-weight: 900; fill: #111; text-anchor: middle; dominant-baseline: central; }
+.opt.glow .pin circle, .opt.glow .pin path { fill: #fff; }
+.opt.glow .glowc { fill: rgba(255,210,63,.4); }
+.opt.best .pin circle, .opt.best .pin path { fill: var(--green); } .opt.best .pin text { fill: #fff; }
+.opt.best .glowc { stroke: var(--green); fill: rgba(34,197,94,.28); stroke-dasharray: none; }
+.opt.dim { opacity: .3; }
+.walker { transition: transform .38s linear; }
+.react { animation: popin .28s ease-out both; transform-box: fill-box; transform-origin: center bottom; }
+.bob { animation: bob 1.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.talk { animation: talk 1.1s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.fast .talk { animation-duration: .45s; }
 
 /* 結果 */
-.panel { flex-shrink: 0; height: 168px; padding: 10px 16px 16px; }
-.verdict { display: flex; align-items: center; gap: 8px; font-size: clamp(21px, 6vw, 27px); line-height: 1.2; animation: rise .25s ease-out both; }
-.verdict svg { width: 30px; height: 30px; flex-shrink: 0; }
-.verdict.good { color: var(--good); } .verdict.bad { color: var(--bad); }
-.why { font-size: 15px; font-weight: 800; margin-top: 6px; color: var(--ink); animation: rise .25s .05s ease-out both; }
-.best-line { font-size: 14px; font-weight: 800; color: var(--good); margin-top: 4px; animation: rise .25s .1s ease-out both; }
-.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 18px; padding: 15px; font: inherit; font-size: 17px; font-weight: 900; background: var(--main); color: #fff; margin-top: 12px; box-shadow: 0 6px 0 #154247; transition: transform .1s, box-shadow .1s; }
-.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #154247; }
-.btn.ghost { background: #fff; color: var(--main); box-shadow: 0 6px 0 #d9d3c6; }
-.btn svg { width: 20px; height: 20px; }
+.panel { flex-shrink: 0; height: 150px; padding-top: 8px; }
+.verdict { display: flex; align-items: center; gap: 8px; font-size: clamp(21px, 6vw, 26px); line-height: 1.2; animation: rise .22s ease-out both; }
+.verdict.good { color: var(--green); } .verdict.bad { color: var(--red); }
+.verdict svg { width: 28px; height: 28px; flex-shrink: 0; }
+.why { font-size: 14px; color: #d7dbe3; margin-top: 6px; animation: rise .22s .05s ease-out both; }
+.why b { color: var(--green); }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 16px; padding: 14px; font-family: "Dela Gothic One", sans-serif; font-size: 20px; background: var(--yellow); color: #111; margin-top: 12px; box-shadow: 0 6px 0 #b8901c; transition: transform .08s, box-shadow .08s; }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b8901c; }
+.btn.dark { background: #232833; color: #fff; box-shadow: 0 6px 0 #10131a; font-family: "M PLUS Rounded 1c", sans-serif; font-weight: 900; font-size: 16px; }
+.btn.big { font-size: 34px; padding: 12px; letter-spacing: .08em; }
 
-/* はじめ・おわり */
-.cover { flex: 1; display: flex; flex-direction: column; padding: 18px 18px 22px; }
-.cover .art { flex: 1; min-height: 0; border-radius: 28px; overflow: hidden; background: #d8d2c4; box-shadow: 0 12px 30px rgba(31,95,102,.18); }
-.cover .art svg { width: 100%; height: 100%; display: block; }
-.cover .art .opt, .cover .art .talk, .cover .art .bob { display: none; }
-.title { font-size: clamp(38px, 11vw, 52px); line-height: 1.05; margin: 18px 0 6px; }
-.title em { font-style: normal; color: var(--accent); }
-.lead { font-size: 15px; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
-.note { font-size: 11px; color: var(--ink-2); margin-top: 10px; text-align: center; }
-.result-card { background: #fff; border-radius: 28px; padding: 22px 18px; text-align: center; box-shadow: 0 12px 30px rgba(31,95,102,.12); margin-top: 8px; }
-.type { font-size: clamp(30px, 9vw, 40px); color: var(--accent); margin: 6px 0; }
-.bigscore { font-size: 54px; color: var(--main); line-height: 1; margin-top: 10px; }
-.bigscore small { font-size: 22px; color: var(--ink-2); }
-.meter { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; margin: 14px auto 6px; max-width: 300px; }
-.meter i { height: 12px; border-radius: 4px; background: #ece6da; } .meter i.ok { background: var(--good); }
+/* タイトル */
+.cover { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; min-height: 0; }
+.cover .scene-bg { position: absolute; inset: 40px -14px 170px; opacity: .45; }
+.logo { position: relative; text-align: center; margin-top: 14px; line-height: .98; }
+.logo .l1, .logo .l2 { display: block; font-family: "Dela Gothic One", sans-serif; color: var(--yellow); text-shadow: 4px 4px 0 var(--pink), 7px 7px 0 #000; transform: rotate(-4deg); }
+.logo .l1 { font-size: clamp(54px, 17vw, 80px); }
+.logo .l2 { font-size: clamp(54px, 17vw, 80px); transform: rotate(-4deg) translateX(14px); }
+.logo .l3 { display: inline-block; margin-top: 4px; font-family: "Dela Gothic One", sans-serif; font-size: clamp(30px, 9vw, 42px); color: #fff; -webkit-text-stroke: 8px #000; paint-order: stroke fill; transform: rotate(-4deg); position: relative; }
+.logo .l3::after { content: attr(data-t); position: absolute; left: 0; top: 0; color: #fff; -webkit-text-stroke: 0; }
+.tagline { position: relative; display: inline-block; background: #000; color: #fff; font-weight: 900; border-radius: 10px; padding: 7px 14px; margin-top: 10px; font-size: 15px; box-shadow: 0 0 0 2px #2a303c; }
+.rules { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; margin-top: 14px; }
+.rule { display: flex; align-items: center; gap: 8px; background: rgba(15,17,23,.92); border: 2px solid #2a303c; border-radius: 14px; padding: 10px; font-size: 13px; font-weight: 800; line-height: 1.3; }
+.rule svg { width: 26px; height: 26px; flex-shrink: 0; }
+.badge-red { position: relative; display: inline-block; margin-top: 14px; background: var(--red); color: #fff; font-weight: 900; padding: 8px 14px; border-radius: 10px; transform: rotate(-3deg); box-shadow: 3px 3px 0 #000; font-size: 15px; }
+.cover .spacer { flex: 1; }
+.cover .btn { position: relative; }
+.note { position: relative; font-size: 11px; color: #6f7888; text-align: center; margin-top: 10px; }
+
+/* 結果画面 */
+.result { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.result .k { color: var(--sub); font-weight: 800; margin-top: 18px; }
+.result .type { font-family: "Dela Gothic One", sans-serif; font-size: clamp(34px, 10vw, 46px); color: var(--yellow); text-shadow: 3px 3px 0 var(--pink), 5px 5px 0 #000; transform: rotate(-3deg); margin: 10px 0 6px; }
+.result .score { font-family: "Rubik", sans-serif; font-weight: 900; font-size: 72px; line-height: 1; margin-top: 12px; }
+.result .score small { font-size: 26px; color: var(--sub); }
+.grid-dots { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 5px; width: 100%; max-width: 320px; margin: 16px 0 8px; }
+.grid-dots i { height: 14px; border-radius: 4px; background: #232833; } .grid-dots i.ok { background: var(--green); } .grid-dots i.ng { background: var(--red); }
 
 @keyframes popin { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@keyframes talk { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-@keyframes slide { from { transform: translateX(0); } to { transform: translateX(-400px); } }
-@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+@keyframes talk { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 @keyframes rise { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .walker { transition: none; } .bob, .slide, .talk, .shake, .react { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .walker { transition: none; } .bob, .talk, .react { animation: none; } }
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 <script>
 /*
- * どこに座る？空気読みゲーム
- * 電車・エレベーター・カフェなどの場面を絵で再現し、3秒以内に A・B・C から自分の場所を選ぶ。
- * 選ぶと「あなた」が入ってきてその場所へ行き、まわりの人の様子で結果が分かる。
+ * 空気読み戦線 どこに座る？
+ * 電車・エレベーター・カフェなどの場面を、斜め上から見た立体風の絵（アイソメトリック）で再現し、
+ * 3秒以内に A・B・C から自分の場所を選ぶ。選ぶと「あなた」が入口から歩いて行き、まわりの人の様子で結果が分かる。
  * 選ぶのを楽しむゲームで、性格や心の診断ではない。
  *
- * 場面の記号：. 空いた席（エレベーターなどは床） f 床 - 何もない D ドア T テーブル
+ * 場面の記号：. 空いた席（エレベーターは床） f 床 - 何もない D ドア・入口 T テーブル
  *   p 人 t 話している人 c せきをしている人 m 音もれ s 寝ている人 k 子ども e お年寄り w 作業中 y 食事中
  *   b 席に置いた荷物 g 大きなスーツケース  A/B/C 選べる場所
  */
@@ -169,37 +178,18 @@ const CLASSROOM = [
 const ALL = SHOW_CLASSROOM ? [...QUESTIONS.slice(0, 3), CLASSROOM[0], ...QUESTIONS.slice(3), ...CLASSROOM.slice(1)] : QUESTIONS;
 const TIME = 3000;
 
-// ── 色（人の服・髪・肌） ──
-const SHIRTS = ['#4f78a8', '#7a9a5b', '#b5603c', '#6e4a7e', '#3f8f8a', '#c0627d', '#8a7a5c', '#4b5a82'];
-const HAIRS = ['#2b2420', '#4a3424', '#1c1c24', '#6b4a2e', '#3b2a22'];
-const SKIN = '#f3c9a4';
-const ME = { shirt: '#ff6a3d', hair: '#2b2420' };
-
-// ── アイコン（場所） ──
-const PLACE_ICON = {
-  '電車': '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/>',
-  'エレベーター': '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M8 9l2-2 2 2M16 15l-2 2-2-2"/>',
-  'カフェ': '<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2v3M12 2v3"/>',
-  '待合室': '<path d="M5 11V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5M3 11h18v5H3zM6 16v4M18 16v4"/>',
-  'バス': '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M7 21v-3M17 21v-3M8 14.5h.01M16 14.5h.01"/>',
-  '図書館': '<path d="M4 4h5v16H4zM9 4h5v16H9zM15 5l4-1 3 15-4 1z"/>',
-  '映画館': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 5v4M12 5v4M17 5v4"/>',
-  '公園': '<path d="M12 3a5 5 0 0 0-5 5c0 3 2 5 5 5s5-2 5-5a5 5 0 0 0-5-5zM12 13v8M7 21h10"/>',
-  'ラーメン屋': '<path d="M3 11h18a9 9 0 0 1-18 0zM8 4c0 2 2 2 2 4M13 4c0 2 2 2 2 4M7 20h10"/>',
-  '会議室': '<rect x="3" y="8" width="18" height="8" rx="2"/><path d="M7 4h10M7 20h10"/>',
-  '教室': '<rect x="3" y="4" width="18" height="11" rx="1"/><path d="M8 20l4-5 4 5"/>',
-};
-const UI = {
+const ICON = {
   sound: '<path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
   mute: '<path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/>',
   ok: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/>',
   ng: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
   clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/>',
-  next: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-  retry: '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/>',
-  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  ban: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+  edge: '<path d="M4 12h12M12 7l5 5-5 5M20 4v16"/>',
+  noise: '<path d="M3 10v4h3l4 3V7L6 10zM15 9l6 6M21 9l-6 6"/>',
+  people: '<circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 19a5 5 0 0 1 10 0M11 19a5 5 0 0 1 10 0"/>',
 };
-const ic = (d, sw = 2.2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const svgi = (d) => `<svg class="i" viewBox="0 0 24 24">${d}</svg>`;
 
 // ── 保存（ジサップの保存機能） ──
 const store = {
@@ -219,274 +209,293 @@ function tone(f, d = .08, type = 'sine', v = .14, delay = 0) {
   } catch {}
 }
 const sfx = {
-  tick: () => tone(880, .05, 'square', .05),
-  tap: () => tone(660, .07, 'triangle', .18),
+  tick: () => tone(880, .05, 'square', .05), tap: () => tone(660, .07, 'triangle', .18),
   step: k => tone(300 + (k % 2) * 60, .05, 'sine', .08),
   good: () => { tone(784, .1, 'triangle', .16); tone(1046, .18, 'triangle', .16, .1); },
   bad: () => { tone(260, .18, 'sawtooth', .06); tone(200, .22, 'sawtooth', .06, .16); },
 };
 
 // ════════════════════════════════════════════
-//  絵（SVG）
+//  斜め上から見た絵（アイソメトリック）
 // ════════════════════════════════════════════
-const S = 100; // 1マスの大きさ
-const hash = (k) => (k * 2654435761) >>> 0;
-const look = (k) => ({ shirt: SHIRTS[hash(k) % SHIRTS.length], hair: HAIRS[hash(k + 7) % HAIRS.length] });
+const S = 64;
+const CX = S * 0.866, CY = S * 0.5;
+const iso = (c, r) => ({ x: (c - r) * CX, y: (c + r) * CY });   // マス目（列・行）→ 画面の位置
+const P = (pts) => pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+const hash = k => (k * 2654435761) >>> 0;
+const SHIRTS = ['#5b7fb8', '#7a9a5b', '#c46a46', '#7e5aa0', '#3f9a94', '#c0627d', '#8a7a5c', '#4b5a92'];
+const HAIRS = ['#2b2420', '#4a3424', '#1c1c24', '#6b4a2e', '#3b2a22'];
+const SKIN = '#f1c7a0';
+/** 色を暗く・明るくする（#rrggbb を受け取り #rrggbb を返す。何度重ねてもよい） */
+const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const ch = v => Math.max(0, Math.min(255, Math.round(v * f))).toString(16).padStart(2, '0'); return `#${ch(n >> 16)}${ch(n >> 8 & 255)}${ch(n & 255)}`; };
 
-/** 上から見た人 */
-function personTop(cx, cy, kind, k, me = false) {
-  const L = me ? ME : look(k), sc = kind === 'k' ? .72 : 1, hair = kind === 'e' ? '#cfcac2' : L.hair;
+/** 箱（席・テーブルなど）。c,r はマスの左上、w,d は幅と奥行き（マス）、h は高さ（px） */
+function box(c, r, w, d, h, color, inset = .12) {
+  const a = iso(c + inset, r + inset), b = iso(c + w - inset, r + inset), cc = iso(c + w - inset, r + d - inset), dd = iso(c + inset, r + d - inset);
+  const up = p => ({ x: p.x, y: p.y - h });
+  return `<polygon points="${P([dd, cc, up(cc), up(dd)])}" fill="${shade(color, .72)}"/>` +
+    `<polygon points="${P([b, cc, up(cc), up(b)])}" fill="${shade(color, .86)}"/>` +
+    `<polygon points="${P([up(a), up(b), up(cc), up(dd)])}" fill="${color}"/>`;
+}
+
+/** 立っている・座っている人（正面向きの立ち絵）。x,y は足もと */
+function figure(x, y, kind, k, opts = {}) {
+  const me = !!opts.me, seated = !!opts.seated, sc = kind === 'k' ? .72 : 1;
+  const shirt = me ? '#ffd23f' : SHIRTS[hash(k) % SHIRTS.length], hair = kind === 'e' ? '#d4d0c8' : me ? '#2b2420' : HAIRS[hash(k + 7) % HAIRS.length];
+  const legH = (seated ? 10 : 22) * sc, bodyH = 26 * sc, headR = 11 * sc, w = 22 * sc;
+  const top = y - legH - bodyH;
   let s = `<g>`;
-  s += `<ellipse cx="${cx}" cy="${cy + 4}" rx="${30 * sc}" ry="${20 * sc}" fill="${L.shirt}"/>`;
-  s += `<circle cx="${cx}" cy="${cy - 2}" r="${15 * sc}" fill="${SKIN}"/><path d="M${cx - 15 * sc} ${cy - 2}a${15 * sc} ${15 * sc} 0 0 1 ${30 * sc} 0c-3 5-9 7-15 7s-12-2-15-7z" fill="${hair}" transform="rotate(180 ${cx} ${cy - 2})"/>`;
-  if (kind === 'm') s += `<path d="M${cx - 17} ${cy - 2}a17 17 0 0 1 34 0" stroke="#22262e" stroke-width="4" fill="none"/>`;
-  if (kind === 'c') s += `<rect x="${cx - 9}" y="${cy + 4}" width="18" height="8" rx="3" fill="#fff" stroke="#d9dde2"/>`;
-  if (kind === 'w') s += `<rect x="${cx - 20}" y="${cy - 40}" width="40" height="22" rx="3" fill="#9aa3ad"/><rect x="${cx - 16}" y="${cy - 37}" width="32" height="16" rx="2" fill="#cfe6ff"/>`;
-  if (kind === 'y') s += `<circle cx="${cx}" cy="${cy - 32}" r="13" fill="#fff" stroke="#d14b2f" stroke-width="3"/><circle cx="${cx}" cy="${cy - 32}" r="7" fill="#f2c66d"/>`;
-  if (kind === 'e') s += `<path d="M${cx + 26} ${cy - 14}l6 34" stroke="#7a5c3c" stroke-width="5" stroke-linecap="round"/>`;
-  if (me) s += `<circle cx="${cx}" cy="${cy}" r="34" fill="none" stroke="#ff6a3d" stroke-width="4"/><g class="react"><rect x="${cx - 26}" y="${cy - 60}" width="52" height="20" rx="10" fill="#ff6a3d"/><text x="${cx}" y="${cy - 50}" font-size="12" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central">あなた</text></g>`;
+  s += `<ellipse cx="${x}" cy="${y}" rx="${14 * sc}" ry="${6 * sc}" fill="rgba(0,0,0,.28)"/>`;
+  s += `<rect x="${x - w / 2 + 2}" y="${y - legH - 2}" width="${8 * sc}" height="${legH + 2}" rx="4" fill="#2f3542"/><rect x="${x + w / 2 - 2 - 8 * sc}" y="${y - legH - 2}" width="${8 * sc}" height="${legH + 2}" rx="4" fill="#2f3542"/>`;
+  s += `<rect x="${x - w / 2}" y="${top}" width="${w}" height="${bodyH}" rx="${9 * sc}" fill="${shirt}"/>`;
+  s += `<rect x="${x - w / 2}" y="${top + bodyH * .55}" width="${w}" height="${bodyH * .45}" rx="${6 * sc}" fill="${shade(shirt, .85)}"/>`;
+  const hy = top - headR + 2;
+  s += `<circle cx="${x}" cy="${hy}" r="${headR}" fill="${SKIN}"/>`;
+  s += `<path d="M${x - headR} ${hy}a${headR} ${headR} 0 0 1 ${headR * 2} 0c-3-4-7-5-10-5-5 0-8 3-${headR * 2 - 10} 5z" fill="${hair}"/>`;
+  if (kind === 's') s += `<path d="M${x - 6} ${hy + 2}q2.5 2 5 0M${x + 1} ${hy + 2}q2.5 2 5 0" stroke="#3a2a22" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  else s += `<circle cx="${x - 4}" cy="${hy + 2}" r="1.6" fill="#2a1f1a"/><circle cx="${x + 4}" cy="${hy + 2}" r="1.6" fill="#2a1f1a"/>`;
+  if (kind === 'c') s += `<rect x="${x - 7}" y="${hy + 4}" width="14" height="7" rx="3" fill="#fff"/>`;
+  if (kind === 'm') s += `<path d="M${x - headR - 1} ${hy}a${headR + 1} ${headR + 1} 0 0 1 ${headR * 2 + 2} 0" stroke="#111" stroke-width="3" fill="none"/><rect x="${x - headR - 4}" y="${hy - 3}" width="6" height="9" rx="2" fill="#111"/><rect x="${x + headR - 2}" y="${hy - 3}" width="6" height="9" rx="2" fill="#111"/>`;
+  if (kind === 'e') s += `<path d="M${x + 15} ${y}l-2 -34q0-4 4-4" stroke="#8a6a48" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  if (kind === 'w') s += `<rect x="${x - 13}" y="${top + 8}" width="26" height="15" rx="2" fill="#aab3bd"/><rect x="${x - 11}" y="${top + 10}" width="22" height="11" rx="1" fill="#bfe3ff"/>`;
+  if (kind === 'y') s += `<path d="M${x - 12} ${top + 12}h24a12 8 0 0 1-24 0z" fill="#fff" stroke="#e05a3b" stroke-width="2"/>`;
+  if (me) s += `<g class="react"><rect x="${x - 24}" y="${hy - headR - 26}" width="48" height="18" rx="9" fill="#ffd23f" stroke="#000" stroke-width="2.5"/><text x="${x}" y="${hy - headR - 17}" font-size="10" font-weight="900" fill="#111" text-anchor="middle" dominant-baseline="central">あなた</text></g>`;
   return s + '</g>';
 }
 
-/** 人の様子を伝える小さな吹き出し（話している・せき・音もれ・寝ている） */
+/** 人の様子（話している・せき・音もれ・寝ている・遊んでいる） */
 function statusMark(x, y, kind, k) {
-  if (kind === 't') return `<g class="talk" style="animation-delay:${(k % 2) * .6}s"><path d="M${x - 26} ${y - 34}h52a10 10 0 0 1 10 10v10a10 10 0 0 1-10 10h-30l-10 10v-10h-12a10 10 0 0 1-10-10v-10a10 10 0 0 1 10-10z" fill="#fff" stroke="#1e2d31" stroke-width="2.5"/><circle cx="${x - 12}" cy="${y - 19}" r="3.5" fill="#1e2d31"/><circle cx="${x}" cy="${y - 19}" r="3.5" fill="#1e2d31"/><circle cx="${x + 12}" cy="${y - 19}" r="3.5" fill="#1e2d31"/></g>`;
-  if (kind === 'c') return `<g class="bob"><text x="${x + 18}" y="${y - 14}" font-size="15" font-weight="900" fill="#7a8a90">ゴホッ</text></g>`;
-  if (kind === 'm') return `<g class="bob"><path d="M${x + 22} ${y - 6}v-22l14-4v20" stroke="#1e2d31" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="${x + 19}" cy="${y - 6}" r="4" fill="#1e2d31"/><circle cx="${x + 33}" cy="${y - 10}" r="4" fill="#1e2d31"/></g>`;
-  if (kind === 's') return `<g class="bob"><text x="${x + 18}" y="${y - 14}" font-size="18" font-weight="900" fill="#4f78a8">Z</text><text x="${x + 32}" y="${y - 28}" font-size="13" font-weight="900" fill="#4f78a8">z</text></g>`;
-  if (kind === 'k') return `<g class="bob"><circle cx="${x + 24}" cy="${y - 8}" r="9" fill="#ffd447" stroke="#d08a2e" stroke-width="2"/></g>`;
+  if (kind === 't') return `<g class="talk" style="animation-delay:${(k % 2) * .55}s"><path d="M${x - 18} ${y - 28}h36a8 8 0 0 1 8 8v6a8 8 0 0 1-8 8h-20l-8 8v-8h-8a8 8 0 0 1-8-8v-6a8 8 0 0 1 8-8z" fill="#fff" stroke="#000" stroke-width="2.5"/><circle cx="${x - 9}" cy="${y - 17}" r="2.6" fill="#000"/><circle cx="${x}" cy="${y - 17}" r="2.6" fill="#000"/><circle cx="${x + 9}" cy="${y - 17}" r="2.6" fill="#000"/></g>`;
+  if (kind === 'c') return `<g class="bob"><text x="${x + 12}" y="${y - 10}" font-size="12" font-weight="900" fill="#c9ced8" stroke="#000" stroke-width="3" paint-order="stroke">ゴホッ</text></g>`;
+  if (kind === 'm') return `<g class="bob"><path d="M${x + 14} ${y - 2}v-16l10-3v14" stroke="#38d6f5" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="${x + 12}" cy="${y - 2}" r="3" fill="#38d6f5"/><circle cx="${x + 22}" cy="${y - 5}" r="3" fill="#38d6f5"/></g>`;
+  if (kind === 's') return `<g class="bob"><text x="${x + 10}" y="${y - 8}" font-size="15" font-weight="900" fill="#8fb3ff">Z</text><text x="${x + 21}" y="${y - 19}" font-size="11" font-weight="900" fill="#8fb3ff">z</text></g>`;
+  if (kind === 'k') return `<g class="bob"><circle cx="${x + 16}" cy="${y - 4}" r="6" fill="#ffd23f" stroke="#000" stroke-width="2"/></g>`;
   return '';
 }
+
+/** 場所の札（緑の「入口」「ドア」など） */
+function sign(x, y, text, color = '#1f8a4c') {
+  const w = text.length * 13 + 16;
+  return `<g><rect x="${x - w / 2}" y="${y - 13}" width="${w}" height="26" rx="5" fill="${color}" stroke="#0b0d12" stroke-width="2.5"/><text x="${x}" y="${y + 1}" font-size="12" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central">${text}</text></g>`;
+}
+
 const isPerson = ch => 'ptcmskewy'.includes(ch);
+const THEME = {
+  '電車': { floor: ['#8d8a83', '#99968e'], wall: '#d9d4c7', seat: '#3f8f6b' },
+  'エレベーター': { floor: ['#9aa1a8', '#a8aeb4'], wall: '#b9c0c7', seat: '#3f8f6b' },
+  'カフェ': { floor: ['#b07d55', '#bd8a61'], wall: '#e8d8bf', seat: '#4b6f8a' },
+  '待合室': { floor: ['#c9c4ba', '#d4cfc5'], wall: '#e7e3d9', seat: '#4f7fa8' },
+  'バス': { floor: ['#7f8790', '#8b939b'], wall: '#d6dbe0', seat: '#3f6f9f' },
+  '図書館': { floor: ['#6f8a6a', '#7b9675'], wall: '#e4dccb', seat: '#8a5a3c' },
+  '映画館': { floor: ['#3a2b40', '#43334a'], wall: '#2a2030', seat: '#b3323b' },
+  '公園': { floor: ['#77a65d', '#82b067'], wall: null, seat: '#a8723f' },
+  'ラーメン屋': { floor: ['#5a4030', '#664a38'], wall: '#7a4e33', seat: '#d14b2f' },
+  '会議室': { floor: ['#8e98a3', '#99a3ad'], wall: '#dfe4e9', seat: '#3d4a5a' },
+  '教室': { floor: ['#b48a5c', '#c09668'], wall: '#efe7d6', seat: '#c9a06a' },
+};
 
-/** 場面をまとめて描く。返り値：SVG と、選べる場所・入口の座標 */
+/** 1列の場面（電車・ラーメン屋）は、向かいの席や通路を足して部屋にする */
+function layoutOf(Q) {
+  const cells = Q.map.split(''), cols = Q.cols, rows = Math.ceil(cells.length / cols);
+  if (rows > 1) return { cells, cols, rows };
+  if (Q.place === 'ラーメン屋') return { cells: [...'K'.repeat(cols), ...cells, ...'f'.repeat(cols - 1), 'D'], cols, rows: 3 };
+  // 電車：奥の壁ぎわが問題の席、まん中が通路、いちばん手前が向かいの席（飾り）
+  const opp = Array.from({ length: cols }, (_, k) => hash(k + cols * 5) % 3 === 0 ? 'O' : 'o');
+  return { cells: [...cells, ...'f'.repeat(cols - 1), 'D', ...opp], cols, rows: 3 };
+}
+
 function drawScene(Q) {
-  const cells = Q.map.split(''), rows = Math.ceil(cells.length / Q.cols);
-  return rows === 1 ? drawCar(Q, cells) : drawTop(Q, cells, rows);
-}
+  const { cells, cols, rows } = layoutOf(Q), th = THEME[Q.place] || THEME['待合室'];
+  const elevator = Q.place === 'エレベーター', WALL = 70;
+  const center = (c, r) => iso(c + .5, r + .5);
+  let floor = '', walls = '', items = [], pos = {}, entry = null;
 
-// 上から見た場面
-function drawTop(Q, cells, rows) {
-  const cols = Q.cols, M = 34, extraTop = ['映画館', '教室'].includes(Q.place) ? 60 : 0;
-  const W = cols * S + M * 2, H = rows * S + M * 2 + extraTop, ox = M, oy = M + extraTop;
-  const theme = {
-    'エレベーター': { floor: '#c9ced3', line: '#b6bcc2', wall: '#8d959d' },
-    'カフェ': { floor: '#e3c9a4', line: '#d4b78f', wall: '#7a5a3e' },
-    '待合室': { floor: '#e8e4dc', line: '#d9d3c6', wall: '#a9a294' },
-    'バス': { floor: '#d6d0c4', line: '#c7c0b2', wall: '#5f6b75' },
-    '図書館': { floor: '#c7d4c0', line: '#b8c7b0', wall: '#6b5a44' },
-    '映画館': { floor: '#3a2f3f', line: '#45394b', wall: '#241d28' },
-    '公園': { floor: '#bcd8a4', line: '#aacb90', wall: '#bcd8a4' },
-    '会議室': { floor: '#cfd6dc', line: '#c1c9d0', wall: '#6d7680' },
-    '教室': { floor: '#e2c69c', line: '#d3b689', wall: '#8a6a48' },
-  }[Q.place] || { floor: '#e8e4dc', line: '#d9d3c6', wall: '#a9a294' };
-  const seatColor = Q.place === '映画館' ? '#a8323a' : Q.place === 'バス' ? '#3f6f9f' : Q.place === '公園' ? '#a06a3c' : Q.place === '教室' ? '#c9a06a' : '#6d8f9a';
-  const pos = {}, people = [];
-  let s = `<svg class="scene" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
-  s += `<rect x="0" y="0" width="${W}" height="${H}" rx="26" fill="${theme.wall}"/>`;
-  s += `<rect x="${M - 10}" y="${M - 10 + extraTop}" width="${cols * S + 20}" height="${rows * S + 20}" rx="14" fill="${theme.floor}"/>`;
-  // 床の目地
-  for (let c = 1; c < cols * 2; c++) s += `<line x1="${ox + c * S / 2}" y1="${oy - 6}" x2="${ox + c * S / 2}" y2="${oy + rows * S + 6}" stroke="${theme.line}" stroke-width="2"/>`;
-  if (Q.place === '映画館') s += `<rect x="${M}" y="14" width="${cols * S}" height="34" rx="8" fill="#e8e6f0"/><text x="${W / 2}" y="31" font-size="16" font-weight="900" fill="#3a2f3f" text-anchor="middle" dominant-baseline="central">スクリーン</text>`;
-  if (Q.place === '教室') s += `<rect x="${M + 30}" y="12" width="${cols * S - 60}" height="40" rx="6" fill="#2f5a3f" stroke="#8a6a48" stroke-width="5"/><text x="${W / 2}" y="32" font-size="15" font-weight="900" fill="#e8f0e4" text-anchor="middle" dominant-baseline="central">黒板</text>`;
-  if (Q.place === 'エレベーター') s += `<rect x="${W - 22}" y="${oy + 20}" width="14" height="60" rx="4" fill="#5d656d"/><circle cx="${W - 15}" cy="${oy + 36}" r="4" fill="#ffd447"/><circle cx="${W - 15}" cy="${oy + 52}" r="4" fill="#ffd447"/>`;
-  if (Q.place === 'バス') { s += `<rect x="4" y="${oy}" width="14" height="${rows * S}" rx="6" fill="#bfe1ee"/><rect x="${W - 18}" y="${oy}" width="14" height="${rows * S}" rx="6" fill="#bfe1ee"/>`; }
-  if (Q.place === '公園') { [[14, 14], [W - 30, H - 24], [W - 24, 18]].forEach(([x, y]) => { s += `<circle cx="${x}" cy="${y}" r="22" fill="#7fae6a"/>`; }); }
-  const elevator = Q.place === 'エレベーター';
-  let entry = { x: W / 2, y: H + 30 };
-  cells.forEach((ch, k) => {
-    const r = Math.floor(k / cols), c = k % cols, cx = ox + c * S + S / 2, cy = oy + r * S + S / 2;
-    const chair = () => Q.place === '公園'
-      ? `<rect x="${cx - 46}" y="${cy - 14}" width="92" height="34" rx="6" fill="${seatColor}"/><rect x="${cx - 46}" y="${cy + 18}" width="92" height="8" rx="3" fill="#7a4e2a"/>`
-      : `<rect x="${cx - 30}" y="${cy - 26}" width="60" height="56" rx="14" fill="${seatColor}"/><rect x="${cx - 30}" y="${cy + 22}" width="60" height="12" rx="6" fill="rgba(0,0,0,.18)"/>`;
-    if (ch === 'D') { s += `<rect x="${cx - S / 2}" y="${cy - 16}" width="${S}" height="40" fill="#b6bcc2"/><line x1="${cx}" y1="${cy - 16}" x2="${cx}" y2="${cy + 24}" stroke="#7d858d" stroke-width="3"/><text x="${cx}" y="${cy + 4}" font-size="15" font-weight="900" fill="#4d555d" text-anchor="middle" dominant-baseline="central">ドア</text>`; entry = { x: cx, y: cy + 60 }; return; }
-    if (ch === 'T') { s += `<rect x="${cx - 40}" y="${cy - 34}" width="80" height="68" rx="12" fill="${Q.place === '会議室' ? '#9aa6b0' : '#a9774a'}"/><circle cx="${cx + 18}" cy="${cy - 10}" r="8" fill="#fff"/>`; return; }
-    if (ch === 'f' || ch === '-') return;
-    const hasSeat = !elevator && ch !== 'g';
-    if (hasSeat) s += chair();
-    if (ch === 'b') s += `<rect x="${cx - 20}" y="${cy - 16}" width="40" height="32" rx="8" fill="#a06a3c"/>`;
-    if (ch === 'g') s += `<rect x="${cx - 26}" y="${cy - 32}" width="52" height="64" rx="10" fill="#4f78a8"/><rect x="${cx - 10}" y="${cy - 40}" width="20" height="10" rx="4" fill="#2e4e74"/>`;
-    if (isPerson(ch)) { s += personTop(cx, cy, ch, k); people.push({ x: cx, y: cy - 14, ch, k }); }
-    if ('ABC'.includes(ch)) pos[ch] = { x: cx, y: cy, k };
-  });
-  people.forEach(p => { s += statusMark(p.x, p.y, p.ch, p.k); });
-  Object.entries(pos).forEach(([L, p]) => { s += optMark(L, p.x, p.y, 40, 76); });
-  s += `<g id="actors"></g></svg>`;
-  return { svg: s, pos, entry, side: false, W, H };
-}
-
-
-// 1列の場面（電車・ラーメン屋）：縦長に、上から見た車内・店内として描く（スマホの縦画面いっぱいに大きく見せるため）
-function drawCar(Q, cells) {
-  const n = cells.length, ramen = Q.place === 'ラーメン屋', SY = 76, M = 48, W = 400, H = n * SY + M * 2; // 席の間隔は少しつめて、大きく見せる
-  const seatX = ramen ? 200 : 82, aisleX = ramen ? 300 : 210, pos = {}, people = [];
-  let s = `<svg class="scene" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
-  if (ramen) {
-    s += `<rect x="0" y="0" width="${W}" height="${H}" rx="26" fill="#4a3022"/>`;
-    s += `<rect x="16" y="16" width="112" height="${H - 32}" rx="12" fill="#6b6f75"/>`; // 厨房
-    for (let k = 0; k < 3; k++) s += `<circle cx="72" cy="${M + 60 + k * (H - 2 * M - 120) / 2}" r="30" fill="#3d4146"/><circle cx="72" cy="${M + 60 + k * (H - 2 * M - 120) / 2}" r="22" fill="#d9d4c7"/>`;
-    s += `<rect x="128" y="16" width="44" height="${H - 32}" rx="6" fill="#c98f5a"/><rect x="168" y="16" width="216" height="${H - 32}" rx="12" fill="#5c3c2b"/>`;
-    for (let y = 30; y < H - 30; y += 40) s += `<line x1="168" y1="${y}" x2="384" y2="${y}" stroke="#4e3324" stroke-width="2"/>`;
-  } else {
-    s += `<rect x="0" y="0" width="${W}" height="${H}" rx="30" fill="#d8d2c4"/>`;
-    s += `<rect x="18" y="18" width="${W - 36}" height="${H - 36}" rx="18" fill="#c7c1b4"/>`;
-    // 窓（左右の壁）
-    for (let y = M + 10; y < H - M - 40; y += 110) { s += `<rect x="6" y="${y}" width="12" height="96" rx="4" fill="#bfe1ee"/><rect x="${W - 18}" y="${y}" width="12" height="96" rx="4" fill="#bfe1ee"/>`; }
-    // ドア（上下）
-    [[18, 18], [W - 104, 18], [18, H - 30], [W - 104, H - 30]].forEach(([x, y]) => { s += `<rect x="${x}" y="${y}" width="86" height="12" rx="3" fill="#f2b33d"/>`; });
-    s += `<text x="${W / 2}" y="${H - 44}" font-size="14" font-weight="900" fill="#8f877a" text-anchor="middle">ドア</text>`;
-    // 座席（自分の側と、向かいの側）
-    s += `<rect x="30" y="${M}" width="104" height="${n * SY}" rx="16" fill="#3f7f6b"/><rect x="30" y="${M}" width="22" height="${n * SY}" rx="10" fill="#2f6655"/>`;
-    s += `<rect x="${W - 134}" y="${M}" width="104" height="${n * SY}" rx="16" fill="#3f7f6b"/><rect x="${W - 52}" y="${M}" width="22" height="${n * SY}" rx="10" fill="#2f6655"/>`;
-    for (let k = 1; k < n; k++) { s += `<line x1="52" y1="${M + k * SY}" x2="134" y2="${M + k * SY}" stroke="#2f6655" stroke-width="3"/><line x1="${W - 134}" y1="${M + k * SY}" x2="${W - 52}" y2="${M + k * SY}" stroke="#2f6655" stroke-width="3"/>`; }
-    // つり革と手すり
-    s += `<line x1="${aisleX}" y1="${M - 20}" x2="${aisleX}" y2="${H - M + 20}" stroke="#a9a294" stroke-width="4"/>`;
-    for (let y = M + 16; y < H - M; y += 50) s += `<circle cx="${aisleX - 22}" cy="${y}" r="9" fill="none" stroke="#f2b33d" stroke-width="4"/><circle cx="${aisleX + 22}" cy="${y + 27}" r="9" fill="none" stroke="#f2b33d" stroke-width="4"/>`;
-    // 向かいの席の人（場面の飾り。選べない）
-    for (let k = 0; k < n; k++) if (hash(k + n * 3) % 3 === 0) s += personTop(W - 82, M + k * SY + SY / 2, 'p', k + 40);
+  // 床（市松）と、床の厚み
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) floor += `<polygon points="${P([iso(c, r), iso(c + 1, r), iso(c + 1, r + 1), iso(c, r + 1)])}" fill="${th.floor[(r + c) % 2]}"/>`;
+  const down = p => ({ x: p.x, y: p.y + 10 });
+  floor += `<polygon points="${P([iso(0, rows), iso(cols, rows), down(iso(cols, rows)), down(iso(0, rows))])}" fill="${shade(th.floor[0], .6)}"/>`;
+  floor += `<polygon points="${P([iso(cols, 0), iso(cols, rows), down(iso(cols, rows)), down(iso(cols, 0))])}" fill="${shade(th.floor[0], .75)}"/>`;
+  // 奥の壁（左奥と右奥）と、壁の飾り（窓・黒板・スクリーン・品書き）
+  if (th.wall) {
+    const up = p => ({ x: p.x, y: p.y - WALL });
+    walls += `<polygon points="${P([iso(0, 0), iso(0, rows), up(iso(0, rows)), up(iso(0, 0))])}" fill="${shade(th.wall, .8)}"/>`;
+    walls += `<polygon points="${P([iso(0, 0), iso(cols, 0), up(iso(cols, 0)), up(iso(0, 0))])}" fill="${th.wall}"/>`;
+    const onBack = (c0, c1, h0, h1, color) => `<polygon points="${P([{ x: iso(c0, 0).x, y: iso(c0, 0).y - h0 }, { x: iso(c1, 0).x, y: iso(c1, 0).y - h0 }, { x: iso(c1, 0).x, y: iso(c1, 0).y - h1 }, { x: iso(c0, 0).x, y: iso(c0, 0).y - h1 }])}" fill="${color}"/>`;
+    if (['電車', 'バス'].includes(Q.place)) for (let c = 0; c < cols; c += 2) walls += onBack(c + .2, Math.min(cols, c + 1.8), 34, 62, '#9fd3e6');
+    if (Q.place === '教室') walls += onBack(.6, cols - .6, 24, 62, '#2f5a3f');
+    if (Q.place === '映画館') walls += onBack(.3, cols - .3, 16, 66, '#e9e7f2');
+    if (Q.place === 'ラーメン屋') for (let c = 0; c < cols; c++) walls += onBack(c + .25, c + .75, 30, 64, '#f4e6c8');
+    if (Q.place === 'カフェ' || Q.place === '図書館') for (let c = 0; c < cols; c += 2) walls += onBack(c + .3, c + 1.5, 26, 60, Q.place === '図書館' ? '#7a5a3c' : '#9fd3e6');
+    if (elevator) walls += onBack(cols - .6, cols - .3, 22, 48, '#5d656d');
   }
-  cells.forEach((ch, k) => {
-    const cx = seatX, cy = M + k * SY + SY / 2;
-    if (ramen) s += `<circle cx="${cx}" cy="${cy}" r="30" fill="#d14b2f"/><circle cx="${cx}" cy="${cy}" r="22" fill="#e9674b"/>`;
-    if (ch === 'b') s += `<rect x="${cx - 24}" y="${cy - 22}" width="48" height="44" rx="10" fill="#a06a3c"/><path d="M${cx - 14} ${cy - 22}a14 10 0 0 1 28 0" stroke="#7a4e2a" stroke-width="4" fill="none"/>`;
-    if (ch === 'g') { s += personTop(cx, cy, 'p', k); s += `<rect x="${cx + 52}" y="${cy - 30}" width="46" height="60" rx="10" fill="#4f78a8"/><rect x="${cx + 66}" y="${cy - 38}" width="18" height="10" rx="4" fill="#2e4e74"/>`; }
-    if (isPerson(ch)) { s += personTop(cx, cy, ch, k); people.push({ x: cx, y: cy - 14, ch, k }); if (ramen && ch === 'y') s += `<circle cx="${cx - 58}" cy="${cy}" r="16" fill="#fff" stroke="#d14b2f" stroke-width="3"/><circle cx="${cx - 58}" cy="${cy}" r="9" fill="#f2c66d"/>`; }
-    if ('ABC'.includes(ch)) pos[ch] = { x: cx, y: cy, k };
-  });
-  people.forEach(p => { s += statusMark(p.x, p.y, p.ch, p.k); });
-  Object.entries(pos).forEach(([L, p]) => { s += optMark(L, p.x, p.y, 36, 76, 78); });
-  s += `<g id="actors"></g></svg>`;
-  const entry = { x: aisleX, y: H + 30 };
-  return { svg: s, pos, entry, side: false, W, H, path: p => [{ x: aisleX, y: entry.y }, { x: aisleX, y: p.y }, { x: p.x, y: p.y }] };
-}
 
-/** 選べる場所の印（点線の輪と、大きな A・B・C）。dx を渡すと、A・B・C を横（通路側）に出す */
-function optMark(L, x, y, r, badgeUp, dx = 0) {
-  const bx = x + dx, by = dx ? y : y - badgeUp + 30;
-  return `<g class="opt" data-opt="${L}"><ellipse class="halo" cx="${x}" cy="${y}" rx="${r + 4}" ry="${r}"/><g class="badge"><circle cx="${bx}" cy="${by}" r="26"/><text x="${bx}" y="${by + 1}" font-size="30">${L}</text></g><rect x="${Math.min(x, bx) - 50}" y="${Math.min(y, by) - 40}" width="${Math.abs(bx - x) + 100}" height="${Math.abs(by - y) + 90}" fill="transparent"/></g>`;
+  cells.forEach((ch, k) => {
+    const c = k % cols, r = Math.floor(k / cols), ctr = center(c, r), z = c + r;
+    const seat = () => {
+      if (Q.place === '教室') return box(c + .1, r + .1, .8, .8, 22, th.seat); // 机
+      if (Q.place === '公園') return box(c, r + .25, 1, .5, 14, th.seat, .04);
+      if (Q.place === '電車') return box(c, r, 1, .8, 16, th.seat, .02) + box(c, r, 1, .2, 34, shade(th.seat, .85), .02);
+      return box(c + .15, r + .15, .7, .7, 16, th.seat) + box(c + .15, r + .15, .7, .16, 32, shade(th.seat, .85), 0);
+    };
+    if (ch === 'f' || ch === '-') return;
+    if (ch === 'D') { if (!entry) entry = { c: c + .5, r: r + .5 }; items.push({ z: z - .5, s: `<polygon points="${P([iso(c, r), iso(c + 1, r), iso(c + 1, r + 1), iso(c, r + 1)])}" fill="#f2c230" opacity=".35"/>` }); return; }
+    if (ch === 'T') { items.push({ z, s: box(c + .05, r + .05, .9, .9, 26, Q.place === '会議室' ? '#a7b2bd' : '#a9774a') }); return; }
+    if (ch === 'K') { items.push({ z, s: box(c, r + .2, 1, .8, 30, '#c98f5a', 0) }); return; }
+    if (ch === 'o' || ch === 'O') { items.push({ z, s: box(c, r + .2, 1, .8, 16, th.seat, .02) }); if (ch === 'O') items.push({ z: z + .1, s: figure(ctr.x, ctr.y - 10, 'p', k + 50, { seated: true }) }); return; }
+    const hasSeat = !elevator && ch !== 'g';
+    if (hasSeat) items.push({ z, s: seat() });
+    if (ch === 'b') items.push({ z: z + .1, s: box(c + .3, r + .3, .4, .4, 30, '#a06a3c', 0) });
+    if (ch === 'g') items.push({ z: z + .1, s: box(c + .25, r + .3, .5, .4, 44, '#4f78a8', 0) });
+    const lift = hasSeat ? 12 : 0;
+    if (isPerson(ch)) items.push({ z: z + .1, s: figure(ctr.x, ctr.y - lift, ch, k, { seated: hasSeat }) + statusMark(ctr.x, ctr.y - lift - 64, ch, k) });
+    if ('ABC'.includes(ch)) pos[ch] = { c: c + .5, r: r + .5, x: ctr.x, y: ctr.y, seatLift: lift, z };
+  });
+  if (!entry) entry = { c: cols - .5, r: rows + .6 };
+
+  // 札（入口・ドア・黒板など）
+  const e = iso(entry.c, entry.r);
+  let signs = sign(e.x + 6, e.y + 26, ['電車', 'エレベーター', 'バス'].includes(Q.place) ? 'ドア' : '入口');
+  if (Q.place === '教室') signs += sign(iso(cols / 2, 0).x, iso(cols / 2, 0).y - 82, '黒板', '#2f5a3f');
+  if (Q.place === '映画館') signs += sign(iso(cols / 2, 0).x, iso(cols / 2, 0).y - 82, 'スクリーン', '#5a4a7a');
+  if (elevator) signs += sign(iso(cols - .45, 0).x + 4, iso(cols - .45, 0).y - 62, 'ボタン', '#555d66');
+
+  // 選べる場所（床の輪と、上に浮かぶピン）
+  Object.entries(pos).forEach(([L, p]) => {
+    const pinY = p.y - p.seatLift - 92;
+    items.push({ z: 999, s: `<g class="opt" data-opt="${L}"><ellipse class="glowc" cx="${p.x}" cy="${p.y}" rx="${CX * .62}" ry="${CY * .62}"/><g class="pin"><path d="M${p.x - 10} ${pinY + 18}L${p.x} ${pinY + 34}L${p.x + 10} ${pinY + 18}z"/><circle cx="${p.x}" cy="${pinY}" r="21"/><text x="${p.x}" y="${pinY + 1}" font-size="24">${L}</text></g><rect x="${p.x - 34}" y="${pinY - 24}" width="68" height="${p.y - pinY + 40}" fill="transparent"/></g>` });
+  });
+  items.sort((a, b) => a.z - b.z);
+
+  // 全体の大きさ
+  const minX = iso(0, rows).x - 14, maxX = iso(cols, 0).x + 14;
+  const minY = iso(0, 0).y - (th.wall ? WALL : 0) - 70, maxY = iso(cols, rows).y + 44;
+  const svg = `<svg viewBox="${minX} ${minY} ${maxX - minX} ${maxY - minY}" preserveAspectRatio="xMidYMid meet">${floor}${walls}${items.map(i => i.s).join('')}${signs}<g id="actors"></g></svg>`;
+  return { svg, pos, entry };
 }
 
 // ════════════════════════════════════════════
 //  遊び
 // ════════════════════════════════════════════
 const app = document.getElementById('app');
-let state = { i: 0, score: 0, answers: [], best: null }, timers = [];
+let state = { i: 0, score: 0, answers: [], best: null }, timers = [], scene = null, picked = false;
 const later = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
-const clearAll = () => { timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = []; };
+const clearAll = () => { timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const soundBtn = () => `<button class="icon-btn" id="mute" aria-label="音">${ic(muted ? UI.mute : UI.sound)}</button>`;
-function bindMute() { const m = document.getElementById('mute'); if (m) m.onclick = () => { muted = !muted; m.innerHTML = ic(muted ? UI.mute : UI.sound); }; }
+const soundBtn = () => `<button class="sq" id="mute" aria-label="音">${svgi(muted ? ICON.mute : ICON.sound)}</button>`;
+function bindMute() { const m = document.getElementById('mute'); if (m) m.onclick = () => { muted = !muted; m.innerHTML = svgi(muted ? ICON.mute : ICON.sound); }; }
 
 function cover() {
   clearAll();
-  const demo = drawScene(ALL[0]).svg.replace('class="scene"', '');
+  const bg = drawScene(ALL[0]).svg;
   app.innerHTML = `
-    <div class="bar"><span class="place">${ic(PLACE_ICON['電車'])}空気読みゲーム</span><span class="dots"></span>${soundBtn()}</div>
     <div class="cover">
-      <div class="art">${demo}</div>
-      <div class="title pop">どこに<em>座る？</em></div>
-      <div class="lead">電車・エレベーター・カフェ…全${ALL.length}問。<br>3秒で、一番気まずくない場所をタップ。</div>
-      ${state.best !== null ? `<div class="lead" style="margin-top:4px">自己ベスト ${state.best} / ${ALL.length}</div>` : ''}
-      <button class="btn" id="go">${ic(UI.next)}スタート</button>
+      <div class="scene-bg">${bg}</div>
+      <div style="position:absolute;right:0;top:0">${soundBtn()}</div>
+      <div class="logo"><span class="l1">空気読み</span><span class="l2">戦線</span><span class="l3" data-t="どこに座る？">どこに座る？</span></div>
+      <div class="tagline">電車・エレベーター・カフェの空気を読み切れ</div>
+      <div class="spacer"></div>
+      <div class="rules">
+        <div class="rule"><span style="color:#ff4b3e">${svgi(ICON.ban)}</span>知らない人の隣はなるべく避ける</div>
+        <div class="rule"><span style="color:#22c55e">${svgi(ICON.edge)}</span>端は片側が壁で安心</div>
+        <div class="rule"><span style="color:#38d6f5">${svgi(ICON.noise)}</span>会話・音もれの近くは落ち着かない</div>
+        <div class="rule"><span style="color:#ffd23f">${svgi(ICON.people)}</span>後から来る人のことも考える</div>
+      </div>
+      <div class="badge-red">全${ALL.length}問　迷ったら気まずい</div>
+      ${state.best !== null ? `<div class="note">自己ベスト ${state.best} / ${ALL.length}</div>` : ''}
+      <button class="btn big en" id="go">START</button>
       <div class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</div>
     </div>`;
+  app.querySelectorAll('.scene-bg .opt').forEach(o => o.remove());
   bindMute();
   document.getElementById('go').onclick = () => { sfx.tap(); state.i = 0; state.score = 0; state.answers = []; question(); };
 }
 
-function dotsHtml() {
-  return ALL.map((_, k) => `<i class="${k < state.answers.length ? (state.answers[k] ? 'ok' : 'ng') : k === state.i ? 'now' : ''}"></i>`).join('');
+function hud(Q) {
+  const n = state.i + 1;
+  return `<div class="stage-name en">STAGE ${Math.ceil(n / 5)}-${(state.i % 5) + 1}　<b>${esc(Q.place)}</b></div>
+    <div class="hud"><span class="coin en">${state.score}</span><span class="count en">${n} / ${ALL.length}</span>${soundBtn()}</div>
+    <div class="progress"><i style="width:${(state.i / ALL.length) * 100}%"></i></div>`;
 }
 
-let scene = null, picked = false;
 function question() {
   clearAll(); picked = false;
   const Q = ALL[state.i];
   scene = drawScene(Q);
-  app.innerHTML = `
-    <div class="bar"><span class="place">${ic(PLACE_ICON[Q.place] || PLACE_ICON['待合室'])}${esc(Q.place)}</span><span class="dots">${dotsHtml()}</span><span class="score">${state.score}点</span>${soundBtn()}</div>
-    <div class="qwrap"><div class="q pop">${esc(Q.q)}</div><div class="hint">3秒で選んで</div>
-      <svg class="ring" viewBox="0 0 52 52"><circle class="bg" cx="26" cy="26" r="22"/><circle class="fg" id="ringfg" cx="26" cy="26" r="22" stroke-dasharray="138.2" stroke-dashoffset="0"/><text x="26" y="27" id="ringtx">3</text></svg>
-    </div>
+  app.innerHTML = `${hud(Q)}
+    <div class="qrow"><span class="qtag en">Q${state.i + 1}</span><span class="q dela">${esc(Q.q)}</span>
+      <svg class="timer" viewBox="0 0 46 46"><circle class="bg" cx="23" cy="23" r="19"/><circle class="fg" id="tfg" cx="23" cy="23" r="19" stroke-dasharray="119.4" stroke-dashoffset="0"/><text x="23" y="24" id="ttx">3</text></svg></div>
     <div class="stage" id="stage">${scene.svg}</div>
     <div class="panel" id="panel"></div>`;
   bindMute();
   const opts = [...app.querySelectorAll('.opt')].sort((a, b) => a.dataset.opt.localeCompare(b.dataset.opt));
   opts.forEach(o => o.addEventListener('pointerdown', () => choose(o.dataset.opt)));
-  // カウントダウン：候補を順番に光らせる
   let g = 0; const glow = () => { opts.forEach(o => o.classList.remove('glow')); opts[g++ % opts.length].classList.add('glow'); };
   glow(); timers.push(setInterval(glow, 280));
-  const fg = document.getElementById('ringfg'), tx = document.getElementById('ringtx'), t0 = performance.now();
+  const fg = document.getElementById('tfg'), tx = document.getElementById('ttx'), t0 = performance.now();
   sfx.tick();
-  const tickT = setInterval(() => {
+  timers.push(setInterval(() => {
     const left = Math.max(0, TIME - (performance.now() - t0));
-    fg.setAttribute('stroke-dashoffset', String(138.2 * (1 - left / TIME)));
-    const n = Math.ceil(left / 1000); if (tx.textContent !== String(n) && n > 0) { tx.textContent = n; sfx.tick(); }
-    if (left <= 0) { clearInterval(tickT); choose(null); }
-  }, 50);
-  timers.push(tickT);
+    fg.setAttribute('stroke-dashoffset', String(119.4 * (1 - left / TIME)));
+    const n = Math.ceil(left / 1000); if (n > 0 && tx.textContent !== String(n)) { tx.textContent = n; sfx.tick(); }
+    if (left <= 0) choose(null);
+  }, 50));
 }
 
 function choose(opt) {
-  if (picked) return; picked = true;
-  clearAll();
-  const Q = ALL[state.i], ok = opt === Q.best, svgEl = app.querySelector('svg.scene'), actors = svgEl.querySelector('#actors');
+  if (picked) return; picked = true; clearAll();
+  const Q = ALL[state.i], ok = opt === Q.best, svgEl = app.querySelector('#stage svg'), actors = svgEl.querySelector('#actors');
   app.querySelectorAll('.opt').forEach(o => { o.classList.remove('glow'); if (o.dataset.opt !== opt) o.classList.add('dim'); });
-  document.getElementById('ringtx').textContent = '';
+  document.getElementById('ttx').textContent = '';
   state.answers.push(ok); if (ok) state.score++;
   const panel = document.getElementById('panel');
-
   if (!opt) {
     sfx.bad(); showBest(Q);
-    panel.innerHTML = `<div class="verdict bad pop">${ic(UI.clock, 2.4)}時間切れ</div><div class="best-line">一番平和は ${Q.best}：${esc(Q.why[Q.best])}</div>${nextBtn()}`;
+    panel.innerHTML = `<div class="verdict bad dela">${svgi(ICON.clock)}時間切れ</div><div class="why">一番平和は <b>${Q.best}</b>：${esc(Q.why[Q.best])}</div>${nextBtn()}`;
     bindNext(); return;
   }
   sfx.tap();
+  panel.innerHTML = `<div class="verdict dela">${opt} を選ぶと……</div>`;
+  // 「あなた」が入口から歩いてきて、その場所へ（マス目の上を、行→列の順に進む）
   const p = scene.pos[opt], e = scene.entry;
-  panel.innerHTML = `<div class="verdict pop" style="color:var(--ink)">${opt} を選ぶと……</div>`;
-  // 「あなた」が入口から歩いてきて、その場所に座る
+  const way = [e, { c: e.c, r: p.r }, { c: p.c, r: p.r }].map(w => iso(w.c, w.r));
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   g.setAttribute('class', 'walker');
-  g.innerHTML = personTop(0, 0, 'p', 0, true);
-  const path = scene.path ? scene.path(p) : [{ x: e.x, y: e.y }, { x: p.x, y: e.y }, { x: p.x, y: p.y }];
-  g.style.transform = `translate(${path[0].x}px, ${path[0].y}px)`;
+  g.innerHTML = figure(0, 0, 'p', 0, { me: true });
+  g.style.transform = `translate(${way[0].x}px, ${way[0].y}px)`;
   actors.appendChild(g);
-  let step = 0; const steps = setInterval(() => sfx.step(step++), 140); timers.push(steps);
-  const legMs = 420;
-  path.slice(1).forEach((pt, k) => later(() => { g.style.transform = `translate(${pt.x}px, ${pt.y}px)`; }, 30 + k * legMs));
-  const arrive = 30 + (path.length - 1) * legMs + 120;
+  let st = 0; timers.push(setInterval(() => sfx.step(st++), 140));
+  way.slice(1).forEach((w, k) => later(() => { g.style.transform = `translate(${w.x}px, ${w.y}px)`; }, 30 + k * 400));
   later(() => {
-    clearInterval(steps);
-    g.insertAdjacentHTML('beforeend', reaction(ok, -44, Q.why[opt]));
-    if (!ok) svgEl.querySelectorAll('.talk').forEach(t => t.style.animationDuration = '.5s');
+    clearAll();
+    g.style.transition = 'none';
+    g.style.transform = `translate(${p.x}px, ${p.y - p.seatLift}px)`;
+    g.innerHTML = figure(0, 0, 'p', 0, { me: true, seated: p.seatLift > 0 }) + reaction(ok);
+    if (!ok) svgEl.classList.add('fast');
     ok ? sfx.good() : sfx.bad();
     showBest(Q);
     panel.innerHTML = `
-      <div class="verdict ${ok ? 'good' : 'bad'} pop">${ic(ok ? UI.ok : UI.ng, 2.4)}${ok ? '正解！ +1' : esc(Q.why[opt])}</div>
-      ${ok ? `<div class="why">${esc(Q.why[opt])}</div>` : `<div class="best-line">一番平和は ${Q.best}：${esc(Q.why[Q.best])}</div>`}
+      <div class="verdict ${ok ? 'good' : 'bad'} dela">${svgi(ok ? ICON.ok : ICON.ng)}${ok ? '正解！ +1' : esc(Q.why[opt])}</div>
+      <div class="why">${ok ? esc(Q.why[opt]) : `一番平和は <b>${Q.best}</b>：${esc(Q.why[Q.best])}`}</div>
       ${nextBtn()}`;
     bindNext();
-  }, arrive);
+  }, 30 + (way.length - 1) * 400 + 100);
 }
 
-/** 座ったあとの気持ち（汗・きらきら）と、ひとこと */
-function reaction(ok, y, text) {
-  const t = ok ? 'ちょうどいい' : '気まずい…';
-  const col = ok ? '#1f9d63' : '#e2463c';
-  const mark = ok
-    ? `<path d="M30 ${y - 4}l4 -10 4 10 10 4 -10 4 -4 10 -4 -10 -10 -4z" fill="#ffd447"/>`
-    : `<path d="M28 ${y + 4}c0-8 8-16 8-16s8 8 8 16a8 8 0 0 1-16 0z" fill="#7cc4e4"/>`;
-  return `<g class="react">${mark}<rect x="-58" y="${y - 44}" width="116" height="30" rx="15" fill="#fff" stroke="${col}" stroke-width="3"/><text x="0" y="${y - 29}" font-size="15" font-weight="900" fill="${col}" text-anchor="middle" dominant-baseline="central">${t}</text></g>`;
+/** 座ったあとの気持ち */
+function reaction(ok) {
+  const t = ok ? 'ちょうどいい' : '気まずい…', col = ok ? '#22c55e' : '#ff4b3e';
+  const mark = ok ? `<path d="M18 -86l3 -8 3 8 8 3 -8 3 -3 8 -3 -8 -8 -3z" fill="#ffd23f"/>` : `<path d="M17 -76c0-7 6-13 6-13s6 6 6 13a6 6 0 0 1-12 0z" fill="#7cc4e4"/>`;
+  return `<g class="react">${mark}<rect x="-50" y="-118" width="100" height="26" rx="13" fill="#0b0d12" stroke="${col}" stroke-width="3"/><text x="0" y="-105" font-size="13" font-weight="900" fill="${col}" text-anchor="middle" dominant-baseline="central">${t}</text></g>`;
 }
 
 function showBest(Q) { const el = app.querySelector(`.opt[data-opt="${Q.best}"]`); if (el) { el.classList.remove('dim'); el.classList.add('best'); } }
-function nextBtn() { return `<button class="btn" id="next">${ic(UI.next)}${state.i + 1 < ALL.length ? '次の問題' : '結果を見る'}</button>`; }
+function nextBtn() { return `<button class="btn" id="next">${state.i + 1 < ALL.length ? '次の問題' : '結果を見る'}</button>`; }
 function bindNext() { document.getElementById('next').onclick = () => { sfx.tap(); state.i++; state.i < ALL.length ? question() : finish(); }; }
 
 function typeOf(score, total) {
   const r = score / total;
   if (r >= .85) return ['空気読み名人', 'どこでも自然な距離をとれる'];
-  if (r >= .6) return ['ほどよい距離感タイプ', 'たいていの場面で気まずくならない'];
+  if (r >= .6) return ['ほどよい距離感', 'たいていの場面で気まずくならない'];
   if (r >= .35) return ['のびのびタイプ', '自分のペースを大事にする'];
   return ['大胆タイプ', 'どこでも気にせず座れる強さがある'];
 }
@@ -497,27 +506,24 @@ async function finish() {
   if (state.best === null || state.score > state.best) { state.best = state.score; await store.save('best', state.best); }
   sfx.good();
   app.innerHTML = `
-    <div class="bar"><span class="place">${ic(UI.ok)}結果</span><span class="dots">${dotsHtml()}</span>${soundBtn()}</div>
-    <div class="cover">
-      <div class="result-card">
-        <div class="lead">あなたの距離感タイプ</div>
-        <div class="type pop">${type}</div>
-        <div class="lead">${desc}</div>
-        <div class="bigscore pop">${state.score}<small> / ${total}</small></div>
-        <div class="meter">${state.answers.map(a => `<i class="${a ? 'ok' : ''}"></i>`).join('')}</div>
-        <div class="lead" style="font-size:13px">自己ベスト ${state.best} / ${total}</div>
-      </div>
+    <div class="stage-name en">RESULT</div>
+    <div class="hud"><span class="coin en">${state.score}</span><span class="count en">${total} / ${total}</span>${soundBtn()}</div>
+    <div class="progress"><i style="width:100%"></i></div>
+    <div class="result">
+      <div class="k">あなたの距離感タイプ</div>
+      <div class="type">${type}</div>
+      <div class="why">${desc}</div>
+      <div class="score">${state.score}<small> / ${total}</small></div>
+      <div class="grid-dots">${state.answers.map(a => `<i class="${a ? 'ok' : 'ng'}"></i>`).join('')}</div>
+      <div class="why" style="color:var(--sub)">自己ベスト ${state.best} / ${total}</div>
       <div style="flex:1"></div>
-      <button class="btn" id="copy">${ic(UI.copy)}結果をコピー</button>
-      <button class="btn ghost" id="again">${ic(UI.retry)}もう一度</button>
+      <button class="btn" id="copy">結果をコピー</button>
+      <button class="btn dark" id="again">もう一度あそぶ</button>
       <div class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</div>
     </div>`;
   bindMute();
   document.getElementById('again').onclick = () => { sfx.tap(); cover(); };
-  document.getElementById('copy').onclick = async e => {
-    const text = `どこに座る？空気読みゲーム ${state.score}/${total}「${type}」`;
-    try { await navigator.clipboard.writeText(text); e.currentTarget.lastChild.textContent = 'コピーしました'; } catch {}
-  };
+  document.getElementById('copy').onclick = async e => { try { await navigator.clipboard.writeText(`空気読み戦線 どこに座る？ ${state.score}/${total}「${type}」`); e.currentTarget.textContent = 'コピーしました'; } catch {} };
 }
 
 (async () => { state.best = await store.load('best'); cover(); })();

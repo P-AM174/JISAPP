@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>旅行代 かんたん精算</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --base: #FFF8EE;     /* 旅のしおりの紙 */
+    --main: #E8613C;     /* 夕焼けの朱 */
+    --main-ink: #FFFFFF;
+    --accent: #2D7FF9;   /* 送金の青 */
+    --main-l: #FDE3D8;
+    --field: #FFFFFF;
+    --ink: #3A2A22;
+    --ink-2: #8A7468;
+    --done: #2BA36B;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--base); color: var(--ink); font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif; }
+  .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; min-height: 100dvh; }
+  h1 { font-size: 24px; font-weight: 900; margin: 6px 0 2px; }
+  .lead { color: var(--ink-2); font-size: 13px; margin: 0 0 14px; }
+  .card { background: var(--field); border-radius: 22px; padding: 14px; box-shadow: 0 6px 20px rgba(232,97,60,.12); margin-bottom: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .row input { min-width: 0; border: 2px solid var(--main-l); border-radius: 14px; padding: 12px; font: inherit; font-size: 17px; background: #fff; color: var(--ink); }
+  .row .name { flex: 1.1; } .row .amt { flex: 1; text-align: right; }
+  .row .yen { color: var(--ink-2); font-weight: 800; }
+  .del { border: 0; background: transparent; color: var(--ink-2); font-size: 20px; width: 32px; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 18px; padding: 16px; font: inherit; font-size: 19px; font-weight: 900; background: var(--main); color: var(--main-ink); }
+  .btn.sub { background: var(--main-l); color: var(--main); font-size: 15px; padding: 12px; margin-top: 8px; }
+  .links { display: flex; gap: 8px; } .links .btn { flex: 1; }
+  .sum { display: flex; justify-content: space-between; font-size: 15px; color: var(--ink-2); margin-top: 6px; }
+  .sum b { color: var(--ink); font-size: 18px; }
+  /* 結果 */
+  .hero { text-align: center; padding: 10px 0 6px; }
+  .hero .big { font-size: clamp(40px, 12vw, 56px); font-weight: 900; color: var(--main); line-height: 1.1; }
+  .hero .small { color: var(--ink-2); font-size: 14px; }
+  .tx { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 20px; padding: 14px; margin-bottom: 10px; box-shadow: 0 6px 18px rgba(45,127,249,.12); animation: slide .4s both; }
+  .person { display: flex; flex-direction: column; align-items: center; width: 70px; }
+  .avatar { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 20px; }
+  .person span { font-size: 13px; font-weight: 800; margin-top: 2px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arrow { flex: 1; text-align: center; }
+  .arrow .money { font-size: clamp(24px, 7vw, 32px); font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .arrow .line { height: 4px; background: var(--accent); border-radius: 4px; position: relative; margin: 4px 6px 0; }
+  .arrow .line::after { content: ''; position: absolute; right: -2px; top: -6px; border: 8px solid transparent; border-left-color: var(--accent); border-right: 0; }
+  .check { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--done); background: #fff; color: var(--done); font-size: 22px; font-weight: 900; }
+  .tx.done { opacity: .55; } .tx.done .check { background: var(--done); color: #fff; }
+  .alldone { text-align: center; font-size: 26px; font-weight: 900; color: var(--done); padding: 8px 0; animation: pop .3s; }
+  .note { font-size: 12px; color: var(--ink-2); text-align: center; margin-top: 10px; }
+  @keyframes slide { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .tx, .alldone { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+/*
+ * 旅行代 かんたん精算
+ * メンバーごとに立て替えた金額を入れると、誰が誰にいくら払えば終わるかを、送金の回数が最も少なくなるように出す。
+ * 入力した内容はジサップの保存機能で残る（次に開いたときも続きから）。
+ */
+const COLORS = ['#E8613C', '#2D7FF9', '#2BA36B', '#A855F7', '#F59E0B', '#EC4899', '#14B8A6', '#64748B'];
+const SAMPLE = [['田中', 4760], ['佐藤', 13000], ['鈴木', 8000], ['高橋', 6240]]; // 架空のデータ（送金2回で終わる例）
+
+let members = [['', ''], ['', '']];
+let result = null;  // { transfers, total, share }
+let done = [];
+
+const store = {
+  async load() { try { return window.Jisapp ? await window.Jisapp.loadData('split') : null; } catch { return null; } },
+  async save() { try { if (window.Jisapp) await window.Jisapp.saveData('split', { members, done, showResult: !!result }); } catch {} },
+};
+
+const app = document.getElementById('app');
+const yen = n => n.toLocaleString('ja-JP');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/**
+ * 送金の回数が最少になる精算。
+ * 差額（立て替え − 1人分）が 0 になる組に分けられるだけ分けると、送金は「人数 − 組の数」回で済む。
+ * 組の分け方をビットで全部調べる（12人まで）。組の中は、多く払う人から多く受け取る人へ順に送る。
+ */
+function settle(list) {
+  const people = list.filter(([n, a]) => n.trim() && Number(a) >= 0).map(([n, a]) => ({ name: n.trim(), paid: Math.round(Number(a) || 0) }));
+  const total = people.reduce((s, p) => s + p.paid, 0);
+  const n = people.length;
+  if (n < 2) return null;
+  const base = Math.floor(total / n), extra = total - base * n;
+  // 割り切れない分の1円は、多く立て替えた人から順に多めに負担してもらう
+  const order = people.map((p, i) => i).sort((a, b) => people[b].paid - people[a].paid);
+  const share = people.map(() => base); for (let k = 0; k < extra; k++) share[order[k]]++;
+  const bal = people.map((p, i) => p.paid - share[i]); // プラス＝受け取る
+  const idx = bal.map((b, i) => i).filter(i => bal[i] !== 0);
+  const m = idx.length;
+  if (m > 12) return { error: '12人までにしてください' };
+  const sums = new Array(1 << m).fill(0);
+  for (let mask = 1; mask < 1 << m; mask++) { const low = mask & -mask, bit = 31 - Math.clz32(low); sums[mask] = sums[mask ^ low] + bal[idx[bit]]; }
+  const dp = new Array(1 << m).fill(-1), from = new Array(1 << m).fill(0); dp[0] = 0;
+  for (let mask = 1; mask < 1 << m; mask++) {
+    if (sums[mask] !== 0) continue;
+    // mask を「最後の組」と「残り」に分ける（残りも0になる組の集まり）
+    for (let sub = mask; sub; sub = (sub - 1) & mask) {
+      if (sums[sub] !== 0 || dp[mask ^ sub] < 0) continue;
+      if (dp[mask ^ sub] + 1 > dp[mask]) { dp[mask] = dp[mask ^ sub] + 1; from[mask] = sub; }
+    }
+  }
+  const transfers = [];
+  for (let mask = (1 << m) - 1; mask; mask ^= from[mask]) {
+    const group = []; for (let b = 0; b < m; b++) if (from[mask] >> b & 1) group.push(idx[b]);
+    const pay = group.filter(i => bal[i] < 0).map(i => ({ i, v: -bal[i] })), get = group.filter(i => bal[i] > 0).map(i => ({ i, v: bal[i] }));
+    pay.sort((a, b) => b.v - a.v); get.sort((a, b) => b.v - a.v);
+    let p = 0, g = 0;
+    while (p < pay.length && g < get.length) {
+      const v = Math.min(pay[p].v, get[g].v);
+      transfers.push({ from: people[pay[p].i].name, to: people[get[g].i].name, amount: v, fc: pay[p].i, tc: get[g].i });
+      pay[p].v -= v; get[g].v -= v; if (!pay[p].v) p++; if (!get[g].v) g++;
+    }
+  }
+  return { transfers, total, share: base, n };
+}
+
+function inputScreen() {
+  result = null;
+  const total = members.reduce((s, [, a]) => s + (Math.round(Number(a)) || 0), 0);
+  const count = members.filter(([n]) => n.trim()).length;
+  app.innerHTML = `
+    <h1>旅行代 かんたん精算</h1>
+    <p class="lead">立て替えた金額を入れると、誰が誰にいくら払えば終わるかを出します</p>
+    <div class="card">
+      ${members.map(([n, a], i) => `
+        <div class="row">
+          <input class="name" data-i="${i}" data-k="0" placeholder="名前" value="${esc(n)}" maxlength="10">
+          <input class="amt" data-i="${i}" data-k="1" placeholder="0" inputmode="numeric" value="${esc(a)}">
+          <span class="yen">円</span>
+          <button class="del" data-del="${i}" aria-label="消す">×</button>
+        </div>`).join('')}
+      <div class="links"><button class="btn sub" id="add">＋ メンバー</button><button class="btn sub" id="sample">例を入れる</button></div>
+      <div class="sum"><span>合計</span><b>${yen(total)}円</b></div>
+      <div class="sum"><span>1人あたり</span><b>${count ? yen(Math.floor(total / count)) : 0}円</b></div>
+    </div>
+    <button class="btn" id="calc">精算する</button>
+    <p class="note">金額は1円単位。割り切れない1円は、多く立て替えた人が負担します。</p>`;
+  app.querySelectorAll('input').forEach(el => el.oninput = () => {
+    const i = +el.dataset.i, k = +el.dataset.k;
+    members[i][k] = k === 1 ? el.value.replace(/[^\d]/g, '') : el.value;
+    if (k === 1) el.value = members[i][k];
+    const t = members.reduce((s, [, a]) => s + (Math.round(Number(a)) || 0), 0), c = members.filter(([nm]) => nm.trim()).length;
+    const sums = app.querySelectorAll('.sum b'); sums[0].textContent = yen(t) + '円'; sums[1].textContent = (c ? yen(Math.floor(t / c)) : 0) + '円';
+    store.save();
+  });
+  app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { if (members.length > 2) { members.splice(+b.dataset.del, 1); store.save(); inputScreen(); } });
+  document.getElementById('add').onclick = () => { members.push(['', '']); inputScreen(); app.querySelectorAll('.name')[members.length - 1].focus(); };
+  document.getElementById('sample').onclick = () => { members = SAMPLE.map(([n, a]) => [n, String(a)]); done = []; store.save(); inputScreen(); };
+  document.getElementById('calc').onclick = () => {
+    const r = settle(members);
+    if (!r) { alert('2人以上の名前と金額を入れてください'); return; }
+    if (r.error) { alert(r.error); return; }
+    result = r; done = r.transfers.map(() => false); store.save(); resultScreen(true);
+  };
+}
+
+function countUp(el, to) {
+  const start = performance.now(), dur = 700;
+  const step = t => { const k = Math.min(1, (t - start) / dur); el.textContent = yen(Math.round(to * (1 - Math.pow(1 - k, 3)))) + '円'; if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+function resultScreen(animate) {
+  const r = result, all = r.transfers.length && done.every(Boolean);
+  app.innerHTML = `
+    <div class="hero">
+      <div class="small">${r.n}人の旅行代 合計${yen(r.total)}円</div>
+      <div class="big">${r.transfers.length ? `送金は${r.transfers.length}回だけ` : '精算なし'}</div>
+      <div class="small">1人あたり ${yen(r.share)}円</div>
+    </div>
+    ${r.transfers.map((t, k) => `
+      <div class="tx ${done[k] ? 'done' : ''}" style="animation-delay:${animate ? k * 0.35 : 0}s">
+        <div class="person"><div class="avatar" style="background:${COLORS[t.fc % COLORS.length]}">${esc(t.from.slice(0, 1))}</div><span>${esc(t.from)}</span></div>
+        <div class="arrow"><div class="money" data-v="${t.amount}">${animate ? '0円' : yen(t.amount) + '円'}</div><div class="line"></div></div>
+        <div class="person"><div class="avatar" style="background:${COLORS[t.tc % COLORS.length]}">${esc(t.to.slice(0, 1))}</div><span>${esc(t.to)}</span></div>
+        <button class="check" data-k="${k}" aria-label="払った">✓</button>
+      </div>`).join('')}
+    ${all ? '<div class="alldone">全員精算済み 🎉</div>' : ''}
+    <button class="btn" id="copy">結果をコピー</button>
+    <button class="btn sub" id="edit">金額を直す</button>
+    <p class="note">払ったら ✓ を押す。誰が誰に払うかだけ、トークに貼れます。</p>`;
+  if (animate) app.querySelectorAll('.money').forEach((el, k) => setTimeout(() => countUp(el, +el.dataset.v), k * 350 + 200));
+  app.querySelectorAll('.check').forEach(b => b.onclick = () => { done[+b.dataset.k] = !done[+b.dataset.k]; store.save(); resultScreen(false); });
+  document.getElementById('edit').onclick = () => inputScreen();
+  document.getElementById('copy').onclick = async e => {
+    const text = `【旅行代の精算】合計${yen(r.total)}円・1人${yen(r.share)}円\n` + r.transfers.map(t => `${t.from} → ${t.to} ${yen(t.amount)}円`).join('\n');
+    try { await navigator.clipboard.writeText(text); e.target.textContent = 'コピーしました'; } catch { e.target.textContent = 'コピーできませんでした'; }
+  };
+}
+
+(async () => {
+  const saved = await store.load();
+  if (saved && Array.isArray(saved.members) && saved.members.length >= 2) {
+    members = saved.members; done = saved.done || [];
+    if (saved.showResult) { const r = settle(members); if (r && !r.error) { result = r; if (done.length !== r.transfers.length) done = r.transfers.map(() => false); resultScreen(false); return; } }
+  }
+  inputScreen();
+})();
+</script>
+</body>
+</html>

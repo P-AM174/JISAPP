@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>どこに座る？空気読みゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --base: #F6F1E7;      /* 駅の床のようなあたたかい白 */
+    --main: #1F6F78;      /* 車両の青緑 */
+    --main-ink: #FFFFFF;
+    --accent: #FF6B4A;    /* 選択・注意の朱色 */
+    --main-l: #DDEDEC;
+    --field: #FFFFFF;
+    --ink: #24343A;
+    --ink-2: #5F7177;
+    --good: #2BA36B;
+    --bad: #E0453A;
+    --seat: #C9DDD9;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--base); color: var(--ink);
+    font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+    display: flex; justify-content: center; overflow: hidden; user-select: none;
+  }
+  .app { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; padding: 14px 14px 18px; }
+  .top { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+  .chip { background: var(--main); color: var(--main-ink); border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 14px; }
+  .score { margin-left: auto; font-weight: 900; font-size: 15px; color: var(--ink-2); }
+  .mute { border: 0; background: var(--main-l); color: var(--main); border-radius: 999px; width: 36px; height: 36px; font-size: 16px; }
+  .q { text-align: center; font-weight: 900; font-size: clamp(26px, 7.5vw, 36px); margin: 10px 0 4px; line-height: 1.2; }
+  .sub { text-align: center; color: var(--ink-2); font-size: 14px; min-height: 20px; }
+  .timer { height: 10px; background: var(--main-l); border-radius: 999px; overflow: hidden; margin: 10px 4px; }
+  .timer i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; }
+  .count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 120px; font-weight: 900; color: rgba(31,111,120,.14); pointer-events: none; }
+  /* 場面：スマホ画面の大部分を使う */
+  .stage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .scene { position: relative; max-width: 100%; background: var(--field); border-radius: 28px; padding: 16px 12px; box-shadow: 0 10px 30px rgba(31,111,120,.15); }
+  .scene-label { position: absolute; top: -12px; left: 18px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+  .grid { display: grid; gap: 8px; }
+  .cell { position: relative; border-radius: 16px; min-width: 0; display: flex; align-items: center; justify-content: center; font-size: clamp(26px, 8vw, 40px); }
+  .cell.seat { background: var(--seat); }
+  .cell.floor { background: transparent; border: 2px dashed #D7E2E0; }
+  .cell.wall { background: transparent; }
+  .cell.door { background: #FFE7B8; font-size: 14px !important; font-weight: 800; color: #8A5A00; }
+  .grid.wide .cell { justify-content: center; gap: 8px; }
+  .grid.wide .cell .tag { position: static; font-size: 13px; }
+  .cell.table { background: #E9D8C2; font-size: 22px; }
+  .cell .tag { position: absolute; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-2); }
+  .cell.opt { background: var(--main-l); border: 3px solid var(--main); cursor: pointer; font-size: clamp(28px, 9vw, 44px); font-weight: 900; color: var(--main); transition: transform .12s; }
+  .cell.opt.glow { background: var(--main); color: #fff; transform: scale(1.06); }
+  .cell.opt.pick { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cell.opt.best { box-shadow: 0 0 0 5px var(--good); }
+  .cell.opt:active { transform: scale(.94); }
+  .me { position: absolute; z-index: 5; width: 54px; height: 54px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(255,107,74,.45); transition: left .45s cubic-bezier(.3,1.4,.5,1), top .45s cubic-bezier(.3,1.4,.5,1); pointer-events: none; }
+  .bubble { position: absolute; z-index: 6; background: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 2px 8px; font-size: 13px; font-weight: 800; white-space: nowrap; animation: pop .25s ease-out; }
+  /* 結果 */
+  .result { height: 170px; flex-shrink: 0; text-align: center; padding-top: 8px; overflow: hidden; }
+  .verdict { font-size: clamp(22px, 6.4vw, 30px); font-weight: 900; line-height: 1.25; }
+  .verdict.good { color: var(--good); } .verdict.bad { color: var(--bad); }
+  .reason { font-size: 16px; margin-top: 4px; }
+  .best-line { font-size: 15px; color: var(--good); font-weight: 800; margin-top: 4px; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 18px; padding: 16px; font: inherit; font-size: 18px; font-weight: 900; background: var(--main); color: #fff; margin-top: 10px; }
+  .btn.ghost { background: var(--main-l); color: var(--main); }
+  /* 始まり・終わり */
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
+  .big { font-size: clamp(34px, 10vw, 48px); font-weight: 900; line-height: 1.15; }
+  .type { font-size: clamp(30px, 9vw, 42px); font-weight: 900; color: var(--accent); margin: 8px 0; }
+  .meter { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 320px; margin: 8px auto; }
+  .meter span { width: 12px; height: 12px; border-radius: 4px; background: var(--main-l); }
+  .meter span.ok { background: var(--good); }
+  .note { font-size: 12px; color: var(--ink-2); }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  .shake { animation: shake .3s; }
+  @media (prefers-reduced-motion: reduce) { .me { transition: none; } .shake { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+/*
+ * どこに座る？空気読みゲーム
+ * 電車・エレベーター・カフェなどの場面で、3秒以内に自分の場所を A・B・C から選ぶ。
+ * 医学的な診断ではなく、選ぶのを楽しむゲーム。
+ * 記号：. 空席（選べない） p 人 t 話している人 c せきをしている人 m 音もれ s 寝ている人 k 子ども b 荷物
+ *       g 大きな荷物 f 床 - 何もない D ドア T テーブル A/B/C 選べる場所
+ */
+const SHOW_CLASSROOM = false; // 動画4の「追加する前」。教室編を入れた版は kuuki-game.html
+
+const ICON = { p: '🧑', t: '🗣️', c: '😷', m: '🎧', s: '😴', k: '🧒', b: '👜', g: '🧳', e: '👴', w: '👩‍💻', y: '🍜', T: '☕' };
+const TAG = { t: '会話中', c: 'せき', m: '音もれ', s: '寝てる', k: '子ども', b: '荷物', g: '大荷物', e: 'お年寄り', w: '作業中', y: '食事中' };
+
+const QUESTIONS = [
+  { place: '電車', q: '電車 どこに座る？', cols: 8, map: 'A.tBt.Cc', best: 'A',
+    why: { A: '端の席。まわりが静かで一番平和', B: '知らない2人の会話に挟まれる', C: 'せきをしている人の隣' } },
+  { place: 'エレベーター', q: 'どこに立つ？', cols: 3, map: 'p.A.Bpp.CDDD', best: 'B',
+    why: { A: '先客にくっつきすぎ', B: '全員と距離が均等。自然', C: '降りる人の出口をブロック' } },
+  { place: 'カフェ', q: 'カフェ どこに座る？', cols: 4, map: 'pTAfffff.TBfkkCf', best: 'B',
+    why: { A: '知らない人と同じテーブル', B: '空いたテーブル。落ち着ける', C: '子どもたちのすぐ横' } },
+  { place: '待合室', q: '待合室 どこに座る？', cols: 5, map: 'p.A.pc.B..m.C..', best: 'C',
+    why: { A: '先客の隣。まだ空いてるのに', B: 'せきをしている人の隣', C: '音もれの人から離れていて静か' } },
+  { place: 'バス', q: 'バス どこに座る？', cols: 4, map: 'pf.A.fpBsf.Cef..', best: 'A',
+    why: { A: '空いた2人席。ひとりでゆったり', B: '寝ている人の隣', C: 'お年寄りが座りたい前の席' } },
+  { place: '図書館', q: '図書館 どこに座る？', cols: 4, map: 'wTwAfffBTyCTfTff', best: 'A',
+    why: { A: '静かに作業する人たちの列', B: '食事中の人の向かい', C: '通路の真ん中' } },
+  { place: '電車', q: '荷物がある電車', cols: 8, map: 'pbApgB.C', best: 'C',
+    why: { A: '荷物を置かれた席の隣で窮屈', B: '大荷物の前で足元が狭い', C: '端の空いた席。広々' } },
+  { place: 'エレベーター', q: '満員に近い', cols: 3, map: 'ppAp.pBC.DDD', best: 'A',
+    why: { A: '奥の空いたすき間。邪魔にならない', B: 'ドアの真ん前', C: 'ボタンの前をふさぐ' } },
+  { place: '映画館', q: '映画館 どこに座る？', cols: 6, map: 'C......Bpp......A.', best: 'A',
+    why: { A: '前に人がいない見やすい席', B: '2人組のすぐ隣', C: '端すぎて画面が斜め' } },
+  { place: 'ベンチ', q: '公園のベンチ', cols: 3, map: 'ApB.yC', best: 'C',
+    why: { A: '知らない人と肩がぶつかる', B: '先客の真横', C: '別のベンチの端。気まずくない' } },
+  { place: '電車', q: '寝ている人がいる', cols: 7, map: 'sA.Bp.C', best: 'C',
+    why: { A: '寝ている人にもたれられる', B: '2人の間で窮屈', C: '端の席。誰にも挟まれない' } },
+  { place: 'カウンター', q: 'ラーメン屋のカウンター', cols: 7, map: 'yA.yB.C', best: 'C',
+    why: { A: '先客の真横', B: '2人に挟まれる', C: '一席あけた端。食べやすい' } },
+  { place: 'エレベーター', q: '2人だけ', cols: 3, map: '...pA.B.CDDD', best: 'C',
+    why: { A: '先客の真横は近すぎる', B: '真ん中で落ち着かない', C: '対角の位置。自然な距離' } },
+  { place: '待合室', q: '子どもが遊んでいる', cols: 5, map: 'kk.A..p..B..C.e', best: 'B',
+    why: { A: '遊んでいる子どものすぐ横', B: '一人の人と一席あけて静か', C: 'お年寄りの隣。譲るなら別' } },
+  { place: '電車', q: '音もれしている人', cols: 7, map: 'Am.B..C', best: 'C',
+    why: { A: '音もれのすぐ隣', B: 'まだ音が聞こえる', C: '一番遠い端の席' } },
+  { place: 'カフェ', q: '作業している人が多い', cols: 4, map: 'wTAfwT.fBTyfCT.f', best: 'A',
+    why: { A: '作業する人どうし。集中できる', B: '食事中の人と相席', C: '入り口の真横で落ち着かない' } },
+  { place: 'バス', q: '後ろの席', cols: 4, map: 'pp.p.A.BpC.p', best: 'A',
+    why: { A: '空いた列。誰の隣でもない', B: '先客の真横', C: '人に挟まれる' } },
+  { place: 'エレベーター', q: '大荷物の人', cols: 3, map: 'gpA.B.C..DDD', best: 'C',
+    why: { A: '大荷物にぶつかる', B: '荷物の人が降りにくい', C: '手前の端。すぐ道をあけられる' } },
+  { place: '電車', q: '優先席の近く', cols: 7, map: 'e.A.pBC', best: 'C',
+    why: { A: 'お年寄りのすぐ近くで落ち着かない', B: '先客の真横', C: '端の席。まわりに余裕' } },
+  { place: '会議室', q: '会議室 どこに座る？', cols: 4, map: 'pTpAffff...BCDff', best: 'A',
+    why: { A: '先にいる人たちの近く。話しやすい', B: '一人だけ離れすぎ', C: '入り口をふさぐ' } },
+];
+
+// 教室編（コメントから追加した場面）
+const CLASSROOM = [
+  { place: '教室', q: '遅刻した教室 どこに座る？', cols: 5, map: 'ppppp ppAp. pBp.C DD...'.replace(/ /g, ''), best: 'A',
+    why: { A: '後ろの空席。授業をじゃましない', B: '真ん中を横切ることになる', C: '一番前の席で目立つ' } },
+  { place: '教室', q: 'テスト前の教室', cols: 5, map: 'w.w.wA.B.wC.w.w', best: 'A',
+    why: { A: '勉強する人と一席あけた席', B: '真ん中で人の視界に入る', C: '集中している人の真横' } },
+  { place: '教室', q: 'グループ活動', cols: 4, map: 'tTtAffffBT..kTkC', best: 'B',
+    why: { A: '話している班に割り込む', B: '空いた班の席。すぐ混ざれる', C: 'にぎやかな班の横' } },
+];
+
+const ALL = SHOW_CLASSROOM ? [...QUESTIONS.slice(0, 3), CLASSROOM[0], ...QUESTIONS.slice(3), ...CLASSROOM.slice(1)] : QUESTIONS;
+const TIME = 3000;
+
+// ── 保存（ジサップの保存機能。なければこの画面の中だけ） ──
+const store = {
+  async load(key) { try { return window.Jisapp ? await window.Jisapp.loadData(key) : null; } catch { return null; } },
+  async save(key, v) { try { if (window.Jisapp) await window.Jisapp.saveData(key, v); } catch {} },
+};
+
+// ── 効果音（タップ・移動・結果） ──
+let ctx = null, muted = false;
+function tone(freq, dur = 0.08, type = 'sine', vol = 0.15, delay = 0) {
+  if (muted) return;
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + delay;
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur);
+  } catch {}
+}
+const sfx = {
+  tick: () => tone(880, 0.05, 'square', 0.06),
+  tap: () => tone(660, 0.07, 'triangle', 0.18),
+  move: () => { tone(440, 0.08, 'sine', 0.12); tone(560, 0.08, 'sine', 0.12, 0.09); },
+  good: () => { tone(784, 0.1, 'triangle', 0.18); tone(1046, 0.16, 'triangle', 0.18, 0.1); },
+  bad: () => { tone(220, 0.22, 'sawtooth', 0.08); },
+};
+
+// ── 画面 ──
+const app = document.getElementById('app');
+let state = { i: 0, score: 0, answers: [], best: null };
+let timer = null, glowTimer = null;
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function startScreen() {
+  clearTimers();
+  app.innerHTML = `
+    <div class="top"><span class="chip">空気読みゲーム</span><button class="mute" id="mute">${muted ? '🔇' : '🔊'}</button></div>
+    <div class="center">
+      <div style="font-size:64px">🚃 🛗 ☕</div>
+      <div class="big">どこに座る？<br>3秒で選んで</div>
+      <p class="sub">全${ALL.length}問。A・B・C から一番気まずくない場所をタップ</p>
+      ${state.best !== null ? `<p class="sub">自己ベスト ${state.best} / ${ALL.length}</p>` : ''}
+      <button class="btn" id="go" style="max-width:320px">スタート</button>
+      <p class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</p>
+    </div>`;
+  bindMute();
+  document.getElementById('go').onclick = () => { state.i = 0; state.score = 0; state.answers = []; sfx.tap(); question(); };
+}
+
+function bindMute() {
+  const m = document.getElementById('mute');
+  if (m) m.onclick = () => { muted = !muted; m.textContent = muted ? '🔇' : '🔊'; };
+}
+
+function clearTimers() { clearTimeout(timer); clearInterval(glowTimer); timer = null; glowTimer = null; }
+
+function question() {
+  clearTimers();
+  const Q = ALL[state.i];
+  const cells = Q.map.split('');
+  app.innerHTML = `
+    <div class="top"><span class="chip">${esc(Q.place)}</span><span class="score">${state.i + 1} / ${ALL.length}　⭐ ${state.score}</span><button class="mute" id="mute">${muted ? '🔇' : '🔊'}</button></div>
+    <div class="q">${esc(Q.q)}</div>
+    <div class="sub">3秒で選んで</div>
+    <div class="timer"><i id="bar"></i></div>
+    <div class="stage" id="stage">
+      <div class="count" id="count">3</div>
+      <div class="scene" id="scene">
+        <span class="scene-label">${esc(Q.place)}</span>
+        <div class="grid" id="grid">
+          ${cells.map((ch, k) => cellHtml(ch, k)).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="result" id="result"></div>`;
+  bindMute();
+  fit(Q);
+  app.querySelectorAll('.cell.opt').forEach(el => el.onclick = () => choose(el.dataset.opt));
+
+  // 3秒カウントダウン：候補を順番に光らせる
+  const bar = document.getElementById('bar');
+  bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)';
+  requestAnimationFrame(() => { bar.style.transition = `transform ${TIME}ms linear`; bar.style.transform = 'scaleX(0)'; });
+  const opts = [...app.querySelectorAll('.cell.opt')].sort((a, b) => a.dataset.opt.localeCompare(b.dataset.opt));
+  let g = 0;
+  const glow = () => { opts.forEach(o => o.classList.remove('glow')); opts[g % opts.length].classList.add('glow'); g++; };
+  glow(); glowTimer = setInterval(glow, 300);
+  let left = 3; sfx.tick();
+  const countEl = document.getElementById('count');
+  const cd = setInterval(() => { left--; if (left > 0) { countEl.textContent = left; sfx.tick(); } else { clearInterval(cd); countEl.textContent = ''; } }, 1000);
+  timer = setTimeout(() => { clearInterval(cd); choose(null); }, TIME);
+}
+
+/**
+ * 席の大きさを、画面に収まるいちばん大きい大きさにする（スマホ画面の大部分を席が使うように）。
+ * 電車のような1列の場面は、縦に長いベンチとして並べる（隣どうしの並びはそのまま）
+ */
+function fit(Q) {
+  const stage = document.getElementById('stage'), grid = document.getElementById('grid');
+  if (!stage || !grid) return;
+  const n = Q.map.length, rows0 = Math.ceil(n / Q.cols), vertical = rows0 === 1 && Q.cols >= 5;
+  const cols = vertical ? 1 : Q.cols, rows = vertical ? Q.cols : rows0, gap = 8, pad = 24;
+  const W = stage.clientWidth - pad, H = stage.clientHeight - pad - 8;
+  let cw, ch;
+  if (vertical) { ch = Math.min(96, Math.floor((H - gap * (rows - 1)) / rows)); cw = Math.min(Math.floor(W * 0.8), 300); }
+  else { cw = ch = Math.max(28, Math.min(120, Math.floor(Math.min((W - gap * (cols - 1)) / cols, (H - gap * (rows - 1)) / rows)))); }
+  grid.classList.toggle('wide', vertical);
+  grid.style.gridTemplateColumns = `repeat(${cols}, ${cw}px)`;
+  grid.style.gridAutoRows = `${ch}px`;
+  grid.style.fontSize = Math.max(18, Math.min(cw, ch) * 0.5) + 'px';
+  grid.querySelectorAll('.cell').forEach(c => { c.style.fontSize = Math.max(20, Math.min(cw, ch) * (c.classList.contains('opt') ? 0.62 : 0.5)) + 'px'; });
+}
+window.addEventListener('resize', () => { const Q = ALL[state.i]; if (document.getElementById('grid') && Q) fit(Q); });
+
+function cellHtml(ch, k) {
+  if ('ABC'.includes(ch)) return `<div class="cell opt" data-opt="${ch}" data-k="${k}">${ch}</div>`;
+  if (ch === '.') return `<div class="cell seat"></div>`;
+  if (ch === 'f') return `<div class="cell floor"></div>`;
+  if (ch === '-') return `<div class="cell wall"></div>`;
+  if (ch === 'D') return `<div class="cell door">ドア</div>`;
+  if (ch === 'T') return `<div class="cell table">${ICON.T}</div>`;
+  return `<div class="cell seat">${ICON[ch] || '🧑'}${TAG[ch] ? `<span class="tag">${TAG[ch]}</span>` : ''}</div>`;
+}
+
+function choose(opt) {
+  if (!timer && !glowTimer) return; // もう選んだ
+  clearTimers();
+  const Q = ALL[state.i];
+  app.querySelectorAll('.cell.opt').forEach(o => { o.classList.remove('glow'); o.onclick = null; });
+  const bar = document.getElementById('bar'); const cs = getComputedStyle(bar).transform; bar.style.transition = 'none'; bar.style.transform = cs;
+  document.getElementById('count').textContent = '';
+  const ok = opt === Q.best;
+  state.answers.push(ok);
+  if (ok) state.score++;
+  const result = document.getElementById('result');
+
+  if (!opt) {
+    sfx.bad();
+    result.innerHTML = `<div class="verdict bad">時間切れ</div><div class="best-line">一番平和 ${Q.best}：${esc(Q.why[Q.best])}</div>${nextBtn()}`;
+    markBest(Q.best); bindNext(); return;
+  }
+  sfx.tap();
+  const target = app.querySelector(`.cell.opt[data-opt="${opt}"]`);
+  target.classList.add('pick');
+  // 主人公が選んだ場所へ移動
+  const scene = document.getElementById('scene'), sr = scene.getBoundingClientRect(), tr = target.getBoundingClientRect();
+  const me = document.createElement('div'); me.className = 'me'; me.textContent = '🙂';
+  me.style.left = (sr.width / 2 - 27) + 'px'; me.style.top = (sr.height + 10) + 'px';
+  scene.appendChild(me);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    me.style.left = (tr.left - sr.left + tr.width / 2 - 27) + 'px';
+    me.style.top = (tr.top - sr.top + tr.height / 2 - 27) + 'px';
+  }));
+  sfx.move();
+  result.innerHTML = `<div class="verdict">${opt} を選ぶと……</div>`;
+  setTimeout(() => {
+    me.textContent = ok ? '😌' : '😰';
+    if (!ok) { scene.classList.add('shake'); }
+    const b = document.createElement('div'); b.className = 'bubble'; b.textContent = ok ? 'ちょうどいい' : '気まずい…';
+    b.style.left = (tr.left - sr.left + tr.width / 2 - 30) + 'px'; b.style.top = (tr.top - sr.top - 26) + 'px';
+    scene.appendChild(b);
+    ok ? sfx.good() : sfx.bad();
+    result.innerHTML = `
+      <div class="verdict ${ok ? 'good' : 'bad'}">${ok ? '正解！ +1' : esc(Q.why[opt])}</div>
+      ${ok ? `<div class="reason">${esc(Q.why[opt])}</div>` : `<div class="best-line">一番平和 ${Q.best}：${esc(Q.why[Q.best])}</div>`}
+      ${nextBtn()}`;
+    markBest(Q.best); bindNext();
+  }, 700);
+}
+
+function markBest(best) { const el = app.querySelector(`.cell.opt[data-opt="${best}"]`); if (el) el.classList.add('best'); }
+function nextBtn() { return `<button class="btn" id="next">${state.i + 1 < ALL.length ? '次の問題' : '結果を見る'}</button>`; }
+function bindNext() { document.getElementById('next').onclick = () => { sfx.tap(); state.i++; state.i < ALL.length ? question() : finish(); }; }
+
+function typeOf(score, total) {
+  const r = score / total;
+  if (r >= 0.85) return ['空気読み名人', 'どこでも自然な距離をとれるタイプ'];
+  if (r >= 0.6) return ['ほどよい距離感タイプ', 'たいていの場面で気まずくならない'];
+  if (r >= 0.35) return ['のびのびタイプ', '自分のペースを大事にする'];
+  return ['大胆タイプ', 'どこでも気にせず座れる強さがある'];
+}
+
+async function finish() {
+  clearTimers();
+  const total = ALL.length, [type, desc] = typeOf(state.score, total);
+  if (state.best === null || state.score > state.best) { state.best = state.score; await store.save('best', state.best); }
+  sfx.good();
+  app.innerHTML = `
+    <div class="top"><span class="chip">結果</span><button class="mute" id="mute">${muted ? '🔇' : '🔊'}</button></div>
+    <div class="center">
+      <div class="sub">あなたの距離感タイプ</div>
+      <div class="type">${type}</div>
+      <div class="reason">${desc}</div>
+      <div class="big" style="margin-top:8px">${state.score} / ${total}</div>
+      <div class="meter">${state.answers.map(a => `<span class="${a ? 'ok' : ''}"></span>`).join('')}</div>
+      <div class="sub">自己ベスト ${state.best} / ${total}</div>
+      <button class="btn" id="copy" style="max-width:320px">結果をコピー</button>
+      <button class="btn ghost" id="again" style="max-width:320px">もう一度</button>
+      <p class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</p>
+    </div>`;
+  bindMute();
+  document.getElementById('again').onclick = () => { sfx.tap(); startScreen(); };
+  document.getElementById('copy').onclick = async (e) => {
+    const text = `どこに座る？空気読みゲーム ${state.score}/${total}「${type}」`;
+    try { await navigator.clipboard.writeText(text); e.target.textContent = 'コピーしました'; } catch { e.target.textContent = text; }
+  };
+}
+
+(async () => { state.best = await store.load('best'); startScreen(); })();
+</script>
+</body>
+</html>

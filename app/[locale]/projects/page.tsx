@@ -55,6 +55,7 @@ import { categoryName } from "@/lib/categories";
 import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
 import { formatBytes } from "@/lib/app-data-limits";
 import { ApiCostNotice } from "@/components/secrets/api-cost-notice";
+import { ApiSetupPublishCheck } from "@/components/secrets/api-setup-issues";
 import { AppStorageBar } from "@/components/app-storage-bar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -435,6 +436,7 @@ export default function ProjectsPage() {
   const [publishError, setPublishError]       = useState<string | null>(null);
   const [publishResetUserData, setPublishResetUserData] = useState(false);
   const [showSecretsModal, setShowSecretsModal] = useState(false);
+  const [secretsAddName, setSecretsAddName] = useState<string | null>(null);
   const [secretWarningOpen, setSecretWarningOpen] = useState(false);
   const [secretFindings, setSecretFindings] = useState<{ label: string; labelEn: string }[]>([]);
   const [storageWarningOpen, setStorageWarningOpen] = useState(false);
@@ -1134,9 +1136,14 @@ export default function ProjectsPage() {
 
       <SecretsSettingsModal
         open={showSecretsModal}
-        onClose={() => setShowSecretsModal(false)}
+        onClose={() => {
+          setShowSecretsModal(false);
+          setSecretsAddName(null);
+        }}
         appId={republishAppId ?? undefined}
         appTitle={publishTitle || publishTarget?.title}
+        code={publishNoticeCode}
+        initialAddName={secretsAddName}
       />
 
       {publishTarget && (
@@ -1453,6 +1460,20 @@ export default function ProjectsPage() {
                     </div>
                   )}
                   <ApiCostNotice code={publishNoticeCode} listed />
+                  <ApiSetupPublishCheck
+                    code={publishNoticeCode}
+                    appId={republishAppId}
+                    isLoggedIn
+                    onRegister={
+                      republishAppId
+                        ? (name) => {
+                            setSecretsAddName(name);
+                            setShowSecretsModal(true);
+                          }
+                        : undefined
+                    }
+                    reloadKey={showSecretsModal}
+                  />
                   {publishError && (
                     <p className="rounded-xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600 ring-1 ring-rose-200">{publishError}</p>
                   )}

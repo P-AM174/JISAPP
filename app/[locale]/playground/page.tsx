@@ -55,6 +55,7 @@ import {
 import { useLocale, useT } from "@/lib/i18n/client";
 import { localizePath, format } from "@/lib/i18n/config";
 import { ApiCostNotice } from "@/components/secrets/api-cost-notice";
+import { ApiSetupPublishCheck } from "@/components/secrets/api-setup-issues";
 import { categoryName } from "@/lib/categories";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
@@ -776,6 +777,7 @@ export default function PlaygroundPage() {
   /** 公開できなかった理由（公開画面の中に表示する） */
   const [publishError, setPublishError] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [secretsAddName, setSecretsAddName] = useState<string | null>(null);
   const [publishTitle, setPublishTitle]       = useState("");
   const [publishDesc, setPublishDesc]         = useState("");
   /** 「このアプリをもとに作る」で開いたときの、もとのアプリの名前（新しいアプリとして公開する） */
@@ -1675,7 +1677,9 @@ export default function PlaygroundPage() {
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 2500);
   };
 
-  const openApiKeys = useCallback(async () => {
+  /** addName を渡すと、APIキーの画面でその名前の登録から始める（コードが使うのに未登録の名前） */
+  const openApiKeys = useCallback(async (addName?: string) => {
+    setSecretsAddName(addName ?? null);
     const run = async () => {
       if (!session?.user) return;
 
@@ -2299,6 +2303,8 @@ export default function PlaygroundPage() {
         appId={publishContext?.appId}
         appTitle={publishTitle || undefined}
         mode="studio"
+        code={code}
+        initialAddName={secretsAddName}
       />
 
       {/* ══════════ ヘッダー ══════════ */}
@@ -2814,6 +2820,13 @@ export default function PlaygroundPage() {
                     </button>
                   </div>
                   <ApiCostNotice code={code} listed={publishListed} />
+                  <ApiSetupPublishCheck
+                    code={code}
+                    appId={publishContext?.appId}
+                    isLoggedIn={isLoggedIn}
+                    onRegister={(name) => void openApiKeys(name)}
+                    reloadKey={showSettings}
+                  />
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-gray-700">
                       {t("アプリ名", "App name")} <span className="text-rose-500">*</span>

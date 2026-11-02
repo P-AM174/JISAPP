@@ -224,6 +224,9 @@ const PROMPT_API_RULES = `【外部APIの使い方（ジサップでの仕組み
   - URLパラメータ：URL に ?key=キー のように付ける（パラメータ名は登録のときに決める）
   - HTTPヘッダー：Authorization: Bearer キー の形で付ける
   これ以外の付け方（x-api-key などの別のヘッダー）しか受け付けないサービスは使えません。その場合は、上の2つのどちらかで使える別のサービスを選んでください。
+・登録の画面の「付け方」は、次の2つから選びます。案内では、使うサービスに合うほうを1つに決めて、画面の選択肢の名前どおりに書いてください（「どちらか」「または」と書かない）。
+  - 「URLパラメータ（?key= 等）」：選ぶと「パラメータ名」の欄が出るので、そのサービスが使う名前（Gemini なら key、OpenWeather なら appid など）も必ず書く
+  - 「HTTPヘッダー（Authorization 等）」：Authorization: Bearer キー の形のサービス（OpenAI・Groq など）。パラメータ名はいらない
 
 ■ 使うサービスの選び方
 ・ユーザーが指定したサービスを使ってください。
@@ -247,11 +250,11 @@ const PROMPT_API_RULES = `【外部APIの使い方（ジサップでの仕組み
 ・AI のふりをしないでください。API につながらないときに、決まった返事やランダムな返事を、本物の答えのように見せないでください。
 
 ■ よく使うサービスの登録のしかたの目安
-・Google Gemini → secret: 'GEMINI' / 付け方: URLパラメータ、パラメータ名「key」 / キーの取り方: Google AI Studio（aistudio.google.com）の「Get API key」（無料で始められる）
-・OpenAI → secret: 'OPENAI' / 付け方: HTTPヘッダー / キーの取り方: platform.openai.com の「API keys」（有料。先にクレジットの購入が必要）
-・Groq → secret: 'GROQ' / 付け方: HTTPヘッダー / キーの取り方: console.groq.com の「API Keys」（無料で始められる）
-・OpenWeather（天気） → secret: 'WEATHER' / 付け方: URLパラメータ、パラメータ名「appid」 / キーの取り方: openweathermap.org でアカウントを作り「API keys」
-・その他 → そのサービスの説明書を見て、URLパラメータかヘッダー（Bearer）かを選ぶ
+・Google Gemini → secret: 'GEMINI' / 付け方:「URLパラメータ（?key= 等）」、パラメータ名「key」 / キーの取り方: Google AI Studio（aistudio.google.com）の「Get API key」（無料で始められる）
+・OpenAI → secret: 'OPENAI' / 付け方:「HTTPヘッダー（Authorization 等）」 / キーの取り方: platform.openai.com の「API keys」（有料。先にクレジットの購入が必要）
+・Groq → secret: 'GROQ' / 付け方:「HTTPヘッダー（Authorization 等）」 / キーの取り方: console.groq.com の「API Keys」（無料で始められる）
+・OpenWeather（天気） → secret: 'WEATHER' / 付け方:「URLパラメータ（?key= 等）」、パラメータ名「appid」 / キーの取り方: openweathermap.org でアカウントを作り「API keys」
+・その他 → そのサービスの説明書を見て、キーを URL に付けるなら「URLパラメータ（?key= 等）」（パラメータ名も調べて書く）、Authorization: Bearer で送るなら「HTTPヘッダー（Authorization 等）」を選ぶ
 
 ■ 返答の形（外部APIを使うとき）
 返答は、次の順番にしてください（サービス名・secret 名・付け方は、実際のコードに合わせる）。最初の返答でコードを省略せずに出すルールは変わりません。
@@ -279,8 +282,9 @@ const PROMPT_API_RULES = `【外部APIの使い方（ジサップでの仕組み
 3. 次のとおり登録する
    ・名前：○○（コードの secret 名と同じ。1文字でもちがうと動きません）
    ・値：準備でコピーした APIキー
-   ・付け方：「URLパラメータ（?key= 等）」でパラメータ名「○○」／または「HTTPヘッダー（Authorization 等）」
-4. プレビューで、ちゃんと返事が来るか試す
+   ・付け方：「○○」を選ぶ（＋URLパラメータのときは、パラメータ名に「○○」と入れる）
+4. 「追加する」を押したあと、キーの横の「つながるか試す」を押して、「つながりました」と出るか確かめる
+5. プレビューで、ちゃんと返事が来るか試す
 
 【費用について（大事）】
 ・このアプリは、使われるたびに、あなたの APIキーで ○○ を呼びます。アプリを使う人は全員、あなたのキーを使います。
@@ -332,6 +336,9 @@ const PROMPT_API_RULES_EN = `[Using external APIs (how it works on Jisapp)]
   - URL parameter: added to the URL like ?key=KEY (the parameter name is chosen when registering)
   - HTTP header: sent as Authorization: Bearer KEY
   Services that only accept other ways (a different header such as x-api-key) can't be used. In that case, pick another service that works with one of the two ways above.
+- On the registration screen, "How it's attached" has these two choices. In your guide, decide the one that fits the service and write it exactly as the option is named on screen (don't write "either" or "or").
+  - "URL parameter (?key=, etc.)": choosing it shows a "Parameter name" box, so always also give the name the service uses (key for Gemini, appid for OpenWeather, etc.)
+  - "HTTP header (Authorization, etc.)": for services that use Authorization: Bearer KEY (OpenAI, Groq, etc.). No parameter name needed
 
 ■ Choosing the service
 - Use the service the user asked for.
@@ -355,11 +362,11 @@ const PROMPT_API_RULES_EN = `[Using external APIs (how it works on Jisapp)]
 - Never pretend to be AI. When the API can't be reached, don't show fixed or random replies as if they were real answers.
 
 ■ How to register common services
-- Google Gemini → secret: 'GEMINI' / attach: URL parameter, parameter name "key" / get a key: "Get API key" in Google AI Studio (aistudio.google.com) (free to start)
-- OpenAI → secret: 'OPENAI' / attach: HTTP header / get a key: "API keys" on platform.openai.com (paid; you need to buy credits first)
-- Groq → secret: 'GROQ' / attach: HTTP header / get a key: "API Keys" on console.groq.com (free to start)
-- OpenWeather (weather) → secret: 'WEATHER' / attach: URL parameter, parameter name "appid" / get a key: create an account on openweathermap.org, then "API keys"
-- Others → check the service's docs and choose URL parameter or header (Bearer)
+- Google Gemini → secret: 'GEMINI' / attach: "URL parameter (?key=, etc.)", parameter name "key" / get a key: "Get API key" in Google AI Studio (aistudio.google.com) (free to start)
+- OpenAI → secret: 'OPENAI' / attach: "HTTP header (Authorization, etc.)" / get a key: "API keys" on platform.openai.com (paid; you need to buy credits first)
+- Groq → secret: 'GROQ' / attach: "HTTP header (Authorization, etc.)" / get a key: "API Keys" on console.groq.com (free to start)
+- OpenWeather (weather) → secret: 'WEATHER' / attach: "URL parameter (?key=, etc.)", parameter name "appid" / get a key: create an account on openweathermap.org, then "API keys"
+- Others → check the service's docs: if the key goes in the URL, choose "URL parameter (?key=, etc.)" (and find and write the parameter name); if it's sent as Authorization: Bearer, choose "HTTP header (Authorization, etc.)"
 
 ■ How to shape your reply (when using external APIs)
 Reply in this order (match the service, secret name and attach method to the actual code). The rule to output the full code in your first reply still applies.
@@ -387,8 +394,9 @@ Reply in this order (match the service, secret name and attach method to the act
 3. Register it like this
    - Name: ○○ (the same as the secret name in the code; even one different letter and it won't work)
    - Value: the API key you copied
-   - How it's attached: "URL parameter (?key=, etc.)" with parameter name "○○" / or "HTTP header (Authorization, etc.)"
-4. Try it in the preview and check that you get a reply
+   - How it's attached: choose "○○" (+ for URL parameter, enter "○○" as the parameter name)
+4. Press "Add", then press "Test connection" next to the key and check that it says "Connected"
+5. Try it in the preview and check that you get a reply
 
 [About costs (important)]
 - Every time the app is used, it calls ○○ with your API key. Everyone who uses the app uses your key.
@@ -970,7 +978,7 @@ export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守っ
 ・secret 名はサービス名の大文字（例: GEMINI, OPENAI, WEATHER）。キーは作った人が開発スタジオの「…」メニュー →「APIキーの登録」で登録する（付け方は URLパラメータか、Authorization: Bearer のヘッダーだけ）
 ・送り先の URL はコードにそのまま書く（キーを付けて送れるのは、コードに書かれた送り先だけ）
 ・つながらないときは、黙って止まらず、理由と直し方を画面に出す。AI のふり（決まった返事を本物のように見せる）をしない
-・外部APIを使うときは、コードの前に使うサービスと APIキーの取り方を、コードのあとに登録する名前と付け方を案内する
+・外部APIを使うときは、コードの前に使うサービスと APIキーの取り方を、コードのあとに登録する名前と付け方を案内する。付け方は「URLパラメータ（?key= 等）」（パラメータ名も書く）か「HTTPヘッダー（Authorization 等）」のどちらか1つに決めて書く
 ・あわせて、料金は作った人にかかること、出品・共有すると使う人が増えて料金が増えることがあること、サービス側で上限を設定できることを注意する`;
 
 /** 短いルールの、Google ドライブのファイル保存の文（ベトナム語版では、元の文 PROMPT_RULES_SHORT_NO_DRIVE_EN に戻す） */
@@ -983,7 +991,7 @@ const PROMPT_RULES_SHORT_API_EN = `- Never write API keys or tokens in the code.
 - Secret names are the service name in uppercase (e.g. GEMINI, OPENAI, WEATHER). The creator registers the key in the Studio via the "…" menu → "Register API key" (it can only be attached as a URL parameter or an Authorization: Bearer header)
 - Write the destination URL as is in the code (a key can only be sent to destinations written in the code)
 - When it can't connect, don't fail silently: show the reason and how to fix it on screen. Never pretend to be AI (don't show fixed replies as if they were real)
-- When using an external API, explain the service and how to get its API key before the code, and the name and attach method to register after the code
+- When using an external API, explain the service and how to get its API key before the code, and the name and attach method to register after the code. Decide one attach method and name it: "URL parameter (?key=, etc.)" (with the parameter name) or "HTTP header (Authorization, etc.)"
 - Also warn that the creator pays for usage, that listing or sharing the app can bring more users and higher costs, and that a limit can be set on the service's side`;
 const PROMPT_RULES_SHORT_API_VI = `- Never write API keys or tokens in the code. Call external APIs with window.Jisapp.fetch(url, { secret: 'NAME' })
 - Secret names are uppercase (e.g. GEMINI, OPENAI, WEATHER). Users register the key's value on Jisapp's "API keys" screen

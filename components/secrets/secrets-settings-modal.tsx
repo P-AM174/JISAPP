@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
-import { Key, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { CheckCircle2, Key, Pencil, Plug, Plus, Trash2, X } from "lucide-react";
 import type { AttachType, SecretMeta } from "@/lib/secrets/constants";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { intlLocale, type Locale, format, pick } from "@/lib/i18n/config";
+import { checkApiSetup, findSecretNames } from "@/lib/secrets/detect-api-use";
+import { ApiSetupIssues } from "@/components/secrets/api-setup-issues";
 
 type Props = {
   open: boolean;
@@ -13,7 +15,39 @@ type Props = {
   appTitle?: string;
   /** studio = 開発スタジオ（APIキー）、app = マイプロジェクト */
   mode?: "studio" | "app";
+  /** アプリのコード。渡すと、登録したキーとコードの secret 名を照らし合わせ、「つながるか試す」で送り先を探すのに使う */
+  code?: string;
+  /** 開いたときに、この名前で新しいキーの登録を始める（コードが使うのに未登録の名前） */
+  initialAddName?: string | null;
 };
+
+/** 「つながるか試す」の結果（/api/secrets/app/test） */
+type TestResult =
+  | { state: "loading" }
+  | { state: "ok" | "rejected" | "limit" | "unsure" | "server_error" | "no_target" | "unsupported" | "error"; status?: number; host?: string; message?: string };
+
+function testResultText(r: TestResult, t: (ja: string, en: string) => string): string {
+  switch (r.state) {
+    case "loading":
+      return t("試しています…", "Testing…");
+    case "ok":
+      return format(t("つながりました（{host}）", "Connected ({host})"), { host: r.host ?? "" });
+    case "rejected":
+      return format(t("キーが受け付けられませんでした（{status}）。キーの値か、付け方（URLパラメータ／HTTPヘッダー、パラメータ名）がちがう可能性があります。", "The key was rejected ({status}). The key value or how it's attached (URL parameter / HTTP header, parameter name) may be wrong."), { status: String(r.status ?? "") });
+    case "limit":
+      return format(t("キーは届きましたが、回数や料金の上限に達しています（{status}）。サービスの管理画面で、使える量や支払いの設定を確かめてください。", "The key reached the service, but you've hit a usage or billing limit ({status}). Check your usage and billing in the service's dashboard."), { status: String(r.status ?? "") });
+    case "unsure":
+      return format(t("キーは届きましたが、試しの送り方では確かめきれませんでした（{status}）。アプリのプレビューで動くか試してください。", "The key reached the service, but this quick test couldn't confirm it ({status}). Try the app in the preview."), { status: String(r.status ?? "") });
+    case "server_error":
+      return format(t("サービス側でエラーが起きています（{status}）。しばらくしてから試してください。", "The service returned an error ({status}). Try again later."), { status: String(r.status ?? "") });
+    case "no_target":
+      return t("このキーを使う送り先（https:// の URL）がコードに見つかりませんでした。コードに secret とあわせて URL が書かれているか確かめてください。", "Couldn't find where this key is sent (an https:// URL) in the code. Check that the code has the URL together with secret.");
+    case "unsupported":
+      return format(t("{host} は、ジサップのキーの付け方（URLパラメータか Authorization ヘッダー）では使えません。別のサービスを使ってください。", "{host} can't be used with Jisapp's ways of attaching keys (URL parameter or Authorization header). Please use another service."), { host: r.host ?? "" });
+    default:
+      return r.message || t("つながりませんでした", "Couldn't connect");
+  }
+}
 
 type FormMode = "add" | "edit";
 
@@ -46,6 +80,8 @@ export function SecretsSettingsModal({
   appId,
   appTitle,
   mode = "app",
+  code,
+  initialAddName,
 }: Props) {
   const formId = useId();
   const t = useT();
@@ -62,6 +98,28 @@ export function SecretsSettingsModal({
   const [attachType, setAttachType] = useState<AttachType>("header");
   const [paramName, setParamName] = useState("");
   const [savingAppSecret, setSavingAppSecret] = useState(false);
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+
+  const registeredNames = useMemo(() => appSecrets.map((s) => s.name), [appSecrets]);
+  const usedNames = useMemo(() => (code ? findSecretNames(code) : []), [code]);
+  const setupCheck = useMemo(() => (code ? checkApiSetup(code, registeredNames) : null), [code, registeredNames]);
+
+  const testSecret = async (name: string) => {
+    if (!appId) return;
+    setTestResults((prev) => ({ ...prev, [name]: { state: "loading" } }));
+    try {
+      const res = await fetch("/api/secrets/app/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appId, name, code: code ?? "" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? t("つながりませんでした", "Couldn't connect"));
+      setTestResults((prev) => ({ ...prev, [name]: data as TestResult }));
+    } catch (e) {
+      setTestResults((prev) => ({ ...prev, [name]: { state: "error", message: e instanceof Error ? e.message : undefined } }));
+    }
+  };
 
   const resetForm = useCallback(() => {
     setFormMode(null);
@@ -92,18 +150,26 @@ export function SecretsSettingsModal({
   useEffect(() => {
     if (!open) {
       resetForm();
+      setTestResults({});
       return;
     }
-    if (appId) loadAppSecrets();
-    else {
+    if (appId) {
+      loadAppSecrets();
+      if (initialAddName) {
+        resetForm();
+        setFormMode("add");
+        setFormName(initialAddName);
+      }
+    } else {
       setAppSecrets([]);
       resetForm();
     }
-  }, [open, appId, loadAppSecrets, resetForm]);
+  }, [open, appId, loadAppSecrets, resetForm, initialAddName]);
 
-  const openAddForm = () => {
+  const openAddForm = (name = "") => {
     resetForm();
     setFormMode("add");
+    setFormName(name);
   };
 
   const openEditForm = (secret: SecretMeta) => {
@@ -239,15 +305,34 @@ export function SecretsSettingsModal({
               {appError && (
                 <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-600">{appError}</p>
               )}
+              {!appLoading && setupCheck && code && (
+                <ApiSetupIssues
+                  code={code}
+                  check={setupCheck}
+                  registeredNames={registeredNames}
+                  onRegister={(name) => openAddForm(name)}
+                />
+              )}
               {appLoading ? (
                 <p className="text-xs text-gray-400">{t("読み込み中…", "Loading…")}</p>
               ) : appSecrets.length > 0 ? (
                 <ul className="space-y-2">
-                  {appSecrets.map((s) => (
+                  {appSecrets.map((s) => {
+                    const result = testResults[s.name];
+                    const resultTone =
+                      !result || result.state === "loading"
+                        ? "text-gray-500"
+                        : result.state === "ok"
+                          ? "text-emerald-700"
+                          : result.state === "unsure" || result.state === "limit"
+                            ? "text-amber-700"
+                            : "text-rose-600";
+                    return (
                     <li
                       key={s.name}
-                      className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5"
+                      className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5"
                     >
+                     <div className="flex items-center gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-sm font-bold text-gray-800">{s.name}</p>
                         <p className="text-[10px] text-gray-400">{attachLabel(s, locale)}</p>
@@ -255,7 +340,22 @@ export function SecretsSettingsModal({
                           {t("●●●● 登録済み", "●●●● Saved")}
                           {s.updated_at ? format(t(" · 更新 {updated_at}", " · updated {updated_at}"), { updated_at: formatUpdatedAt(s.updated_at, locale) }) : ""}
                         </p>
+                        {code && usedNames.includes(s.name) && (
+                          <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {t("コードで使われています", "Used in the code")}
+                          </p>
+                        )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => void testSecret(s.name)}
+                        disabled={result?.state === "loading"}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 disabled:opacity-50"
+                      >
+                        <Plug className="h-3.5 w-3.5" />
+                        {t("つながるか試す", "Test connection")}
+                      </button>
                       <button
                         type="button"
                         onClick={() => openEditForm(s)}
@@ -272,8 +372,15 @@ export function SecretsSettingsModal({
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
+                     </div>
+                      {result && (
+                        <p role="status" className={`mt-1.5 text-[11px] font-semibold leading-relaxed ${resultTone}`}>
+                          {testResultText(result, t)}
+                        </p>
+                      )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="text-xs text-gray-400">{t("登録されたシークレットはありません", "No secrets yet")}</p>
@@ -431,7 +538,7 @@ export function SecretsSettingsModal({
               ) : (
                 <button
                   type="button"
-                  onClick={openAddForm}
+                  onClick={() => openAddForm()}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
                 >
                   <Plus className="h-4 w-4" />

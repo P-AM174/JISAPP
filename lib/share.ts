@@ -84,7 +84,7 @@ export function openShareWindow(shareUrl: string): void {
 }
 
 /** 共有先（計測の utm_source にも使う） */
-export type ShareSource = "x" | "line" | "facebook" | "messenger" | "zalo" | "mail" | "copy" | "native";
+export type ShareSource = "x" | "line" | "facebook" | "messenger" | "zalo" | "mail" | "sms" | "copy" | "native";
 
 /**
  * 共有リンクに計測用の UTM をつける（どこから来た人かを数えるため）。
@@ -108,6 +108,11 @@ export function withUtm(url: string, source: ShareSource, locale: Locale | null 
  */
 export function getMessengerShareUrl(url: string): string {
   return `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+}
+
+/** スマホの「メッセージ」アプリ（SMS・iMessage）で送る。iPhone・Android の両方で開ける書き方 */
+export function getSmsShareUrl(url: string, text?: string): string {
+  return `sms:?&body=${encodeURIComponent([text?.trim(), url].filter(Boolean).join("\n"))}`;
 }
 
 /** Messenger の共有が使えるか（スマホだけ） */

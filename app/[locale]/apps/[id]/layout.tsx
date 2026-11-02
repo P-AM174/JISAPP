@@ -7,6 +7,19 @@ import {
 import { getShareableAppSeo } from "@/lib/seo/public-apps";
 import { siteName } from "@/lib/seo/site";
 import { getI18n } from "@/lib/i18n/server";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+
+/**
+ * アイコンを保存した日時。アイコンの URL に ?v= として付け、iPhone などが古い画像を使い続けないようにする
+ */
+async function iconVersion(id: string): Promise<string> {
+  try {
+    const { data } = await createServerSupabaseClient().from("app_appearance").select("updated_at").eq("app_id", id).maybeSingle();
+    return data?.updated_at ? `&v=${new Date(data.updated_at).getTime()}` : "";
+  } catch {
+    return "";
+  }
+}
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -31,6 +44,7 @@ export async function generateMetadata({
     });
   }
 
+  const v = await iconVersion(app.id);
   return { ...createPageMetadata({
     locale,
     title: app.title,
@@ -41,7 +55,7 @@ export async function generateMetadata({
     ogTitle: t(`${app.title}｜${siteName(locale)}`, `${app.title} | ${siteName(locale)}`),
     ogDescription: app.description,
     noIndex: app.isListed === false,
-  }), manifest: `/api/apps/${id}/manifest?locale=${locale}`, icons: { apple: `/api/apps/${id}/icon?size=192`, icon: `/api/apps/${id}/icon?size=192` }, appleWebApp: { capable: true, title: app.title } };
+  }), manifest: `/api/apps/${id}/manifest?locale=${locale}`, icons: { apple: { url: `/api/apps/${id}/icon?size=180${v}`, sizes: "180x180", type: "image/png" }, icon: { url: `/api/apps/${id}/icon?size=192${v}`, sizes: "192x192", type: "image/png" } }, appleWebApp: { capable: true, title: app.title } };
 }
 
 export default async function AppDetailLayout({ children, params }: LayoutProps) {

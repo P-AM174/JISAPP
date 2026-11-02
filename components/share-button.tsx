@@ -13,6 +13,7 @@ import {
   getLineShareUrl,
   getMailShareUrl,
   getMessengerShareUrl,
+  getSmsShareUrl,
   getTwitterShareUrl,
   nativeShare,
   openShareWindow,
@@ -28,8 +29,8 @@ import { trackEvent } from "@/lib/analytics/client";
  * ベトナムは Facebook・Zalo が人口の8割近く、X は1割未満（URL コピーは下に常に出す）
  */
 const SHARE_ORDER: Record<Locale, ShareSource[]> = {
-  ja: ["x", "line", "facebook", "mail"],
-  en: ["x", "line", "facebook", "mail"],
+  ja: ["line", "x", "sms", "facebook", "mail"],
+  en: ["x", "line", "sms", "facebook", "mail"],
   vi: ["facebook", "messenger", "zalo", "x"],
 };
 
@@ -59,7 +60,34 @@ export function LineBrandIcon({ className }: { className?: string }) {
   );
 }
 
-function FacebookBrandIcon({ className }: { className?: string }) {
+/** WhatsApp のマーク */
+export function WhatsAppBrandIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35ZM12.05 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.34-.2-3.56.93.95-3.47-.22-.36a9.4 9.4 0 0 1-1.44-5.01c0-5.19 4.23-9.42 9.43-9.42 2.52 0 4.88.98 6.66 2.76a9.36 9.36 0 0 1 2.76 6.67c0 5.2-4.23 9.42-9.43 9.42Zm8.02-17.45A11.27 11.27 0 0 0 12.05.72C5.8.72.71 5.8.71 12.06c0 2 .52 3.95 1.52 5.67L.62 23.6l6.01-1.58a11.3 11.3 0 0 0 5.42 1.38h.01c6.25 0 11.34-5.09 11.34-11.34 0-3.03-1.18-5.88-3.32-8.02Z" />
+    </svg>
+  );
+}
+
+/** Telegram のマーク */
+export function TelegramBrandIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M21.94 4.3 18.7 19.6c-.24 1.08-.88 1.35-1.79.84l-4.94-3.64-2.38 2.29c-.26.26-.48.48-.99.48l.35-5.02 9.14-8.26c.4-.35-.09-.55-.62-.2L6.17 13.2l-4.87-1.52c-1.06-.33-1.08-1.06.22-1.57L20.55 2.8c.88-.33 1.65.2 1.39 1.5Z" />
+    </svg>
+  );
+}
+
+/** スマホの「メッセージ」（SMS・iMessage）を表す吹き出し */
+export function MessagesIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M12 3C6.48 3 2 6.92 2 11.75c0 2.7 1.4 5.1 3.6 6.7-.15 1.13-.66 2.3-1.6 3.25 2.06-.08 3.75-.86 4.9-1.82.98.26 2.02.4 3.1.4 5.52 0 10-3.92 10-8.53C22 6.92 17.52 3 12 3Z" />
+    </svg>
+  );
+}
+
+export function FacebookBrandIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
       <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.91h-2.33V22c4.78-.76 8.45-4.92 8.45-9.94Z" />
@@ -157,6 +185,19 @@ function ShareSheet({
           bg: "bg-gradient-to-br from-[#0099FF] to-[#A033FF] text-white",
           action: () => {
             window.location.href = getMessengerShareUrl(link("messenger"));
+          },
+        }
+      : undefined,
+    // スマホだけ（パソコンでは「メッセージ」アプリを開けないことが多い）
+    sms: canShareToMessenger()
+      ? {
+          id: "sms",
+          label: t("メッセージ", "Messages"),
+          sub: t("SMS・iMessageで送る", "Send by text message"),
+          icon: <MessagesIcon className="h-5 w-5" />,
+          bg: "bg-[#34C759] text-white",
+          action: () => {
+            window.location.href = getSmsShareUrl(link("sms"), shareText);
           },
         }
       : undefined,

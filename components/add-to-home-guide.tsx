@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MoreVertical, Share, SquarePlus, Smartphone, X } from "lucide-react";
+import { Compass, Globe, MoreVertical, Share, SquarePlus, Smartphone, X } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import { rich } from "@/lib/i18n/rich";
 
@@ -34,19 +34,29 @@ export function isStandalone(): boolean {
   );
 }
 
-function Step({ n, children }: { n: number; children: React.ReactNode }) {
+function Step({ n, children, visual }: { n: number; children: React.ReactNode; visual?: React.ReactNode }) {
   return (
-    <li className="flex gap-2.5">
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">{n}</span>
-      <span className="pt-0.5 leading-snug">{children}</span>
+    <li className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">{n}</span>
+      <span className="min-w-0 flex-1 text-[13px] leading-snug">{children}</span>
+      {visual && <span aria-hidden className="shrink-0">{visual}</span>}
     </li>
   );
 }
 
 const icon = "mx-0.5 inline h-4 w-4 align-[-3px] text-sky-600";
 
-/** 端末に合わせた手順。openFirst のときは「まずアプリを開く」を1番目に入れる（公開直後の画面用） */
-export function AddToHomeSteps({ openFirst = false }: { openFirst?: boolean }) {
+/** 画面の部品のミニチュア（どこを押すか、見た目で分かるように） */
+function MockButton({ children, accent = false }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <span className={`flex h-10 min-w-10 items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-bold shadow-sm ring-1 ${accent ? "bg-sky-500 text-white ring-sky-500" : "bg-white text-sky-600 ring-slate-200"}`}>
+      {children}
+    </span>
+  );
+}
+
+/** 端末に合わせた手順。openFirst のときは「まずアプリを開く」を1番目に入れる（公開直後の画面用）。preview は最後に「こう並びます」として出す */
+export function AddToHomeSteps({ openFirst = false, preview }: { openFirst?: boolean; preview?: React.ReactNode }) {
   const t = useT();
   const [platform, setPlatform] = useState<Platform>("desktop");
   useEffect(() => setPlatform(detectPlatform()), []);
@@ -54,43 +64,57 @@ export function AddToHomeSteps({ openFirst = false }: { openFirst?: boolean }) {
 
   if (platform === "desktop") {
     return (
-      <p className="text-sm leading-relaxed text-slate-700">
-        {t(
-          "スマホでこのアプリのURLを開いて、ホーム画面に追加すると、アプリのようにすぐ開けます。パソコンでは、ブックマーク（Ctrl+D／⌘+D）に入れておくと便利です。",
-          "Open this app's URL on your phone and add it to your home screen to open it like an app. On a computer, bookmark it (Ctrl+D / ⌘+D)."
-        )}
-      </p>
+      <div className="space-y-3">
+        <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600"><Smartphone className="h-5 w-5" /></span>
+          <p className="text-sm leading-relaxed text-slate-700">
+            {t(
+              "スマホでこのアプリのURLを開いて、ホーム画面に追加すると、アプリのようにすぐ開けます。パソコンでは、ブックマーク（Ctrl+D／⌘+D）に入れておくと便利です。",
+              "Open this app's URL on your phone and add it to your home screen to open it like an app. On a computer, bookmark it (Ctrl+D / ⌘+D)."
+            )}
+          </p>
+        </div>
+        {preview}
+      </div>
     );
   }
 
+  const add = t("追加", "Add");
   return (
-    <ol className="space-y-2 text-sm text-slate-700">
-      {openFirst && <Step n={1}>{t("下の「アプリを開く」でアプリを開く", "Open the app with “Open app” below")}</Step>}
-      {platform === "ios_inapp" && (
-        <Step n={first + 1}>
-          {t("右上（または右下）のメニューから「Safariで開く」を選ぶ", "From the menu at the top (or bottom) right, choose “Open in Safari”")}
-        </Step>
-      )}
-      {platform === "android" ? (
-        <>
-          <Step n={first + 1}>
-            {rich(t("Chrome の右上の {icon} を押す", "Tap {icon} at the top right of Chrome"), {}, { icon: <MoreVertical className={icon} /> })}
+    <div className="space-y-3">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
+        {platform === "android" ? <Globe className="h-3.5 w-3.5" /> : <Compass className="h-3.5 w-3.5" />}
+        {platform === "android" ? t("Android（Chrome）の場合", "On Android (Chrome)") : t("iPhone（Safari）の場合", "On iPhone (Safari)")}
+      </p>
+      <ol className="space-y-2 text-slate-700">
+        {openFirst && <Step n={1} visual={<MockButton accent>{t("開く", "Open")}</MockButton>}>{t("下の「アプリを開く」でアプリを開く", "Open the app with “Open app” below")}</Step>}
+        {platform === "ios_inapp" && (
+          <Step n={first + 1} visual={<MockButton><Compass className="h-4 w-4" />Safari</MockButton>}>
+            {t("右上（または右下）のメニューから「Safariで開く」を選ぶ", "From the menu at the top (or bottom) right, choose “Open in Safari”")}
           </Step>
-          <Step n={first + 2}>{t("「ホーム画面に追加」を押す", "Tap “Add to Home screen”")}</Step>
-          <Step n={first + 3}>{t("「追加」を押す", "Tap “Add”")}</Step>
-        </>
-      ) : (
-        <>
-          <Step n={first + (platform === "ios_inapp" ? 2 : 1)}>
-            {rich(t("Safari の共有ボタン {icon} を押す（画面の下か上にあります）", "Tap the Share button {icon} in Safari (at the bottom or top of the screen)"), {}, { icon: <Share className={icon} /> })}
-          </Step>
-          <Step n={first + (platform === "ios_inapp" ? 3 : 2)}>
-            {rich(t("下にスクロールして「ホーム画面に追加」{icon} を押す", "Scroll down and tap “Add to Home Screen” {icon}"), {}, { icon: <SquarePlus className={icon} /> })}
-          </Step>
-          <Step n={first + (platform === "ios_inapp" ? 4 : 3)}>{t("右上の「追加」を押す", "Tap “Add” at the top right")}</Step>
-        </>
-      )}
-    </ol>
+        )}
+        {platform === "android" ? (
+          <>
+            <Step n={first + 1} visual={<MockButton><MoreVertical className="h-5 w-5" /></MockButton>}>
+              {rich(t("Chrome の右上の {icon} を押す", "Tap {icon} at the top right of Chrome"), {}, { icon: <MoreVertical className={icon} /> })}
+            </Step>
+            <Step n={first + 2} visual={<MockButton><SquarePlus className="h-4 w-4" /></MockButton>}>{t("「ホーム画面に追加」を押す", "Tap “Add to Home screen”")}</Step>
+            <Step n={first + 3} visual={<MockButton accent>{add}</MockButton>}>{t("「追加」を押す", "Tap “Add”")}</Step>
+          </>
+        ) : (
+          <>
+            <Step n={first + (platform === "ios_inapp" ? 2 : 1)} visual={<MockButton><Share className="h-5 w-5" /></MockButton>}>
+              {rich(t("Safari の共有ボタン {icon} を押す（画面の下か上にあります）", "Tap the Share button {icon} in Safari (at the bottom or top of the screen)"), {}, { icon: <Share className={icon} /> })}
+            </Step>
+            <Step n={first + (platform === "ios_inapp" ? 3 : 2)} visual={<MockButton><SquarePlus className="h-4 w-4" /></MockButton>}>
+              {rich(t("下にスクロールして「ホーム画面に追加」{icon} を押す", "Scroll down and tap “Add to Home Screen” {icon}"), {}, { icon: <SquarePlus className={icon} /> })}
+            </Step>
+            <Step n={first + (platform === "ios_inapp" ? 4 : 3)} visual={<MockButton accent>{add}</MockButton>}>{t("右上の「追加」を押す", "Tap “Add” at the top right")}</Step>
+          </>
+        )}
+      </ol>
+      {preview}
+    </div>
   );
 }
 

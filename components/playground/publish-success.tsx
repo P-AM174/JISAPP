@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { signIn } from "next-auth/react";
-import { ArrowRight, Check, Copy, LogIn, MessageCircle, PartyPopper, Smartphone, User, Users, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Copy, LogIn, MessageCircle, PartyPopper, Send, Smartphone, SquarePlus, User, Users, X } from "lucide-react";
 import Link from "@/lib/i18n/navigation";
 import { LineBrandIcon, ShareButton, XBrandIcon } from "@/components/share-button";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
@@ -118,10 +118,32 @@ export function PublishSuccess({
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-6">
         {appId && <section className="space-y-3">
-          <p className="text-base font-bold">{sharesData?t('一緒に使う人を招待しよう','Invite people to use it together'):appSavesData(code)?t('ホーム画面に置いて、また使おう','Keep it on your home screen'):t('作ったアプリをシェアしよう','Share your new app')}</p>
+          <p className="flex items-center gap-2 text-base font-black text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+              {sharesData ? <Users className="h-4 w-4" /> : appSavesData(code) ? <Smartphone className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+            </span>
+            {sharesData?t('一緒に使う人を招待しよう','Invite people to use it together'):appSavesData(code)?t('ホーム画面に置いて、また使おう','Keep it on your home screen'):t('作ったアプリをシェアしよう','Share your new app')}
+          </p>
           <IconPicker appId={appId} title={name}/>
-          {sharesData ? groupBlock : appSavesData(code) ? <details onToggle={e=>{if(e.currentTarget.open)engagement('home_howto',appId,{surface:'publish'});}}><summary className="cursor-pointer rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white">{t('ホーム画面への追加方法','How to add to home screen')}</summary><div className="mt-3"><AddToHomeSteps openFirst/></div></details> : null}
-          {!sharesData && <ShareActions appId={appId} url={url} title={name}/>}
+          {sharesData ? groupBlock : appSavesData(code) ? (
+            <details className="group overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-sky-100" onToggle={e=>{if(e.currentTarget.open)engagement('home_howto',appId,{surface:'publish'});}}>
+              <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500 text-white shadow-sm"><SquarePlus className="h-5 w-5" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-black text-sky-950">{t('ホーム画面への追加方法','How to add to home screen')}</span>
+                  <span className="block text-[11px] text-sky-800/70">{t('3ステップで、アイコンから開けるように','3 steps to open it from an icon')}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-sky-500 transition group-open:rotate-180" />
+              </summary>
+              <div className="border-t border-sky-100 bg-white p-3"><AddToHomeSteps openFirst/></div>
+            </details>
+          ) : null}
+          {!sharesData && (
+            <div className="space-y-2 rounded-2xl bg-white p-3 ring-1 ring-slate-200">
+              <p className="text-xs font-bold text-slate-500">{appSavesData(code) ? t('友だちや家族にも送る', 'Send it to friends and family') : t('送り先を選ぶ', 'Choose where to send it')}</p>
+              <ShareActions appId={appId} url={url} title={name}/>
+            </div>
+          )}
         </section>}
         {/* いちばん上：URL をコピー、その下に LINE と X を同じ大きさで並べる */}
         {!appId && <div className="space-y-2">

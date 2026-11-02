@@ -54,6 +54,7 @@ import {
 } from "@/lib/playground/prompt-template";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { localizePath, format } from "@/lib/i18n/config";
+import { ApiCostNotice } from "@/components/secrets/api-cost-notice";
 import { categoryName } from "@/lib/categories";
 import { SecretsSettingsModal } from "@/components/secrets/secrets-settings-modal";
 import { StudioLoginPromptModal } from "@/components/studio-login-prompt-modal";
@@ -2812,6 +2813,7 @@ export default function PlaygroundPage() {
                       </span>
                     </button>
                   </div>
+                  <ApiCostNotice code={code} listed={publishListed} />
                   <div>
                     <label className="mb-1.5 block text-xs font-bold text-gray-700">
                       {t("アプリ名", "App name")} <span className="text-rose-500">*</span>

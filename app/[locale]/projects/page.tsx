@@ -54,6 +54,7 @@ import { intlLocale, localizePath, makeT, type Locale, format, plural } from "@/
 import { categoryName } from "@/lib/categories";
 import { StorageMeter, useAppDataUsage } from "@/components/storage-meter";
 import { formatBytes } from "@/lib/app-data-limits";
+import { ApiCostNotice } from "@/components/secrets/api-cost-notice";
 import { AppStorageBar } from "@/components/app-storage-bar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -423,6 +424,7 @@ export default function ProjectsPage() {
 
   // 出品モーダル
   const [publishTarget, setPublishTarget]     = useState<Project | null>(null);
+  const [publishNoticeCode, setPublishNoticeCode] = useState("");
   const [publishTitle, setPublishTitle]       = useState("");
   const [publishDesc, setPublishDesc]         = useState("");
   const [publishCategory, setPublishCategory] = useState("");
@@ -481,6 +483,17 @@ export default function ProjectsPage() {
     storageWarningAckRef.current = false;
     secretWarningAckRef.current = false;
     setPendingHtmlForPublish(null);
+
+    // 外部APIの費用の注意を出すかを決めるために、公開するコードを先に読んでおく
+    setPublishNoticeCode("");
+    if (proj.id === "saved_playground") {
+      try { setPublishNoticeCode(localStorage.getItem("jisapp_playground_code") ?? ""); } catch { /**/ }
+    } else if (!proj.isDemo) {
+      fetch(`/api/my-projects/${proj.id}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((d) => setPublishNoticeCode(d?.project?.html_code ?? ""))
+        .catch(() => { /* noop */ });
+    }
 
     if (proj.appId) {
       supabase
@@ -1439,6 +1452,7 @@ export default function ProjectsPage() {
                       </label>
                     </div>
                   )}
+                  <ApiCostNotice code={publishNoticeCode} listed />
                   {publishError && (
                     <p className="rounded-xl bg-rose-50 px-4 py-2.5 text-xs text-rose-600 ring-1 ring-rose-200">{publishError}</p>
                   )}

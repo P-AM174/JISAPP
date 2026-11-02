@@ -203,33 +203,103 @@ ${PROMPT_STORAGE_SHARED}
 ${current}`;
 }
 
+/**
+ * 外部API（AI・天気・地図など）を使うアプリのための文。
+ * ジサップでの仕組み（キーは「APIキーの登録」に置く・送り先はコードに書かれたものだけ・料金は作った人）と設定のしかたを、
+ * AI が使う人に案内できるようにする。登録画面の名前・付け方は components/secrets/secrets-settings-modal.tsx に合わせる
+ */
+const PROMPT_API_INTRO = `【外部API（AI・天気・地図など）を使いたいとき（重要）】
+・ユーザーが AI・天気・地図・翻訳・ニュースなど、外部のサービス（API）を使うアプリを作りたいときは、下の【外部APIの使い方（ジサップでの仕組み）】に従ってください。返答では、コードの前に APIキーの取り方を、コードのあとにジサップでの設定のしかたと費用の注意を、必ず案内してください。
+・外部APIが必要ないアプリでは、外部APIについて質問したり案内したりしないでください。`;
+
+const PROMPT_API_RULES = `【外部APIの使い方（ジサップでの仕組み）】
+■ ジサップでの仕組み（コードを書く前に理解してください）
+・アプリは window.Jisapp.fetch で外部APIを呼びます。ジサップのサーバーが代わりに送り、結果をアプリに返します。
+・APIキーはコードに書きません。アプリを作った人が、開発スタジオの「APIキーの登録」でキーを登録します。キーはジサップのサーバーに暗号化して保存され、アプリを使う人には見えません。
+・コードには secret: 'GEMINI' のように、キーの「名前」だけを書きます。送るときに、ジサップがその名前で登録されたキーを付けます。
+・キーを付けて送れるのは、アプリのコードに書かれている送り先だけです。送り先の URL（https://api.example.com/... のドメイン部分）は、コードの中にそのまま文字で書いてください（文字をつなげて組み立てない）。
+・アプリを使う人は全員、作った人のキーで呼びます。使う人にキーを入力させないでください。有料のAPIは、使われた分の料金が作った人にかかります。
+・使えるのは https の URL だけです。送るデータは256KBまで、返ってくるデータは512KBまで、待つのは約50秒までです。短い時間に呼びすぎると、しばらく止まります。
+・キーの付け方は2つだけです。
+  - URLパラメータ：URL に ?key=キー のように付ける（パラメータ名は登録のときに決める）
+  - HTTPヘッダー：Authorization: Bearer キー の形で付ける
+  これ以外の付け方（x-api-key などの別のヘッダー）しか受け付けないサービスは使えません。その場合は、上の2つのどちらかで使える別のサービスを選んでください。
+
+■ 使うサービスの選び方
+・ユーザーが指定したサービスを使ってください。
+・指定がなければ、目的に合い、なるべく無料で始められるサービスを1つ選び、何を選んだかを案内に書いてください。
+
+■ コードの書き方（必須）
+・APIキー・トークン・秘密鍵を HTML / JavaScript / CSS に絶対に書かないでください。ユーザーに「キーを教えて」と聞かないでください。
+  禁止例: const API_KEY = 'AIza...'; const OPENAI_KEY = 'sk-...'; fetch(url + '?key=xxxx')
+・APIキーが必要な外部APIは、必ず window.Jisapp.fetch の secret を使って呼んでください。
+  例: const res = await window.Jisapp.fetch('https://api.example.com/v1/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: { text: '...' },   // オブジェクトはそのまま渡してよい（JSON に変わる）
+        secret: 'EXAMPLE'
+      });
+      // res.ok（成功したか）、res.status（数字）、res.body（返ってきたデータ。JSON はオブジェクトになる）
+・secret 名は、大文字英字で始まる大文字・数字・アンダースコア（32文字以内）にし、サービス名にしてください（例: GEMINI, OPENAI, GROQ, WEATHER）。1つのアプリで、同じサービスには同じ名前を使ってください。
+・キーがいらず、CORS に対応している API だけは、ふつうの fetch(url) で呼んでかまいません。CORS エラーになるときは window.Jisapp.fetch(url) を使ってください。
+・つながらなかったとき（キーが未登録・キーがちがう・料金の上限・呼びすぎなど）は、window.Jisapp.fetch がエラーを投げるか、res.ok が false になります。必ず try/catch と res.ok を確かめ、画面に理由と直し方を出してください。黙って止まったり、固まったりしないでください。
+  例:「APIキーがまだ登録されていません。開発スタジオの『…』メニュー →『APIキーの登録』で GEMINI を登録してください」
+・AI のふりをしないでください。API につながらないときに、決まった返事やランダムな返事を、本物の答えのように見せないでください。
+
+■ よく使うサービスの登録のしかたの目安
+・Google Gemini → secret: 'GEMINI' / 付け方: URLパラメータ、パラメータ名「key」 / キーの取り方: Google AI Studio（aistudio.google.com）の「Get API key」（無料で始められる）
+・OpenAI → secret: 'OPENAI' / 付け方: HTTPヘッダー / キーの取り方: platform.openai.com の「API keys」（有料。先にクレジットの購入が必要）
+・Groq → secret: 'GROQ' / 付け方: HTTPヘッダー / キーの取り方: console.groq.com の「API Keys」（無料で始められる）
+・OpenWeather（天気） → secret: 'WEATHER' / 付け方: URLパラメータ、パラメータ名「appid」 / キーの取り方: openweathermap.org でアカウントを作り「API keys」
+・その他 → そのサービスの説明書を見て、URLパラメータかヘッダー（Bearer）かを選ぶ
+
+■ 返答の形（外部APIを使うとき）
+返答は、次の順番にしてください（サービス名・secret 名・付け方は、実際のコードに合わせる）。最初の返答でコードを省略せずに出すルールは変わりません。
+
+1. コードの前に、次を書く
+---
+【このアプリで使う外部API】
+・サービス：○○（何に使うか）
+・料金：無料で始められる／有料（だいたいの目安）
+
+【準備：○○ の APIキーの取り方】
+1. ○○（サイトの URL）にアクセスして、アカウントを作る（またはログインする）
+2. ○○ の画面で「○○」を押して、APIキーを作る
+3. 表示されたキーをコピーしておく（あとでジサップに登録します。キーは他の人に見せないでください）
+※ 有料のサービスは、ここで支払い方法の登録やクレジットの購入が必要なことも書く
+---
+
+2. 完成した index.html のコード
+
+3. コードのあとに、次を書く
+---
+【ジサップでの設定のしかた】
+1. このコードを、ジサップの開発スタジオに貼り付ける
+2. 右上の「…」メニューから「APIキーの登録」を開く
+3. 次のとおり登録する
+   ・名前：○○（コードの secret 名と同じ。1文字でもちがうと動きません）
+   ・値：準備でコピーした APIキー
+   ・付け方：「URLパラメータ（?key= 等）」でパラメータ名「○○」／または「HTTPヘッダー（Authorization 等）」
+4. プレビューで、ちゃんと返事が来るか試す
+
+【費用について（大事）】
+・このアプリは、使われるたびに、あなたの APIキーで ○○ を呼びます。アプリを使う人は全員、あなたのキーを使います。
+・ジサップに出品したり、URL を共有したりすると、知らない人もふくめて使う人が増え、そのぶん API の料金が増えることがあります。
+・有料の API は、使われた分の料金があなたにかかります。無料の API も、無料の範囲を超えると止まったり、料金がかかったりします。
+・心配なときは、○○ の管理画面で、使える金額や回数の上限を設定しておいてください（○○ での設定のしかたも短く書く）。
+
+【知っておくこと】
+・キーはジサップに暗号化して保存され、アプリを使う人には見えません。キーをコードに書かないでください。
+・送り先の URL を変えたときは、アプリを公開し直してください。
+---`;
+
 /** 開発スタジオ・自由研究ガイド共通の AI 指示文 */
 export const PROMPT_TEMPLATE = `あなたはジサップ（Jisapp）向けの優秀なフロントエンドエンジニアです。
 「${PROMPT_APP_NAME_PLACEHOLDER}」を作りたいです。
 
 次のルールを守って、最初の返答で完成した index.html を1ファイルまるごと出力してください（「変更部分のみ」や途中省略は不可）。保存の要否はすでに決まっているので、保存について質問しないでください。
 
-【外部API・AI連携が話題に出たとき（重要）】
-・ユーザーが「AIを使って」「ChatGPT」「Gemini」「天気API」「地図」「外部サービスと連携」など、APIキーが必要になりそうな要望を出したときだけ、コードのあとに次を短く案内してください。
-・必要がなければ、外部APIについて能動的に質問しないでください。
-
-■ ユーザーへの案内文（この内容をベースに、サービスに合わせて書き換えてください）
----
-ジサップでは、APIキーをコードに直接書きません（公開すると他人に見える可能性があります）。
-
-代わりに、開発スタジオ画面で次の手順を行ってください。
-1. 生成した HTML を開発スタジオのコード欄に貼り付ける
-2. 右上の「…」メニューから「APIキーの登録」を開く
-3. 次の内容でキーを登録する
-   ・名前（大文字）: 【WEATHER / OPENAI / MAPS など、コードで使う名前】
-   ・値: 取得したAPIキー（AIza... / sk-... など）
-   ・付け方: サービスの仕様に合わせて選ぶ
-     - URLパラメータ型（Google Gemini 等） → 「URLパラメータ」、パラメータ名「key」
-     - Authorization ヘッダー型（OpenAI 等） → 「HTTPヘッダー」
-4. プレビューで動作を確認する
-
-コード側では、キーの値は書かず secret: 'API_NAME' のように名前だけ指定します（API_NAME は登録名と同じ大文字）。
----
+${PROMPT_API_INTRO}
 
 【コードを書くときのルール】
 以下のジサップ専用ルールを厳守して、1つの index.html にすべてを含めたコードを出力してください。
@@ -243,47 +313,99 @@ Tailwind CSSやBootstrapなどのCDN（外部読み込み）は、環境制限�
 
 ${PROMPT_STORAGE_MARKER}
 
-【APIキーの扱い（外部API・AIを使う場合は必須・最重要）】
-・APIキー・トークン・秘密鍵を HTML / JavaScript / CSS に絶対に書かないでください。
-  禁止例: const API_KEY = 'AIza...'; const OPENAI_KEY = 'sk-...'; fetch(url + '?key=xxxx')
-・ユーザーに「キーを教えて」と聞かないでください。キーはジサップの「APIキー」画面でユーザー自身が登録します。
-・外部APIを使うコードでは、必ず window.Jisapp.fetch の secret オプションを使ってください。
-  例: const res = await window.Jisapp.fetch('https://api.example.com/data', { secret: 'WEATHER' });
-       const data = res.body;
-・コードに書いてよいのは secret の名前（大文字英字・数字・アンダースコア、32文字以内）だけです。
-  例: GEMINI, OPENAI, WEATHER, MAPS_API
-・secret 名は、ユーザーが「APIキー」画面で登録する名前と必ず一致させてください。
+${PROMPT_API_RULES}`;
 
-【よく使うサービスの secret 名と登録設定の目安】
-・Google Gemini → secret: 'GEMINI' / APIキー画面: URLパラメータ「key」
-・OpenAI → secret: 'OPENAI' / APIキー画面: HTTPヘッダー（Authorization）
-・Groq → secret: 'GROQ' / APIキー画面: HTTPヘッダー（Authorization）
-・天気・その他 → secret: 'WEATHER' 等 / APIキー画面: 各APIのドキュメントに合わせる
+/** 外部APIの文（英語版）。中身は日本語版の PROMPT_API_INTRO / PROMPT_API_RULES と同じ */
+const PROMPT_API_INTRO_EN = `[When the user wants to use external APIs (AI, weather, maps, etc.) (important)]
+- If the user wants an app that uses an external service (API) such as AI, weather, maps, translation or news, follow [Using external APIs (how it works on Jisapp)] below. In your reply, always explain how to get the API key before the code, and how to set it up on Jisapp plus a note about costs after the code.
+- If the app doesn't need an external API, don't ask about or explain external APIs.`;
 
-【コード出力後に必ずユーザーへ案内すること】
-HTMLコードを出力したあと、最後に必ず次のような短い手順を添えてください（サービス名と secret 名は実際のコードに合わせる）:
+const PROMPT_API_RULES_EN = `[Using external APIs (how it works on Jisapp)]
+■ How it works on Jisapp (understand this before writing code)
+- Apps call external APIs with window.Jisapp.fetch. Jisapp's server sends the request for the app and returns the result.
+- API keys are never written in the code. The app's creator registers the key with "Register API key" in the Studio. The key is stored encrypted on Jisapp's server and people using the app can't see it.
+- In the code, write only the key's name, like secret: 'GEMINI'. When sending, Jisapp attaches the key registered under that name.
+- A key can only be sent to destinations written in the app's code. Write the destination URL (the domain part of https://api.example.com/...) as plain text in the code (don't build it by joining strings).
+- Everyone who uses the app calls the API with the creator's key. Don't make users enter a key. For paid APIs, the creator pays for what is used.
+- Only https URLs work. Requests up to 256KB, responses up to 512KB, and a wait of about 50 seconds at most. Calling too often in a short time pauses it for a while.
+- There are only two ways to attach a key:
+  - URL parameter: added to the URL like ?key=KEY (the parameter name is chosen when registering)
+  - HTTP header: sent as Authorization: Bearer KEY
+  Services that only accept other ways (a different header such as x-api-key) can't be used. In that case, pick another service that works with one of the two ways above.
+
+■ Choosing the service
+- Use the service the user asked for.
+- If they didn't name one, pick one that fits the purpose and is free to start if possible, and say which one you picked in the guide.
+
+■ How to write the code (required)
+- Never write API keys, tokens or secret keys in HTML / JavaScript / CSS. Don't ask the user for their key.
+  Not allowed: const API_KEY = 'AIza...'; const OPENAI_KEY = 'sk-...'; fetch(url + '?key=xxxx')
+- Always call external APIs that need a key with the secret option of window.Jisapp.fetch.
+  Example: const res = await window.Jisapp.fetch('https://api.example.com/v1/data', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: { text: '...' },   // you can pass an object as is (it becomes JSON)
+             secret: 'EXAMPLE'
+           });
+           // res.ok (whether it worked), res.status (number), res.body (the returned data; JSON becomes an object)
+- Secret names start with an uppercase letter and use only uppercase letters, numbers and underscores (32 characters max). Name them after the service (e.g. GEMINI, OPENAI, GROQ, WEATHER). Use the same name for the same service throughout the app.
+- Only APIs that need no key and support CORS may be called with a normal fetch(url). If you get a CORS error, use window.Jisapp.fetch(url).
+- When it can't connect (key not registered, wrong key, billing limit, too many calls, etc.), window.Jisapp.fetch throws an error or res.ok is false. Always use try/catch and check res.ok, and show the reason and how to fix it on screen. Never fail silently or freeze.
+  Example: "The API key isn't registered yet. In the Studio, open the '…' menu → 'Register API key' and register GEMINI."
+- Never pretend to be AI. When the API can't be reached, don't show fixed or random replies as if they were real answers.
+
+■ How to register common services
+- Google Gemini → secret: 'GEMINI' / attach: URL parameter, parameter name "key" / get a key: "Get API key" in Google AI Studio (aistudio.google.com) (free to start)
+- OpenAI → secret: 'OPENAI' / attach: HTTP header / get a key: "API keys" on platform.openai.com (paid; you need to buy credits first)
+- Groq → secret: 'GROQ' / attach: HTTP header / get a key: "API Keys" on console.groq.com (free to start)
+- OpenWeather (weather) → secret: 'WEATHER' / attach: URL parameter, parameter name "appid" / get a key: create an account on openweathermap.org, then "API keys"
+- Others → check the service's docs and choose URL parameter or header (Bearer)
+
+■ How to shape your reply (when using external APIs)
+Reply in this order (match the service, secret name and attach method to the actual code). The rule to output the full code in your first reply still applies.
+
+1. Before the code, write this
 ---
-【APIキーの登録手順】
-1. このコードをジサップ開発スタジオに貼り付ける
-2. 右上の「…」メニューの「APIキーの登録」を開く
-3. 名前（コード内の secret 名と同じ。例: WEATHER, OPENAI, MAPS など）でキーを登録
-4. プレビューで確認
-※ キーをコードに直接書かないでください
+[External API this app uses]
+- Service: ○○ (what it's used for)
+- Cost: free to start / paid (rough idea)
+
+[Before you start: how to get a ○○ API key]
+1. Go to ○○ (the site's URL) and create an account (or sign in)
+2. On the ○○ screen, press "○○" to create an API key
+3. Copy the key that appears (you'll register it on Jisapp later; don't show it to anyone)
+* For paid services, also say if you need to add a payment method or buy credits here
 ---
 
-【外部API連携の実装手順】
-  1. まず通常の fetch(url) を試す（API側がCORS対応している場合のみ）。
-  2. CORSエラーになる、またはAPIキーが必要な場合は window.Jisapp.fetch(url, { secret: 'NAME' }) を使う。
-  ※ URLは https のみ。`;
+2. The complete index.html code
 
-/** 英語版の AI 指示文。アプリの画面の文字も英語にしてもらう */
-export const PROMPT_TEMPLATE_EN = `You are an excellent front-end engineer building apps for Jisapp.
-I want to make "${PROMPT_APP_NAME_PLACEHOLDER_EN}".
+3. After the code, write this
+---
+[How to set it up on Jisapp]
+1. Paste this code into the Jisapp Studio
+2. Open "Register API key" from the "…" menu at the top right
+3. Register it like this
+   - Name: ○○ (the same as the secret name in the code; even one different letter and it won't work)
+   - Value: the API key you copied
+   - How it's attached: "URL parameter (?key=, etc.)" with parameter name "○○" / or "HTTP header (Authorization, etc.)"
+4. Try it in the preview and check that you get a reply
 
-Follow the rules below and output the complete index.html as one whole file in your first reply (no "changed parts only", no skipping). Whether to save data has already been decided, so don't ask about saving.
-Write all text in the app's screens (labels, buttons, messages) in natural English.
+[About costs (important)]
+- Every time the app is used, it calls ○○ with your API key. Everyone who uses the app uses your key.
+- If you list the app on Jisapp or share its URL, more people (including strangers) may use it, and your API costs may go up.
+- For paid APIs, you pay for what is used. Free APIs may also stop working or start charging once you go past the free limit.
+- If you're worried, set a spending or usage limit in ○○'s dashboard (also briefly explain how to set it in ○○).
 
-[When external APIs or AI come up (important)]
+[Good to know]
+- Your key is stored encrypted on Jisapp and people using the app can't see it. Don't write the key in the code.
+- If you change the destination URL, publish the app again.
+---`;
+
+/**
+ * ベトナム語版の外部APIの文。2026-11-02 に日本語版・英語版の外部APIの案内（ジサップでの仕組みと設定のしかた）を新しくしたとき、
+ * ベトナム語版は変えないことにしたので、それまでの英語版の文をそのまま持つ
+ */
+const PROMPT_API_INTRO_VI = `[When external APIs or AI come up (important)]
 - Only if the user asks for something that probably needs an API key — "use AI", "ChatGPT", "Gemini", "weather API", "maps", "connect to another service", etc. — add the short guide below after the code.
 - If it isn't needed, don't bring up external APIs yourself.
 
@@ -303,21 +425,9 @@ Instead, do this in the Studio:
 4. Check that it works in the preview
 
 In the code, never write the key's value — only its name, like secret: 'API_NAME' (API_NAME is the same UPPERCASE name you registered).
----
+---`;
 
-[Rules for writing the code]
-Strictly follow these Jisapp rules and put everything into a single index.html.
-
-[One complete HTML file (single file)]
-Don't split CSS or JavaScript into other files. Embed everything in one "index.html" file.
-
-[No CDNs or external CSS frameworks at all (important)]
-Never use CDNs such as Tailwind CSS or Bootstrap — because of environment limits, the design won't apply or it will error.${GOOGLE_FONTS_OK_EN}
-Write all design in plain CSS (Vanilla CSS), use CSS variables (:root) and so on, and build a bright, fresh, polished, modern UI (light mode) that's friendly for beginners.
-
-${PROMPT_STORAGE_MARKER}
-
-[Handling API keys (required and most important when using external APIs or AI)]
+const PROMPT_API_RULES_VI = `[Handling API keys (required and most important when using external APIs or AI)]
 - Never write API keys, tokens or secret keys in HTML / JavaScript / CSS.
   Not allowed: const API_KEY = 'AIza...'; const OPENAI_KEY = 'sk-...'; fetch(url + '?key=xxxx')
 - Don't ask the user for their key. Users register keys themselves on Jisapp's "API keys" screen.
@@ -349,6 +459,29 @@ After outputting the HTML, always finish with short steps like these (match the 
   1. First try a normal fetch(url) (only if the API supports CORS).
   2. If you get a CORS error, or an API key is needed, use window.Jisapp.fetch(url, { secret: 'NAME' }).
   * https URLs only.`;
+
+/** 英語版の AI 指示文。アプリの画面の文字も英語にしてもらう */
+export const PROMPT_TEMPLATE_EN = `You are an excellent front-end engineer building apps for Jisapp.
+I want to make "${PROMPT_APP_NAME_PLACEHOLDER_EN}".
+
+Follow the rules below and output the complete index.html as one whole file in your first reply (no "changed parts only", no skipping). Whether to save data has already been decided, so don't ask about saving.
+Write all text in the app's screens (labels, buttons, messages) in natural English.
+
+${PROMPT_API_INTRO_EN}
+
+[Rules for writing the code]
+Strictly follow these Jisapp rules and put everything into a single index.html.
+
+[One complete HTML file (single file)]
+Don't split CSS or JavaScript into other files. Embed everything in one "index.html" file.
+
+[No CDNs or external CSS frameworks at all (important)]
+Never use CDNs such as Tailwind CSS or Bootstrap — because of environment limits, the design won't apply or it will error.${GOOGLE_FONTS_OK_EN}
+Write all design in plain CSS (Vanilla CSS), use CSS variables (:root) and so on, and build a bright, fresh, polished, modern UI (light mode) that's friendly for beginners.
+
+${PROMPT_STORAGE_MARKER}
+
+${PROMPT_API_RULES_EN}`;
 
 /**
  * ジサップオリジナルデザイン（グラスモーフィズム）の指定。
@@ -833,14 +966,28 @@ export const PROMPT_RULES_SHORT = `【ジサップ必須ルール（必ず守っ
   保存できるのは文字のデータだけ。1つの識別名は1MBまでなので、増え続けるデータは年ごとに識別名を分ける
 ・写真・動画・PDF などのファイルは、使う人の Google ドライブに保存する: const files = await window.Jisapp.drive.upload({ accept: 'image' })（'video'・'pdf'・'any' も使える。複数は multiple: true）。戻り値の [{ id, name, kind, url, thumbnail }] を保存し、img.src = file.thumbnail で表示、await window.Jisapp.drive.open(file) で開く（動画・PDF はアプリの中では表示できないので、必ず open を使う）
 ・同じ端末だけでよければ localStorage を使う（Jisapp の保存APIは使わない）
-・APIキー・トークンをコードに絶対に書かない。外部APIは window.Jisapp.fetch(url, { secret: 'NAME' }) を使う
-・secret 名は大文字英字（例: GEMINI, OPENAI, WEATHER）。キーの値はユーザーがジサップの「APIキー」画面で登録する
-・コード出力後、APIキーが必要な場合は登録手順を短く案内する`;
+・APIキー・トークンをコードに絶対に書かない。キーが必要な外部APIは window.Jisapp.fetch(url, { secret: 'NAME' }) を使う（戻り値は { ok, status, body }）
+・secret 名はサービス名の大文字（例: GEMINI, OPENAI, WEATHER）。キーは作った人が開発スタジオの「…」メニュー →「APIキーの登録」で登録する（付け方は URLパラメータか、Authorization: Bearer のヘッダーだけ）
+・送り先の URL はコードにそのまま書く（キーを付けて送れるのは、コードに書かれた送り先だけ）
+・つながらないときは、黙って止まらず、理由と直し方を画面に出す。AI のふり（決まった返事を本物のように見せる）をしない
+・外部APIを使うときは、コードの前に使うサービスと APIキーの取り方を、コードのあとに登録する名前と付け方を案内する
+・あわせて、料金は作った人にかかること、出品・共有すると使う人が増えて料金が増えることがあること、サービス側で上限を設定できることを注意する`;
 
 /** 短いルールの、Google ドライブのファイル保存の文（ベトナム語版では、元の文 PROMPT_RULES_SHORT_NO_DRIVE_EN に戻す） */
 const PROMPT_RULES_SHORT_DRIVE_EN = `  Only text data can be saved. Each key holds up to 1MB, so split growing data into one key per year
 - Save files such as photos, videos or PDFs to the user's own Google Drive: const files = await window.Jisapp.drive.upload({ accept: 'image' }) ('video', 'pdf' or 'any' also work; multiple: true for several). Save the returned [{ id, name, kind, url, thumbnail }], show it with img.src = file.thumbnail, and open it with await window.Jisapp.drive.open(file) (videos and PDFs can't be shown inside the app, so always use open)`;
 const PROMPT_RULES_SHORT_NO_DRIVE_EN = "  Only text data can be saved (no images or video). Each key holds up to 1MB, so split growing data into one key per year";
+
+/** 短いルールの、外部APIの文。ベトナム語版では、元の文 PROMPT_RULES_SHORT_API_VI に戻す */
+const PROMPT_RULES_SHORT_API_EN = `- Never write API keys or tokens in the code. Call external APIs that need a key with window.Jisapp.fetch(url, { secret: 'NAME' }) (it returns { ok, status, body })
+- Secret names are the service name in uppercase (e.g. GEMINI, OPENAI, WEATHER). The creator registers the key in the Studio via the "…" menu → "Register API key" (it can only be attached as a URL parameter or an Authorization: Bearer header)
+- Write the destination URL as is in the code (a key can only be sent to destinations written in the code)
+- When it can't connect, don't fail silently: show the reason and how to fix it on screen. Never pretend to be AI (don't show fixed replies as if they were real)
+- When using an external API, explain the service and how to get its API key before the code, and the name and attach method to register after the code
+- Also warn that the creator pays for usage, that listing or sharing the app can bring more users and higher costs, and that a limit can be set on the service's side`;
+const PROMPT_RULES_SHORT_API_VI = `- Never write API keys or tokens in the code. Call external APIs with window.Jisapp.fetch(url, { secret: 'NAME' })
+- Secret names are uppercase (e.g. GEMINI, OPENAI, WEATHER). Users register the key's value on Jisapp's "API keys" screen
+- After the code, if an API key is needed, briefly explain how to register it`;
 
 export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
 - Put the finished code in a single index.html (don't split HTML/CSS/JS into files)
@@ -852,9 +999,7 @@ export const PROMPT_RULES_SHORT_EN = `[Jisapp rules (always follow these)]
   Load: await window.Jisapp.loadData('keyName')
 ${PROMPT_RULES_SHORT_DRIVE_EN}
 - If the same device is enough, use localStorage (don't use Jisapp's save API)
-- Never write API keys or tokens in the code. Call external APIs with window.Jisapp.fetch(url, { secret: 'NAME' })
-- Secret names are uppercase (e.g. GEMINI, OPENAI, WEATHER). Users register the key's value on Jisapp's "API keys" screen
-- After the code, if an API key is needed, briefly explain how to register it`;
+${PROMPT_RULES_SHORT_API_EN}`;
 
 export function getPromptRulesShort(locale: Locale = "ja"): string {
   if (locale === "vi") return PROMPT_RULES_SHORT_VI;
@@ -920,7 +1065,9 @@ const EN_UI_LINE = "Write all text in the app's screens (labels, buttons, messag
 export const PROMPT_TEMPLATE_VI = PROMPT_TEMPLATE_EN.split(PROMPT_APP_NAME_PLACEHOLDER_EN)
   .join(PROMPT_APP_NAME_PLACEHOLDER_VI)
   .replace(GOOGLE_FONTS_OK_EN, "")
-  .replace(EN_UI_LINE, PROMPT_VIETNAMESE_UI);
+  .replace(EN_UI_LINE, PROMPT_VIETNAMESE_UI)
+  .replace(PROMPT_API_INTRO_EN, () => PROMPT_API_INTRO_VI)
+  .replace(PROMPT_API_RULES_EN, () => PROMPT_API_RULES_VI);
 
 /**
  * ベトナム語版のデザインの指定。2026-10-29 に日本語版・英語版を新しい指定（題材らしさ・素材・2つの書体など）に変えたとき、
@@ -1008,4 +1155,4 @@ export const PROMPT_RULES_SHORT_VI = PROMPT_RULES_SHORT_EN.replace(`.${GOOGLE_FO
   `- Write all text in the app's screens in natural Vietnamese with correct diacritics, and set <html lang="vi">
 - Use only system fonts that display Vietnamese, in this order: -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif (not system-ui). line-height about 1.5
 - Format dates and numbers with Intl (vi-VN): dd/mm/yyyy, 1.000`
-);
+).replace(PROMPT_RULES_SHORT_API_EN, () => PROMPT_RULES_SHORT_API_VI);

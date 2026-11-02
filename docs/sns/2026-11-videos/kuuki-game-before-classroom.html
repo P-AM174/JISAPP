@@ -5,79 +5,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>どこに座る？空気読みゲーム</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&family=Dela+Gothic+One&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --base: #F6F1E7;      /* 駅の床のようなあたたかい白 */
-    --main: #1F6F78;      /* 車両の青緑 */
-    --main-ink: #FFFFFF;
-    --accent: #FF6B4A;    /* 選択・注意の朱色 */
-    --main-l: #DDEDEC;
-    --field: #FFFFFF;
-    --ink: #24343A;
-    --ink-2: #5F7177;
-    --good: #2BA36B;
-    --bad: #E0453A;
-    --seat: #C9DDD9;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; }
-  body {
-    background: var(--base); color: var(--ink);
-    font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
-    display: flex; justify-content: center; overflow: hidden; user-select: none;
-  }
-  .app { width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column; padding: 14px 14px 18px; }
-  .top { display: flex; align-items: center; gap: 8px; min-height: 36px; }
-  .chip { background: var(--main); color: var(--main-ink); border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 14px; }
-  .score { margin-left: auto; font-weight: 900; font-size: 15px; color: var(--ink-2); }
-  .mute { border: 0; background: var(--main-l); color: var(--main); border-radius: 999px; width: 36px; height: 36px; font-size: 16px; }
-  .q { text-align: center; font-weight: 900; font-size: clamp(26px, 7.5vw, 36px); margin: 10px 0 4px; line-height: 1.2; }
-  .sub { text-align: center; color: var(--ink-2); font-size: 14px; min-height: 20px; }
-  .timer { height: 10px; background: var(--main-l); border-radius: 999px; overflow: hidden; margin: 10px 4px; }
-  .timer i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; }
-  .count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 120px; font-weight: 900; color: rgba(31,111,120,.14); pointer-events: none; }
-  /* 場面：スマホ画面の大部分を使う */
-  .stage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
-  .scene { position: relative; max-width: 100%; background: var(--field); border-radius: 28px; padding: 16px 12px; box-shadow: 0 10px 30px rgba(31,111,120,.15); }
-  .scene-label { position: absolute; top: -12px; left: 18px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
-  .grid { display: grid; gap: 8px; }
-  .cell { position: relative; border-radius: 16px; min-width: 0; display: flex; align-items: center; justify-content: center; font-size: clamp(26px, 8vw, 40px); }
-  .cell.seat { background: var(--seat); }
-  .cell.floor { background: transparent; border: 2px dashed #D7E2E0; }
-  .cell.wall { background: transparent; }
-  .cell.door { background: #FFE7B8; font-size: 14px !important; font-weight: 800; color: #8A5A00; }
-  .grid.wide .cell { justify-content: center; gap: 8px; }
-  .grid.wide .cell .tag { position: static; font-size: 13px; }
-  .cell.table { background: #E9D8C2; font-size: 22px; }
-  .cell .tag { position: absolute; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-2); }
-  .cell.opt { background: var(--main-l); border: 3px solid var(--main); cursor: pointer; font-size: clamp(28px, 9vw, 44px); font-weight: 900; color: var(--main); transition: transform .12s; }
-  .cell.opt.glow { background: var(--main); color: #fff; transform: scale(1.06); }
-  .cell.opt.pick { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .cell.opt.best { box-shadow: 0 0 0 5px var(--good); }
-  .cell.opt:active { transform: scale(.94); }
-  .me { position: absolute; z-index: 5; width: 54px; height: 54px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(255,107,74,.45); transition: left .45s cubic-bezier(.3,1.4,.5,1), top .45s cubic-bezier(.3,1.4,.5,1); pointer-events: none; }
-  .bubble { position: absolute; z-index: 6; background: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 2px 8px; font-size: 13px; font-weight: 800; white-space: nowrap; animation: pop .25s ease-out; }
-  /* 結果 */
-  .result { height: 170px; flex-shrink: 0; text-align: center; padding-top: 8px; overflow: hidden; }
-  .verdict { font-size: clamp(22px, 6.4vw, 30px); font-weight: 900; line-height: 1.25; }
-  .verdict.good { color: var(--good); } .verdict.bad { color: var(--bad); }
-  .reason { font-size: 16px; margin-top: 4px; }
-  .best-line { font-size: 15px; color: var(--good); font-weight: 800; margin-top: 4px; }
-  .btn { display: block; width: 100%; border: 0; border-radius: 18px; padding: 16px; font: inherit; font-size: 18px; font-weight: 900; background: var(--main); color: #fff; margin-top: 10px; }
-  .btn.ghost { background: var(--main-l); color: var(--main); }
-  /* 始まり・終わり */
-  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
-  .big { font-size: clamp(34px, 10vw, 48px); font-weight: 900; line-height: 1.15; }
-  .type { font-size: clamp(30px, 9vw, 42px); font-weight: 900; color: var(--accent); margin: 8px 0; }
-  .meter { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 320px; margin: 8px auto; }
-  .meter span { width: 12px; height: 12px; border-radius: 4px; background: var(--main-l); }
-  .meter span.ok { background: var(--good); }
-  .note { font-size: 12px; color: var(--ink-2); }
-  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-  .shake { animation: shake .3s; }
-  @media (prefers-reduced-motion: reduce) { .me { transition: none; } .shake { animation: none; } }
+:root {
+  --base: #f3efe6;
+  --main: #1f5f66;
+  --accent: #ff6a3d;
+  --main-l: #dcebea;
+  --ink: #1e2d31;
+  --ink-2: #5d6f73;
+  --good: #1f9d63;
+  --bad: #e2463c;
+  --card: #ffffff;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--base); color: var(--ink); font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif; overflow: hidden; user-select: none; }
+.app { position: relative; max-width: 480px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; }
+.pop { font-family: "Dela Gothic One", "M PLUS Rounded 1c", sans-serif; font-weight: 400; }
+
+/* 上の帯 */
+.bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px 6px; }
+.place { display: inline-flex; align-items: center; gap: 6px; background: var(--main); color: #fff; border-radius: 999px; padding: 5px 12px 5px 8px; font-weight: 800; font-size: 13px; }
+.place svg { width: 18px; height: 18px; }
+.dots { flex: 1; display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: #d9d3c6; }
+.dots i.ok { background: var(--good); } .dots i.ng { background: var(--bad); } .dots i.now { background: var(--accent); transform: scale(1.3); }
+.score { font-weight: 900; font-size: 14px; color: var(--main); min-width: 44px; text-align: right; }
+.icon-btn { border: 0; background: #fff; border-radius: 999px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--ink-2); box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* 問題 */
+.qwrap { position: relative; padding: 2px 16px 8px; text-align: center; }
+.q { font-size: clamp(26px, 7.6vw, 34px); line-height: 1.15; letter-spacing: .01em; }
+.hint { font-size: 13px; color: var(--ink-2); font-weight: 700; margin-top: 4px; }
+.ring { position: absolute; right: 14px; top: -4px; width: 52px; height: 52px; }
+.ring circle { fill: none; stroke-width: 6; }
+.ring .bg { stroke: #e5dfd2; } .ring .fg { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+.ring text { font-family: "Dela Gothic One", sans-serif; font-size: 22px; fill: var(--accent); text-anchor: middle; dominant-baseline: central; }
+
+/* 場面 */
+.stage { position: relative; flex: 1; min-height: 0; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
+.stage svg.scene { width: 100%; height: 100%; display: block; overflow: visible; }
+.opt { cursor: pointer; }
+.opt .halo { fill: rgba(255,106,61,.16); stroke: var(--accent); stroke-width: 4; stroke-dasharray: 10 8; }
+.opt .badge circle { fill: #fff; stroke: var(--accent); stroke-width: 5; }
+.opt .badge text { font-family: "Dela Gothic One", sans-serif; fill: var(--accent); text-anchor: middle; dominant-baseline: central; }
+.opt.glow .badge circle { fill: var(--accent); } .opt.glow .badge text { fill: #fff; }
+.opt.glow .halo { fill: rgba(255,106,61,.32); }
+.opt.best .halo { stroke: var(--good); fill: rgba(31,157,99,.18); stroke-dasharray: none; }
+.opt.best .badge circle { fill: var(--good); stroke: var(--good); } .opt.best .badge text { fill: #fff; }
+.opt.dim { opacity: .35; }
+.walker { transition: transform .42s linear; }
+.react { animation: popin .3s ease-out both; transform-box: fill-box; transform-origin: center bottom; }
+.bob { animation: bob 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.slide { animation: slide 6s linear infinite; }
+.talk { animation: talk 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.shake { animation: shake .4s ease-in-out 2; transform-box: fill-box; transform-origin: center; }
+
+/* 結果 */
+.panel { flex-shrink: 0; height: 168px; padding: 10px 16px 16px; }
+.verdict { display: flex; align-items: center; gap: 8px; font-size: clamp(21px, 6vw, 27px); line-height: 1.2; animation: rise .25s ease-out both; }
+.verdict svg { width: 30px; height: 30px; flex-shrink: 0; }
+.verdict.good { color: var(--good); } .verdict.bad { color: var(--bad); }
+.why { font-size: 15px; font-weight: 800; margin-top: 6px; color: var(--ink); animation: rise .25s .05s ease-out both; }
+.best-line { font-size: 14px; font-weight: 800; color: var(--good); margin-top: 4px; animation: rise .25s .1s ease-out both; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 18px; padding: 15px; font: inherit; font-size: 17px; font-weight: 900; background: var(--main); color: #fff; margin-top: 12px; box-shadow: 0 6px 0 #154247; transition: transform .1s, box-shadow .1s; }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #154247; }
+.btn.ghost { background: #fff; color: var(--main); box-shadow: 0 6px 0 #d9d3c6; }
+.btn svg { width: 20px; height: 20px; }
+
+/* はじめ・おわり */
+.cover { flex: 1; display: flex; flex-direction: column; padding: 18px 18px 22px; }
+.cover .art { flex: 1; min-height: 0; border-radius: 28px; overflow: hidden; background: #d8d2c4; box-shadow: 0 12px 30px rgba(31,95,102,.18); }
+.cover .art svg { width: 100%; height: 100%; display: block; }
+.cover .art .opt, .cover .art .talk, .cover .art .bob { display: none; }
+.title { font-size: clamp(38px, 11vw, 52px); line-height: 1.05; margin: 18px 0 6px; }
+.title em { font-style: normal; color: var(--accent); }
+.lead { font-size: 15px; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
+.note { font-size: 11px; color: var(--ink-2); margin-top: 10px; text-align: center; }
+.result-card { background: #fff; border-radius: 28px; padding: 22px 18px; text-align: center; box-shadow: 0 12px 30px rgba(31,95,102,.12); margin-top: 8px; }
+.type { font-size: clamp(30px, 9vw, 40px); color: var(--accent); margin: 6px 0; }
+.bigscore { font-size: 54px; color: var(--main); line-height: 1; margin-top: 10px; }
+.bigscore small { font-size: 22px; color: var(--ink-2); }
+.meter { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; margin: 14px auto 6px; max-width: 300px; }
+.meter i { height: 12px; border-radius: 4px; background: #ece6da; } .meter i.ok { background: var(--good); }
+
+@keyframes popin { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes talk { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes slide { from { transform: translateX(0); } to { transform: translateX(-400px); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+@keyframes rise { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .walker { transition: none; } .bob, .slide, .talk, .shake, .react { animation: none; } }
 </style>
 </head>
 <body>
@@ -85,15 +105,15 @@
 <script>
 /*
  * どこに座る？空気読みゲーム
- * 電車・エレベーター・カフェなどの場面で、3秒以内に自分の場所を A・B・C から選ぶ。
- * 医学的な診断ではなく、選ぶのを楽しむゲーム。
- * 記号：. 空席（選べない） p 人 t 話している人 c せきをしている人 m 音もれ s 寝ている人 k 子ども b 荷物
- *       g 大きな荷物 f 床 - 何もない D ドア T テーブル A/B/C 選べる場所
+ * 電車・エレベーター・カフェなどの場面を絵で再現し、3秒以内に A・B・C から自分の場所を選ぶ。
+ * 選ぶと「あなた」が入ってきてその場所へ行き、まわりの人の様子で結果が分かる。
+ * 選ぶのを楽しむゲームで、性格や心の診断ではない。
+ *
+ * 場面の記号：. 空いた席（エレベーターなどは床） f 床 - 何もない D ドア T テーブル
+ *   p 人 t 話している人 c せきをしている人 m 音もれ s 寝ている人 k 子ども e お年寄り w 作業中 y 食事中
+ *   b 席に置いた荷物 g 大きなスーツケース  A/B/C 選べる場所
  */
 const SHOW_CLASSROOM = false; // 動画4の「追加する前」。教室編を入れた版は kuuki-game.html
-
-const ICON = { p: '🧑', t: '🗣️', c: '😷', m: '🎧', s: '😴', k: '🧒', b: '👜', g: '🧳', e: '👴', w: '👩‍💻', y: '🍜', T: '☕' };
-const TAG = { t: '会話中', c: 'せき', m: '音もれ', s: '寝てる', k: '子ども', b: '荷物', g: '大荷物', e: 'お年寄り', w: '作業中', y: '食事中' };
 
 const QUESTIONS = [
   { place: '電車', q: '電車 どこに座る？', cols: 8, map: 'A.tBt.Cc', best: 'A',
@@ -114,11 +134,11 @@ const QUESTIONS = [
     why: { A: '奥の空いたすき間。邪魔にならない', B: 'ドアの真ん前', C: 'ボタンの前をふさぐ' } },
   { place: '映画館', q: '映画館 どこに座る？', cols: 6, map: 'C......Bpp......A.', best: 'A',
     why: { A: '前に人がいない見やすい席', B: '2人組のすぐ隣', C: '端すぎて画面が斜め' } },
-  { place: 'ベンチ', q: '公園のベンチ', cols: 3, map: 'ApB.yC', best: 'C',
+  { place: '公園', q: '公園のベンチ', cols: 3, map: 'ApB.yC', best: 'C',
     why: { A: '知らない人と肩がぶつかる', B: '先客の真横', C: '別のベンチの端。気まずくない' } },
   { place: '電車', q: '寝ている人がいる', cols: 7, map: 'sA.Bp.C', best: 'C',
     why: { A: '寝ている人にもたれられる', B: '2人の間で窮屈', C: '端の席。誰にも挟まれない' } },
-  { place: 'カウンター', q: 'ラーメン屋のカウンター', cols: 7, map: 'yA.yB.C', best: 'C',
+  { place: 'ラーメン屋', q: 'カウンター どこ？', cols: 7, map: 'yA.yB.C', best: 'C',
     why: { A: '先客の真横', B: '2人に挟まれる', C: '一席あけた端。食べやすい' } },
   { place: 'エレベーター', q: '2人だけ', cols: 3, map: '...pA.B.CDDD', best: 'C',
     why: { A: '先客の真横は近すぎる', B: '真ん中で落ち着かない', C: '対角の位置。自然な距離' } },
@@ -137,229 +157,370 @@ const QUESTIONS = [
   { place: '会議室', q: '会議室 どこに座る？', cols: 4, map: 'pTpAffff...BCDff', best: 'A',
     why: { A: '先にいる人たちの近く。話しやすい', B: '一人だけ離れすぎ', C: '入り口をふさぐ' } },
 ];
-
 // 教室編（コメントから追加した場面）
 const CLASSROOM = [
-  { place: '教室', q: '遅刻した教室 どこに座る？', cols: 5, map: 'ppppp ppAp. pBp.C DD...'.replace(/ /g, ''), best: 'A',
+  { place: '教室', q: '遅刻した教室 どこ？', cols: 5, map: 'pppppppAp.pBp.CDD...', best: 'A',
     why: { A: '後ろの空席。授業をじゃましない', B: '真ん中を横切ることになる', C: '一番前の席で目立つ' } },
   { place: '教室', q: 'テスト前の教室', cols: 5, map: 'w.w.wA.B.wC.w.w', best: 'A',
     why: { A: '勉強する人と一席あけた席', B: '真ん中で人の視界に入る', C: '集中している人の真横' } },
   { place: '教室', q: 'グループ活動', cols: 4, map: 'tTtAffffBT..kTkC', best: 'B',
     why: { A: '話している班に割り込む', B: '空いた班の席。すぐ混ざれる', C: 'にぎやかな班の横' } },
 ];
-
 const ALL = SHOW_CLASSROOM ? [...QUESTIONS.slice(0, 3), CLASSROOM[0], ...QUESTIONS.slice(3), ...CLASSROOM.slice(1)] : QUESTIONS;
 const TIME = 3000;
 
-// ── 保存（ジサップの保存機能。なければこの画面の中だけ） ──
+// ── 色（人の服・髪・肌） ──
+const SHIRTS = ['#4f78a8', '#7a9a5b', '#b5603c', '#6e4a7e', '#3f8f8a', '#c0627d', '#8a7a5c', '#4b5a82'];
+const HAIRS = ['#2b2420', '#4a3424', '#1c1c24', '#6b4a2e', '#3b2a22'];
+const SKIN = '#f3c9a4';
+const ME = { shirt: '#ff6a3d', hair: '#2b2420' };
+
+// ── アイコン（場所） ──
+const PLACE_ICON = {
+  '電車': '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/>',
+  'エレベーター': '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M8 9l2-2 2 2M16 15l-2 2-2-2"/>',
+  'カフェ': '<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2v3M12 2v3"/>',
+  '待合室': '<path d="M5 11V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v5M3 11h18v5H3zM6 16v4M18 16v4"/>',
+  'バス': '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M7 21v-3M17 21v-3M8 14.5h.01M16 14.5h.01"/>',
+  '図書館': '<path d="M4 4h5v16H4zM9 4h5v16H9zM15 5l4-1 3 15-4 1z"/>',
+  '映画館': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 5v4M12 5v4M17 5v4"/>',
+  '公園': '<path d="M12 3a5 5 0 0 0-5 5c0 3 2 5 5 5s5-2 5-5a5 5 0 0 0-5-5zM12 13v8M7 21h10"/>',
+  'ラーメン屋': '<path d="M3 11h18a9 9 0 0 1-18 0zM8 4c0 2 2 2 2 4M13 4c0 2 2 2 2 4M7 20h10"/>',
+  '会議室': '<rect x="3" y="8" width="18" height="8" rx="2"/><path d="M7 4h10M7 20h10"/>',
+  '教室': '<rect x="3" y="4" width="18" height="11" rx="1"/><path d="M8 20l4-5 4 5"/>',
+};
+const UI = {
+  sound: '<path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/>',
+  ok: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/>',
+  ng: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>',
+  clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/>',
+  next: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  retry: '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+};
+const ic = (d, sw = 2.2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+// ── 保存（ジサップの保存機能） ──
 const store = {
-  async load(key) { try { return window.Jisapp ? await window.Jisapp.loadData(key) : null; } catch { return null; } },
-  async save(key, v) { try { if (window.Jisapp) await window.Jisapp.saveData(key, v); } catch {} },
+  async load(k) { try { return window.Jisapp ? await window.Jisapp.loadData(k) : null; } catch { return null; } },
+  async save(k, v) { try { if (window.Jisapp) await window.Jisapp.saveData(k, v); } catch {} },
 };
 
-// ── 効果音（タップ・移動・結果） ──
-let ctx = null, muted = false;
-function tone(freq, dur = 0.08, type = 'sine', vol = 0.15, delay = 0) {
+// ── 効果音 ──
+let actx = null, muted = false;
+function tone(f, d = .08, type = 'sine', v = .14, delay = 0) {
   if (muted) return;
   try {
-    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + delay;
-    o.type = type; o.frequency.setValueAtTime(freq, t);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur);
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + delay;
+    o.type = type; o.frequency.setValueAtTime(f, t); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + d);
   } catch {}
 }
 const sfx = {
-  tick: () => tone(880, 0.05, 'square', 0.06),
-  tap: () => tone(660, 0.07, 'triangle', 0.18),
-  move: () => { tone(440, 0.08, 'sine', 0.12); tone(560, 0.08, 'sine', 0.12, 0.09); },
-  good: () => { tone(784, 0.1, 'triangle', 0.18); tone(1046, 0.16, 'triangle', 0.18, 0.1); },
-  bad: () => { tone(220, 0.22, 'sawtooth', 0.08); },
+  tick: () => tone(880, .05, 'square', .05),
+  tap: () => tone(660, .07, 'triangle', .18),
+  step: k => tone(300 + (k % 2) * 60, .05, 'sine', .08),
+  good: () => { tone(784, .1, 'triangle', .16); tone(1046, .18, 'triangle', .16, .1); },
+  bad: () => { tone(260, .18, 'sawtooth', .06); tone(200, .22, 'sawtooth', .06, .16); },
 };
 
-// ── 画面 ──
+// ════════════════════════════════════════════
+//  絵（SVG）
+// ════════════════════════════════════════════
+const S = 100; // 1マスの大きさ
+const hash = (k) => (k * 2654435761) >>> 0;
+const look = (k) => ({ shirt: SHIRTS[hash(k) % SHIRTS.length], hair: HAIRS[hash(k + 7) % HAIRS.length] });
+
+/** 上から見た人 */
+function personTop(cx, cy, kind, k, me = false) {
+  const L = me ? ME : look(k), sc = kind === 'k' ? .72 : 1, hair = kind === 'e' ? '#cfcac2' : L.hair;
+  let s = `<g>`;
+  s += `<ellipse cx="${cx}" cy="${cy + 4}" rx="${30 * sc}" ry="${20 * sc}" fill="${L.shirt}"/>`;
+  s += `<circle cx="${cx}" cy="${cy - 2}" r="${15 * sc}" fill="${SKIN}"/><path d="M${cx - 15 * sc} ${cy - 2}a${15 * sc} ${15 * sc} 0 0 1 ${30 * sc} 0c-3 5-9 7-15 7s-12-2-15-7z" fill="${hair}" transform="rotate(180 ${cx} ${cy - 2})"/>`;
+  if (kind === 'm') s += `<path d="M${cx - 17} ${cy - 2}a17 17 0 0 1 34 0" stroke="#22262e" stroke-width="4" fill="none"/>`;
+  if (kind === 'c') s += `<rect x="${cx - 9}" y="${cy + 4}" width="18" height="8" rx="3" fill="#fff" stroke="#d9dde2"/>`;
+  if (kind === 'w') s += `<rect x="${cx - 20}" y="${cy - 40}" width="40" height="22" rx="3" fill="#9aa3ad"/><rect x="${cx - 16}" y="${cy - 37}" width="32" height="16" rx="2" fill="#cfe6ff"/>`;
+  if (kind === 'y') s += `<circle cx="${cx}" cy="${cy - 32}" r="13" fill="#fff" stroke="#d14b2f" stroke-width="3"/><circle cx="${cx}" cy="${cy - 32}" r="7" fill="#f2c66d"/>`;
+  if (kind === 'e') s += `<path d="M${cx + 26} ${cy - 14}l6 34" stroke="#7a5c3c" stroke-width="5" stroke-linecap="round"/>`;
+  if (me) s += `<circle cx="${cx}" cy="${cy}" r="34" fill="none" stroke="#ff6a3d" stroke-width="4"/><g class="react"><rect x="${cx - 26}" y="${cy - 60}" width="52" height="20" rx="10" fill="#ff6a3d"/><text x="${cx}" y="${cy - 50}" font-size="12" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="central">あなた</text></g>`;
+  return s + '</g>';
+}
+
+/** 人の様子を伝える小さな吹き出し（話している・せき・音もれ・寝ている） */
+function statusMark(x, y, kind, k) {
+  if (kind === 't') return `<g class="talk" style="animation-delay:${(k % 2) * .6}s"><path d="M${x - 26} ${y - 34}h52a10 10 0 0 1 10 10v10a10 10 0 0 1-10 10h-30l-10 10v-10h-12a10 10 0 0 1-10-10v-10a10 10 0 0 1 10-10z" fill="#fff" stroke="#1e2d31" stroke-width="2.5"/><circle cx="${x - 12}" cy="${y - 19}" r="3.5" fill="#1e2d31"/><circle cx="${x}" cy="${y - 19}" r="3.5" fill="#1e2d31"/><circle cx="${x + 12}" cy="${y - 19}" r="3.5" fill="#1e2d31"/></g>`;
+  if (kind === 'c') return `<g class="bob"><text x="${x + 18}" y="${y - 14}" font-size="15" font-weight="900" fill="#7a8a90">ゴホッ</text></g>`;
+  if (kind === 'm') return `<g class="bob"><path d="M${x + 22} ${y - 6}v-22l14-4v20" stroke="#1e2d31" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="${x + 19}" cy="${y - 6}" r="4" fill="#1e2d31"/><circle cx="${x + 33}" cy="${y - 10}" r="4" fill="#1e2d31"/></g>`;
+  if (kind === 's') return `<g class="bob"><text x="${x + 18}" y="${y - 14}" font-size="18" font-weight="900" fill="#4f78a8">Z</text><text x="${x + 32}" y="${y - 28}" font-size="13" font-weight="900" fill="#4f78a8">z</text></g>`;
+  if (kind === 'k') return `<g class="bob"><circle cx="${x + 24}" cy="${y - 8}" r="9" fill="#ffd447" stroke="#d08a2e" stroke-width="2"/></g>`;
+  return '';
+}
+const isPerson = ch => 'ptcmskewy'.includes(ch);
+
+/** 場面をまとめて描く。返り値：SVG と、選べる場所・入口の座標 */
+function drawScene(Q) {
+  const cells = Q.map.split(''), rows = Math.ceil(cells.length / Q.cols);
+  return rows === 1 ? drawCar(Q, cells) : drawTop(Q, cells, rows);
+}
+
+// 上から見た場面
+function drawTop(Q, cells, rows) {
+  const cols = Q.cols, M = 34, extraTop = ['映画館', '教室'].includes(Q.place) ? 60 : 0;
+  const W = cols * S + M * 2, H = rows * S + M * 2 + extraTop, ox = M, oy = M + extraTop;
+  const theme = {
+    'エレベーター': { floor: '#c9ced3', line: '#b6bcc2', wall: '#8d959d' },
+    'カフェ': { floor: '#e3c9a4', line: '#d4b78f', wall: '#7a5a3e' },
+    '待合室': { floor: '#e8e4dc', line: '#d9d3c6', wall: '#a9a294' },
+    'バス': { floor: '#d6d0c4', line: '#c7c0b2', wall: '#5f6b75' },
+    '図書館': { floor: '#c7d4c0', line: '#b8c7b0', wall: '#6b5a44' },
+    '映画館': { floor: '#3a2f3f', line: '#45394b', wall: '#241d28' },
+    '公園': { floor: '#bcd8a4', line: '#aacb90', wall: '#bcd8a4' },
+    '会議室': { floor: '#cfd6dc', line: '#c1c9d0', wall: '#6d7680' },
+    '教室': { floor: '#e2c69c', line: '#d3b689', wall: '#8a6a48' },
+  }[Q.place] || { floor: '#e8e4dc', line: '#d9d3c6', wall: '#a9a294' };
+  const seatColor = Q.place === '映画館' ? '#a8323a' : Q.place === 'バス' ? '#3f6f9f' : Q.place === '公園' ? '#a06a3c' : Q.place === '教室' ? '#c9a06a' : '#6d8f9a';
+  const pos = {}, people = [];
+  let s = `<svg class="scene" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" rx="26" fill="${theme.wall}"/>`;
+  s += `<rect x="${M - 10}" y="${M - 10 + extraTop}" width="${cols * S + 20}" height="${rows * S + 20}" rx="14" fill="${theme.floor}"/>`;
+  // 床の目地
+  for (let c = 1; c < cols * 2; c++) s += `<line x1="${ox + c * S / 2}" y1="${oy - 6}" x2="${ox + c * S / 2}" y2="${oy + rows * S + 6}" stroke="${theme.line}" stroke-width="2"/>`;
+  if (Q.place === '映画館') s += `<rect x="${M}" y="14" width="${cols * S}" height="34" rx="8" fill="#e8e6f0"/><text x="${W / 2}" y="31" font-size="16" font-weight="900" fill="#3a2f3f" text-anchor="middle" dominant-baseline="central">スクリーン</text>`;
+  if (Q.place === '教室') s += `<rect x="${M + 30}" y="12" width="${cols * S - 60}" height="40" rx="6" fill="#2f5a3f" stroke="#8a6a48" stroke-width="5"/><text x="${W / 2}" y="32" font-size="15" font-weight="900" fill="#e8f0e4" text-anchor="middle" dominant-baseline="central">黒板</text>`;
+  if (Q.place === 'エレベーター') s += `<rect x="${W - 22}" y="${oy + 20}" width="14" height="60" rx="4" fill="#5d656d"/><circle cx="${W - 15}" cy="${oy + 36}" r="4" fill="#ffd447"/><circle cx="${W - 15}" cy="${oy + 52}" r="4" fill="#ffd447"/>`;
+  if (Q.place === 'バス') { s += `<rect x="4" y="${oy}" width="14" height="${rows * S}" rx="6" fill="#bfe1ee"/><rect x="${W - 18}" y="${oy}" width="14" height="${rows * S}" rx="6" fill="#bfe1ee"/>`; }
+  if (Q.place === '公園') { [[14, 14], [W - 30, H - 24], [W - 24, 18]].forEach(([x, y]) => { s += `<circle cx="${x}" cy="${y}" r="22" fill="#7fae6a"/>`; }); }
+  const elevator = Q.place === 'エレベーター';
+  let entry = { x: W / 2, y: H + 30 };
+  cells.forEach((ch, k) => {
+    const r = Math.floor(k / cols), c = k % cols, cx = ox + c * S + S / 2, cy = oy + r * S + S / 2;
+    const chair = () => Q.place === '公園'
+      ? `<rect x="${cx - 46}" y="${cy - 14}" width="92" height="34" rx="6" fill="${seatColor}"/><rect x="${cx - 46}" y="${cy + 18}" width="92" height="8" rx="3" fill="#7a4e2a"/>`
+      : `<rect x="${cx - 30}" y="${cy - 26}" width="60" height="56" rx="14" fill="${seatColor}"/><rect x="${cx - 30}" y="${cy + 22}" width="60" height="12" rx="6" fill="rgba(0,0,0,.18)"/>`;
+    if (ch === 'D') { s += `<rect x="${cx - S / 2}" y="${cy - 16}" width="${S}" height="40" fill="#b6bcc2"/><line x1="${cx}" y1="${cy - 16}" x2="${cx}" y2="${cy + 24}" stroke="#7d858d" stroke-width="3"/><text x="${cx}" y="${cy + 4}" font-size="15" font-weight="900" fill="#4d555d" text-anchor="middle" dominant-baseline="central">ドア</text>`; entry = { x: cx, y: cy + 60 }; return; }
+    if (ch === 'T') { s += `<rect x="${cx - 40}" y="${cy - 34}" width="80" height="68" rx="12" fill="${Q.place === '会議室' ? '#9aa6b0' : '#a9774a'}"/><circle cx="${cx + 18}" cy="${cy - 10}" r="8" fill="#fff"/>`; return; }
+    if (ch === 'f' || ch === '-') return;
+    const hasSeat = !elevator && ch !== 'g';
+    if (hasSeat) s += chair();
+    if (ch === 'b') s += `<rect x="${cx - 20}" y="${cy - 16}" width="40" height="32" rx="8" fill="#a06a3c"/>`;
+    if (ch === 'g') s += `<rect x="${cx - 26}" y="${cy - 32}" width="52" height="64" rx="10" fill="#4f78a8"/><rect x="${cx - 10}" y="${cy - 40}" width="20" height="10" rx="4" fill="#2e4e74"/>`;
+    if (isPerson(ch)) { s += personTop(cx, cy, ch, k); people.push({ x: cx, y: cy - 14, ch, k }); }
+    if ('ABC'.includes(ch)) pos[ch] = { x: cx, y: cy, k };
+  });
+  people.forEach(p => { s += statusMark(p.x, p.y, p.ch, p.k); });
+  Object.entries(pos).forEach(([L, p]) => { s += optMark(L, p.x, p.y, 40, 76); });
+  s += `<g id="actors"></g></svg>`;
+  return { svg: s, pos, entry, side: false, W, H };
+}
+
+
+// 1列の場面（電車・ラーメン屋）：縦長に、上から見た車内・店内として描く（スマホの縦画面いっぱいに大きく見せるため）
+function drawCar(Q, cells) {
+  const n = cells.length, ramen = Q.place === 'ラーメン屋', SY = 76, M = 48, W = 400, H = n * SY + M * 2; // 席の間隔は少しつめて、大きく見せる
+  const seatX = ramen ? 200 : 82, aisleX = ramen ? 300 : 210, pos = {}, people = [];
+  let s = `<svg class="scene" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+  if (ramen) {
+    s += `<rect x="0" y="0" width="${W}" height="${H}" rx="26" fill="#4a3022"/>`;
+    s += `<rect x="16" y="16" width="112" height="${H - 32}" rx="12" fill="#6b6f75"/>`; // 厨房
+    for (let k = 0; k < 3; k++) s += `<circle cx="72" cy="${M + 60 + k * (H - 2 * M - 120) / 2}" r="30" fill="#3d4146"/><circle cx="72" cy="${M + 60 + k * (H - 2 * M - 120) / 2}" r="22" fill="#d9d4c7"/>`;
+    s += `<rect x="128" y="16" width="44" height="${H - 32}" rx="6" fill="#c98f5a"/><rect x="168" y="16" width="216" height="${H - 32}" rx="12" fill="#5c3c2b"/>`;
+    for (let y = 30; y < H - 30; y += 40) s += `<line x1="168" y1="${y}" x2="384" y2="${y}" stroke="#4e3324" stroke-width="2"/>`;
+  } else {
+    s += `<rect x="0" y="0" width="${W}" height="${H}" rx="30" fill="#d8d2c4"/>`;
+    s += `<rect x="18" y="18" width="${W - 36}" height="${H - 36}" rx="18" fill="#c7c1b4"/>`;
+    // 窓（左右の壁）
+    for (let y = M + 10; y < H - M - 40; y += 110) { s += `<rect x="6" y="${y}" width="12" height="96" rx="4" fill="#bfe1ee"/><rect x="${W - 18}" y="${y}" width="12" height="96" rx="4" fill="#bfe1ee"/>`; }
+    // ドア（上下）
+    [[18, 18], [W - 104, 18], [18, H - 30], [W - 104, H - 30]].forEach(([x, y]) => { s += `<rect x="${x}" y="${y}" width="86" height="12" rx="3" fill="#f2b33d"/>`; });
+    s += `<text x="${W / 2}" y="${H - 44}" font-size="14" font-weight="900" fill="#8f877a" text-anchor="middle">ドア</text>`;
+    // 座席（自分の側と、向かいの側）
+    s += `<rect x="30" y="${M}" width="104" height="${n * SY}" rx="16" fill="#3f7f6b"/><rect x="30" y="${M}" width="22" height="${n * SY}" rx="10" fill="#2f6655"/>`;
+    s += `<rect x="${W - 134}" y="${M}" width="104" height="${n * SY}" rx="16" fill="#3f7f6b"/><rect x="${W - 52}" y="${M}" width="22" height="${n * SY}" rx="10" fill="#2f6655"/>`;
+    for (let k = 1; k < n; k++) { s += `<line x1="52" y1="${M + k * SY}" x2="134" y2="${M + k * SY}" stroke="#2f6655" stroke-width="3"/><line x1="${W - 134}" y1="${M + k * SY}" x2="${W - 52}" y2="${M + k * SY}" stroke="#2f6655" stroke-width="3"/>`; }
+    // つり革と手すり
+    s += `<line x1="${aisleX}" y1="${M - 20}" x2="${aisleX}" y2="${H - M + 20}" stroke="#a9a294" stroke-width="4"/>`;
+    for (let y = M + 16; y < H - M; y += 50) s += `<circle cx="${aisleX - 22}" cy="${y}" r="9" fill="none" stroke="#f2b33d" stroke-width="4"/><circle cx="${aisleX + 22}" cy="${y + 27}" r="9" fill="none" stroke="#f2b33d" stroke-width="4"/>`;
+    // 向かいの席の人（場面の飾り。選べない）
+    for (let k = 0; k < n; k++) if (hash(k + n * 3) % 3 === 0) s += personTop(W - 82, M + k * SY + SY / 2, 'p', k + 40);
+  }
+  cells.forEach((ch, k) => {
+    const cx = seatX, cy = M + k * SY + SY / 2;
+    if (ramen) s += `<circle cx="${cx}" cy="${cy}" r="30" fill="#d14b2f"/><circle cx="${cx}" cy="${cy}" r="22" fill="#e9674b"/>`;
+    if (ch === 'b') s += `<rect x="${cx - 24}" y="${cy - 22}" width="48" height="44" rx="10" fill="#a06a3c"/><path d="M${cx - 14} ${cy - 22}a14 10 0 0 1 28 0" stroke="#7a4e2a" stroke-width="4" fill="none"/>`;
+    if (ch === 'g') { s += personTop(cx, cy, 'p', k); s += `<rect x="${cx + 52}" y="${cy - 30}" width="46" height="60" rx="10" fill="#4f78a8"/><rect x="${cx + 66}" y="${cy - 38}" width="18" height="10" rx="4" fill="#2e4e74"/>`; }
+    if (isPerson(ch)) { s += personTop(cx, cy, ch, k); people.push({ x: cx, y: cy - 14, ch, k }); if (ramen && ch === 'y') s += `<circle cx="${cx - 58}" cy="${cy}" r="16" fill="#fff" stroke="#d14b2f" stroke-width="3"/><circle cx="${cx - 58}" cy="${cy}" r="9" fill="#f2c66d"/>`; }
+    if ('ABC'.includes(ch)) pos[ch] = { x: cx, y: cy, k };
+  });
+  people.forEach(p => { s += statusMark(p.x, p.y, p.ch, p.k); });
+  Object.entries(pos).forEach(([L, p]) => { s += optMark(L, p.x, p.y, 36, 76, 78); });
+  s += `<g id="actors"></g></svg>`;
+  const entry = { x: aisleX, y: H + 30 };
+  return { svg: s, pos, entry, side: false, W, H, path: p => [{ x: aisleX, y: entry.y }, { x: aisleX, y: p.y }, { x: p.x, y: p.y }] };
+}
+
+/** 選べる場所の印（点線の輪と、大きな A・B・C）。dx を渡すと、A・B・C を横（通路側）に出す */
+function optMark(L, x, y, r, badgeUp, dx = 0) {
+  const bx = x + dx, by = dx ? y : y - badgeUp + 30;
+  return `<g class="opt" data-opt="${L}"><ellipse class="halo" cx="${x}" cy="${y}" rx="${r + 4}" ry="${r}"/><g class="badge"><circle cx="${bx}" cy="${by}" r="26"/><text x="${bx}" y="${by + 1}" font-size="30">${L}</text></g><rect x="${Math.min(x, bx) - 50}" y="${Math.min(y, by) - 40}" width="${Math.abs(bx - x) + 100}" height="${Math.abs(by - y) + 90}" fill="transparent"/></g>`;
+}
+
+// ════════════════════════════════════════════
+//  遊び
+// ════════════════════════════════════════════
 const app = document.getElementById('app');
-let state = { i: 0, score: 0, answers: [], best: null };
-let timer = null, glowTimer = null;
+let state = { i: 0, score: 0, answers: [], best: null }, timers = [];
+const later = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
+const clearAll = () => { timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = []; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const soundBtn = () => `<button class="icon-btn" id="mute" aria-label="音">${ic(muted ? UI.mute : UI.sound)}</button>`;
+function bindMute() { const m = document.getElementById('mute'); if (m) m.onclick = () => { muted = !muted; m.innerHTML = ic(muted ? UI.mute : UI.sound); }; }
 
-function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
-function startScreen() {
-  clearTimers();
+function cover() {
+  clearAll();
+  const demo = drawScene(ALL[0]).svg.replace('class="scene"', '');
   app.innerHTML = `
-    <div class="top"><span class="chip">空気読みゲーム</span><button class="mute" id="mute">${muted ? '🔇' : '🔊'}</button></div>
-    <div class="center">
-      <div style="font-size:64px">🚃 🛗 ☕</div>
-      <div class="big">どこに座る？<br>3秒で選んで</div>
-      <p class="sub">全${ALL.length}問。A・B・C から一番気まずくない場所をタップ</p>
-      ${state.best !== null ? `<p class="sub">自己ベスト ${state.best} / ${ALL.length}</p>` : ''}
-      <button class="btn" id="go" style="max-width:320px">スタート</button>
-      <p class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</p>
+    <div class="bar"><span class="place">${ic(PLACE_ICON['電車'])}空気読みゲーム</span><span class="dots"></span>${soundBtn()}</div>
+    <div class="cover">
+      <div class="art">${demo}</div>
+      <div class="title pop">どこに<em>座る？</em></div>
+      <div class="lead">電車・エレベーター・カフェ…全${ALL.length}問。<br>3秒で、一番気まずくない場所をタップ。</div>
+      ${state.best !== null ? `<div class="lead" style="margin-top:4px">自己ベスト ${state.best} / ${ALL.length}</div>` : ''}
+      <button class="btn" id="go">${ic(UI.next)}スタート</button>
+      <div class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</div>
     </div>`;
   bindMute();
-  document.getElementById('go').onclick = () => { state.i = 0; state.score = 0; state.answers = []; sfx.tap(); question(); };
+  document.getElementById('go').onclick = () => { sfx.tap(); state.i = 0; state.score = 0; state.answers = []; question(); };
 }
 
-function bindMute() {
-  const m = document.getElementById('mute');
-  if (m) m.onclick = () => { muted = !muted; m.textContent = muted ? '🔇' : '🔊'; };
+function dotsHtml() {
+  return ALL.map((_, k) => `<i class="${k < state.answers.length ? (state.answers[k] ? 'ok' : 'ng') : k === state.i ? 'now' : ''}"></i>`).join('');
 }
 
-function clearTimers() { clearTimeout(timer); clearInterval(glowTimer); timer = null; glowTimer = null; }
-
+let scene = null, picked = false;
 function question() {
-  clearTimers();
+  clearAll(); picked = false;
   const Q = ALL[state.i];
-  const cells = Q.map.split('');
+  scene = drawScene(Q);
   app.innerHTML = `
-    <div class="top"><span class="chip">${esc(Q.place)}</span><span class="score">${state.i + 1} / ${ALL.length}　⭐ ${state.score}</span><button class="mute" id="mute">${muted ? '🔇' : '🔊'}</button></div>
-    <div class="q">${esc(Q.q)}</div>
-    <div class="sub">3秒で選んで</div>
-    <div class="timer"><i id="bar"></i></div>
-    <div class="stage" id="stage">
-      <div class="count" id="count">3</div>
-      <div class="scene" id="scene">
-        <span class="scene-label">${esc(Q.place)}</span>
-        <div class="grid" id="grid">
-          ${cells.map((ch, k) => cellHtml(ch, k)).join('')}
-        </div>
-      </div>
+    <div class="bar"><span class="place">${ic(PLACE_ICON[Q.place] || PLACE_ICON['待合室'])}${esc(Q.place)}</span><span class="dots">${dotsHtml()}</span><span class="score">${state.score}点</span>${soundBtn()}</div>
+    <div class="qwrap"><div class="q pop">${esc(Q.q)}</div><div class="hint">3秒で選んで</div>
+      <svg class="ring" viewBox="0 0 52 52"><circle class="bg" cx="26" cy="26" r="22"/><circle class="fg" id="ringfg" cx="26" cy="26" r="22" stroke-dasharray="138.2" stroke-dashoffset="0"/><text x="26" y="27" id="ringtx">3</text></svg>
     </div>
-    <div class="result" id="result"></div>`;
+    <div class="stage" id="stage">${scene.svg}</div>
+    <div class="panel" id="panel"></div>`;
   bindMute();
-  fit(Q);
-  app.querySelectorAll('.cell.opt').forEach(el => el.onclick = () => choose(el.dataset.opt));
-
-  // 3秒カウントダウン：候補を順番に光らせる
-  const bar = document.getElementById('bar');
-  bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)';
-  requestAnimationFrame(() => { bar.style.transition = `transform ${TIME}ms linear`; bar.style.transform = 'scaleX(0)'; });
-  const opts = [...app.querySelectorAll('.cell.opt')].sort((a, b) => a.dataset.opt.localeCompare(b.dataset.opt));
-  let g = 0;
-  const glow = () => { opts.forEach(o => o.classList.remove('glow')); opts[g % opts.length].classList.add('glow'); g++; };
-  glow(); glowTimer = setInterval(glow, 300);
-  let left = 3; sfx.tick();
-  const countEl = document.getElementById('count');
-  const cd = setInterval(() => { left--; if (left > 0) { countEl.textContent = left; sfx.tick(); } else { clearInterval(cd); countEl.textContent = ''; } }, 1000);
-  timer = setTimeout(() => { clearInterval(cd); choose(null); }, TIME);
-}
-
-/**
- * 席の大きさを、画面に収まるいちばん大きい大きさにする（スマホ画面の大部分を席が使うように）。
- * 電車のような1列の場面は、縦に長いベンチとして並べる（隣どうしの並びはそのまま）
- */
-function fit(Q) {
-  const stage = document.getElementById('stage'), grid = document.getElementById('grid');
-  if (!stage || !grid) return;
-  const n = Q.map.length, rows0 = Math.ceil(n / Q.cols), vertical = rows0 === 1 && Q.cols >= 5;
-  const cols = vertical ? 1 : Q.cols, rows = vertical ? Q.cols : rows0, gap = 8, pad = 24;
-  const W = stage.clientWidth - pad, H = stage.clientHeight - pad - 8;
-  let cw, ch;
-  if (vertical) { ch = Math.min(96, Math.floor((H - gap * (rows - 1)) / rows)); cw = Math.min(Math.floor(W * 0.8), 300); }
-  else { cw = ch = Math.max(28, Math.min(120, Math.floor(Math.min((W - gap * (cols - 1)) / cols, (H - gap * (rows - 1)) / rows)))); }
-  grid.classList.toggle('wide', vertical);
-  grid.style.gridTemplateColumns = `repeat(${cols}, ${cw}px)`;
-  grid.style.gridAutoRows = `${ch}px`;
-  grid.style.fontSize = Math.max(18, Math.min(cw, ch) * 0.5) + 'px';
-  grid.querySelectorAll('.cell').forEach(c => { c.style.fontSize = Math.max(20, Math.min(cw, ch) * (c.classList.contains('opt') ? 0.62 : 0.5)) + 'px'; });
-}
-window.addEventListener('resize', () => { const Q = ALL[state.i]; if (document.getElementById('grid') && Q) fit(Q); });
-
-function cellHtml(ch, k) {
-  if ('ABC'.includes(ch)) return `<div class="cell opt" data-opt="${ch}" data-k="${k}">${ch}</div>`;
-  if (ch === '.') return `<div class="cell seat"></div>`;
-  if (ch === 'f') return `<div class="cell floor"></div>`;
-  if (ch === '-') return `<div class="cell wall"></div>`;
-  if (ch === 'D') return `<div class="cell door">ドア</div>`;
-  if (ch === 'T') return `<div class="cell table">${ICON.T}</div>`;
-  return `<div class="cell seat">${ICON[ch] || '🧑'}${TAG[ch] ? `<span class="tag">${TAG[ch]}</span>` : ''}</div>`;
+  const opts = [...app.querySelectorAll('.opt')].sort((a, b) => a.dataset.opt.localeCompare(b.dataset.opt));
+  opts.forEach(o => o.addEventListener('pointerdown', () => choose(o.dataset.opt)));
+  // カウントダウン：候補を順番に光らせる
+  let g = 0; const glow = () => { opts.forEach(o => o.classList.remove('glow')); opts[g++ % opts.length].classList.add('glow'); };
+  glow(); timers.push(setInterval(glow, 280));
+  const fg = document.getElementById('ringfg'), tx = document.getElementById('ringtx'), t0 = performance.now();
+  sfx.tick();
+  const tickT = setInterval(() => {
+    const left = Math.max(0, TIME - (performance.now() - t0));
+    fg.setAttribute('stroke-dashoffset', String(138.2 * (1 - left / TIME)));
+    const n = Math.ceil(left / 1000); if (tx.textContent !== String(n) && n > 0) { tx.textContent = n; sfx.tick(); }
+    if (left <= 0) { clearInterval(tickT); choose(null); }
+  }, 50);
+  timers.push(tickT);
 }
 
 function choose(opt) {
-  if (!timer && !glowTimer) return; // もう選んだ
-  clearTimers();
-  const Q = ALL[state.i];
-  app.querySelectorAll('.cell.opt').forEach(o => { o.classList.remove('glow'); o.onclick = null; });
-  const bar = document.getElementById('bar'); const cs = getComputedStyle(bar).transform; bar.style.transition = 'none'; bar.style.transform = cs;
-  document.getElementById('count').textContent = '';
-  const ok = opt === Q.best;
-  state.answers.push(ok);
-  if (ok) state.score++;
-  const result = document.getElementById('result');
+  if (picked) return; picked = true;
+  clearAll();
+  const Q = ALL[state.i], ok = opt === Q.best, svgEl = app.querySelector('svg.scene'), actors = svgEl.querySelector('#actors');
+  app.querySelectorAll('.opt').forEach(o => { o.classList.remove('glow'); if (o.dataset.opt !== opt) o.classList.add('dim'); });
+  document.getElementById('ringtx').textContent = '';
+  state.answers.push(ok); if (ok) state.score++;
+  const panel = document.getElementById('panel');
 
   if (!opt) {
-    sfx.bad();
-    result.innerHTML = `<div class="verdict bad">時間切れ</div><div class="best-line">一番平和 ${Q.best}：${esc(Q.why[Q.best])}</div>${nextBtn()}`;
-    markBest(Q.best); bindNext(); return;
+    sfx.bad(); showBest(Q);
+    panel.innerHTML = `<div class="verdict bad pop">${ic(UI.clock, 2.4)}時間切れ</div><div class="best-line">一番平和は ${Q.best}：${esc(Q.why[Q.best])}</div>${nextBtn()}`;
+    bindNext(); return;
   }
   sfx.tap();
-  const target = app.querySelector(`.cell.opt[data-opt="${opt}"]`);
-  target.classList.add('pick');
-  // 主人公が選んだ場所へ移動
-  const scene = document.getElementById('scene'), sr = scene.getBoundingClientRect(), tr = target.getBoundingClientRect();
-  const me = document.createElement('div'); me.className = 'me'; me.textContent = '🙂';
-  me.style.left = (sr.width / 2 - 27) + 'px'; me.style.top = (sr.height + 10) + 'px';
-  scene.appendChild(me);
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    me.style.left = (tr.left - sr.left + tr.width / 2 - 27) + 'px';
-    me.style.top = (tr.top - sr.top + tr.height / 2 - 27) + 'px';
-  }));
-  sfx.move();
-  result.innerHTML = `<div class="verdict">${opt} を選ぶと……</div>`;
-  setTimeout(() => {
-    me.textContent = ok ? '😌' : '😰';
-    if (!ok) { scene.classList.add('shake'); }
-    const b = document.createElement('div'); b.className = 'bubble'; b.textContent = ok ? 'ちょうどいい' : '気まずい…';
-    b.style.left = (tr.left - sr.left + tr.width / 2 - 30) + 'px'; b.style.top = (tr.top - sr.top - 26) + 'px';
-    scene.appendChild(b);
+  const p = scene.pos[opt], e = scene.entry;
+  panel.innerHTML = `<div class="verdict pop" style="color:var(--ink)">${opt} を選ぶと……</div>`;
+  // 「あなた」が入口から歩いてきて、その場所に座る
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('class', 'walker');
+  g.innerHTML = personTop(0, 0, 'p', 0, true);
+  const path = scene.path ? scene.path(p) : [{ x: e.x, y: e.y }, { x: p.x, y: e.y }, { x: p.x, y: p.y }];
+  g.style.transform = `translate(${path[0].x}px, ${path[0].y}px)`;
+  actors.appendChild(g);
+  let step = 0; const steps = setInterval(() => sfx.step(step++), 140); timers.push(steps);
+  const legMs = 420;
+  path.slice(1).forEach((pt, k) => later(() => { g.style.transform = `translate(${pt.x}px, ${pt.y}px)`; }, 30 + k * legMs));
+  const arrive = 30 + (path.length - 1) * legMs + 120;
+  later(() => {
+    clearInterval(steps);
+    g.insertAdjacentHTML('beforeend', reaction(ok, -44, Q.why[opt]));
+    if (!ok) svgEl.querySelectorAll('.talk').forEach(t => t.style.animationDuration = '.5s');
     ok ? sfx.good() : sfx.bad();
-    result.innerHTML = `
-      <div class="verdict ${ok ? 'good' : 'bad'}">${ok ? '正解！ +1' : esc(Q.why[opt])}</div>
-      ${ok ? `<div class="reason">${esc(Q.why[opt])}</div>` : `<div class="best-line">一番平和 ${Q.best}：${esc(Q.why[Q.best])}</div>`}
+    showBest(Q);
+    panel.innerHTML = `
+      <div class="verdict ${ok ? 'good' : 'bad'} pop">${ic(ok ? UI.ok : UI.ng, 2.4)}${ok ? '正解！ +1' : esc(Q.why[opt])}</div>
+      ${ok ? `<div class="why">${esc(Q.why[opt])}</div>` : `<div class="best-line">一番平和は ${Q.best}：${esc(Q.why[Q.best])}</div>`}
       ${nextBtn()}`;
-    markBest(Q.best); bindNext();
-  }, 700);
+    bindNext();
+  }, arrive);
 }
 
-function markBest(best) { const el = app.querySelector(`.cell.opt[data-opt="${best}"]`); if (el) el.classList.add('best'); }
-function nextBtn() { return `<button class="btn" id="next">${state.i + 1 < ALL.length ? '次の問題' : '結果を見る'}</button>`; }
+/** 座ったあとの気持ち（汗・きらきら）と、ひとこと */
+function reaction(ok, y, text) {
+  const t = ok ? 'ちょうどいい' : '気まずい…';
+  const col = ok ? '#1f9d63' : '#e2463c';
+  const mark = ok
+    ? `<path d="M30 ${y - 4}l4 -10 4 10 10 4 -10 4 -4 10 -4 -10 -10 -4z" fill="#ffd447"/>`
+    : `<path d="M28 ${y + 4}c0-8 8-16 8-16s8 8 8 16a8 8 0 0 1-16 0z" fill="#7cc4e4"/>`;
+  return `<g class="react">${mark}<rect x="-58" y="${y - 44}" width="116" height="30" rx="15" fill="#fff" stroke="${col}" stroke-width="3"/><text x="0" y="${y - 29}" font-size="15" font-weight="900" fill="${col}" text-anchor="middle" dominant-baseline="central">${t}</text></g>`;
+}
+
+function showBest(Q) { const el = app.querySelector(`.opt[data-opt="${Q.best}"]`); if (el) { el.classList.remove('dim'); el.classList.add('best'); } }
+function nextBtn() { return `<button class="btn" id="next">${ic(UI.next)}${state.i + 1 < ALL.length ? '次の問題' : '結果を見る'}</button>`; }
 function bindNext() { document.getElementById('next').onclick = () => { sfx.tap(); state.i++; state.i < ALL.length ? question() : finish(); }; }
 
 function typeOf(score, total) {
   const r = score / total;
-  if (r >= 0.85) return ['空気読み名人', 'どこでも自然な距離をとれるタイプ'];
-  if (r >= 0.6) return ['ほどよい距離感タイプ', 'たいていの場面で気まずくならない'];
-  if (r >= 0.35) return ['のびのびタイプ', '自分のペースを大事にする'];
+  if (r >= .85) return ['空気読み名人', 'どこでも自然な距離をとれる'];
+  if (r >= .6) return ['ほどよい距離感タイプ', 'たいていの場面で気まずくならない'];
+  if (r >= .35) return ['のびのびタイプ', '自分のペースを大事にする'];
   return ['大胆タイプ', 'どこでも気にせず座れる強さがある'];
 }
 
 async function finish() {
-  clearTimers();
+  clearAll();
   const total = ALL.length, [type, desc] = typeOf(state.score, total);
   if (state.best === null || state.score > state.best) { state.best = state.score; await store.save('best', state.best); }
   sfx.good();
   app.innerHTML = `
-    <div class="top"><span class="chip">結果</span><button class="mute" id="mute">${muted ? '🔇' : '🔊'}</button></div>
-    <div class="center">
-      <div class="sub">あなたの距離感タイプ</div>
-      <div class="type">${type}</div>
-      <div class="reason">${desc}</div>
-      <div class="big" style="margin-top:8px">${state.score} / ${total}</div>
-      <div class="meter">${state.answers.map(a => `<span class="${a ? 'ok' : ''}"></span>`).join('')}</div>
-      <div class="sub">自己ベスト ${state.best} / ${total}</div>
-      <button class="btn" id="copy" style="max-width:320px">結果をコピー</button>
-      <button class="btn ghost" id="again" style="max-width:320px">もう一度</button>
-      <p class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</p>
+    <div class="bar"><span class="place">${ic(UI.ok)}結果</span><span class="dots">${dotsHtml()}</span>${soundBtn()}</div>
+    <div class="cover">
+      <div class="result-card">
+        <div class="lead">あなたの距離感タイプ</div>
+        <div class="type pop">${type}</div>
+        <div class="lead">${desc}</div>
+        <div class="bigscore pop">${state.score}<small> / ${total}</small></div>
+        <div class="meter">${state.answers.map(a => `<i class="${a ? 'ok' : ''}"></i>`).join('')}</div>
+        <div class="lead" style="font-size:13px">自己ベスト ${state.best} / ${total}</div>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn" id="copy">${ic(UI.copy)}結果をコピー</button>
+      <button class="btn ghost" id="again">${ic(UI.retry)}もう一度</button>
+      <div class="note">選ぶのを楽しむゲームです。性格や心の診断ではありません。</div>
     </div>`;
   bindMute();
-  document.getElementById('again').onclick = () => { sfx.tap(); startScreen(); };
-  document.getElementById('copy').onclick = async (e) => {
+  document.getElementById('again').onclick = () => { sfx.tap(); cover(); };
+  document.getElementById('copy').onclick = async e => {
     const text = `どこに座る？空気読みゲーム ${state.score}/${total}「${type}」`;
-    try { await navigator.clipboard.writeText(text); e.target.textContent = 'コピーしました'; } catch { e.target.textContent = text; }
+    try { await navigator.clipboard.writeText(text); e.currentTarget.lastChild.textContent = 'コピーしました'; } catch {}
   };
 }
 
-(async () => { state.best = await store.load('best'); startScreen(); })();
+(async () => { state.best = await store.load('best'); cover(); })();
 </script>
 </body>
 </html>

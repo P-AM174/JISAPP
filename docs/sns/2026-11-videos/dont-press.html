@@ -5,74 +5,105 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>押してはいけないボタン</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --base: #F4F1EA;     /* 実験室の白 */
-    --main: #E5312B;     /* 赤いボタン */
-    --main-ink: #FFFFFF;
-    --accent: #1E2A3A;   /* 警告の濃紺 */
-    --main-l: #FBD5D2;
-    --field: #FFFFFF;
-    --ink: #1E2A3A;
-    --ink-2: #6B7480;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; overflow: hidden; }
-  body { background: var(--base); color: var(--ink); font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif; user-select: none; transition: background .35s; }
-  body.dark { background: #2A2F38; color: #fff; }
-  .app { position: relative; max-width: 480px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 18px; }
-  .top { width: 100%; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 14px; color: var(--ink-2); }
-  body.dark .top { color: #C9CFD8; }
-  .mute { border: 0; background: rgba(0,0,0,.06); color: inherit; border-radius: 999px; width: 36px; height: 36px; font-size: 16px; }
-  .msg { margin-top: 9vh; text-align: center; font-size: clamp(34px, 10vw, 48px); font-weight: 900; line-height: 1.15; min-height: 2.4em; }
-  .sub { text-align: center; font-size: 16px; color: var(--ink-2); min-height: 1.4em; }
-  body.dark .sub { color: #C9CFD8; }
-  .field { position: relative; flex: 1; width: 100%; }
-  .btn-red {
-    position: absolute; left: 50%; top: 42%; width: min(62vw, 260px); aspect-ratio: 1; border-radius: 50%; border: 0;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(circle at 35% 30%, #FF7A72, var(--main) 55%, #A8150F);
-    box-shadow: 0 14px 0 #8E120D, 0 24px 40px rgba(0,0,0,.25);
-    color: #fff; font: inherit; font-size: clamp(22px, 6.5vw, 30px); font-weight: 900; letter-spacing: .05em;
-    transition: left .28s cubic-bezier(.3,1.5,.5,1), top .28s cubic-bezier(.3,1.5,.5,1), transform .1s;
-  }
-  .btn-red:active { transform: translate(-50%, -46%); box-shadow: 0 6px 0 #8E120D, 0 12px 20px rgba(0,0,0,.25); }
-  .btn-red.small { width: min(34vw, 140px); font-size: 18px; }
-  .wobble { animation: wobble 1.2s ease-in-out infinite; }
-  .shake { animation: shake .25s linear infinite; }
-  .count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 46vw; font-weight: 900; color: var(--main); pointer-events: none; animation: pop .35s; }
-  .stats { text-align: center; font-size: 15px; color: var(--ink-2); margin-bottom: 10px; }
-  body.dark .stats { color: #C9CFD8; }
-  .stats b { font-size: 22px; color: inherit; }
-  .confetti { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 2px; animation: fall linear forwards; pointer-events: none; }
-  .note { font-size: 11px; color: var(--ink-2); text-align: center; }
-  @keyframes wobble { 0%,100% { transform: translate(-50%,-50%) rotate(0); } 25% { transform: translate(-50%,-50%) rotate(-2deg); } 75% { transform: translate(-50%,-50%) rotate(2deg); } }
-  @keyframes shake { 0%,100% { transform: translate(-50%,-50%); } 25% { transform: translate(-52%,-50%); } 75% { transform: translate(-48%,-50%); } }
-  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  @keyframes fall { to { transform: translateY(105vh) rotate(720deg); } }
-  @media (prefers-reduced-motion: reduce) { .wobble, .shake { animation: none; } .confetti { display: none; } }
+:root {
+  --base: #e9e6df;
+  --panel: #c8ccd1;
+  --panel-d: #a3a9b0;
+  --red: #e5312b;
+  --ink: #1f2630;
+  --ink-2: #5d6672;
+  --hazard: #f2c230;
+  --led: #ff5a3c;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body { background: var(--base); color: var(--ink); font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif; user-select: none; transition: background .35s; }
+body.dark { background: #20242b; }
+.app { position: relative; max-width: 480px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 14px 18px 18px; transition: transform .5s cubic-bezier(.5,1.6,.4,1); }
+.top { width: 100%; display: flex; align-items: center; gap: 8px; }
+.counter { font-family: "Share Tech Mono", monospace; background: #15181d; color: var(--led); border-radius: 10px; padding: 6px 12px; font-size: 18px; letter-spacing: .08em; box-shadow: inset 0 2px 6px rgba(0,0,0,.6); }
+.counter small { color: #8c6a63; font-size: 11px; margin-right: 6px; font-family: "M PLUS Rounded 1c"; }
+.mute { margin-left: auto; border: 0; background: rgba(0,0,0,.06); color: var(--ink-2); border-radius: 999px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+body.dark .mute { background: rgba(255,255,255,.1); color: #c9cfd8; }
+.mute svg { width: 18px; height: 18px; }
+.msg { margin-top: 5vh; text-align: center; font-family: "Dela Gothic One", sans-serif; font-size: clamp(36px, 11vw, 52px); line-height: 1.1; min-height: 2.3em; display: flex; align-items: center; justify-content: center; transition: color .3s; }
+body.dark .msg { color: #fff; }
+.sub { text-align: center; font-size: 16px; font-weight: 700; color: var(--ink-2); min-height: 1.4em; }
+body.dark .sub { color: #c9cfd8; }
+.field { position: relative; flex: 1; width: 100%; }
+
+/* 金属の板（しま模様のふち） */
+.plate { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: min(78vw, 330px); aspect-ratio: 1; border-radius: 36px; padding: 18px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%231f2630'/%3E%3Cpath d='M0 40L40 0H20L0 20zM40 40V20L20 40z' fill='%23f2c230'/%3E%3C/svg%3E");
+  box-shadow: 0 18px 30px rgba(0,0,0,.25); transition: opacity .25s, transform .25s; }
+.plate-in { position: relative; width: 100%; height: 100%; border-radius: 22px; background: var(--panel); box-shadow: inset 0 2px 0 rgba(255,255,255,.6), inset 0 -3px 0 rgba(0,0,0,.15); display: flex; align-items: center; justify-content: center; }
+.screw { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--panel-d); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
+.screw::after { content: ""; position: absolute; left: 3px; right: 3px; top: 6px; height: 2px; background: #7e858d; transform: rotate(35deg); }
+.screw.a { left: 12px; top: 12px; } .screw.b { right: 12px; top: 12px; } .screw.c { left: 12px; bottom: 12px; } .screw.d { right: 12px; bottom: 12px; }
+.label { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: #fff; border: 3px solid var(--ink); border-radius: 6px; padding: 2px 12px; font-family: "Dela Gothic One", sans-serif; font-size: 15px; letter-spacing: .1em; white-space: nowrap; }
+
+/* ボタン（台座＋ドーム） */
+.press { position: relative; width: 68%; aspect-ratio: 1; border: 0; padding: 0; background: none; cursor: pointer; }
+.press .ring { position: absolute; inset: 0; border-radius: 50%; background: #2a2f37; box-shadow: inset 0 4px 8px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.4); }
+.press .dome { position: absolute; inset: 9%; border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #ff9b8f 0 8%, #ff5a4f 22%, var(--red) 52%, #a3120c 100%);
+  box-shadow: 0 12px 0 #8e0f0a, 0 16px 18px rgba(0,0,0,.35); transition: transform .08s, box-shadow .08s; }
+.press .shine { position: absolute; left: 24%; top: 18%; width: 30%; height: 16%; border-radius: 50%; background: rgba(255,255,255,.55); filter: blur(2px); transform: rotate(-25deg); }
+.press:active .dome, .press.down .dome { transform: translateY(9px); box-shadow: 0 3px 0 #8e0f0a, 0 5px 8px rgba(0,0,0,.35); }
+.wobble .dome { animation: wobble 1.4s ease-in-out infinite; }
+.shake { animation: shake .18s linear infinite; }
+
+/* 逃げるボタン */
+.runner { position: absolute; width: 104px; height: 104px; transform: translate(-50%, -50%); transition: left .26s cubic-bezier(.3,1.5,.5,1), top .26s cubic-bezier(.3,1.5,.5,1); }
+.runner .tag { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 12px; font-weight: 900; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+
+/* 3・2・1（デジタル表示） */
+.led { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.led span { font-family: "Share Tech Mono", monospace; font-size: 46vw; max-width: 100%; color: var(--led); text-shadow: 0 0 22px rgba(255,90,60,.6); background: #15181d; border-radius: 28px; padding: 0 6vw; line-height: 1.05; animation: pop .3s; box-shadow: inset 0 4px 14px rgba(0,0,0,.7); }
+
+.best { text-align: center; font-size: 14px; font-weight: 700; color: var(--ink-2); min-height: 22px; }
+body.dark .best { color: #c9cfd8; }
+.best b { font-family: "Share Tech Mono", monospace; font-size: 20px; color: var(--ink); }
+body.dark .best b { color: #fff; }
+.note { font-size: 11px; color: var(--ink-2); text-align: center; margin-top: 4px; }
+.confetti { position: fixed; top: -20px; width: 10px; height: 16px; border-radius: 2px; animation: fall linear forwards; pointer-events: none; z-index: 9; }
+
+@keyframes wobble { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-3deg); } 70% { transform: rotate(3deg); } }
+@keyframes shake { 0%,100% { transform: translate(-50%,-50%); } 25% { transform: translate(-51.5%,-50%); } 75% { transform: translate(-48.5%,-50%); } }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes fall { to { transform: translateY(105vh) rotate(720deg); } }
+@media (prefers-reduced-motion: reduce) { .wobble .dome, .shake, .led span { animation: none; } .confetti { display: none; } }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="top"><span id="round">押した回数 0</span><button class="mute" id="mute">🔊</button></div>
+<div class="app" id="app">
+  <div class="top"><div class="counter"><small>押した回数</small><span id="count">0000</span></div><button class="mute" id="mute" aria-label="音"></button></div>
   <div class="msg" id="msg">押さないで</div>
   <div class="sub" id="sub">このボタン、絶対に押さないで。</div>
-  <div class="field" id="field"><button class="btn-red wobble" id="red">押さないで</button></div>
-  <div class="stats" id="stats"></div>
+  <div class="field" id="field">
+    <div class="plate" id="plate"><div class="plate-in">
+      <i class="screw a"></i><i class="screw b"></i><i class="screw c"></i><i class="screw d"></i>
+      <button class="press wobble" id="red" aria-label="押してはいけないボタン"><span class="ring"></span><span class="dome"><span class="shine"></span></span></button>
+      <span class="label">押すな</span>
+    </div></div>
+  </div>
+  <div class="best" id="best"></div>
   <div class="note">押しても本当に何も起きません。</div>
 </div>
 <script>
 /*
  * 押してはいけないボタン
- * 押すたびに、警告 → 暗転 → 逃げるボタン（捕まえる）→ 3・2・1 → 紙吹雪「何も起きません」→ 最初の画面 に戻る。
- * 2周目からは画面が逆さまになる場面が入る。最後の画面は最初の画面と同じ（ループ）。
+ * 押すたびに、警告（暗転）→ 逃げるボタン（捕まえる）→ 3・2・1 → 紙吹雪「何も起きません」→ 最初の画面 に戻る。
+ * 2周目からは、警告のあとに画面が逆さまになる。最後の画面は最初の画面と同じ（ループ）。
  * 押した回数と、逃げるボタンを捕まえるまでの最速タイムを、ジサップの保存機能で残す。
  */
 const $ = id => document.getElementById(id);
-const red = $('red'), msg = $('msg'), sub = $('sub'), field = $('field');
-let step = 0, presses = 0, laps = 0, best = null, escapeTimer = null, escapeStart = 0, busy = false, muted = false;
+const app = $('app'), field = $('field'), plate = $('plate'), red = $('red'), msg = $('msg'), sub = $('sub');
+const SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+const MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/></svg>';
+let step = 0, presses = 0, laps = 0, best = null, runner = null, moveT = null, startT = 0, busy = false, muted = false;
 
 const store = {
   async load() { try { return window.Jisapp ? await window.Jisapp.loadData('dontpress') : null; } catch { return null; } },
@@ -90,44 +121,46 @@ function tone(f, d = .08, type = 'square', v = .08, delay = 0) {
     o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d);
   } catch {}
 }
-const click = () => tone(700, .06, 'triangle', .16);
-const warn = () => { tone(330, .18, 'sawtooth', .05); tone(330, .18, 'sawtooth', .05, .22); };
-const boop = () => tone(520, .09, 'sine', .14);
+const click = () => { tone(180, .05, 'square', .12); tone(700, .06, 'triangle', .14, .02); };
+const warn = () => { tone(330, .18, 'sawtooth', .05); tone(330, .18, 'sawtooth', .05, .24); };
+const boop = () => tone(520, .07, 'sine', .12);
+const beep = n => tone(660 + (3 - n) * 140, .14, 'square', .08);
 const tada = () => [523, 659, 784, 1046].forEach((f, i) => tone(f, .14, 'triangle', .14, i * .09));
 
-function say(m, s = '') { msg.textContent = m; sub.textContent = s; }
-function stats() { $('round').textContent = `押した回数 ${presses}`; $('stats').innerHTML = best ? `捕まえる最速 <b>${(best / 1000).toFixed(2)}</b> 秒` : ''; }
+const say = (m, s = '') => { msg.textContent = m; sub.textContent = s; };
+function stats() { $('count').textContent = String(presses).padStart(4, '0'); $('best').innerHTML = best ? `捕まえる最速 <b>${(best / 1000).toFixed(2)}</b> 秒` : ''; }
 
 function reset() {
   // 最初の画面（ループの最後もここに戻る）
-  step = 0; busy = false; clearInterval(escapeTimer);
-  document.body.classList.remove('dark'); document.querySelector('.app').style.transform = '';
-  red.className = 'btn-red wobble'; red.style.left = ''; red.style.top = ''; red.textContent = '押さないで'; red.style.visibility = '';
+  step = 0; busy = false; clearInterval(moveT); if (runner) runner.remove(); runner = null;
+  field.querySelectorAll('.led').forEach(e => e.remove());
+  document.body.classList.remove('dark'); app.style.transform = '';
+  plate.style.opacity = '1'; plate.classList.remove('shake'); red.classList.add('wobble');
   say('押さないで', 'このボタン、絶対に押さないで。'); stats();
 }
 
-function moveRandom() {
-  const w = field.clientWidth, h = field.clientHeight, s = red.offsetWidth / 2 + 10;
-  red.style.left = (s + Math.random() * Math.max(1, w - 2 * s)) + 'px';
-  red.style.top = (s + Math.random() * Math.max(1, h - 2 * s)) + 'px';
+function moveRunner() {
+  const w = field.clientWidth, h = field.clientHeight, m = 64;
+  runner.style.left = (m + Math.random() * Math.max(1, w - 2 * m)) + 'px';
+  runner.style.top = (m + Math.random() * Math.max(1, h - 2 * m)) + 'px';
   boop();
 }
 
 function countdown(done) {
-  red.style.visibility = 'hidden'; say('捕まえると……', '');
+  say('捕まえると……', '');
   let n = 3;
   const show = () => {
-    field.querySelectorAll('.count').forEach(e => e.remove());
+    field.querySelectorAll('.led').forEach(e => e.remove());
     if (n === 0) { done(); return; }
-    const c = document.createElement('div'); c.className = 'count'; c.textContent = n; field.appendChild(c); tone(440 + (3 - n) * 120, .12, 'sine', .14);
+    const d = document.createElement('div'); d.className = 'led'; d.innerHTML = `<span>${n}</span>`; field.appendChild(d); beep(n);
     n--; setTimeout(show, 900);
   };
   show();
 }
 
 function confetti() {
-  const colors = ['#E5312B', '#F59E0B', '#2D7FF9', '#2BA36B', '#A855F7', '#EC4899'];
-  for (let i = 0; i < 60; i++) {
+  const colors = ['#e5312b', '#f2c230', '#2d7ff9', '#1f9d63', '#a855f7', '#ec4899'];
+  for (let i = 0; i < 70; i++) {
     const c = document.createElement('i'); c.className = 'confetti';
     c.style.left = Math.random() * 100 + 'vw'; c.style.background = colors[i % colors.length];
     c.style.animationDuration = 1.6 + Math.random() * 1.4 + 's'; c.style.animationDelay = Math.random() * .4 + 's';
@@ -135,35 +168,42 @@ function confetti() {
   }
 }
 
-red.addEventListener('pointerdown', async () => {
+async function caught() {
+  busy = true; clearInterval(moveT);
+  const t = performance.now() - startT; if (!best || t < best) best = Math.round(t);
+  laps++; await store.save(); stats();
+  runner.remove(); runner = null;
+  countdown(() => {
+    say('何も起きません', `あなたは${presses}回押しました`); confetti(); tada();
+    setTimeout(reset, 2600);
+  });
+}
+
+red.addEventListener('pointerdown', () => {
   if (busy) return;
   presses++; click(); stats();
+  red.classList.add('down'); setTimeout(() => red.classList.remove('down'), 120);
   if (step === 0) {
     // 1回目：警告（画面を暗くする。強い点滅はしない）
-    step = 1; red.className = 'btn-red shake'; red.textContent = 'ダメ';
+    step = 1; red.classList.remove('wobble'); plate.classList.add('shake');
     document.body.classList.add('dark'); warn();
     say('押しましたね', 'もう一回押すと、逃げます。');
-    if (laps % 2 === 1) setTimeout(() => { document.querySelector('.app').style.transform = 'rotate(180deg)'; say('逆さまにしました', 'それでも押しますか？'); }, 900);
+    if (laps % 2 === 1) setTimeout(() => { if (step === 1) { app.style.transform = 'rotate(180deg)'; say('逆さまにしました', 'それでも押しますか？'); } }, 900);
   } else if (step === 1) {
-    // 2回目：ボタンが逃げる。押せたら捕まえた
-    step = 2; document.querySelector('.app').style.transform = ''; document.body.classList.remove('dark');
-    red.className = 'btn-red small'; red.textContent = '捕まえて';
-    say('逃げます', '捕まえて'); moveRandom(); escapeStart = performance.now();
-    escapeTimer = setInterval(moveRandom, 650);
-  } else if (step === 2) {
-    // 捕まえた → 3・2・1 → 何も起きません → 最初に戻る
-    busy = true; clearInterval(escapeTimer);
-    const t = performance.now() - escapeStart; if (!best || t < best) best = Math.round(t);
-    laps++; await store.save(); stats();
-    countdown(() => {
-      say('何も起きません', `あなたは${presses}回押しました`); confetti(); tada();
-      setTimeout(reset, 2600);
-    });
+    // 2回目：ボタンが板から外れて逃げる。押せたら捕まえた
+    step = 2; app.style.transform = ''; document.body.classList.remove('dark'); plate.classList.remove('shake'); plate.style.opacity = '0';
+    say('逃げます', '捕まえて');
+    runner = document.createElement('button'); runner.className = 'press runner'; runner.setAttribute('aria-label', '逃げるボタン');
+    runner.innerHTML = '<span class="ring"></span><span class="dome"><span class="shine"></span></span><span class="tag">捕まえて</span>';
+    runner.style.left = '50%'; runner.style.top = '46%';
+    field.appendChild(runner);
+    runner.addEventListener('pointerdown', () => { if (!busy) { presses++; click(); stats(); caught(); } });
+    startT = performance.now(); setTimeout(moveRunner, 120); moveT = setInterval(moveRunner, 650);
   }
 });
 
-$('mute').onclick = () => { muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; };
-
+$('mute').innerHTML = SOUND;
+$('mute').onclick = () => { muted = !muted; $('mute').innerHTML = muted ? MUTE : SOUND; };
 (async () => { const s = await store.load(); if (s) { presses = s.presses || 0; best = s.best || null; laps = s.laps || 0; } reset(); })();
 </script>
 </body>

@@ -124,7 +124,7 @@ export function PublishSuccess({
             </span>
             {sharesData?t('一緒に使う人を招待しよう','Invite people to use it together'):appSavesData(code)?t('ホーム画面に置いて、また使おう','Keep it on your home screen'):t('作ったアプリをシェアしよう','Share your new app')}
           </p>
-          <IconPicker appId={appId} title={name}/>
+          <IconPicker appId={appId} title={name} onLogin={isGuest ? loginAndKeep : undefined}/>
           {sharesData ? groupBlock : appSavesData(code) ? (
             <details className="group overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-sky-100" onToggle={e=>{if(e.currentTarget.open)engagement('home_howto',appId,{surface:'publish'});}}>
               <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">

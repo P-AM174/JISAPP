@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { looksLikePrompt } from "@/lib/playground/code-cleanup";
 import { hashClaimToken, newClaimToken } from "@/lib/apps/claim";
+import { autoIcon } from "@/lib/apps/icon-catalog";
 import { isReservedOfficialName } from "@/lib/official-name";
 import { GUEST_NICKNAME_MAX, guestNickname, withGuestMark } from "@/lib/guest-name";
 import { prisma } from "@/lib/db";
@@ -495,6 +496,13 @@ export async function POST(request: Request) {
       const { error: claimError } = await supabase.from("apps").update({ claim_token_hash: hashClaimToken(token) }).eq("id", appId);
       if (!claimError) claimToken = token;
     }
+
+    // ホーム画面のアイコンを、アプリ名から選んで保存しておく（選ばなくてもアプリに合ったアイコンになる。
+    // あとからアプリ名を変えてもアイコンが変わらないように、ここで決めて残す。表がまだなくても公開は止めない）
+    const { error: iconError } = await supabase
+      .from("app_appearance")
+      .upsert({ app_id: appId, ...autoIcon(title, (body.description ?? "").trim()) }, { onConflict: "app_id", ignoreDuplicates: true });
+    if (iconError) console.warn("[publish icon]", iconError.message);
   }
 
   // コードの指紋と、もとにしたアプリを残す（列がまだないとき＝SQL の実行前は、公開は止めずに飛ばす）

@@ -66,6 +66,8 @@ import { StorageChangeWarningModal } from "@/components/playground/storage-chang
 import { RemixGuideModal, isRemixGuideHidden } from "@/components/playground/remix-guide-modal";
 import { DoneSigns } from "@/components/playground/done-signs";
 import { PublishSuccess } from "@/components/playground/publish-success";
+import { IconArt } from "@/lib/apps/icon-art";
+import { autoIcon } from "@/lib/apps/icon-catalog";
 import { StuckRequest } from "@/components/playground/stuck-request";
 import { rememberGuestClaim } from "@/components/guest-claim-gate";
 import { GUEST_NICKNAME_MAX, guestNickname } from "@/lib/guest-name";
@@ -2843,6 +2845,19 @@ export default function PlaygroundPage() {
                       name="jisapp_publish_app_title"
                       className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                     />
+                    {/* ホーム画面のアイコンは、アプリ名から自動で選ぶ（ここでは選ばせない：公開までの手間を増やさないため） */}
+                    {!isRepublish && publishTitle.trim() && (
+                      <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                        <IconArt {...autoIcon(publishTitle, publishDesc)} size={32} />
+                        <p className="min-w-0 flex-1 text-[11px] leading-snug text-slate-600">
+                          <span className="font-bold text-slate-800">{t("ホーム画面のアイコン", "Home screen icon")}</span>
+                          <br />
+                          {isLoggedIn
+                            ? t("アプリ名から自動で選びます。公開したあとに変えられます", "Picked from the app name. You can change it after publishing")
+                            : t("アプリ名から自動で選びます。ログインすると、公開したあとに変えられます", "Picked from the app name. Sign in to change it after publishing")}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   {guestPublish && (
                     <div>

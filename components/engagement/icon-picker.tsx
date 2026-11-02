@@ -1,6 +1,6 @@
 "use client";
 import { useEffect,useState } from 'react';
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { Check, ChevronDown, Lock, LogIn, Search } from 'lucide-react';
 import { ICONS,ICON_COLORS,DEFAULT_ICON,recommendedIcons } from '@/lib/apps/icon-catalog';
 import { IconArt } from '@/lib/apps/icon-art';
 import { useLocale,useT } from '@/lib/i18n/client';
@@ -15,14 +15,29 @@ export function HomeScreenPreview({icon,color,title}:{icon:string;color:string;t
  </div>;
 }
 
-export function IconPicker({appId,title,defaultOpen=false}:{appId:string;title:string;defaultOpen?:boolean}) {
+/**
+ * ホーム画面のアイコンを選ぶ。変えられるのはログインしたアプリの持ち主だけ。
+ * onLogin を渡したとき（ゲストで公開した直後）は、今のアイコンを見せて「ログインすると変えられます」と案内する
+ */
+export function IconPicker({appId,title,defaultOpen=false,onLogin}:{appId:string;title:string;defaultOpen?:boolean;onLogin?:()=>void}) {
  const t=useT(),locale=useLocale();const [value,setValue]=useState(DEFAULT_ICON),[query,setQuery]=useState(''),[notice,setNotice]=useState<{ok:boolean;text:string}|null>(null),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[saved,setSaved]=useState(DEFAULT_ICON);
  const recommended = recommendedIcons(title);
  const catalog = [...ICONS].sort((a,b)=>(recommended.includes(b[0])?1:0)-(recommended.includes(a[0])?1:0));
  useEffect(()=>{let alive=true;setReady(false);fetch(`/api/apps/${appId}/appearance`).then(r=>{if(!r.ok)throw Error();return r.json();}).then(v=>{if(alive){setValue(v);setSaved(v);setReady(true);}}).catch(()=>{if(alive)setNotice({ok:false,text:t('設定を読み込めませんでした。再度開いてください。','Could not load settings. Please reopen.')});});return()=>{alive=false};},[appId,t]);
- async function save(){setBusy(true);setNotice(null);let claimToken:string|undefined;try{claimToken=JSON.parse(localStorage.getItem('jisapp_guest_claims')??'[]').find((c:{appId:string})=>c.appId===appId)?.token;}catch{}
- try{const r=await fetch(`/api/apps/${appId}/appearance`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...value,claimToken})});if(!r.ok)throw Error();engagement('icon_saved',appId,{icon:value.icon,color:value.color});setSaved(value);setNotice({ok:true,text:t('保存しました。すでにホーム画面に置いている場合は、いったん削除して追加し直すと新しいアイコンになります。','Saved. If it is already on your home screen, remove it and add it again to see the new icon.')});}catch{setNotice({ok:false,text:t('保存できませんでした。所有者としてログインしているか確認してください。','Could not save. Check that you are signed in as the owner.')});}finally{setBusy(false);}}
+ async function save(){setBusy(true);setNotice(null);
+ try{const r=await fetch(`/api/apps/${appId}/appearance`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!r.ok)throw r.status;engagement('icon_saved',appId,{icon:value.icon,color:value.color});setSaved(value);setNotice({ok:true,text:t('保存しました。すでにホーム画面に置いている場合は、いったん削除して追加し直すと新しいアイコンになります。','Saved. If it is already on your home screen, remove it and add it again to see the new icon.')});}catch(status){setNotice({ok:false,text:status===401?t('アイコンを変えるには、ログインが必要です。','Sign in to change the icon.'):t('保存できませんでした。このアプリを作ったアカウントでログインしているか確認してください。','Could not save. Check that you are signed in with the account that made this app.')});}finally{setBusy(false);}}
  const changed=value.icon!==saved.icon||value.color!==saved.color;
+ if(onLogin) return <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
+  <div className="flex items-center gap-3 p-3">
+   <IconArt {...value} size={44}/>
+   <span className="min-w-0 flex-1"><span className="block text-sm font-black text-slate-900">{t('ホーム画面のアイコン','Home screen icon')}</span><span className="block text-[11px] text-slate-500">{t('アプリ名から自動で選びました','Picked from your app name')}</span></span>
+   <span className="flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500"><Lock className="h-3 w-3"/>{t('ログインで変更','Sign in to edit')}</span>
+  </div>
+  <div className="space-y-3 border-t border-slate-100 p-3">
+   <HomeScreenPreview icon={value.icon} color={value.color} title={title}/>
+   <button type="button" onClick={onLogin} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-white py-2.5 text-xs font-black text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"><LogIn className="h-3.5 w-3.5"/>{t('ログインして、絵と色を自分で選ぶ','Sign in to choose the symbol and color')}</button>
+  </div>
+ </div>;
  return <details open={defaultOpen} className="group overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
   <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
    <IconArt {...value} size={44}/>

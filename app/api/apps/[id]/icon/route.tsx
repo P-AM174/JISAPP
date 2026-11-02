@@ -1,15 +1,15 @@
 import { ImageResponse } from 'next/og';
 import { IconArt } from '@/lib/apps/icon-art';
-import { DEFAULT_ICON } from '@/lib/apps/icon-catalog';
+import { autoIcon } from '@/lib/apps/icon-catalog';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 export const runtime = 'nodejs';
 export async function GET(request: Request, {params}: {params:Promise<{id:string}>}) {
   const {id}=await params;
   const db=createServerSupabaseClient();
-  const {data:app}=await db.from('apps').select('id').eq('id',id).eq('status','active').maybeSingle();
+  const {data:app}=await db.from('apps').select('id,title,description').eq('id',id).eq('status','active').maybeSingle();
   if(!app)return new Response(null,{status:404});
   const {data}=await db.from('app_appearance').select('icon,color').eq('app_id',id).maybeSingle();
-  const appearance=data??DEFAULT_ICON;
+  const appearance=data??autoIcon(app.title??'',app.description??'');
   const query=new URL(request.url).searchParams;
   const requested=Number(query.get('size'));
   // 180: iPhone のホーム画面（apple-touch-icon）、192/512: Android などのマニフェスト

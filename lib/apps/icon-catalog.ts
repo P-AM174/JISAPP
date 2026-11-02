@@ -11,13 +11,42 @@ export const ICONS = [
   ['languages','語学','Languages'], ['lightbulb','アイデア','Ideas'], ['bot','AI','AI'], ['code','コード','Code'], ['target','目標','Goals'],
   ['timer','タイマー','Timer'], ['list-todo','タスク','Tasks'], ['map-pin','場所','Places'], ['ticket','イベント','Events'], ['sprout','成長','Growth'],
 ] as const;
+/**
+ * アイコンの背景色：[ID, 背景色, 日本語名, 英語名, 絵の色]。ホーム画面で見つけやすい、はっきりした色（白い絵。黄色だけ濃い絵）。
+ * ID は保存されるので変えない
+ */
 export const ICON_COLORS = [
-  ['mist','#DCE8E5','ミネラルミスト','Mineral mist'], ['sage','#E1E9E2','シーソルトセージ','Sea salt sage'],
-  ['blue','#DCE6ED','パールブルー','Pearl blue'], ['aqua','#D8E9E7','ポーセリンアクア','Porcelain aqua'], ['stone','#E4E7E5','クラウドストーン','Cloud stone'],
+  ['red','#FF5A5F','赤','Red','#FFFFFF'], ['orange','#FF8A1F','オレンジ','Orange','#FFFFFF'],
+  ['yellow','#FFC233','黄色','Yellow','#5A3A00'], ['green','#22C55E','緑','Green','#FFFFFF'],
+  ['teal','#14B8A6','青緑','Teal','#FFFFFF'], ['blue','#3B82F6','青','Blue','#FFFFFF'],
+  ['indigo','#6366F1','藍色','Indigo','#FFFFFF'], ['purple','#A855F7','紫','Purple','#FFFFFF'],
+  ['pink','#EC4899','ピンク','Pink','#FFFFFF'], ['charcoal','#1F2937','黒','Charcoal','#FFFFFF'],
 ] as const;
-export const DEFAULT_ICON = { icon: 'calendar', color: 'mist' };
+
+/** 前の淡い色の ID（保存済みのアプリ用）を、近い新しい色に引き継ぐ */
+const LEGACY_COLORS: Record<string, string> = { mist: 'teal', sage: 'green', aqua: 'teal', stone: 'charcoal' };
+
+export const DEFAULT_ICON = { icon: 'calendar', color: 'teal' };
+
+/** 保存されている色の ID を、今の色の ID にする（前の色は引き継ぎ先に、知らない ID は既定の色に） */
+export function normalizeColor(color: string | null | undefined): string {
+  const id = color ? LEGACY_COLORS[color] ?? color : DEFAULT_ICON.color;
+  return ICON_COLORS.some(x => x[0] === id) ? id : DEFAULT_ICON.color;
+}
+
+function colorEntry(color: string) {
+  const id = normalizeColor(color);
+  return ICON_COLORS.find(x => x[0] === id)!;
+}
+
+/** 背景色 */
 export function iconColorHex(color: string): string {
-  return ICON_COLORS.find(x => x[0] === color)?.[1] ?? ICON_COLORS[0][1];
+  return colorEntry(color)[1];
+}
+
+/** 背景色の上に描く絵の色 */
+export function iconInkHex(color: string): string {
+  return colorEntry(color)[4];
 }
 /**
  * アイコンごとの「アプリ名・説明に出てきそうな言葉」。カタログの名前（予定・Calendar など）に加えて照らし合わせる。

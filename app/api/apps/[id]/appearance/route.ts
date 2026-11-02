@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/api-auth';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { autoIcon, validIcon } from '@/lib/apps/icon-catalog';
+import { autoIcon, normalizeColor, validIcon } from '@/lib/apps/icon-catalog';
 type Context = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, { params }: Context) {
   const { id } = await params;
@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: Context) {
   if (!app) return NextResponse.json({ error:'Not found' },{status:404});
   const { data } = await db.from('app_appearance').select('icon,color').eq('app_id',id).maybeSingle();
   // まだ選んでいないアプリは、アプリ名から選んだアイコンを返す（ホーム画面の画像と同じ）
-  return NextResponse.json(data ?? autoIcon(app.title ?? '', app.description ?? ''), { headers:{'Cache-Control':'no-store'} });
+  return NextResponse.json(data ? { icon: data.icon, color: normalizeColor(data.color) } : autoIcon(app.title ?? '', app.description ?? ''), { headers:{'Cache-Control':'no-store'} });
 }
 export async function PUT(request: Request, { params }: Context) {
   if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin) return new Response(null,{status:403});

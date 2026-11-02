@@ -49,7 +49,7 @@ export function IconPicker({appId,title,defaultOpen=false,onLogin,embedded=false
    <HomeScreenPreview icon={value.icon} color={value.color} title={title}/>
    <div>
     <p className="mb-2 text-xs font-bold text-slate-700">{t('色','Color')}</p>
-    <div className="flex flex-wrap gap-3">{ICON_COLORS.map(c=><button key={c[0]} type="button" title={locale==='ja'?c[2]:c[3]} aria-label={locale==='ja'?c[2]:c[3]} aria-pressed={value.color===c[0]} onClick={()=>setValue({...value,color:c[0]})} style={{backgroundColor:c[1]}} className={`flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-slate-300 transition ${value.color===c[0]?'ring-2 ring-emerald-600 ring-offset-2':''}`}>{value.color===c[0]&&<Check className="h-4 w-4 text-[#164E55]" strokeWidth={3}/>}</button>)}</div>
+    <div className="flex flex-wrap gap-3">{ICON_COLORS.map(c=><button key={c[0]} type="button" title={locale==='ja'?c[2]:c[3]} aria-label={locale==='ja'?c[2]:c[3]} aria-pressed={value.color===c[0]} onClick={()=>setValue({...value,color:c[0]})} style={{backgroundColor:c[1]}} className={`flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-slate-300 transition ${value.color===c[0]?'ring-2 ring-emerald-600 ring-offset-2':''}`}>{value.color===c[0]&&<Check className="h-4 w-4" style={{color:c[4]}} strokeWidth={3}/>}</button>)}</div>
    </div>
    <div>
     <p className="mb-2 text-xs font-bold text-slate-700">{t('絵','Symbol')}</p>

@@ -8,9 +8,11 @@ import { HomeAddSheet } from './home-add-sheet';
 type InstallEvent = Event & { prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}> };
 type Sheet = null | 'icon' | 'edit';
 export function AppRetention({appId,title,owner,enabled}:{appId:string;title:string;owner:boolean;enabled:boolean}) {
- const t=useT();const [visible,setVisible]=useState(false),[sheet,setSheet]=useState<Sheet>(null),[install,setInstall]=useState<InstallEvent|null>(null);const tracked=useRef('');
+ const t=useT();const [visible,setVisible]=useState(false),[sheet,setSheet]=useState<Sheet>(null),[install,setInstall]=useState<InstallEvent|null>(null);const tracked=useRef('');const [guestCreator,setGuestCreator]=useState(false);
  useEffect(()=>{
   const u=new URL(window.location.href);
+  // ゲストで公開した人の端末には、引き継ぎの印が残っている（アイコンはログインすると変えられると案内する）
+  try{setGuestCreator(JSON.parse(localStorage.getItem('jisapp_guest_claims')??'[]').some((c:{appId:string})=>c.appId===appId));}catch{}
   if(tracked.current!==appId){tracked.current=appId;engagement('app_open',appId,{owner,standalone:isStandalone()});
    if(isStandalone())engagement('standalone_open',appId,{owner});
    const sid=u.searchParams.get('share_id');
@@ -37,5 +39,5 @@ export function AppRetention({appId,title,owner,enabled}:{appId:string;title:str
    <button type="button" onClick={()=>setSheet('edit')} className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100"><Palette className="h-3.5 w-3.5 text-emerald-600"/>{t('アプリアイコンを設定','Set app icon')}</button>
   </div>}
  </div>
- {sheet&&<HomeAddSheet appId={appId} title={title} owner={owner} startAt={sheet} onInstall={install?prompt:undefined} onClose={()=>setSheet(null)}/>}</>;
+ {sheet&&<HomeAddSheet appId={appId} title={title} owner={owner} guestCreator={!owner&&guestCreator} startAt={sheet} onInstall={install?prompt:undefined} onClose={()=>setSheet(null)}/>}</>;
 }

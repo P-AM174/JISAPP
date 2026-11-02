@@ -171,7 +171,8 @@ export function PublishSuccess({
 
         {/* ゲストで公開した人へ：このままだと困ることを具体的に伝え、Google で1タップのログインを勧める。
             送るボタンのすぐ下に置く（下にあるとスクロールしないと見えず、押されていなかった：ChatGPT から来て公開した人の登録が0件だった） */}
-        {isGuest && !overwrite && (
+        {/* グループのアプリでは、招待の欄（PublishGroupInvite）にログインの案内をまとめるので、ここには出さない */}
+        {isGuest && !overwrite && !(appId && sharesData) && (
           <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
             <p className="text-sm font-black leading-snug text-amber-950">
               {t("ログインしないと、このあと困ること", "If you don't sign in")}

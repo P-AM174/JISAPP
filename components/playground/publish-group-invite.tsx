@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Link2, LogIn, Users } from "lucide-react";
+import { Check, Link2, LogIn, Users } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import Link from "@/lib/i18n/navigation";
 import { inviteUrl, readActiveGroup, saveGroupSession, type GroupSession } from "@/lib/groups/client";
@@ -101,15 +101,32 @@ export function PublishGroupInvite({ appId, title, isGuest, onLogin }: { appId: 
           </p>
         </>
       ) : isGuest ? (
-        <>
-          <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900">
-            {t("グループを作るには、ログインが必要です（参加するメンバーはログインなしで使えます）。", "You need to sign in to create a group (members can join without signing in).")}
-          </p>
-          <button type="button" onClick={onLogin} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white shadow-sm hover:bg-emerald-700">
+        <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+          <p className="text-sm font-black text-amber-950">{t("グループを作るには、ログインが必要です", "Sign in to create a group")}</p>
+          <p className="mt-0.5 text-[11px] text-amber-900/80">{t("参加するメンバーは、ログインなしで使えます", "Members can join without signing in")}</p>
+          <p className="mt-3 text-xs font-bold text-amber-950">{t("ログインすると、ほかにもこんなことができます", "Signing in also lets you")}</p>
+          <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-amber-950">
+            {[
+              t("あとからアプリを直せる", "Edit the app later"),
+              t("ほかのスマホやパソコンでも続きを使える", "Pick up where you left off on other devices"),
+              t("ホーム画面のアイコンを自分で選べる", "Choose your own home screen icon"),
+            ].map((x) => (
+              <li key={x} className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" strokeWidth={3} />{x}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-amber-900/80">{t("ログインしないと、2か月だれも開かないアプリは消えます。", "Without signing in, the app is deleted if nobody opens it for 2 months.")}</p>
+          <button type="button" onClick={onLogin} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-sm font-black text-white shadow-sm hover:bg-amber-600">
             <LogIn className="h-4 w-4" />
             {t("Googleでログインしてグループを作る", "Sign in with Google to create a group")}
           </button>
-        </>
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent("/playground?load=1")}`}
+            onClick={() => { try { sessionStorage.setItem("jisapp_signup_from", "publish_done"); } catch { /* noop */ } }}
+            className="mt-2 block text-center text-xs font-bold text-amber-800 underline"
+          >
+            {t("メールアドレスでログイン・登録する", "Sign in or sign up with email")}
+          </Link>
+        </div>
       ) : (
         <>
           <div className="grid gap-2">

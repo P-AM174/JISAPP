@@ -32,6 +32,8 @@ import { shareToZalo } from "@/lib/share";
 import { intlLocale, format, plural } from "@/lib/i18n/config";
 import { isComposing } from "@/lib/i18n/text";
 import { getAppShareUrl } from "@/lib/share";
+import { ShareActions } from '@/components/engagement/share-actions';
+import { engagement } from '@/lib/analytics/engagement';
 
 type InviteInfo = {
   group: { id: string; name: string; appId: string };
@@ -872,6 +874,7 @@ function JoinModal({
         inviteToken: token,
       };
       saveGroupSession(session);
+      engagement('group_joined',appId,{shareId:new URL(window.location.href).searchParams.get('share_id')??''});
       onJoined(session);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("参加できませんでした", "Couldn't join"));
@@ -1172,6 +1175,7 @@ function InviteLinkSection({ appId, appTitle, group }: { appId: string; appTitle
   const t = useT();
   const locale = useLocale();
   const url = inviteUrl(appId, group.inviteToken ?? "");
+  if (locale !== 'vi') return <div className="mt-3"><ShareActions appId={appId} url={url} title={appTitle} kind="group_invite"/><p className="mt-2 text-xs text-slate-500">{t('招待リンクを知っている人が参加できます。送る相手を確認してください。','Anyone with the invitation link can join. Choose who you send it to.')}</p></div>;
   const message = format(t("「{groupName}」で「{appTitle}」を使おう。このリンクから参加できます（登録不要）\n", "Let's use “{appTitle}” together in “{groupName}”. Join with this link (no sign-up needed)\n"), { groupName: group.groupName, appTitle });
 
   const copy = async () => {

@@ -58,6 +58,7 @@ import { APP_REPORT_REASONS, APP_REPORT_REASON_EN } from "@/lib/reports/reasons"
 import { format } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
 import { appSavesData } from "@/lib/apps/saves-data";
+import { AppRetention } from '@/components/engagement/app-retention';
 
 
 
@@ -383,6 +384,7 @@ ${app.js_code ?? ""}`);
         </div>
       )}
 
+      <AppRetention appId={id} title={app.title} owner={!!app.creator_id && app.creator_id === (session?.user as {id?:string}|undefined)?.id} enabled={appUsesShared || appSavesData([app.html_code,app.css_code,app.js_code].join('\n'))} />
       <AppGroupPanel
         appId={id}
         appTitle={app.title}

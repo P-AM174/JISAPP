@@ -14,6 +14,11 @@ import { getLineShareUrl, getTwitterShareUrl, openShareWindow, withUtm } from "@
 import { trackEvent } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 import { buildSharedConvertMessage } from "@/lib/playground/prompt-template";
+import { IconPicker } from '@/components/engagement/icon-picker';
+import { ShareActions } from '@/components/engagement/share-actions';
+import { appSavesData } from '@/lib/apps/saves-data';
+import { engagement } from '@/lib/analytics/engagement';
+import { useEffect, useRef } from 'react';
 
 /** このアプリを誰と使うか（公開した直後に聞く） */
 type Audience = "me" | "friends" | "group";
@@ -55,7 +60,11 @@ export function PublishSuccess({
   const t = useT();
   const locale = useLocale();
   const [postCopied, setPostCopied] = useState(false);
-  const [audience, setAudience] = useState<Audience | null>(sharesData ? "group" : null);
+  const [audience, setAudience] = useState<Audience | null>(sharesData ? "group" : appSavesData(code) ? "me" : "friends");
+  const appId = url.match(/\/apps\/([^/?#]+)/)?.[1] ?? '';
+  const branch = sharesData ? 'group' : appSavesData(code) ? 'saved' : 'public';
+  const exposure = useRef('');
+  useEffect(()=>{if(appId && exposure.current!==appId){exposure.current=appId;engagement('publish_shown',appId,{branch});if(branch==='saved')engagement('home_shown',appId,{surface:'publish'});}},[appId,branch]);
   const [askCopied, setAskCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const name = title || t("アプリ", "my app");
@@ -108,8 +117,14 @@ export function PublishSuccess({
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-6">
+        {appId && <section className="space-y-3">
+          <p className="text-base font-bold">{sharesData?t('一緒に使う人を招待しよう','Invite people to use it together'):appSavesData(code)?t('ホーム画面に置いて、また使おう','Keep it on your home screen'):t('作ったアプリをシェアしよう','Share your new app')}</p>
+          <IconPicker appId={appId} title={name}/>
+          {sharesData ? groupBlock : appSavesData(code) ? <details onToggle={e=>{if(e.currentTarget.open)engagement('home_howto',appId,{surface:'publish'});}}><summary className="cursor-pointer rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white">{t('ホーム画面への追加方法','How to add to home screen')}</summary><div className="mt-3"><AddToHomeSteps openFirst/></div></details> : null}
+          {!sharesData && <ShareActions appId={appId} url={url} title={name}/>}
+        </section>}
         {/* いちばん上：URL をコピー、その下に LINE と X を同じ大きさで並べる */}
-        <div className="space-y-2">
+        {!appId && <div className="space-y-2">
           <div className="flex items-center gap-2 rounded-xl bg-emerald-50 py-1.5 pl-3 pr-1.5 ring-1 ring-emerald-200">
             <span className="min-w-0 flex-1 truncate font-mono text-xs text-emerald-800">{url}</span>
             <button
@@ -163,7 +178,7 @@ export function PublishSuccess({
             <ShareButton url={url} title={name} text={shareText} variant="ghost" size="sm" label={t("ほかの方法で送る", "Other ways to send")} className="text-xs text-gray-500" />
           )}
           <p className="text-center text-[11px] text-gray-400">{t("URLを知っている人なら誰でもアクセス・使用できます", "Anyone with the URL can open and use it")}</p>
-        </div>
+        </div>}
 
         {/* ゲストで公開した人へ：このままだと困ることを具体的に伝え、Google で1タップのログインを勧める。
             送るボタンのすぐ下に置く（下にあるとスクロールしないと見えず、押されていなかった：ChatGPT から来て公開した人の登録が0件だった） */}
@@ -206,7 +221,7 @@ export function PublishSuccess({
         )}
 
         {/* 誰と使う？（選んだ人に、使い方のコツを出す。上書きのときは聞かない） */}
-        {!overwrite && (
+        {!appId && !overwrite && (
           <div className="rounded-2xl bg-emerald-50/60 p-4 ring-1 ring-emerald-100">
             <p className="text-sm font-black text-slate-900">{t("このアプリ、誰と使う？", "Who will use this app?")}</p>
             <p className="mt-0.5 text-[11px] text-slate-500">{t("選ぶと、使い方のコツが出ます", "Pick one to see tips")}</p>
@@ -286,7 +301,7 @@ export function PublishSuccess({
             )}
           </div>
         )}
-        {overwrite && groupBlock}
+        {!appId && overwrite && groupBlock}
 
         {/* SNS に投稿する文 */}
         <div className="space-y-2">

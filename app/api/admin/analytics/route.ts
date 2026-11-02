@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { classifySource, type TrafficSource } from "@/lib/analytics/sources";
+import { summarizeEngagement } from '@/lib/analytics/engagement-summary';
 
 /** 運営画面用：計測の集計（イベント × 言語 × 流入元、ベトナムからの月間訪問数） */
 export async function GET(req: NextRequest) {
@@ -114,5 +115,6 @@ export async function GET(req: NextRequest) {
   const sources = [...bySource.values()].sort((a, b) => b.visits - a.visits);
   const aiByDay = [...aiDaily.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([day, counts]) => ({ day, counts }));
 
-  return NextResponse.json({ days, summary: summary.data ?? [], vnMonthly: vn.data ?? [], pasteBreakdown, countries, sources, aiByDay });
+  const engagement = summarizeEngagement(evs.filter(e=>e.name==='engagement'));
+  return NextResponse.json({ days, summary: summary.data ?? [], vnMonthly: vn.data ?? [], pasteBreakdown, countries, sources, aiByDay, engagement });
 }

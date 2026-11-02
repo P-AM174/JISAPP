@@ -91,7 +91,7 @@ export type ShareSource = "x" | "line" | "facebook" | "messenger" | "zalo" | "ma
  * 日本語版は今までどおりのリンクにするため、英語・ベトナム語ページから共有したときだけつける
  */
 export function withUtm(url: string, source: ShareSource, locale: Locale | null | undefined): string {
-  if (!locale || locale === "ja") return url;
+  void locale;
   try {
     const u = new URL(url);
     u.searchParams.set("utm_source", source);

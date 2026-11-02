@@ -31,7 +31,7 @@ export async function generateMetadata({
     });
   }
 
-  return createPageMetadata({
+  return { ...createPageMetadata({
     locale,
     title: app.title,
     description: app.description,
@@ -41,7 +41,7 @@ export async function generateMetadata({
     ogTitle: t(`${app.title}｜${siteName(locale)}`, `${app.title} | ${siteName(locale)}`),
     ogDescription: app.description,
     noIndex: app.isListed === false,
-  });
+  }), manifest: `/api/apps/${id}/manifest?locale=${locale}`, icons: { apple: `/api/apps/${id}/icon?size=192`, icon: `/api/apps/${id}/icon?size=192` }, appleWebApp: { capable: true, title: app.title } };
 }
 
 export default async function AppDetailLayout({ children, params }: LayoutProps) {

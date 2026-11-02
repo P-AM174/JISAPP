@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { EngagementPanel } from '@/components/admin/engagement-panel';
+import type { summarizeEngagement } from '@/lib/analytics/engagement-summary';
 
 /**
  * 運営画面：計測（多言語版の流入と利用の流れ、ベトナムからの月間訪問数）。運営画面なので日本語だけ。
@@ -39,6 +41,7 @@ const LOCALES = ["ja", "en", "vi"];
 const VN_THRESHOLD = 100_000;
 
 export default function AdminAnalyticsPage() {
+  const [engagement,setEngagement]=useState<ReturnType<typeof summarizeEngagement>|null>(null);
   const [days, setDays] = useState(30);
   const [rows, setRows] = useState<Row[]>([]);
   const [vn, setVn] = useState<VnRow[]>([]);
@@ -57,6 +60,7 @@ export default function AdminAnalyticsPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "読み込めませんでした");
       setRows(json.summary);
+      setEngagement(json.engagement??null);
       setVn(json.vnMonthly);
       setPastes(json.pasteBreakdown ?? {});
       setCountries(json.countries ?? []);
@@ -129,6 +133,7 @@ export default function AdminAnalyticsPage() {
 
         {!loading && !error && (
           <>
+            <EngagementPanel data={engagement}/>
             <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
               <h2 className="font-bold text-gray-900">ベトナムからの月間訪問数</h2>
               <p className="mt-1 text-xs text-gray-500">

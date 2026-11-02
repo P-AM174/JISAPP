@@ -8,6 +8,7 @@ import { localeFromPath } from "@/lib/i18n/config";
  * 記録する内容と表は scripts/add-analytics-events.sql を参照
  */
 export type AnalyticsEvent =
+  | "engagement"
   | "page_view"
   | "prompt_copy"
   | "studio_paste"

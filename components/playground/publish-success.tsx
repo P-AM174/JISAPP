@@ -14,7 +14,6 @@ import { getLineShareUrl, getTwitterShareUrl, openShareWindow, withUtm } from "@
 import { trackEvent } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 import { buildSharedConvertMessage } from "@/lib/playground/prompt-template";
-import { IconPicker } from '@/components/engagement/icon-picker';
 import { ShareActions } from '@/components/engagement/share-actions';
 import { appSavesData } from '@/lib/apps/saves-data';
 import { engagement } from '@/lib/analytics/engagement';
@@ -42,6 +41,7 @@ export function PublishSuccess({
   sharesData = false,
   onKeepEditing,
   onOpenApp,
+  onAddToHome,
   onHome,
 }: {
   url: string;
@@ -55,6 +55,8 @@ export function PublishSuccess({
   sharesData?: boolean;
   onKeepEditing: () => void;
   onOpenApp: () => void;
+  /** アプリのページを開き、「ホーム画面に追加」のシートを出す */
+  onAddToHome?: () => void;
   onHome: () => void;
 }) {
   const t = useT();
@@ -105,46 +107,58 @@ export function PublishSuccess({
           <span aria-hidden className="absolute inset-0" />
         </button>
         <p className="mt-2 truncate text-sm font-bold">{name}</p>
-        {/* 開いた最初の状態で「開く」と「送る」の両方が見えるように、ここにも置く */}
-        <button
+        {/* 開いた最初の状態で「開く」と「送る」の両方が見えるように、ここにも置く（新しい画面では次の一歩を1つにするため出さない） */}
+        {!appId && <button
           type="button"
           onClick={onOpenApp}
           className="mx-auto mt-3 flex items-center justify-center gap-1.5 rounded-full bg-white px-5 py-2 text-sm font-black text-emerald-700 shadow-md transition hover:bg-emerald-50 active:scale-[0.98]"
         >
           {t("アプリを開く", "Open app")}
           <ArrowRight className="h-4 w-4" />
-        </button>
+        </button>}
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-6">
-        {appId && <section className="space-y-3">
-          <p className="flex items-center gap-2 text-base font-black text-slate-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              {sharesData ? <Users className="h-4 w-4" /> : appSavesData(code) ? <Smartphone className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-            </span>
-            {sharesData?t('一緒に使う人を招待しよう','Invite people to use it together'):appSavesData(code)?t('ホーム画面に置いて、また使おう','Keep it on your home screen'):t('作ったアプリをシェアしよう','Share your new app')}
-          </p>
-          <IconPicker appId={appId} title={name} onLogin={isGuest ? loginAndKeep : undefined}/>
-          {sharesData ? groupBlock : appSavesData(code) ? (
-            <details className="group overflow-hidden rounded-2xl bg-sky-50 ring-1 ring-sky-100" onToggle={e=>{if(e.currentTarget.open)engagement('home_howto',appId,{surface:'publish'});}}>
-              <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500 text-white shadow-sm"><SquarePlus className="h-5 w-5" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black text-sky-950">{t('ホーム画面への追加方法','How to add to home screen')}</span>
-                  <span className="block text-[11px] text-sky-800/70">{t('3ステップで、アイコンから開けるように','3 steps to open it from an icon')}</span>
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0 text-sky-500 transition group-open:rotate-180" />
-              </summary>
-              <div className="border-t border-sky-100 bg-white p-3"><AddToHomeSteps openFirst/></div>
-            </details>
-          ) : null}
-          {!sharesData && (
-            <div className="space-y-2 rounded-2xl bg-white p-3 ring-1 ring-slate-200">
-              <p className="text-xs font-bold text-slate-500">{appSavesData(code) ? t('友だちや家族にも送る', 'Send it to friends and family') : t('送り先を選ぶ', 'Choose where to send it')}</p>
-              <ShareActions appId={appId} url={url} title={name}/>
+        {/* 次の一歩は1つだけ大きく出す：保存するアプリは「ホーム画面に追加」、シェア向けは「送る」、グループは「招待」。
+            ホーム画面への追加とアイコンの確認は、アプリのページ（?home=1）でシートを出して案内する
+            （この画面で Safari の「ホーム画面に追加」をすると、アプリではなくスタジオのページが追加されてしまうため） */}
+        {appId && (sharesData ? groupBlock : appSavesData(code) ? (
+          <section className="space-y-3">
+            <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-sky-600 shadow-sm"><Smartphone className="h-5 w-5" /></span>
+                <div className="min-w-0">
+                  <p className="text-base font-black text-sky-950">{t('ホーム画面に追加して、また使おう','Add it to your home screen')}</p>
+                  <p className="text-xs text-sky-800/80">{t('次からは、アイコンから1タップで開けます','Next time, open it in one tap from the icon')}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { engagement('home_cta', appId, { surface: 'publish' }); (onAddToHome ?? onOpenApp)(); }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98]"
+              >
+                <SquarePlus className="h-5 w-5" />
+                {t('ホーム画面に追加', 'Add to home screen')}
+              </button>
             </div>
-          )}
-        </section>}
+            <details className="group rounded-2xl bg-white ring-1 ring-slate-200">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 [&::-webkit-details-marker]:hidden">
+                <Send className="h-4 w-4 text-emerald-600" />
+                <span className="flex-1">{t('友だちや家族にも送る', 'Send it to friends and family')}</span>
+                <ChevronDown className="h-4 w-4 text-slate-400 transition group-open:rotate-180" />
+              </summary>
+              <div className="border-t border-slate-100 p-3"><ShareActions appId={appId} url={url} title={name}/></div>
+            </details>
+          </section>
+        ) : (
+          <section className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+            <p className="flex items-center gap-2 text-base font-black text-slate-900">
+              <Send className="h-5 w-5 text-emerald-600" />
+              {t('作ったアプリを送ろう', 'Send your new app')}
+            </p>
+            <ShareActions appId={appId} url={url} title={name}/>
+          </section>
+        ))}
         {/* いちばん上：URL をコピー、その下に LINE と X を同じ大きさで並べる */}
         {!appId && <div className="space-y-2">
           <div className="flex items-center gap-2 rounded-xl bg-emerald-50 py-1.5 pl-3 pr-1.5 ring-1 ring-emerald-200">
@@ -214,6 +228,7 @@ export function PublishSuccess({
                 t("直したくなっても、このアプリは直せません", "You can't edit this app later, even if you want to"),
                 ...(listed ? [] : [t("2か月だれも開かないと、アプリが消えます", "The app is deleted if nobody opens it for 2 months")]),
                 t("ほかのスマホやパソコンでは、続きを使えません", "You can't pick up where you left off on another phone or computer"),
+                t("ホーム画面のアイコンを、自分で選べません", "You can't choose your own home screen icon"),
               ].map((x) => (
                 <li key={x} className="flex gap-1.5">
                   <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-500" strokeWidth={3} />
@@ -325,8 +340,8 @@ export function PublishSuccess({
         )}
         {!appId && overwrite && groupBlock}
 
-        {/* SNS に投稿する文 */}
-        <div className="space-y-2">
+        {/* SNS に投稿する文（ホーム画面に追加が主役の画面では出さない） */}
+        {!(appId && !sharesData && appSavesData(code)) && <div className="space-y-2">
           <button
             type="button"
             onClick={() => {
@@ -342,7 +357,7 @@ export function PublishSuccess({
             {postCopied ? t("コピーしました。SNSに貼って投稿できます", "Copied. Paste it into a post") : t("SNSに投稿する文をコピー", "Copy a post for social media")}
           </button>
           <p className="whitespace-pre-line rounded-xl bg-gray-50 px-3 py-2 text-[11px] leading-relaxed text-gray-500">{postText}</p>
-        </div>
+        </div>}
 
         <div className="flex gap-3">
           <button onClick={onKeepEditing} className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">

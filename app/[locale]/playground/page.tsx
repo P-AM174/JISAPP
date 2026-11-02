@@ -2771,6 +2771,14 @@ export default function PlaygroundPage() {
                     router.push(publishedUrl);
                   }
                 }}
+                onAddToHome={() => {
+                  // アプリのページで「ホーム画面に追加」のシートを出す
+                  try {
+                    router.push(`${new URL(publishedUrl).pathname}?home=1`);
+                  } catch {
+                    router.push(`${publishedUrl}?home=1`);
+                  }
+                }}
                 onHome={() => router.push("/")}
               />
             ) : (

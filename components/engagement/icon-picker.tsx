@@ -19,13 +19,19 @@ export function HomeScreenPreview({icon,color,title}:{icon:string;color:string;t
  * ホーム画面のアイコンを選ぶ。変えられるのはログインしたアプリの持ち主だけ。
  * onLogin を渡したとき（ゲストで公開した直後）は、今のアイコンを見せて「ログインすると変えられます」と案内する
  */
-export function IconPicker({appId,title,defaultOpen=false,onLogin}:{appId:string;title:string;defaultOpen?:boolean;onLogin?:()=>void}) {
+export function IconPicker({appId,title,defaultOpen=false,onLogin,embedded=false,onSaved}:{appId:string;title:string;defaultOpen?:boolean;onLogin?:()=>void;
+ /** 開閉の欄を付けずに中身だけを出す（ホーム画面に追加のシートの中で使う） */
+ embedded?:boolean;
+ /** 保存できたとき（選んだアイコンを渡す） */
+ onSaved?:(v:{icon:string;color:string})=>void}) {
  const t=useT(),locale=useLocale();const [value,setValue]=useState(DEFAULT_ICON),[query,setQuery]=useState(''),[notice,setNotice]=useState<{ok:boolean;text:string}|null>(null),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[saved,setSaved]=useState(DEFAULT_ICON);
  const recommended = recommendedIcons(title);
- const catalog = [...ICONS].sort((a,b)=>(recommended.includes(b[0])?1:0)-(recommended.includes(a[0])?1:0));
+ // おすすめを、合う順（アプリ名にいちばん合うものが先頭）に並べる
+ const rank=(id:string)=>{const i=recommended.indexOf(id);return i<0?recommended.length:i;};
+ const catalog = [...ICONS].sort((a,b)=>rank(a[0])-rank(b[0]));
  useEffect(()=>{let alive=true;setReady(false);fetch(`/api/apps/${appId}/appearance`).then(r=>{if(!r.ok)throw Error();return r.json();}).then(v=>{if(alive){setValue(v);setSaved(v);setReady(true);}}).catch(()=>{if(alive)setNotice({ok:false,text:t('設定を読み込めませんでした。再度開いてください。','Could not load settings. Please reopen.')});});return()=>{alive=false};},[appId,t]);
  async function save(){setBusy(true);setNotice(null);
- try{const r=await fetch(`/api/apps/${appId}/appearance`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!r.ok)throw r.status;engagement('icon_saved',appId,{icon:value.icon,color:value.color});setSaved(value);setNotice({ok:true,text:t('保存しました。すでにホーム画面に置いている場合は、いったん削除して追加し直すと新しいアイコンになります。','Saved. If it is already on your home screen, remove it and add it again to see the new icon.')});}catch(status){setNotice({ok:false,text:status===401?t('アイコンを変えるには、ログインが必要です。','Sign in to change the icon.'):t('保存できませんでした。このアプリを作ったアカウントでログインしているか確認してください。','Could not save. Check that you are signed in with the account that made this app.')});}finally{setBusy(false);}}
+ try{const r=await fetch(`/api/apps/${appId}/appearance`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!r.ok)throw r.status;engagement('icon_saved',appId,{icon:value.icon,color:value.color});setSaved(value);onSaved?.(value);setNotice({ok:true,text:t('保存しました。すでにホーム画面に置いている場合は、いったん削除して追加し直すと新しいアイコンになります。','Saved. If it is already on your home screen, remove it and add it again to see the new icon.')});}catch(status){setNotice({ok:false,text:status===401?t('アイコンを変えるには、ログインが必要です。','Sign in to change the icon.'):t('保存できませんでした。このアプリを作ったアカウントでログインしているか確認してください。','Could not save. Check that you are signed in with the account that made this app.')});}finally{setBusy(false);}}
  const changed=value.icon!==saved.icon||value.color!==saved.color;
  if(onLogin) return <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
   <div className="flex items-center gap-3 p-3">
@@ -38,13 +44,8 @@ export function IconPicker({appId,title,defaultOpen=false,onLogin}:{appId:string
    <button type="button" onClick={onLogin} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-white py-2.5 text-xs font-black text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"><LogIn className="h-3.5 w-3.5"/>{t('ログインして、絵と色を自分で選ぶ','Sign in to choose the symbol and color')}</button>
   </div>
  </div>;
- return <details open={defaultOpen} className="group overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
-  <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
-   <IconArt {...value} size={44}/>
-   <span className="min-w-0 flex-1"><span className="block text-sm font-black text-slate-900">{t('ホーム画面のアイコン','Home screen icon')}</span><span className="block text-[11px] text-slate-500">{t('絵と色を選んで、自分のアプリらしく','Pick a symbol and color for your app')}</span></span>
-   <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180"/>
-  </summary>
-  <div className="space-y-4 border-t border-slate-100 p-4">
+ const body=(
+  <div className={embedded?'space-y-4':'space-y-4 border-t border-slate-100 p-4'}>
    <HomeScreenPreview icon={value.icon} color={value.color} title={title}/>
    <div>
     <p className="mb-2 text-xs font-bold text-slate-700">{t('色','Color')}</p>
@@ -58,5 +59,14 @@ export function IconPicker({appId,title,defaultOpen=false,onLogin}:{appId:string
    <button type="button" disabled={busy||!ready||!changed} onClick={()=>void save()} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50">{!changed&&ready?<><Check className="h-4 w-4"/>{t('このアイコンを使っています','This icon is in use')}</>:busy?t('保存中…','Saving…'):t('このアイコンにする','Use this icon')}</button>
    {notice&&<p role="status" className={`rounded-lg px-3 py-2 text-xs ${notice.ok?'bg-emerald-50 text-emerald-800':'bg-rose-50 text-rose-700'}`}>{notice.text}</p>}
   </div>
+ );
+ if(embedded) return body;
+ return <details open={defaultOpen} className="group overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
+  <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
+   <IconArt {...value} size={44}/>
+   <span className="min-w-0 flex-1"><span className="block text-sm font-black text-slate-900">{t('ホーム画面のアイコン','Home screen icon')}</span><span className="block text-[11px] text-slate-500">{t('絵と色を選んで、自分のアプリらしく','Pick a symbol and color for your app')}</span></span>
+   <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180"/>
+  </summary>
+  {body}
  </details>;
 }

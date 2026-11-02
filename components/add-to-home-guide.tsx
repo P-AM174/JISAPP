@@ -11,9 +11,9 @@ import { rich } from "@/lib/i18n/rich";
  * ホーム画面にアイコンを置いてもらい、次からすぐ開けるようにする。
  */
 
-type Platform = "ios" | "ios_inapp" | "android" | "desktop";
+export type Platform = "ios" | "ios_inapp" | "android" | "desktop";
 
-function detectPlatform(): Platform {
+export function detectPlatform(): Platform {
   if (typeof navigator === "undefined") return "desktop";
   const ua = navigator.userAgent;
   const iPadOS = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;

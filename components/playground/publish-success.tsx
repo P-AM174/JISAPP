@@ -6,6 +6,7 @@ import { Check, ChevronDown, Copy, LogIn, MessageCircle, Send, Smartphone, Squar
 import Link from "@/lib/i18n/navigation";
 import { LineBrandIcon, ShareButton, XBrandIcon } from "@/components/share-button";
 import { PublishHero } from "@/components/playground/publish-hero";
+import { PublishGroupInvite } from "@/components/playground/publish-group-invite";
 import { copyText } from "@/lib/playground/ai-launch";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { format, localizePath } from "@/lib/i18n/config";
@@ -89,13 +90,13 @@ export function PublishSuccess({
 
   return (
     <>
-      <PublishHero appId={appId} url={url} title={name} code={code} overwrite={overwrite} listed={listed} onOpenApp={onOpenApp} />
+      <PublishHero appId={appId} url={url} title={name} code={code} overwrite={overwrite} listed={listed} showUrl={!(appId && sharesData)} onOpenApp={onOpenApp} />
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-6">
         {/* 次の一歩は1つだけ大きく出す：保存するアプリは「ホーム画面に追加」、シェア向けは「送る」、グループは「招待」。
             ホーム画面への追加とアイコンの確認は、アプリのページ（?home=1）でシートを出して案内する
             （この画面で Safari の「ホーム画面に追加」をすると、アプリではなくスタジオのページが追加されてしまうため） */}
-        {appId && (sharesData ? groupBlock : appSavesData(code) ? (
+        {appId && (sharesData ? <PublishGroupInvite appId={appId} title={name} isGuest={isGuest} onLogin={loginAndKeep} /> : appSavesData(code) ? (
           <section className="space-y-3">
             <div className="rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-100">
               <div className="flex items-center gap-3">
@@ -292,8 +293,8 @@ export function PublishSuccess({
         )}
         {!appId && overwrite && groupBlock}
 
-        {/* SNS に投稿する文（ホーム画面に追加が主役の画面では出さない） */}
-        {!(appId && !sharesData && appSavesData(code)) && <div className="space-y-2">
+        {/* SNS に投稿する文（ホーム画面に追加・グループ招待が主役の画面では出さない。グループのアプリはアプリの URL を見せない） */}
+        {!(appId && (sharesData || appSavesData(code))) && <div className="space-y-2">
           <button
             type="button"
             onClick={() => {

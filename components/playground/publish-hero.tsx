@@ -92,6 +92,7 @@ export function PublishHero({
   code,
   overwrite,
   listed,
+  showUrl = true,
   onOpenApp,
 }: {
   appId: string;
@@ -100,6 +101,8 @@ export function PublishHero({
   code: string;
   overwrite: boolean;
   listed: boolean;
+  /** false のときは URL を出さず「アプリを開く」だけにする（グループのアプリは招待リンクを送るため） */
+  showUrl?: boolean;
   onOpenApp: () => void;
 }) {
   const t = useT();
@@ -148,14 +151,14 @@ export function PublishHero({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-300 opacity-75 motion-reduce:hidden" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-lime-300" />
               </span>
-              {listed ? t("公開中・だれでも見つけられます", "Live · anyone can find it") : t("公開中・URLで使えます", "Live · open it with the URL")}
+              {!showUrl ? t("公開中・招待した人と使えます", "Live · use it with people you invite") : listed ? t("公開中・だれでも見つけられます", "Live · anyone can find it") : t("公開中・URLで使えます", "Live · open it with the URL")}
             </p>
           </div>
         </div>
 
         {/* URL と「コピー」「開く」：どの種類のアプリでも同じ場所に置く */}
         <div className="mt-4 flex items-stretch gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-1 rounded-xl bg-white/95 py-1 pl-3 pr-1 text-slate-800 shadow-md">
+          {showUrl && <div className="flex min-w-0 flex-1 items-center gap-1 rounded-xl bg-white/95 py-1 pl-3 pr-1 text-slate-800 shadow-md">
             <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-500">{shortUrl}</span>
             <button
               type="button"
@@ -172,11 +175,11 @@ export function PublishHero({
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? t("コピー済み", "Copied") : t("URLをコピー", "Copy URL")}
             </button>
-          </div>
+          </div>}
           <button
             type="button"
             onClick={onOpenApp}
-            className="flex shrink-0 items-center gap-1 rounded-xl bg-slate-900 px-3.5 text-xs font-black text-white shadow-md transition hover:bg-slate-800 active:scale-95"
+            className={`flex items-center justify-center gap-1 rounded-xl bg-slate-900 px-3.5 text-xs font-black text-white shadow-md transition hover:bg-slate-800 active:scale-95 ${showUrl ? "shrink-0" : "flex-1 py-3"}`}
           >
             {t("アプリを開く", "Open app")}
             <ArrowUpRight className="h-3.5 w-3.5" />

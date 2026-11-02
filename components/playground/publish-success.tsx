@@ -89,10 +89,11 @@ export function PublishSuccess({
   };
 
   return (
-    <>
-      <PublishHero appId={appId} url={url} title={name} code={code} overwrite={overwrite} listed={listed} showUrl={!(appId && sharesData)} onOpenApp={onOpenApp} />
+    // 上の「完成！」も一緒にスクロールする（上を固定すると、下の招待などの欄が狭くなり分かりにくかった）
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <PublishHero appId={appId} url={url} title={name} code={code} overwrite={overwrite} listed={listed} showUrl={!(appId && sharesData)} compact={!!(appId && sharesData)} onOpenApp={onOpenApp} />
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-6">
+      <div className="space-y-4 p-6">
         {/* 次の一歩は1つだけ大きく出す：保存するアプリは「ホーム画面に追加」、シェア向けは「送る」、グループは「招待」。
             ホーム画面への追加とアイコンの確認は、アプリのページ（?home=1）でシートを出して案内する
             （この画面で Safari の「ホーム画面に追加」をすると、アプリではなくスタジオのページが追加されてしまうため） */}
@@ -320,6 +321,6 @@ export function PublishSuccess({
           {t("トップに戻る", "Back to home")}
         </button>
       </div>
-    </>
+    </div>
   );
 }

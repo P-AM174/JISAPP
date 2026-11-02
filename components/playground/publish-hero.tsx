@@ -93,6 +93,7 @@ export function PublishHero({
   overwrite,
   listed,
   showUrl = true,
+  compact = false,
   onOpenApp,
 }: {
   appId: string;
@@ -103,6 +104,8 @@ export function PublishHero({
   listed: boolean;
   /** false のときは URL を出さず「アプリを開く」だけにする（グループのアプリは招待リンクを送るため） */
   showUrl?: boolean;
+  /** 小さめに出す（グループのアプリ：下の「グループを作って招待」を最初の画面に収めるため） */
+  compact?: boolean;
   onOpenApp: () => void;
 }) {
   const t = useT();
@@ -123,7 +126,7 @@ export function PublishHero({
   const shortUrl = url.replace(/^https?:\/\//, "");
 
   return (
-    <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-emerald-400 via-teal-500 to-sky-600 px-5 pb-5 pt-5 text-white">
+    <div className={`relative shrink-0 overflow-hidden bg-gradient-to-br from-emerald-400 via-teal-500 to-sky-600 px-5 text-white ${compact ? "pb-4 pt-4" : "pb-5 pt-5"}`}>
       {/* 水玉の模様と、光のにじみ */}
       <div aria-hidden className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.5px)", backgroundSize: "14px 14px" }} />
       <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-yellow-200/40 blur-3xl" />
@@ -135,17 +138,25 @@ export function PublishHero({
           <PartyPopper className="h-4 w-4" />
           {overwrite ? t("上書きしました", "Updated") : listed ? t("出品しました", "Published") : t("URLを発行しました", "Your URL is ready")}
         </p>
-        <p className="mt-0.5 text-center text-3xl font-black tracking-tight drop-shadow-sm">
+        <p className={`mt-0.5 text-center font-black tracking-tight drop-shadow-sm ${compact ? "text-2xl" : "text-3xl"}`}>
           {overwrite ? t("新しくなりました！", "It's updated!") : t("完成！", "It's done!")}
         </p>
 
-        <div className="mt-4 flex items-center gap-4">
-          <PhonePreview html={code} onClick={onOpenApp} label={t("アプリを開く", "Open app")} />
-          <div className="min-w-0 flex-1">
-            <div className="rounded-2xl bg-white/95 p-1 shadow-lg ring-1 ring-black/5 w-fit">
-              <IconArt icon={icon.icon} color={icon.color} size={56} />
+        <div className={`flex items-center gap-4 ${compact ? "mt-3" : "mt-4"}`}>
+          {/* 小さめのとき（グループのアプリ）はスマホの見本を出さず、アイコンと名前だけにする */}
+          {!compact && <PhonePreview html={code} onClick={onOpenApp} label={t("アプリを開く", "Open app")} />}
+          {compact && (
+            <div className="shrink-0 rounded-2xl bg-white/95 p-1 shadow-lg ring-1 ring-black/5">
+              <IconArt icon={icon.icon} color={icon.color} size={48} />
             </div>
-            <p className="mt-2 line-clamp-2 text-lg font-black leading-tight">{title}</p>
+          )}
+          <div className="min-w-0 flex-1">
+            {!compact && (
+              <div className="rounded-2xl bg-white/95 p-1 shadow-lg ring-1 ring-black/5 w-fit">
+                <IconArt icon={icon.icon} color={icon.color} size={56} />
+              </div>
+            )}
+            <p className={`line-clamp-2 text-lg font-black leading-tight ${compact ? "" : "mt-2"}`}>{title}</p>
             <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold backdrop-blur">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-300 opacity-75 motion-reduce:hidden" />
@@ -157,7 +168,7 @@ export function PublishHero({
         </div>
 
         {/* URL と「コピー」「開く」：どの種類のアプリでも同じ場所に置く */}
-        <div className="mt-4 flex items-stretch gap-2">
+        <div className={`flex items-stretch gap-2 ${compact ? "mt-3" : "mt-4"}`}>
           {showUrl && <div className="flex min-w-0 flex-1 items-center gap-1 rounded-xl bg-white/95 py-1 pl-3 pr-1 text-slate-800 shadow-md">
             <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-500">{shortUrl}</span>
             <button
@@ -179,7 +190,7 @@ export function PublishHero({
           <button
             type="button"
             onClick={onOpenApp}
-            className={`flex items-center justify-center gap-1 rounded-xl bg-slate-900 px-3.5 text-xs font-black text-white shadow-md transition hover:bg-slate-800 active:scale-95 ${showUrl ? "shrink-0" : "flex-1 py-3"}`}
+            className={`flex items-center justify-center gap-1 rounded-xl bg-slate-900 px-3.5 text-xs font-black text-white shadow-md transition hover:bg-slate-800 active:scale-95 ${showUrl ? "shrink-0" : compact ? "flex-1 py-2.5" : "flex-1 py-3"}`}
           >
             {t("アプリを開く", "Open app")}
             <ArrowUpRight className="h-3.5 w-3.5" />

@@ -50,6 +50,7 @@ import { JisappLogoIcon } from "@/components/jisapp-logo";
 import {
   getSecretsStudioGuide,
   buildPromptFromTemplate,
+  buildSaveConvertMessage,
   buildSharedConvertMessage,
 } from "@/lib/playground/prompt-template";
 import { useLocale, useT } from "@/lib/i18n/client";
@@ -99,6 +100,7 @@ import {
 import { copyText, copyTextNow, findStudioAi, type StudioAi } from "@/lib/playground/ai-launch";
 import { getSampleAppHtml, isSampleAppHtml } from "@/lib/playground/sample-app";
 import { usesSharedData } from "@/lib/groups/client";
+import { appSavesData } from "@/lib/apps/saves-data";
 import { supabase } from "@/lib/supabase";
 import {
   markStudioLoginPromptShown,
@@ -2868,6 +2870,40 @@ export default function PlaygroundPage() {
                       </div>
                     )}
                   </div>
+                  {/* このアプリにデータの保存機能があるか（コードから判定）。公開する人が、使う人にどう残るかを分かったうえで公開できるように */}
+                  {code.trim() && (() => {
+                    const kind = sharesData ? "shared" : appSavesData(code) ? "saves" : "plain";
+                    const info = {
+                      shared: { Icon: Users, box: "bg-sky-50 ring-sky-200 text-sky-950", badge: "bg-sky-600", label: t("保存あり（グループで共有）", "Saves data (shared with a group)"), desc: t("グループのメンバー全員が、同じデータを見たり書き込んだりできます。データはジサップに保存されます。", "Everyone in the group sees and edits the same data. The data is stored on Jisapp.") },
+                      saves: { Icon: Save, box: "bg-emerald-50 ring-emerald-200 text-emerald-950", badge: "bg-emerald-600", label: t("保存あり", "Saves data"), desc: t("入力した内容は、次に開いたときも残ります。使う人がログインしていればほかの端末でも続きを使え、ログインしていなければその端末だけに残ります。", "What people enter is still there next time. Signed-in users can continue on other devices; otherwise it stays on that device only.") },
+                      plain: { Icon: RotateCcw, box: "bg-gray-50 ring-gray-200 text-gray-800", badge: "bg-gray-500", label: t("保存なし", "No saving"), desc: t("開くたびに最初の状態に戻ります。記録を残したいときは、下の依頼文をAIに送り、返ってきたコードを貼り直してから公開してください。", "It starts fresh every time it's opened. To keep records, send the request below to the AI and paste the new code before publishing.") },
+                    }[kind];
+                    return (
+                      <div className={cn("flex items-start gap-3 rounded-xl p-3 ring-1", info.box)}>
+                        <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white", info.badge)}><info.Icon className="h-4 w-4" /></span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold opacity-70">{t("データの保存", "Saving data")}</p>
+                          <p className="text-sm font-black">{info.label}</p>
+                          <p className="mt-0.5 text-[11px] leading-relaxed opacity-80">{info.desc}</p>
+                          {/* 保存したかったのにプロンプトで指定し忘れた人向け：今のコード入りの依頼文をコピーして AI に送れる */}
+                          {kind === "plain" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void copyText(buildSaveConvertMessage(code, locale)).then((ok) =>
+                                  showToast(ok ? t("依頼文をコピーしました（今のコード入り）。AIに送って、返ってきたコードを貼り直してください", "Copied the request (with your current code). Send it to the AI and paste the new code") : t("コピーできませんでした", "Couldn't copy"))
+                                );
+                              }}
+                              className="mt-2 flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              {t("保存機能を付ける依頼文をコピー", "Copy a request to add saving")}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {guestPublish && (
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-700">

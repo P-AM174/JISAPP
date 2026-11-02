@@ -204,6 +204,36 @@ ${current}`;
 }
 
 /**
+ * 保存機能のないアプリを、入力した内容が残るように書き換えてもらう依頼文（今のコード入り）。
+ * プロンプトで保存の指定を忘れた人が、公開設定の画面からそのまま AI に頼めるようにする。
+ * ベトナム語では英語の文を使う（ベトナム語版の文は増やさない）
+ */
+export function buildSaveConvertMessage(code?: string, locale: Locale = "ja"): string {
+  if (locale !== "ja") {
+    const current = code?.trim()
+      ? `[Current code]\n${code.trim()}`
+      : "[Current code]\n(Paste your app's current code here)";
+    return `Please rewrite this app so that what people enter is still there the next time they open it.
+Keep the current features and look as they are, and save the data people enter or change (records, lists, settings, scores, etc.) with Jisapp's save feature below. Load the saved data when the app opens and show it.
+Output the finished index.html from start to finish without leaving anything out.
+
+${locale === "vi" ? PROMPT_STORAGE_ZISUP_VI : PROMPT_STORAGE_ZISUP_EN}
+
+${current}`;
+  }
+  const current = code?.trim()
+    ? `【今のコード】\n${code.trim()}`
+    : "【今のコード】\n（ここに、今のアプリのコードを貼り付けてください）";
+  return `このアプリを、入力した内容が次に開いたときも残るように書き換えてください。
+今の機能と見た目はそのままにして、使う人が入力・変更したデータ（記録・一覧・設定・スコアなど）を、次のジサップの保存機能で保存してください。アプリを開いたときは保存したデータを読み込んで表示してください。
+完成した index.html を、最初から最後まで省略せずに出力してください。
+
+${PROMPT_STORAGE_ZISUP}
+
+${current}`;
+}
+
+/**
  * 外部API（AI・天気・地図など）を使うアプリのための文。
  * ジサップでの仕組み（キーは「APIキーの登録」に置く・送り先はコードに書かれたものだけ・料金は作った人）と設定のしかたを、
  * AI が使う人に案内できるようにする。登録画面の名前・付け方は components/secrets/secrets-settings-modal.tsx に合わせる

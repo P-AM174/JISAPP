@@ -5,13 +5,14 @@ import Link from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
 import { EngagementPanel } from '@/components/admin/engagement-panel';
 import type { summarizeEngagement } from '@/lib/analytics/engagement-summary';
+import type { summarizeCreation, summarizeRetention, summarizeSecondApp } from '@/lib/analytics/retention';
+import { RetentionPanel } from '@/components/admin/retention-panel';
 
 /**
- * 運営画面：計測（多言語版の流入と利用の流れ、ベトナムからの月間訪問数）。運営画面なので日本語だけ。
+ * 運営画面：計測（今月の目標の継続利用・アプリ作成数・2つ目のアプリ、公開後の行動、流入と利用の流れ）。運営画面なので日本語だけ。
  * 数字は scripts/add-analytics-events.sql の表から集計する
  */
 type Row = { name: string; locale: string; utm_source: string; events: number; sessions: number };
-type VnRow = { month: string; visits: number; page_views: number };
 type SourceRow = { name: string; kind: string; visits: number; paste: number; publish: number; signup: number };
 
 const KIND_LABEL: Record<string, string> = { ai: "AI", search: "検索", sns: "SNS・動画", share: "共有ボタン", direct: "直接・不明", other: "そのほかのサイト" };
@@ -35,16 +36,14 @@ const FUNNEL: { name: string; label: string }[] = [
   { name: "share", label: "共有" },
   { name: "signup", label: "新規登録" },
 ];
-const LOCALES = ["ja", "en", "vi"];
+const LOCALES = ["ja", "en"];
 
-/** 政令147号の対象になる目安（ベトナムからの月間訪問数） */
-const VN_THRESHOLD = 100_000;
 
 export default function AdminAnalyticsPage() {
   const [engagement,setEngagement]=useState<ReturnType<typeof summarizeEngagement>|null>(null);
+  const [goal, setGoal] = useState<{ retention: ReturnType<typeof summarizeRetention> | null; creation: ReturnType<typeof summarizeCreation> | null; secondApp: ReturnType<typeof summarizeSecondApp> | null }>({ retention: null, creation: null, secondApp: null });
   const [days, setDays] = useState(30);
   const [rows, setRows] = useState<Row[]>([]);
-  const [vn, setVn] = useState<VnRow[]>([]);
   const [pastes, setPastes] = useState<Record<string, number>>({});
   const [countries, setCountries] = useState<{ country: string; views: number; visits: number }[]>([]);
   const [sources, setSources] = useState<SourceRow[]>([]);
@@ -61,7 +60,7 @@ export default function AdminAnalyticsPage() {
       if (!res.ok) throw new Error(json.error ?? "読み込めませんでした");
       setRows(json.summary);
       setEngagement(json.engagement??null);
-      setVn(json.vnMonthly);
+      setGoal({ retention: json.retention ?? null, creation: json.creation ?? null, secondApp: json.secondApp ?? null });
       setPastes(json.pasteBreakdown ?? {});
       setCountries(json.countries ?? []);
       setSources(json.sources ?? []);
@@ -87,19 +86,7 @@ export default function AdminAnalyticsPage() {
     return map;
   }, [rows]);
 
-  /** 流入元ごと（ベトナム語ページ） */
-  const viSources = useMemo(() => {
-    const map = new Map<string, Map<string, number>>();
-    for (const r of rows.filter((x) => x.locale === "vi")) {
-      const m = map.get(r.utm_source) ?? new Map<string, number>();
-      m.set(r.name, (m.get(r.name) ?? 0) + Number(r.sessions));
-      map.set(r.utm_source, m);
-    }
-    return [...map.entries()].sort((a, b) => (b[1].get("page_view") ?? 0) - (a[1].get("page_view") ?? 0));
-  }, [rows]);
 
-  const thisMonth = vn[0];
-  const ratio = thisMonth ? Number(thisMonth.visits) / VN_THRESHOLD : 0;
 
   return (
     <div className="min-h-screen bg-[#f3f4f2]">
@@ -113,7 +100,7 @@ export default function AdminAnalyticsPage() {
       </header>
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-black text-gray-900">計測（多言語版）</h1>
+          <h1 className="text-xl font-black text-gray-900">計測</h1>
           <div className="flex items-center gap-2 text-sm">
             {[7, 30, 90].map((d) => (
               <button
@@ -133,46 +120,8 @@ export default function AdminAnalyticsPage() {
 
         {!loading && !error && (
           <>
+            <RetentionPanel {...goal} />
             <EngagementPanel data={engagement}/>
-            <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
-              <h2 className="font-bold text-gray-900">ベトナムからの月間訪問数</h2>
-              <p className="mt-1 text-xs text-gray-500">
-                政令147号の対象の目安は月間{VN_THRESHOLD.toLocaleString()}訪問。訪問 = ブラウザのタブごとの訪問（同じ人が別の日に来ると別に数える）
-              </p>
-              {thisMonth ? (
-                <>
-                  <p className="mt-3 text-3xl font-black text-gray-900">
-                    {Number(thisMonth.visits).toLocaleString()}
-                    <span className="ml-1 text-sm font-semibold text-gray-500">訪問（{thisMonth.month}）</span>
-                  </p>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className={`h-full ${ratio >= 0.8 ? "bg-rose-500" : ratio >= 0.5 ? "bg-amber-500" : "bg-emerald-500"}`}
-                      style={{ width: `${Math.min(100, ratio * 100)}%` }}
-                    />
-                  </div>
-                  {ratio >= 0.5 && (
-                    <p className="mt-2 text-sm font-bold text-rose-600">目安の{Math.round(ratio * 100)}%に達しています。弁護士に相談してください</p>
-                  )}
-                  <table className="mt-4 w-full text-sm">
-                    <thead className="text-left text-xs text-gray-500">
-                      <tr><th className="py-1">月</th><th>訪問</th><th>ページ表示</th></tr>
-                    </thead>
-                    <tbody>
-                      {vn.map((r) => (
-                        <tr key={r.month} className="border-t border-gray-100">
-                          <td className="py-1.5">{r.month}</td>
-                          <td>{Number(r.visits).toLocaleString()}</td>
-                          <td>{Number(r.page_views).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
-              ) : (
-                <p className="mt-3 text-sm text-gray-500">まだ記録がありません</p>
-              )}
-            </section>
 
             <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
               <h2 className="font-bold text-gray-900">利用の流れ（言語別・訪問数）</h2>
@@ -305,28 +254,6 @@ export default function AdminAnalyticsPage() {
               <p className="mt-2 text-xs text-gray-400">国は Vercel が判定した2文字の国コード（JP=日本、IN=インド、GB=イギリス、IR=イラン など）</p>
             </section>
 
-            <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
-              <h2 className="font-bold text-gray-900">ベトナム語ページの流入元（utm_source）</h2>
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead className="text-left text-xs text-gray-500">
-                    <tr>
-                      <th className="py-1">流入元</th>
-                      {FUNNEL.map((f) => <th key={f.name}>{f.label}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {viSources.map(([source, m]) => (
-                      <tr key={source} className="border-t border-gray-100">
-                        <td className="py-1.5">{source === "-" ? "（直接・不明）" : source}</td>
-                        {FUNNEL.map((f) => <td key={f.name}>{(m.get(f.name) ?? 0).toLocaleString()}</td>)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {viSources.length === 0 && <p className="mt-2 text-sm text-gray-500">まだ記録がありません</p>}
-              </div>
-            </section>
           </>
         )}
       </main>

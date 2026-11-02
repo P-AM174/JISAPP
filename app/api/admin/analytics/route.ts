@@ -3,8 +3,10 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { classifySource, type TrafficSource } from "@/lib/analytics/sources";
 import { summarizeEngagement } from '@/lib/analytics/engagement-summary';
+import { summarizeCreation, summarizeRetention, summarizeSecondApp, type CreatedApp } from '@/lib/analytics/retention';
+import { OFFICIAL_CREATOR_NAME } from '@/lib/agent/official-creator';
 
-/** 運営画面用：計測の集計（イベント × 言語 × 流入元、ベトナムからの月間訪問数） */
+/** 運営画面用：計測の集計（継続利用・アプリ作成数・2つ目のアプリ、イベント × 言語 × 流入元） */
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin();
   if (!admin.ok) {
@@ -12,16 +14,13 @@ export async function GET(req: NextRequest) {
   }
   const days = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get("days") ?? "30") || 30, 1), 365);
   const supabase = createServerSupabaseClient();
-  const [summary, vn] = await Promise.all([
-    supabase.rpc("analytics_summary", { p_days: days }),
-    supabase.rpc("analytics_vn_monthly", { p_months: 6 }),
-  ]);
-  if (summary.error || vn.error) {
+  const summary = await supabase.rpc("analytics_summary", { p_days: days });
+  if (summary.error) {
     return NextResponse.json(
       {
         error:
           "計測の表がまだありません。Supabase の SQL Editor で scripts/add-analytics-events.sql を実行してください",
-        detail: summary.error?.message ?? vn.error?.message,
+        detail: summary.error?.message,
       },
       { status: 503 }
     );
@@ -115,6 +114,26 @@ export async function GET(req: NextRequest) {
   const sources = [...bySource.values()].sort((a, b) => b.visits - a.visits);
   const aiByDay = [...aiDaily.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([day, counts]) => ({ day, counts }));
 
-  const engagement = summarizeEngagement(evs.filter(e=>e.name==='engagement'));
-  return NextResponse.json({ days, summary: summary.data ?? [], vnMonthly: vn.data ?? [], pasteBreakdown, countries, sources, aiByDay, engagement });
+  const engagementEvents = evs.filter(e=>e.name==='engagement');
+  const engagement = summarizeEngagement(engagementEvents);
+  const retention = summarizeRetention(engagementEvents);
+
+  // アプリの作成数・2つ目のアプリ（apps 表。公式のアプリは除く。消されたアプリは数えられない）
+  const apps: CreatedApp[] = [];
+  for (let from = 0; from < 200000; from += 1000) {
+    const { data, error } = await supabase
+      .from("apps")
+      .select("created_at, creator_id, creator_name")
+      .order("created_at", { ascending: true })
+      .range(from, from + 999);
+    if (error || !data?.length) break;
+    for (const a of data as { created_at: string; creator_id: string | null; creator_name: string | null }[]) {
+      if (a.creator_name !== OFFICIAL_CREATOR_NAME) apps.push({ created_at: a.created_at, creator_id: a.creator_id });
+    }
+    if (data.length < 1000) break;
+  }
+  const creation = summarizeCreation(apps);
+  const secondApp = summarizeSecondApp(apps, days);
+
+  return NextResponse.json({ days, summary: summary.data ?? [], pasteBreakdown, countries, sources, aiByDay, engagement, retention, creation, secondApp });
 }

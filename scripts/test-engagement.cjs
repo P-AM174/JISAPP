@@ -20,6 +20,21 @@ assert.equal(result.shareRate.numerator,1);
 assert.equal(result.shareRate.denominator,2);
 assert.equal(result.openedShareLinks,1);
 assert.equal(result.repeatAppBrowsers,1);
+// ホーム画面に追加：iPhone はホーム画面側のブラウザIDが別（h1）になるので、ref（案内を見た Safari 側の a）で結び付ける
+const home = summarizeEngagement([
+  ev('home_shown','a'), ev('home_shown','c'),
+  ev('home_first_launch','h1',{platform:'ios',ref:'a',owner:false}), ev('home_first_launch','h1',{platform:'ios',ref:'a',owner:false}),
+  ev('standalone_open','h1',{}), ev('standalone_open','h1',{},'2026-11-02'),
+  ev('home_first_launch','c',{platform:'android',owner:true}),
+  ev('home_first_launch','x9',{platform:'ios',owner:false}),
+]);
+assert.equal(home.homeInstalls.total,3);
+assert.equal(home.homeInstalls.byOthers,2);
+assert.equal(home.homeInstalls.guidedRate.numerator,2);
+assert.equal(home.homeInstalls.guidedRate.denominator,2);
+assert.equal(home.homeInstalls.usedOnTwoDays,1);
+assert.equal(home.homeInstalls.platforms.ios,2);
+assert.equal(home.apps[0].installs,3);
 const {ICONS,ICON_COLORS,validIcon,autoIcon,normalizeColor,iconColorHex,iconInkHex}=load('lib/apps/icon-catalog.ts');
 assert.equal(ICONS.length,50);
 assert.equal(new Set(ICONS.map(x=>x[0])).size,50);
@@ -42,4 +57,4 @@ assert.equal(autoIcon('部活の出欠表').icon,'users');
 assert.equal(autoIcon('なにか').icon,'calendar');
 assert.deepEqual(autoIcon('わんこ日記'),autoIcon('わんこ日記'));
 assert.ok(ICONS.some(x=>x[0]===autoIcon('Habit tracker').icon)&&ICON_COLORS.some(x=>x[0]===autoIcon('Habit tracker').color));
-console.log('Passed: auto icon, deduplication, share denominators, repeat use, author exclusion, icon catalog validation.');
+console.log('Passed: home installs, auto icon, deduplication, share denominators, repeat use, author exclusion, icon catalog validation.');

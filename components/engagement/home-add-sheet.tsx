@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useT } from '@/lib/i18n/client';
 import { AddToHomeSteps, detectPlatform, type Platform } from '@/components/add-to-home-guide';
 import { engagement } from '@/lib/analytics/engagement';
+import { tagHomeLaunchUrl } from '@/lib/analytics/home-install';
 import { DEFAULT_ICON, ICON_COLORS, ICONS, recommendedIcons } from '@/lib/apps/icon-catalog';
 import { IconArt } from '@/lib/apps/icon-art';
 import { useLocale } from '@/lib/i18n/client';
@@ -26,6 +27,8 @@ export function HomeAddSheet({appId,title,owner,guestCreator=false,onInstall,onC
  const t=useT(),locale=useLocale();const [step,setStep]=useState<Step>(startAt),[appearance,setAppearance]=useState(DEFAULT_ICON),[draft,setDraft]=useState(DEFAULT_ICON),[loaded,setLoaded]=useState(false),[platform,setPlatform]=useState<Platform>('desktop'),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  useEffect(()=>{setPlatform(detectPlatform());let alive=true;fetch(`/api/apps/${appId}/appearance`).then(r=>r.ok?r.json():null).then(v=>{if(alive&&v){setAppearance(v);setDraft(v);}}).catch(()=>{}).finally(()=>{if(alive)setLoaded(true);});return()=>{alive=false};},[appId]);
  useEffect(()=>{engagement('home_sheet_step',appId,{step});},[appId,step]);
+ // 追加される起動 URL に、案内を見たブラウザの ID を載せる（ホーム画面から初めて開いたときに、案内を見た人と結び付けるため）
+ useEffect(()=>{tagHomeLaunchUrl(appId);},[appId]);
  // 候補：今のアイコンを先頭に、アプリ名に合うものを並べる
  const picks=[...new Set([appearance.icon,...recommendedIcons(title)])].slice(0,5);
  const iconName=(id:string)=>{const x=ICONS.find(i=>i[0]===id);return x?(locale==='ja'?x[1]:x[2]):id;};

@@ -1,9 +1,9 @@
-# 読み上げ音声を作る（Gemini TTS）。使い方: GEMINI_API_KEY=... python3 gemini_tts.py lines.json 出力フォルダ
+# 読み上げ音声を作る（Gemini TTS）。使い方: python3 gemini_tts.py lines.json 出力フォルダ
+# キーは GEMINI_API_KEY か、環境の「ネットワークのシークレット」（x-goog-api-key ヘッダーを自動で付ける）のどちらか
 # lines.json: [{"text": "...", "max": 2.0, "voice": "Vindemiatrix"}]
 # 1文ずつ作って、前後の無音を削り、max 秒に入りきらないときは atempo で少し速くする（最大 1.45 倍）
 import base64, json, os, subprocess, sys, time, urllib.request, wave
 KEY = os.environ.get('GEMINI_API_KEY')
-if not KEY: sys.exit('GEMINI_API_KEY がありません')
 MODEL = os.environ.get('GEMINI_TTS_MODEL', 'gemini-2.5-flash-preview-tts')
 STYLE = '日本のショート動画のナレーション。明るく、はっきり、少し早口で。「ジサップ」は「じ・さっぷ」と、「ジ」を強めに読む。次の文だけを読んでください：'
 lines = json.load(open(sys.argv[1], encoding='utf-8')); out = sys.argv[2]
@@ -12,7 +12,7 @@ def call(text, voice):
     body = {"contents": [{"parts": [{"text": f"{STYLE}{text}"}]}],
             "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}}}}
     req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent",
-                                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json", "x-goog-api-key": KEY})
+                                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json", **({"x-goog-api-key": KEY} if KEY else {})})
     for k in range(4):
         try:
             with urllib.request.urlopen(req, timeout=90) as r: d = json.load(r)

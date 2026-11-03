@@ -64,10 +64,11 @@ const OVERLAY = fs.readFileSync(path.join(__dirname, 'overlay.js'), 'utf8');
   // spec.voice が 'gemini' のときは Gemini TTS（GEMINI_API_KEY がなければ声なしで書き出す）。ほかは Open JTalk
   let vo = spec.vo;
   if (spec.voice === 'gemini') {
-    if (!process.env.GEMINI_API_KEY || process.env.NO_VOICE) { console.log('声なしで書き出します（GEMINI_API_KEY がありません）'); vo = []; }
+    if (process.env.NO_VOICE) { console.log('声なしで書き出します'); vo = []; }
     else {
       fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(vo.map(v => ({ text: v.say ?? v.text, max: v.max, voice: spec.voiceName }))));
-      console.log(execFileSync('python3', [path.join(__dirname, 'gemini_tts.py'), path.join(work, 'vo.json'), work]).toString());
+      try { console.log(execFileSync('python3', [path.join(__dirname, 'gemini_tts.py'), path.join(work, 'vo.json'), work]).toString()); }
+      catch (e) { console.log('Gemini TTS が使えないので、声なしで書き出します'); vo = []; }
     }
   } else {
     fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(vo.map(v => ({ text: v.text, speed: v.speed ?? 1.2 }))));

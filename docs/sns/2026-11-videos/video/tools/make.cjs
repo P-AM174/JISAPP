@@ -67,7 +67,7 @@ const OVERLAY = fs.readFileSync(path.join(__dirname, 'overlay.js'), 'utf8');
     if (process.env.NO_VOICE) { console.log('声なしで書き出します'); vo = []; }
     else {
       fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(vo.map(v => ({ text: v.say ?? v.text, max: v.max, voice: spec.voiceName }))));
-      try { console.log(execFileSync('python3', [path.join(__dirname, 'gemini_tts.py'), path.join(work, 'vo.json'), work]).toString()); }
+      try { console.log(execFileSync('python3', [path.join(__dirname, 'gemini_tts.py'), path.join(work, 'vo.json'), work], { env: { TTS_CACHE: path.join(H, 'tts-cache'), ...process.env } }).toString()); }
       catch (e) { console.log('Gemini TTS が使えないので、声なしで書き出します'); vo = []; }
     }
   } else {

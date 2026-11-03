@@ -17,17 +17,21 @@ const tap = (t, sel) => ev(t, async p => {
 const scroll = (t, sel, off = 60, smooth = true) => inApp(t, ([s, o, sm]) => { const el = document.querySelector(s); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - o, behavior: sm ? 'smooth' : 'instant' }); }, [sel, off, smooth]);
 
 // 声と字幕（同じ文）。t は始まり、max はその画面の長さ（入りきらないときは少し速くする）
+// 画面の区切り：台本の秒（左）→ 実際の声の長さに合わせた秒（右）。ほかの動き・効果音の時間もこれで合わせる
+const FROM = [0, 2, 4, 6, 8, 10, 12, 14, 17, 19, 20.3];
+const TO = [0, 2.6, 4.5, 6.3, 8.0, 9.8, 11.75, 13.75, 17.85, 19.85, 21.6];
+const R = t => { let k = 0; while (k < FROM.length - 2 && t >= FROM[k + 1]) k++; return +(TO[k] + (t - FROM[k]) * (TO[k + 1] - TO[k]) / (FROM[k + 1] - FROM[k])).toFixed(3); };
 const VO = [
-  [0.05, 1.95, '3人で箱根、立て替えが4件。誰がいくら？', '<b>3人</b>で箱根、立て替えが<b>4件</b>。<br>誰がいくら？'],
-  [2.0, 1.95, '全部まとめて、送金は2回だけ。', '全部まとめて、<br>送金は<b>2回</b>だけ。'],
-  [4.0, 1.95, '「あとで計算するね」、もう言わない。', '「あとで計算するね」、<br>もう言わない。'],
-  [6.0, 1.95, '払った人と金額を入れる。', '払った人と金額を入れる。'],
-  [8.0, 1.95, '誰で割るか、タップで選ぶ。', '誰で割るか、タップで選ぶ。'],
-  [10.0, 1.95, '誰が誰に払うか、すぐ出る。', '誰が誰に払うか、すぐ出る。'],
+  [0.05, 2.55, '3人で箱根、立て替えが4件。誰がいくら？', '<b>3人</b>で箱根、立て替えが<b>4件</b>。<br>誰がいくら？'],
+  [2.0, 1.9, '全部まとめて、送金は2回だけ。', '全部まとめて、<br>送金は<b>2回</b>だけ。'],
+  [4.0, 1.75, '「あとで計算するね」、もう言わない。', '「あとで計算するね」、<br>もう言わない。'],
+  [6.0, 1.65, '払った人と金額を入れる。', '払った人と金額を入れる。'],
+  [8.0, 1.75, '誰で割るか、タップで選ぶ。', '誰で割るか、タップで選ぶ。'],
+  [10.0, 1.9, '誰が誰に払うか、すぐ出る。', '誰が誰に払うか、すぐ出る。'],
   [12.0, 1.95, '8回の支払いが、送金2回に。', '<b>8回</b>の支払いが、<br>送金<b>2回</b>に。'],
-  [14.0, 2.95, '「こんなアプリ作りたい！」って自分のAIに送って、出てきたコードをジサップに貼るだけ。', '<small>「こんなアプリ作りたい！」って自分のAIに送って、<br>出てきたコードを<b>ジサップ</b>に貼るだけ。</small>'],
+  [14.0, 4.05, '「こんなアプリ作りたい！」って自分のAIに送って、出てきたコードをジサップに貼るだけ。', '<small>「こんなアプリ作りたい！」って自分のAIに送って、<br>出てきたコードを<b>ジサップ</b>に貼るだけ。</small>'],
   [17.0, 1.95, '帰りの電車で、精算おわり。', '帰りの電車で、精算おわり。'],
-  [19.0, 1.25, 'まずは「ジサップ」で検索。', 'まずは「<b>ジサップ</b>」で検索。'],
+  [19.0, 1.45, 'まずは「ジサップ」で検索。', 'まずは「<b>ジサップ</b>」で検索。'],
 ];
 
 // 14〜17秒：スマホの中で、AI に一文を送る → ジサップに貼る → アプリ
@@ -42,7 +46,7 @@ const editor = `<div style="position:absolute;inset:0;background:#fff url(studio
 
 module.exports = {
   url: 'file:///home/user/JISAPP/docs/sns/2026-11-videos/video/travel-stage.html',
-  duration: 20.3,
+  duration: 21.6,
   voice: 'gemini', voiceName: 'Vindemiatrix', voVol: 1.3,
   prep: async p => {
     await p.evaluate(() => Promise.all([document.fonts.load('40px "Dela Gothic One"'), document.fonts.load('900 27px "M PLUS Rounded 1c"'), document.fonts.ready]));
@@ -57,7 +61,7 @@ module.exports = {
       const h = [...document.querySelectorAll('.sec')][1]; window.scrollTo({ top: h.getBoundingClientRect().top + window.scrollY - 92, behavior: 'instant' });
     });
   },
-  events: [
+  events: ([
     ...VO.map(([t, , , c]) => stage(t, h => window.cap(h), c)),
     // 2〜4 数字の得
     big(2.05, '送金は<em>2</em>回だけ'),
@@ -98,12 +102,13 @@ module.exports = {
     stage(18.4, () => { window.count(3); window.hideFinger(); }),
     // 19〜20 終わりの画面
     stage(19.0, () => window.endScreen()),
-  ],
-  vo: VO.map(([t, max, text]) => ({ t, max, text })),
+  ]).map(e => ({ ...e, t: R(e.t) })),
+  // 5つ目があれば、読み上げにはそちらを使う（字幕は同じ文のまま。区切りを入れて固有名詞をはっきり読ませる）
+  vo: VO.map(([t, max, text, , say]) => ({ t: t ? R(t) : t, max, text, say })),
   sfx: [
     { t: 2.05, name: 'pop', vol: .8 }, { t: 4.0, name: 'whoosh', vol: .5 },
     { t: 6.35, name: 'tap', vol: .6 }, { t: 7.8, name: 'tap', vol: .6 }, { t: 8.55, name: 'tap', vol: .6 }, { t: 9.35, name: 'tap', vol: .6 },
     { t: 10.35, name: 'good', vol: .6 }, { t: 12.05, name: 'pop', vol: .8 }, { t: 14.0, name: 'whoosh', vol: .5 }, { t: 15.3, name: 'click', vol: .6 },
     { t: 17.4, name: 'tick', vol: .7 }, { t: 18.1, name: 'tick', vol: .7 }, { t: 18.4, name: 'tada', vol: .7 }, { t: 19.0, name: 'whoosh', vol: .5 },
-  ],
+  ].map(x => ({ ...x, t: R(x.t) })),
 };

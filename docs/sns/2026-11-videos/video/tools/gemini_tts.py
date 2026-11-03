@@ -2,7 +2,7 @@
 # キーは GEMINI_API_KEY か、環境の「ネットワークのシークレット」（x-goog-api-key ヘッダーを自動で付ける）のどちらか
 # lines.json: [{"text": "...", "max": 2.0, "voice": "Vindemiatrix"}]
 # 1文ずつ作って、前後の無音を削り、max 秒に入りきらないときは atempo で少し速くする（最大 1.45 倍）
-import base64, json, os, subprocess, sys, time, urllib.request, wave
+import base64, hashlib, json, os, shutil, subprocess, sys, time, urllib.request, wave
 KEY = os.environ.get('GEMINI_API_KEY')
 MODEL = os.environ.get('GEMINI_TTS_MODEL', 'gemini-2.5-flash-preview-tts')
 STYLE = '日本のショート動画のナレーション。明るく、はっきり、少し早口で。「ジサップ」は「じ・さっぷ」と、「ジ」を強めに読む。次の文だけを読んでください：'
@@ -25,10 +25,16 @@ def dur(f): return float(subprocess.check_output(['ffprobe', '-v', 'error', '-sh
 
 for i, ln in enumerate(lines):
     raw = f"{out}/vo{i:02d}.raw.wav"
-    w = wave.open(raw, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(call(ln['text'], ln.get('voice', 'Vindemiatrix'))); w.close()
+    # 同じ文・同じ声は作り直さない（TTS_CACHE に残す）。作り直すときはそのファイルを消す
+    cache = os.environ.get('TTS_CACHE'); voice = ln.get('voice', 'Vindemiatrix')
+    cf = cache and os.path.join(cache, hashlib.sha1(f"{MODEL}|{voice}|{STYLE}|{ln['text']}".encode()).hexdigest()[:16] + '.wav')
+    if cf and os.path.exists(cf): shutil.copy(cf, raw)
+    else:
+        w = wave.open(raw, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(call(ln['text'], voice)); w.close()
+        if cf: os.makedirs(cache, exist_ok=True); shutil.copy(raw, cf)
     trim = f"{out}/vo{i:02d}.trim.wav"
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', raw, '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse', trim], check=True)
     d, mx = dur(trim), ln.get('max', 99)
-    tempo = min(1.45, max(1.0, d / mx))
+    tempo = min(float(os.environ.get('TTS_MAX_TEMPO', 1.3)), max(1.0, d / mx))
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', trim, '-af', f'atempo={tempo:.3f}', f"{out}/vo{i:02d}.wav"], check=True)
     print(i, f"{d:.2f}s -> {d / tempo:.2f}s (max {mx}, x{tempo:.2f})", ln['text'])

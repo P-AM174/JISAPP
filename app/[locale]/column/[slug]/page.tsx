@@ -34,9 +34,20 @@ export async function generateMetadata({ params }: PageProps) {
   if (!r) return {};
   const { locale, column } = r;
   const description = column.description || excerpt(column.body);
-  const og = column.coverImage ? absoluteUrl(column.coverImage) : `/og/columns/${column.slug}.png`;
+  // 見出し画像は Supabase の完全な URL で保存している（そのまま使う）。ない記事はタイトルを描いた画像
+  const base = createPageMetadata({ locale, title: column.title, description, path: `/column/${column.slug}`, ogImage: column.coverImage || `/og/columns/${column.slug}.png` });
+  const og = base.openGraph!;
   return {
-    ...createPageMetadata({ locale, title: column.title, description, path: `/column/${column.slug}`, ogImage: og }),
+    ...base,
+    openGraph: {
+      ...og,
+      type: "article",
+      publishedTime: column.publishedAt ?? column.createdAt,
+      modifiedTime: column.updatedAt,
+      ...(column.tags.length ? { tags: column.tags } : {}),
+      // 見出し画像は大きさも形式もまちまちなので、幅・高さ・形式は書かない（描いた画像は 1200×630 の PNG）
+      ...(column.coverImage ? { images: [{ url: column.coverImage, alt: column.title }] } : {}),
+    },
     // ほかの言語の記事はないので、言語の対応（hreflang）は出さない。ベトナム語のページの記事は英語の URL を正とする
     alternates: { canonical: absoluteUrl(localizePath(`/column/${column.slug}`, column.locale)) },
   };
@@ -67,7 +78,7 @@ export default async function ColumnPage({ params }: PageProps) {
         "@context": "https://schema.org", "@type": "BlogPosting", headline: column.title,
         description: column.description || excerpt(column.body), url, inLanguage: column.locale,
         datePublished: column.publishedAt ?? column.createdAt, dateModified: column.updatedAt,
-        ...(column.coverImage ? { image: absoluteUrl(column.coverImage) } : {}),
+        ...(column.coverImage ? { image: column.coverImage } : {}),
         ...(column.tags.length ? { keywords: column.tags.join(",") } : {}),
         author: { "@type": "Organization", name: siteName(locale) }, publisher: { "@type": "Organization", name: siteName(locale) },
       }} />

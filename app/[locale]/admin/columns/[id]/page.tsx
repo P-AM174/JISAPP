@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import {
   AppWindow, ArrowLeft, Bold, Check, ChevronLeft, Copy, ExternalLink, Eye, Heading2, Heading3, ImagePlus, Link2,
-  List, ListOrdered, Loader2, Minus, MousePointerClick, PenLine, Quote, Send, Sparkles, Trash2, X, CirclePlay,
+  List, ListOrdered, Loader2, Minus, MousePointerClick, PenLine, Quote, Send, Sparkles, Trash2, X, CirclePlay, ChevronsDownUp,
 } from "lucide-react";
 import Link, { useRouter } from "@/lib/i18n/navigation";
 import { AdminLogin } from "@/components/columns/admin-gate";
@@ -91,7 +91,7 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
   const [cover, setCover] = useState<string | null>(null);
   const [save, setSave] = useState<SaveState>("saved");
   const [preview, setPreview] = useState(false);
-  const [sheet, setSheet] = useState<null | "publish" | "ai" | "app" | "link" | "youtube" | "button">(null);
+  const [sheet, setSheet] = useState<null | "publish" | "ai" | "app" | "link" | "youtube" | "button" | "prompt">(null);
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
   const [kbOffset, setKbOffset] = useState(0);
@@ -236,6 +236,7 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
     { icon: <ImagePlus className="h-5 w-5" />, label: "画像", run: () => fileRef.current?.click() },
     { icon: <Link2 className="h-5 w-5" />, label: "リンク", run: () => setSheet("link") },
     { icon: <AppWindow className="h-5 w-5" />, label: "アプリ", run: () => setSheet("app") },
+    { icon: <ChevronsDownUp className="h-5 w-5" />, label: "プロンプト", run: () => setSheet("prompt") },
     { icon: <CirclePlay className="h-5 w-5" />, label: "動画", run: () => setSheet("youtube") },
     { icon: <MousePointerClick className="h-5 w-5" />, label: "ボタン", run: () => setSheet("button") },
     { icon: <Minus className="h-5 w-5" />, label: "区切り", run: () => insert(() => "---", true) },
@@ -315,6 +316,9 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
       {sheet === "app" && <AppSheet onClose={() => setSheet(null)} onPick={(appId) => { insert(() => `::app[${appId}]`, true); setSheet(null); }} />}
       {sheet === "link" && <FieldsSheet title="リンクを入れる" fields={[["文字", "例：開発スタジオ"], ["URL", "https:// か / で始まる"]]}
         onClose={() => setSheet(null)} onOk={([label, url]) => { insert((s) => `[${s || label || url}](${url})`); setSheet(null); }} />}
+      {sheet === "prompt" && <FieldsSheet title="プロンプトを折りたたんで入れる" fields={[["見出し", "このアプリのプロンプト"], ["プロンプト（AI に送った文）", "旅行で誰かが立て替えたものを入れると…"]]}
+        defaults={["このアプリのプロンプト"]} multiline={1}
+        onClose={() => setSheet(null)} onOk={([label, text]) => { insert(() => `:::prompt ${label || "このアプリのプロンプト"}\n${text.replace(/^:::$/gm, "：：：")}\n:::`, true); setSheet(null); }} />}
       {sheet === "youtube" && <FieldsSheet title="YouTube の動画を入れる" fields={[["動画の URL", "https://youtube.com/shorts/…"]]}
         onClose={() => setSheet(null)} onOk={([url]) => { insert(() => `::youtube[${url}]`, true); setSheet(null); }} />}
       {sheet === "button" && <FieldsSheet title="ボタンを入れる" fields={[["ボタンの文字", "ジサップでアプリを作る"], ["行き先", "/playground"]]}
@@ -340,7 +344,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 
 const inputCls = "w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-base outline-none focus:border-emerald-400 focus:bg-white";
 
-function FieldsSheet({ title, fields, defaults = [], onOk, onClose }: { title: string; fields: [string, string][]; defaults?: string[]; onOk: (v: string[]) => void; onClose: () => void }) {
+function FieldsSheet({ title, fields, defaults = [], multiline, onOk, onClose }: { title: string; fields: [string, string][]; defaults?: string[]; multiline?: number; onOk: (v: string[]) => void; onClose: () => void }) {
   const [v, setV] = useState<string[]>(fields.map((_, i) => defaults[i] ?? ""));
   return (
     <Sheet title={title} onClose={onClose}>
@@ -348,7 +352,9 @@ function FieldsSheet({ title, fields, defaults = [], onOk, onClose }: { title: s
         {fields.map(([label, ph], i) => (
           <label key={label} className="block">
             <span className="mb-1 block text-xs font-bold text-gray-500">{label}</span>
-            <input className={inputCls} placeholder={ph} value={v[i]} onChange={(e) => setV(v.map((x, k) => (k === i ? e.target.value : x)))} autoFocus={i === 0} />
+            {multiline === i
+              ? <textarea className={`${inputCls} resize-y`} rows={8} placeholder={ph} value={v[i]} onChange={(e) => setV(v.map((x, k) => (k === i ? e.target.value : x)))} />
+              : <input className={inputCls} placeholder={ph} value={v[i]} onChange={(e) => setV(v.map((x, k) => (k === i ? e.target.value : x)))} autoFocus={i === 0} />}
           </label>
         ))}
         <button onClick={() => onOk(v.map((x) => x.trim()))} disabled={!v[v.length - 1].trim()} className="w-full rounded-xl bg-gray-900 py-3 font-bold text-white disabled:opacity-40">入れる</button>

@@ -7,6 +7,11 @@
  *   ::app[アプリのID]          … ジサップのアプリのカード
  *   ::youtube[動画のURL]       … YouTube の動画
  *   ::button[文字](/playground) … ボタン
+ *   :::prompt 見出し            … 折りたたみのプロンプト（開くと全文とコピーボタン）
+ *   （プロンプトの全文。何行でもよい）
+ *   :::
+ *   :::fold 見出し              … 折りたたみ（中は本文と同じ書き方）
+ *   :::
  * HTML は使えない（すべて文字として表示する）
  */
 
@@ -27,7 +32,9 @@ export type Block =
   | { t: "image"; src: string; alt: string }
   | { t: "app"; id: string }
   | { t: "youtube"; id: string }
-  | { t: "button"; label: string; href: string };
+  | { t: "button"; label: string; href: string }
+  | { t: "prompt"; title: string; v: string }
+  | { t: "fold"; title: string; v: Block[] };
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
@@ -94,6 +101,16 @@ export function parseBody(body: string): Block[] {
       const code: string[] = [];
       for (i++; i < lines.length && !lines[i].trim().startsWith("```"); i++) code.push(lines[i]);
       blocks.push({ t: "code", v: code.join("\n") });
+      continue;
+    }
+    // 折りたたみ（:::prompt / :::fold 〜 :::）
+    if ((m = s.match(/^:::(prompt|fold)(?:\s+(.*))?$/))) {
+      flushPara();
+      const inner: string[] = [];
+      for (i++; i < lines.length && lines[i].trim() !== ":::"; i++) inner.push(lines[i]);
+      const text = inner.join("\n").replace(/^\n+|\s+$/g, "");
+      if (m[1] === "prompt") blocks.push({ t: "prompt", title: (m[2] || "").trim() || "このアプリのプロンプト", v: text });
+      else blocks.push({ t: "fold", title: (m[2] || "").trim() || "くわしく", v: parseBody(text) });
       continue;
     }
     if ((m = s.match(/^(#{1,3})\s+(.+)$/))) {

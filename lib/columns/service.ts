@@ -28,7 +28,7 @@ export function validateColumnInput(input: ColumnInput): string[] {
   if (input.xText !== undefined && input.xText.length > 280) errors.push("X の投稿文は280文字まで");
   if (input.locale !== undefined && !["ja", "en"].includes(input.locale)) errors.push("言語が正しくありません");
   if (input.status !== undefined && !["draft", "published"].includes(input.status)) errors.push("公開の状態が正しくありません");
-  if (input.coverImage && !/^(\/api\/columns\/image\/[0-9a-f-]{36}|https:\/\/[^\s"'<>]+)$/.test(input.coverImage)) errors.push("見出し画像の場所が正しくありません");
+  if (input.coverImage && !/^https:\/\/[^\s"'<>]+$/.test(input.coverImage)) errors.push("見出し画像の場所が正しくありません");
   return errors;
 }
 
@@ -126,23 +126,56 @@ export async function listPublishedColumnSlugs(): Promise<{ slug: string; locale
   }
 }
 
-const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const MAX_IMAGE_BASE64 = 2_000_000; // 約1.5MB
+// 記事の写真（Supabase Storage の column-images に「記事のID/ランダム.webp」で置く）
+export const IMAGE_BUCKET = "column-images";
+export const MAX_IMAGE_BYTES = 1024 * 1024;
+const IMAGE_TYPES: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg" };
 
-export async function saveColumnImage(mime: string, base64: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  if (!IMAGE_MIMES.includes(mime as (typeof IMAGE_MIMES)[number])) return { ok: false, error: "JPEG・PNG・WebP の画像だけ使えます" };
-  if (!/^[A-Za-z0-9+/=]+$/.test(base64) || base64.length > MAX_IMAGE_BASE64) return { ok: false, error: "画像が大きすぎます" };
-  const sb = createServerSupabaseClient();
-  const { data, error } = await sb.from("column_images").insert({ mime, data: base64 }).select("id").single();
-  if (error || !data) return { ok: false, error: error?.message ?? "保存できませんでした" };
-  return { ok: true, url: `/api/columns/image/${(data as { id: string }).id}` };
+/** この置き場の公開 URL の頭（例：https://xxx.supabase.co/storage/v1/object/public/column-images/） */
+function imageUrlPrefix(): string {
+  return `${(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}/storage/v1/object/public/${IMAGE_BUCKET}/`;
 }
 
-export async function getColumnImage(id: string): Promise<{ mime: string; data: Buffer } | null> {
-  if (!/^[0-9a-f-]{36}$/.test(id)) return null;
+export async function saveColumnImage(columnId: string, mime: string, bytes: Uint8Array): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const ext = IMAGE_TYPES[mime];
+  if (!ext) return { ok: false, error: "WebP・JPEG の画像だけ使えます" };
+  if (bytes.byteLength > MAX_IMAGE_BYTES) return { ok: false, error: "画像が大きすぎます（1MB まで）" };
+  if (!(await getColumnAdmin(columnId))) return { ok: false, error: "記事が見つかりません" };
   const sb = createServerSupabaseClient();
-  const { data } = await sb.from("column_images").select("mime, data").eq("id", id).maybeSingle();
-  if (!data) return null;
-  const r = data as { mime: string; data: string };
-  return { mime: r.mime, data: Buffer.from(r.data, "base64") };
+  const path = `${columnId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await sb.storage.from(IMAGE_BUCKET).upload(path, bytes, { contentType: mime, cacheControl: "31536000", upsert: false });
+  if (error) return { ok: false, error: /bucket/i.test(error.message) ? "写真の置き場がありません（scripts/add-columns.sql を実行してください）" : error.message };
+  return { ok: true, url: imageUrlPrefix() + path };
+}
+
+/** 本文と見出し画像で使っている、この置き場の写真の場所 */
+function usedImagePaths(c: Pick<Column, "body" | "coverImage">): Set<string> {
+  const prefix = imageUrlPrefix();
+  const used = new Set<string>();
+  for (const text of [c.body, c.coverImage ?? ""]) {
+    let i = text.indexOf(prefix);
+    while (i !== -1) {
+      const m = text.slice(i + prefix.length).match(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:webp|jpg)/);
+      if (m) used.add(m[0]);
+      i = text.indexOf(prefix, i + prefix.length);
+    }
+  }
+  return used;
+}
+
+/**
+ * 使われなくなった写真を消す（公開設定を保存したとき・記事を消したときに呼ぶ）。
+ * 書いている途中は消さない（元に戻したときに写真が消えていないように）
+ */
+export async function cleanupColumnImages(columnId: string, keep: Pick<Column, "body" | "coverImage"> | null): Promise<number> {
+  try {
+    const sb = createServerSupabaseClient();
+    const { data } = await sb.storage.from(IMAGE_BUCKET).list(columnId, { limit: 1000 });
+    const used = keep ? usedImagePaths(keep) : new Set<string>();
+    const remove = (data ?? []).map((f) => `${columnId}/${f.name}`).filter((p) => !used.has(p));
+    if (remove.length) await sb.storage.from(IMAGE_BUCKET).remove(remove);
+    return remove.length;
+  } catch {
+    return 0;
+  }
 }

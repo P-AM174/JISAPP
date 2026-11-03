@@ -40,7 +40,6 @@ export function safeHref(href: string): string | null {
 }
 function safeImage(src: string): string | null {
   const s = src.trim();
-  if (new RegExp(`^/api/columns/image/${UUID}$`).test(s)) return s;
   if (/^https:\/\/[^\s"'<>]+$/i.test(s)) return s;
   return null;
 }

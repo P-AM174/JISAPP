@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
-import { deleteColumn, getColumnAdmin, updateColumn, validateColumnInput } from "@/lib/columns/service";
+import { cleanupColumnImages, deleteColumn, getColumnAdmin, updateColumn, validateColumnInput } from "@/lib/columns/service";
 import type { ColumnInput } from "@/lib/columns/types";
 
 const DENIED = () => NextResponse.json({ error: "管理者権限が必要です" }, { status: 401 });
@@ -38,6 +38,8 @@ export async function PUT(req: Request, { params }: Ctx) {
   const before = await getColumnAdmin(id);
   const r = await updateColumn(id, input);
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 400 });
+  // 公開設定を保存したとき（status つき）に、使われなくなった写真を消す。書いている途中の自動保存では消さない
+  if (input.status !== undefined) await cleanupColumnImages(id, r.column);
   if (r.column.status === "published" || before?.status === "published") {
     revalidate(r.column.slug);
     if (before && before.slug !== r.column.slug) revalidate(before.slug);
@@ -50,6 +52,7 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   const { id } = await params;
   const before = await getColumnAdmin(id);
   if (!(await deleteColumn(id))) return NextResponse.json({ error: "消せませんでした" }, { status: 500 });
+  await cleanupColumnImages(id, null);
   if (before) revalidate(before.slug);
   return NextResponse.json({ ok: true });
 }

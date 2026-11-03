@@ -41,12 +41,12 @@ function useAutoGrow(ref: React.RefObject<HTMLTextAreaElement | null>, value: st
   }, [ref, value]);
 }
 
-/** 画像を縮めて（長い辺 1600px・JPEG）base64 にする */
-async function shrinkImage(file: File): Promise<{ mime: string; data: string }> {
+/** 写真を縮める（長い辺 1200px・WebP。WebP を作れないブラウザは JPEG）。だいたい 100〜200KB になる */
+async function shrinkImage(file: File): Promise<Blob> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = url; });
-    const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const scale = Math.min(1, 1200 / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement("canvas");
     c.width = Math.round(img.naturalWidth * scale);
     c.height = Math.round(img.naturalHeight * scale);
@@ -54,17 +54,24 @@ async function shrinkImage(file: File): Promise<{ mime: string; data: string }> 
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, c.width, c.height);
     ctx.drawImage(img, 0, 0, c.width, c.height);
-    let q = 0.85, data = c.toDataURL("image/jpeg", q);
-    while (data.length > 1_900_000 && q > 0.4) { q -= 0.15; data = c.toDataURL("image/jpeg", q); }
-    return { mime: "image/jpeg", data: data.split(",")[1] };
+    const make = (type: string, q: number) => new Promise<Blob | null>((ok) => c.toBlob(ok, type, q));
+    let q = 0.8;
+    let blob = await make("image/webp", q);
+    const type = blob?.type === "image/webp" ? "image/webp" : "image/jpeg";
+    if (type === "image/jpeg") blob = await make(type, q);
+    while (blob && blob.size > 900_000 && q > 0.4) { q -= 0.15; blob = await make(type, q); }
+    if (!blob) throw new Error("写真を読み込めませんでした");
+    return blob;
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
-async function uploadImage(file: File): Promise<string> {
-  const img = await shrinkImage(file);
-  const res = await fetch("/api/admin/columns/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(img) });
+async function uploadImage(file: File, columnId: string): Promise<string> {
+  const form = new FormData();
+  form.append("file", await shrinkImage(file));
+  form.append("columnId", columnId);
+  const res = await fetch("/api/admin/columns/image", { method: "POST", body: form });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.url) throw new Error(data.error ?? "画像を保存できませんでした");
   return data.url as string;
@@ -184,7 +191,7 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
     if (!file) return;
     setBusy(true);
     try {
-      const url = await uploadImage(file);
+      const url = await uploadImage(file, id);
       if (asCover) setCover(url);
       else insert(() => `![](${url})`, true);
     } catch (e) {

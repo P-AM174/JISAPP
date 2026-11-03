@@ -21,21 +21,16 @@ import type { Column } from "@/lib/columns/types";
 
 type SaveState = "saved" | "saving" | "dirty" | "error";
 
-const AI_PROMPT = (theme: string) => `ジサップ（jisapp.app）の公式コラムを書いてください。
+// 依頼文。くわしい決まりは docs/columns/writing-guide.md（リポジトリを読める AI に、それを読んで書いてもらう）
+const AI_PROMPT = (theme: string) => `ジサップ（このリポジトリ）の公式コラムを書いてください。
 
 【テーマ】${theme || "（ここにテーマを書く）"}
 
-【ジサップとは】ChatGPT・Claude・Gemini などの AI に「こんなアプリ作りたい」と送り、出てきたコードをジサップに貼るだけで、自分専用のアプリを無料で公開できるサービス。データの保存や、グループのメンバー全員でデータを共有するアプリも作れる。
-
-【書き方】
-- 読む人：アプリを作ったことがない人。やさしい言葉で、note のような語りかける文体
-- 1文目は「その人に起きた場面」から始める（例：旅行の精算、毎回だれかが電卓をたたいている。）
-- 見出しは「## 」、小見出しは「### 」で始める。箇条書きは「- 」。太字は **文字**
-- 構成：場面 → 困っていること → アプリにするとどう楽になるか → AI に送る一文（そのまま使える例を引用「> 」で） → ジサップに貼って公開する流れ → まとめ
-- 2,000字くらい
-- ジサップで今できることだけを書く。確かめられない数字（「3秒で完成」など）や、ほかのサービスの悪口は書かない
-- 最後に「::button[ジサップでアプリを作る](/playground)」という1行を入れる
-- 返事は、記事の本文だけ（タイトルは1行目に「# タイトル」で）`;
+書き方の決まりは docs/columns/writing-guide.md にあります。まずそれを読んでください。
+特に次の3つを守ってください。
+- ジサップの機能は、コードで確かめてから書く（コードにないこと・確かめられない数字は書かない）
+- 1文目は「その人に起きた場面」から。見出しは「## 」、1行目は「# タイトル」
+- 返事は記事の本文だけ。最後に「説明：」と「Xの投稿文：」を本文とは別に書く`;
 
 function useAutoGrow(ref: React.RefObject<HTMLTextAreaElement | null>, value: string) {
   useEffect(() => {
@@ -199,16 +194,25 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
     }
   };
 
-  /** AI の返事を貼ったとき、1行目の「# タイトル」をタイトル欄に移す */
+  /**
+   * AI の返事を貼ったとき：1行目の「# タイトル」はタイトル欄へ、
+   * 最後の「説明：」「Xの投稿文：」は公開設定へ移して、本文には残さない
+   */
   const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const text = e.clipboardData.getData("text");
-    const m = text.match(/^\s*#\s+(.+)\n/);
-    if (m && !title.trim()) {
-      e.preventDefault();
-      setTitle(m[1].trim());
-      insert(() => text.slice(m[0].length).replace(/^\s+/, ""));
-      say("1行目をタイトルにしました");
-    }
+    let text = e.clipboardData.getData("text").replace(/\r\n?/g, "\n");
+    const moved: string[] = [];
+    const patch: Partial<Column> = {};
+    const t = text.match(/^\s*#\s+(.+)\n/);
+    if (t && !title.trim()) { setTitle(t[1].trim()); text = text.slice(t[0].length); moved.push("タイトル"); }
+    const d = text.match(/^[*\s-]*説明[*]*\s*[:：]\s*(.+)$/m);
+    if (d) { patch.description = d[1].trim().slice(0, 300); text = text.replace(d[0], ""); moved.push("説明"); }
+    const x = text.match(/^[*\s-]*X\s*の?投稿文[*]*\s*[:：]\s*([\s\S]+?)\s*$/m);
+    if (x) { patch.xText = x[1].trim().slice(0, 256); text = text.slice(0, x.index) + text.slice((x.index ?? 0) + x[0].length); moved.push("Xの投稿文"); }
+    if (!moved.length) return;
+    e.preventDefault();
+    insert(() => text.replace(/^\s+/, "").replace(/\s+$/, ""));
+    if (patch.description !== undefined || patch.xText !== undefined) put(patch);
+    say(`${moved.join("・")}を分けて入れました`);
   };
 
   if (authed === null) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-emerald-600" /></div>;

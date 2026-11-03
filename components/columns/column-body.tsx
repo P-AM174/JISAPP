@@ -42,7 +42,7 @@ function AppCard({ app, id, appHref, joined }: { app?: EmbeddedApp; id: string; 
 
 function block(b: Block, i: number, apps: Record<string, EmbeddedApp>, appHref: (id: string) => string, prev?: Block, next?: Block): ReactNode {
   switch (b.t) {
-    case "h2": return <h2 key={i} id={b.id} className="mt-11 mb-3 scroll-mt-20 text-[1.25rem] font-bold leading-[1.5] text-[#222]">{inl(b.v)}</h2>;
+    case "h2": return <h2 key={i} id={b.id} className="mt-11 mb-3 scroll-mt-20 border-l-4 border-emerald-500 pl-3 text-[1.25rem] font-bold leading-[1.5] text-[#222]">{inl(b.v)}</h2>;
     case "h3": return <h3 key={i} id={b.id} className="mt-8 mb-2 scroll-mt-20 text-[1.08rem] font-bold leading-[1.5] text-[#222]">{inl(b.v)}</h3>;
     case "p": return <p key={i} className="my-5">{inl(b.v)}</p>;
     case "quote": return <blockquote key={i} className="my-6 border-l-4 border-gray-200 pl-4 text-gray-600">{inl(b.v)}</blockquote>;

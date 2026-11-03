@@ -9,6 +9,7 @@ import Link, { useRouter } from "@/lib/i18n/navigation";
 import { AdminLogin } from "@/components/columns/admin-gate";
 import { ColumnBody } from "@/components/columns/column-body";
 import { excerpt } from "@/lib/columns/markdown";
+import { COLUMN_TAGS, normalizeTags } from "@/lib/columns/tags";
 import type { Column } from "@/lib/columns/types";
 
 /**
@@ -30,7 +31,7 @@ const AI_PROMPT = (theme: string) => `ジサップ（このリポジトリ）の
 特に次の3つを守ってください。
 - ジサップの機能は、コードで確かめてから書く（コードにないこと・確かめられない数字は書かない）
 - 1文目は「その人に起きた場面」から。見出しは「## 」、1行目は「# タイトル」
-- 返事は記事の本文だけ。最後に「説明：」と「Xの投稿文：」を本文とは別に書く`;
+- 返事は記事の本文だけ。はじめに「:::learn この記事でわかること」の箱、最後に「説明：」「Xの投稿文：」「タグ：」を本文とは別に書く`;
 
 function useAutoGrow(ref: React.RefObject<HTMLTextAreaElement | null>, value: string) {
   useEffect(() => {
@@ -215,10 +216,12 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
     if (d) { patch.description = d[1].trim().slice(0, 300); text = text.replace(d[0], ""); moved.push("説明"); }
     const x = text.match(/^[*\s-]*X\s*の?投稿文[*]*\s*[:：]\s*([\s\S]+?)\s*$/m);
     if (x) { patch.xText = x[1].trim().slice(0, 256); text = text.slice(0, x.index) + text.slice((x.index ?? 0) + x[0].length); moved.push("Xの投稿文"); }
+    const g = text.match(/^[*\s-]*タグ[*]*\s*[:：]\s*(.+)$/m);
+    if (g) { patch.tags = normalizeTags(g[1]); text = text.replace(g[0], ""); moved.push("タグ"); }
     if (!moved.length) return;
     e.preventDefault();
     insert(() => text.replace(/^\s+/, "").replace(/\s+$/, ""));
-    if (patch.description !== undefined || patch.xText !== undefined) put(patch);
+    if (patch.description !== undefined || patch.xText !== undefined || patch.tags !== undefined) put(patch);
     say(`${moved.join("・")}を分けて入れました`);
   };
 
@@ -277,7 +280,7 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
         {preview ? (
           <article>
             <h1 className="mb-8 text-[1.75rem] font-black leading-snug text-gray-900">{title || "（タイトルなし）"}</h1>
-            <ColumnBody body={body} />
+            <ColumnBody body={body} toc />
           </article>
         ) : (
           <>
@@ -422,6 +425,9 @@ function PublishSheet({ col, title, body, put, onClose, say, onDeleted }: {
   const [locale, setLocale] = useState(col.locale);
   const [description, setDescription] = useState(col.description || excerpt(body));
   const [xText, setXText] = useState(col.xText || title);
+  const [tags, setTags] = useState<string[]>(col.tags ?? []);
+  const [tagInput, setTagInput] = useState("");
+  const toggleTag = (t: string) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : normalizeTags([...cur, t])));
   const [saving, setSaving] = useState(false);
   const url = typeof window !== "undefined" ? `${window.location.origin}${publicPath({ slug: slug || col.slug, locale })}` : "";
   const xHref = `https://x.com/intent/post?text=${encodeURIComponent(xText)}&url=${encodeURIComponent(url)}`;
@@ -430,7 +436,8 @@ function PublishSheet({ col, title, body, put, onClose, say, onDeleted }: {
   const submit = async (status: Column["status"]) => {
     if (status === "published" && !/^[a-z0-9][a-z0-9-]{0,79}$/.test(slug)) { say("URL の名前を、半角の小文字・数字・ハイフンで入れてください"); return; }
     setSaving(true);
-    const c = await put({ title, body, slug: slug || col.slug, locale, description, xText, status });
+    const c = await put({ title, body, slug: slug || col.slug, locale, description, xText, status, tags: normalizeTags([...tags, ...tagInput.split(/[,、\s]+/)]) });
+    setTagInput("");
     setSaving(false);
     if (c) say(status === "published" ? "公開しました" : "下書きに戻しました");
   };
@@ -458,6 +465,23 @@ function PublishSheet({ col, title, body, put, onClose, say, onDeleted }: {
               <button key={l} onClick={() => setLocale(l)} className={`flex-1 rounded-xl py-2 text-sm font-bold ring-1 ${locale === l ? "bg-emerald-50 text-emerald-700 ring-emerald-300" : "text-gray-500 ring-gray-200"}`}>{l === "ja" ? "日本語" : "英語"}</button>
             ))}
           </div>
+        </div>
+        <div>
+          <span className="mb-1 block text-xs font-bold text-gray-500">タグ（5つまで。一覧の表紙の色と「次に読む」に使う）</span>
+          <div className="flex flex-wrap gap-1.5">
+            {[...COLUMN_TAGS.map((x) => x.name), ...tags.filter((x) => !COLUMN_TAGS.some((c) => c.name === x))].map((name) => {
+              const on = tags.includes(name);
+              const emoji = COLUMN_TAGS.find((c) => c.name === name)?.emoji;
+              return (
+                <button key={name} type="button" onClick={() => toggleTag(name)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-bold ring-1 ${on ? "bg-emerald-600 text-white ring-emerald-600" : "text-gray-600 ring-gray-200"}`}>
+                  {emoji ? `${emoji} ` : "#"}{name}
+                </button>
+              );
+            })}
+          </div>
+          <input className={`${inputCls} mt-2`} placeholder="ほかのタグ（例：合宿）" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && tagInput.trim()) { e.preventDefault(); setTags((cur) => normalizeTags([...cur, tagInput])); setTagInput(""); } }} />
         </div>
         <label className="block">
           <span className="mb-1 flex items-center text-xs font-bold text-gray-500">説明（検索結果やシェアのカードに出る）

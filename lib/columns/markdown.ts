@@ -10,6 +10,8 @@
  *   :::prompt 見出し            … 折りたたみのプロンプト（開くと全文とコピーボタン）
  *   （プロンプトの全文。何行でもよい）
  *   :::
+ *   :::learn この記事でわかること … 記事のはじめの、灰色の箱（中は本文と同じ書き方。箇条書きがおすすめ）
+ *   :::
  *   :::fold 見出し              … 折りたたみ（中は本文と同じ書き方）
  *   :::
  * HTML は使えない（すべて文字として表示する）
@@ -34,7 +36,8 @@ export type Block =
   | { t: "youtube"; id: string }
   | { t: "button"; label: string; href: string }
   | { t: "prompt"; title: string; v: string }
-  | { t: "fold"; title: string; v: Block[] };
+  | { t: "fold"; title: string; v: Block[] }
+  | { t: "learn"; title: string; v: Block[] };
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
@@ -104,12 +107,13 @@ export function parseBody(body: string): Block[] {
       continue;
     }
     // 折りたたみ（:::prompt / :::fold 〜 :::）
-    if ((m = s.match(/^:::(prompt|fold)(?:\s+(.*))?$/))) {
+    if ((m = s.match(/^:::(prompt|fold|learn)(?:\s+(.*))?$/))) {
       flushPara();
       const inner: string[] = [];
       for (i++; i < lines.length && lines[i].trim() !== ":::"; i++) inner.push(lines[i]);
       const text = inner.join("\n").replace(/^\n+|\s+$/g, "");
       if (m[1] === "prompt") blocks.push({ t: "prompt", title: (m[2] || "").trim() || "このアプリのプロンプト", v: text });
+      else if (m[1] === "learn") blocks.push({ t: "learn", title: (m[2] || "").trim() || "この記事でわかること", v: parseBody(text) });
       else blocks.push({ t: "fold", title: (m[2] || "").trim() || "くわしく", v: parseBody(text) });
       continue;
     }

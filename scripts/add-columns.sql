@@ -27,3 +27,6 @@ on conflict (id) do update set public = true, file_size_limit = 1048576, allowed
 alter table public.columns enable row level security;
 revoke all on table public.columns from anon, authenticated;
 grant all on table public.columns to service_role;
+
+-- タグ（一覧の表紙の色や、次に読む記事を選ぶのに使う）。あとから足した列
+alter table public.columns add column if not exists tags text[] not null default '{}';

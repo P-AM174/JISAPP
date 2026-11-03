@@ -1,17 +1,18 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import type { Column, ColumnInput, ColumnLocale, EmbeddedApp } from "./types";
+import type { Column, ColumnInput, ColumnLocale, EmbeddedApp, PopularApp } from "./types";
+import { normalizeTags } from "./tags";
 import { appIdsInBody } from "./markdown";
 
 type Row = {
   id: string; slug: string; locale: ColumnLocale; title: string; description: string; body: string;
-  cover_image: string | null; x_text: string; status: Column["status"]; published_at: string | null;
+  cover_image: string | null; x_text: string; tags?: string[] | null; status: Column["status"]; published_at: string | null;
   created_at: string; updated_at: string;
 };
 
 function toColumn(r: Row): Column {
   return {
     id: r.id, slug: r.slug, locale: r.locale, title: r.title, description: r.description, body: r.body,
-    coverImage: r.cover_image, xText: r.x_text, status: r.status, publishedAt: r.published_at,
+    coverImage: r.cover_image, xText: r.x_text, tags: r.tags ?? [], status: r.status, publishedAt: r.published_at,
     createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }
@@ -42,6 +43,7 @@ function toRow(input: ColumnInput): Record<string, unknown> {
   if (input.coverImage !== undefined) row.cover_image = input.coverImage || null;
   if (input.xText !== undefined) row.x_text = input.xText;
   if (input.status !== undefined) row.status = input.status;
+  if (input.tags !== undefined) row.tags = normalizeTags(input.tags);
   return row;
 }
 
@@ -113,6 +115,31 @@ export async function getEmbeddedApps(body: string): Promise<Record<string, Embe
   const map: Record<string, EmbeddedApp> = {};
   for (const a of (data ?? []) as EmbeddedApp[]) map[a.id] = a;
   return map;
+}
+
+/** 次に読む記事：同じタグの記事を先に、足りなければ新しい順で */
+export async function listRelatedColumns(column: Column, limit = 3): Promise<Column[]> {
+  const all = (await listPublishedColumns(column.locale, 30)).filter((c) => c.id !== column.id);
+  const score = (c: Column) => c.tags.filter((t) => column.tags.includes(t)).length;
+  return all.map((c, i) => ({ c, s: score(c), i })).sort((a, b) => b.s - a.s || a.i - b.i).slice(0, limit).map((x) => x.c);
+}
+
+/** 人気のアプリ（よく開かれている、一覧に出している公開中のアプリ） */
+export async function listPopularApps(limit = 3): Promise<PopularApp[]> {
+  const sb = createServerSupabaseClient();
+  const tries = [
+    () => sb.from("apps").select("id, title").eq("status", "active").eq("is_listed", true).order("open_count", { ascending: false }).limit(limit),
+    () => sb.from("apps").select("id, title").eq("status", "active").order("created_at", { ascending: false }).limit(limit),
+  ];
+  for (const q of tries) {
+    try {
+      const { data, error } = await q();
+      if (!error && data?.length) return data as PopularApp[];
+    } catch {
+      /* 列がないときは次の方法 */
+    }
+  }
+  return [];
 }
 
 /** サイトマップ用 */

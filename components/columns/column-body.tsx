@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { parseBody, type Block, type Inline } from "@/lib/columns/markdown";
+import { Fragment, type ReactNode } from "react";
+import { headings, parseBody, type Block, type Inline } from "@/lib/columns/markdown";
 import type { EmbeddedApp } from "@/lib/columns/types";
 import { CopyText } from "./copy-text";
 
@@ -13,7 +13,7 @@ function inl(v: Inline[], k = "i"): ReactNode[] {
     if (x.t === "text") return x.v;
     if (x.t === "br") return <br key={key} />;
     if (x.t === "code") return <code key={key} className="rounded bg-gray-100 px-1.5 py-0.5 text-[0.9em] text-rose-700">{x.v}</code>;
-    if (x.t === "bold") return <strong key={key} className="font-bold text-gray-900">{inl(x.v, key)}</strong>;
+    if (x.t === "bold") return <strong key={key} className="font-bold text-[#111]">{inl(x.v, key)}</strong>;
     const external = /^https?:/i.test(x.href);
     return (
       <a key={key} href={x.href} className="font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4 hover:text-emerald-800"
@@ -42,8 +42,8 @@ function AppCard({ app, id, appHref, joined }: { app?: EmbeddedApp; id: string; 
 
 function block(b: Block, i: number, apps: Record<string, EmbeddedApp>, appHref: (id: string) => string, prev?: Block, next?: Block): ReactNode {
   switch (b.t) {
-    case "h2": return <h2 key={i} id={b.id} className="mt-12 mb-4 scroll-mt-20 border-l-4 border-emerald-500 pl-3 text-[1.35rem] font-black leading-snug text-gray-900">{inl(b.v)}</h2>;
-    case "h3": return <h3 key={i} id={b.id} className="mt-8 mb-3 scroll-mt-20 text-lg font-bold leading-snug text-gray-900">{inl(b.v)}</h3>;
+    case "h2": return <h2 key={i} id={b.id} className="mt-11 mb-3 scroll-mt-20 text-[1.25rem] font-bold leading-[1.5] text-[#222]">{inl(b.v)}</h2>;
+    case "h3": return <h3 key={i} id={b.id} className="mt-8 mb-2 scroll-mt-20 text-[1.08rem] font-bold leading-[1.5] text-[#222]">{inl(b.v)}</h3>;
     case "p": return <p key={i} className="my-5">{inl(b.v)}</p>;
     case "quote": return <blockquote key={i} className="my-6 border-l-4 border-gray-200 pl-4 text-gray-600">{inl(b.v)}</blockquote>;
     case "ul": return <ul key={i} className="my-5 list-disc space-y-1.5 pl-6 marker:text-emerald-500">{b.items.map((it, k) => <li key={k}>{inl(it)}</li>)}</ul>;
@@ -82,6 +82,12 @@ function block(b: Block, i: number, apps: Record<string, EmbeddedApp>, appHref: 
         <div className="border-t border-gray-100 px-4 text-[15.5px]">{b.v.map((c, k) => block(c, k, apps, appHref, b.v[k - 1], b.v[k + 1]))}</div>
       </details>
     );
+    case "learn": return (
+      <section key={i} className="my-6 rounded-xl bg-[#f5f7f7] px-5 py-4 text-[15px] leading-[1.9]">
+        <p className="mb-1 text-sm font-bold text-emerald-700">{b.title}</p>
+        <div className="[&_ul]:my-1 [&_ol]:my-1 [&_p]:my-1">{b.v.map((c, k) => block(c, k, apps, appHref, b.v[k - 1], b.v[k + 1]))}</div>
+      </section>
+    );
     case "button": return (
       <div key={i} className="my-8 text-center">
         <a href={b.href} className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-8 py-3.5 text-base font-bold text-white no-underline shadow-md transition hover:bg-emerald-700">{b.label}</a>
@@ -90,7 +96,40 @@ function block(b: Block, i: number, apps: Record<string, EmbeddedApp>, appHref: 
   }
 }
 
-export function ColumnBody({ body, apps = {}, appHref = (id) => `/apps/${id}` }: { body: string; apps?: Record<string, EmbeddedApp>; appHref?: (id: string) => string }) {
+/** 目次（見出しが2つ以上あるとき）。押すとその見出しへ */
+function Toc({ blocks, title }: { blocks: Block[]; title: string }) {
+  const hs = headings(blocks).filter((h) => h.level === 2);
+  if (hs.length < 2) return null;
+  return (
+    <nav className="my-5 rounded-xl border border-gray-100 px-5 py-4" aria-label={title}>
+      <p className="mb-1 text-[13px] font-bold text-gray-400">{title}</p>
+      <ul className="text-[14.5px] leading-[2.1]">
+        {hs.map((h) => (
+          <li key={h.id} className="before:mr-1 before:text-emerald-500 before:content-['・']">
+            <a href={`#${h.id}`} className="text-gray-700 no-underline hover:text-emerald-700">{h.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+export function ColumnBody({ body, apps = {}, appHref = (id) => `/apps/${id}`, toc, tocTitle = "目次" }: {
+  body: string; apps?: Record<string, EmbeddedApp>; appHref?: (id: string) => string;
+  /** 目次を出す（記事のはじめの「この記事でわかること」の箱のすぐ後ろ） */
+  toc?: boolean; tocTitle?: string;
+}) {
   const blocks = parseBody(body);
-  return <div className="column-body text-[16.5px] leading-[2] tracking-[0.02em] text-gray-800 [overflow-wrap:anywhere]">{blocks.map((b, i) => block(b, i, apps, appHref, blocks[i - 1], blocks[i + 1]))}</div>;
+  const tocAt = toc ? (blocks[0]?.t === "learn" ? 1 : 0) : -1;
+  return (
+    <div className="column-body text-[16px] leading-[2.05] tracking-[0.04em] text-[#222] [overflow-wrap:anywhere]">
+      {blocks.map((b, i) => (
+        <Fragment key={i}>
+          {i === tocAt && <Toc blocks={blocks} title={tocTitle} />}
+          {block(b, i, apps, appHref, blocks[i - 1], blocks[i + 1])}
+        </Fragment>
+      ))}
+      {tocAt >= blocks.length && <Toc blocks={blocks} title={tocTitle} />}
+    </div>
+  );
 }

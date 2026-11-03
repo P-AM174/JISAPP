@@ -227,3 +227,8 @@ html {
   background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+/* コラムの書体（note に近い：iPhone はヒラギノ角ゴ、ほかは Noto Sans JP） */
+.font-column {
+  font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", var(--font-noto-sans-jp), "Noto Sans JP", Meiryo, sans-serif;
+  color: #222;
+}

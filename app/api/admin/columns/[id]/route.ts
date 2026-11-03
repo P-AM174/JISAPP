@@ -27,6 +27,10 @@ export async function PUT(req: Request, { params }: Ctx) {
   const raw = (await req.json().catch(() => null)) as ColumnInput | null;
   if (!raw || typeof raw !== "object") return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   const input: ColumnInput = {};
+  if (raw.tags !== undefined) {
+    if (!Array.isArray(raw.tags) || raw.tags.some((t) => typeof t !== "string")) return NextResponse.json({ error: "タグが正しくありません" }, { status: 400 });
+    input.tags = raw.tags;
+  }
   for (const k of ["slug", "locale", "title", "description", "body", "coverImage", "xText", "status"] as const) {
     const v = raw[k];
     if (v === undefined) continue;

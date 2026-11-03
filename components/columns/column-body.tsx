@@ -33,7 +33,6 @@ function AppCard({ app, id, appHref, joined, en }: { app?: EmbeddedApp; id: stri
           <img src="/logo-header.png" alt="" width={16} height={16} className="h-4 w-4" />{en ? "A Jisapp app" : "ジサップのアプリ"}
         </span>
         <span className="block truncate text-base font-black text-gray-900">{app?.title ?? (en ? "App (the name shows on the published page)" : "アプリ（公開ページで名前が出ます）")}</span>
-        {app?.description ? <span className="mt-0.5 line-clamp-2 block text-xs text-gray-500">{app.description}</span> : null}
       </span>
       <span className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white">{en ? "Try it" : "使ってみる"}</span>
     </a>

@@ -52,6 +52,7 @@ export const HERO_VISUAL_LABELS = {
   studio: "開発スタジオ",
   summer: "夏休み",
   requests: "掲示板",
+  column: "コラム",
   phone: "スマホ",
   none: "なし",
 } as const;

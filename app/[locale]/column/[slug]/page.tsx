@@ -93,7 +93,7 @@ export default async function ColumnPage({ params }: PageProps) {
         <article className="mt-2"><ColumnBody body={column.body} apps={apps} appHref={appHref} toc tocTitle={t("目次", "Contents")} /></article>
 
         <div className="mt-12"><ColumnShare url={url} text={column.xText || column.title} en={en} /></div>
-        <div className="mt-8"><StudioCard /></div>
+        <div className="mt-8"><StudioCard tone="column" /></div>
 
         {related.length > 0 && (
           <section className="mt-10">

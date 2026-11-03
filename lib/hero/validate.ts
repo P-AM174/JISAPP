@@ -2,7 +2,7 @@ import type { HeroSlideInput } from "./types";
 
 const LAYOUTS = new Set(["two_column", "card", "theme"]);
 const THEMES = new Set(["studio", "violet", "summer", "amber", "cyan"]);
-const VISUALS = new Set(["studio", "summer", "requests", "phone", "none"]);
+const VISUALS = new Set(["studio", "summer", "requests", "column", "phone", "none"]);
 const PATTERNS = new Set(["grid", "dots", "none"]);
 
 export function validateHeroSlide(input: HeroSlideInput, index = 0): string[] {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Terminal, Sun, MessageSquare, Smartphone, Code2 } from "lucide-react";
+import { Terminal, Sun, MessageSquare, Smartphone, Code2, BookOpen } from "lucide-react";
 import type { HeroVisual } from "@/lib/hero/types";
 import { useT } from "@/lib/i18n/client";
 
@@ -64,6 +64,29 @@ export function HeroVisual({ type }: { type: HeroVisual | null }) {
                 {step}
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // コラム：記事のカードが重なった絵
+  if (type === "column") {
+    const posts = [
+      { emoji: "🧳", title: t("旅行の精算、送金2回で終わらせる", "Settle a trip in two transfers"), bg: "bg-[#d5f0ea]" },
+      { emoji: "⚽", title: t("遠征の車出しを10秒で割り振る", "Assign carpools in 10 seconds"), bg: "bg-[#dbeafe]" },
+    ];
+    return (
+      <div className="relative mx-auto w-full max-w-sm space-y-3">
+        {posts.map((p, i) => (
+          <div key={p.title} className={`flex items-center gap-3 rounded-2xl bg-white/95 p-3 shadow-xl ${i === 0 ? "mr-8" : "ml-8"}`}>
+            <span className={`flex h-12 w-16 shrink-0 items-center justify-center rounded-lg text-2xl ${p.bg}`}>{p.emoji}</span>
+            <span className="text-[13px] font-bold leading-snug text-gray-800">{p.title}</span>
+          </div>
+        ))}
+        <div className="flex justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+            <BookOpen className="h-5 w-5 text-white" />
           </div>
         </div>
       </div>

@@ -77,7 +77,7 @@ export default async function ColumnListPage({ params }: PageProps) {
             ))}
           </>
         )}
-        <div className="mt-10"><StudioCard /></div>
+        <div className="mt-10"><StudioCard tone="column" /></div>
       </main>
     </div>
   );

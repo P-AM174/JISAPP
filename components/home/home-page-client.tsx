@@ -45,6 +45,7 @@ import {
   X,
   Package,
   FolderOpen,
+  Newspaper,
 } from "lucide-react";
 
 import { CATEGORY_MAP, categoryName, visibleCategories } from "@/lib/categories";
@@ -438,7 +439,10 @@ function SiteHeader({
               { icon: <Terminal className="h-4 w-4" />,    label: t("アプリ開発スタジオへ", "Open the Studio"), href: "/playground",bg: "bg-violet-600 text-white", highlight: true },
               { icon: <Package className="h-4 w-4" />,     label: t("自分の作ったアプリを見る", "Apps you made"), href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
               { icon: <BookOpen className="h-4 w-4" />,    label: t("マイライブラリ", "My library"), href: "/library",   bg: "bg-teal-50 text-teal-600"       },
-              { icon: <Wrench className="h-4 w-4" />,      label: t("開発依頼掲示板", "App requests"), href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
+              // 日本語版はコラムへ（英語・ベトナム語の記事はまだないので、開発依頼掲示板のまま）
+              locale === "ja"
+                ? { icon: <Newspaper className="h-4 w-4" />, label: "アプリでラクする話（コラム）", href: "/column", bg: "bg-amber-50 text-amber-600" }
+                : { icon: <Wrench className="h-4 w-4" />,      label: t("開発依頼掲示板", "App requests"), href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
               { icon: <User className="h-4 w-4" />,        label: t("マイページ", "My page"), href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
             ] as { icon: React.ReactNode; label: string; href: string; bg: string; highlight?: boolean }[]).map((item) => (
               <Link
@@ -779,18 +783,29 @@ function SectionHeader({ icon, title, sub, href }: { icon: React.ReactNode; titl
 
 function HomeQuickActions() {
   const t = useT();
+  const locale = useLocale();
   return (
     <div className="border-b border-gray-100 bg-gradient-to-b from-violet-50/70 to-white px-4 py-6 shadow-sm">
       <div className="mx-auto max-w-4xl">
         <StudioCard />
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:mx-auto sm:max-w-3xl">
-          <Link
-            href="/requests"
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
-          >
-            <MessageSquarePlus className="h-4 w-4" />
-            {t("開発依頼掲示板をみる", "See app requests")}
-          </Link>
+          {locale === "ja" ? (
+            <Link
+              href="/column"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
+            >
+              <Newspaper className="h-4 w-4" />
+              アプリでラクする話を読む
+            </Link>
+          ) : (
+            <Link
+              href="/requests"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              {t("開発依頼掲示板をみる", "See app requests")}
+            </Link>
+          )}
           <Link
             href="/search"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-bold text-gray-800 transition-all hover:bg-gray-100 active:scale-[0.98]"

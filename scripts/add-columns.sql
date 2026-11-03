@@ -30,3 +30,16 @@ grant all on table public.columns to service_role;
 
 -- タグ（一覧の表紙の色や、次に読む記事を選ぶのに使う）。あとから足した列
 alter table public.columns add column if not exists tags text[] not null default '{}';
+
+-- トップページのヒーロー：「開発依頼掲示板」のスライドを「コラム」のスライドに差し替える
+-- （絵の種類に column を足してから、スライドを書きかえる。運営画面 /admin/hero で直してもよい）
+alter table public.hero_slides drop constraint if exists hero_slides_visual_type_check;
+alter table public.hero_slides add constraint hero_slides_visual_type_check
+  check (visual_type in ('studio', 'summer', 'requests', 'column', 'phone', 'none'));
+update public.hero_slides set
+  badge = 'ジサップ コラム',
+  title = '旅行の精算も、遠征の車出しも。アプリにしたら、こんなにラク。',
+  subtitle = 'グループの面倒な用事を、AI とジサップで自分のアプリにした話。読むと、きっと作りたくなります。',
+  cta_enabled = true, cta_label = 'コラムを読んでみる', cta_href = '/column',
+  theme = 'studio', visual_type = 'column', bg_pattern = 'none', updated_at = now()
+where badge = '開発依頼掲示板';

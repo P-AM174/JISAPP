@@ -1,6 +1,6 @@
 export type HeroLayout = "two_column" | "card" | "theme";
 export type HeroTheme = "studio" | "violet" | "summer" | "amber" | "cyan";
-export type HeroVisual = "studio" | "summer" | "requests" | "phone" | "none";
+export type HeroVisual = "studio" | "summer" | "requests" | "column" | "phone" | "none";
 export type HeroBgPattern = "grid" | "dots" | "none";
 
 export type HeroSlide = {

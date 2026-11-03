@@ -28,7 +28,10 @@ function AppCard({ app, id, appHref, joined }: { app?: EmbeddedApp; id: string; 
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`/api/apps/${id}/icon?size=180`} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-2xl shadow-sm" />
       <span className="min-w-0 flex-1">
-        <span className="block text-xs font-bold text-emerald-700">ジサップのアプリ</span>
+        <span className="flex items-center gap-1 text-xs font-bold text-emerald-700">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-header.png" alt="" width={16} height={16} className="h-4 w-4" />ジサップのアプリ
+        </span>
         <span className="block truncate text-base font-black text-gray-900">{app?.title ?? "アプリ（公開ページで名前が出ます）"}</span>
         {app?.description ? <span className="mt-0.5 line-clamp-2 block text-xs text-gray-500">{app.description}</span> : null}
       </span>

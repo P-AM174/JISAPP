@@ -28,7 +28,7 @@ export type Block =
   | { t: "h2" | "h3"; v: Inline[]; id: string }
   | { t: "p"; v: Inline[] }
   | { t: "quote"; v: Inline[] }
-  | { t: "ul" | "ol"; items: Inline[][] }
+  | { t: "ul" | "ol"; items: Inline[][]; start?: number }
   | { t: "hr" }
   | { t: "code"; v: string }
   | { t: "image"; src: string; alt: string }
@@ -148,7 +148,9 @@ export function parseBody(body: string, en = false): Block[] {
       const items: Inline[][] = [];
       for (; i < lines.length && re.test(lines[i].trim()); i++) items.push(parseInline(lines[i].trim().replace(re, "")));
       i--;
-      blocks.push({ t: ordered ? "ol" : "ul", items });
+      // 番号つきは、書いた最初の番号から数える（引用などをはさんで「3.」から続けたとき）
+      const start = ordered ? Number(s.match(/^(\d+)/)?.[1] ?? 1) : undefined;
+      blocks.push({ t: ordered ? "ol" : "ul", items, ...(start && start !== 1 ? { start } : {}) });
       continue;
     }
     para.push(s);

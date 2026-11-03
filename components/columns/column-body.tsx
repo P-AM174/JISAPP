@@ -47,7 +47,7 @@ function block(b: Block, i: number, apps: Record<string, EmbeddedApp>, appHref: 
     case "p": return <p key={i} className="my-5">{inl(b.v)}</p>;
     case "quote": return <blockquote key={i} className="my-6 border-l-4 border-gray-200 pl-4 text-gray-600">{inl(b.v)}</blockquote>;
     case "ul": return <ul key={i} className="my-5 list-disc space-y-1.5 pl-6 marker:text-emerald-500">{b.items.map((it, k) => <li key={k}>{inl(it)}</li>)}</ul>;
-    case "ol": return <ol key={i} className="my-5 list-decimal space-y-1.5 pl-6 marker:font-bold marker:text-emerald-600">{b.items.map((it, k) => <li key={k}>{inl(it)}</li>)}</ol>;
+    case "ol": return <ol key={i} start={b.start} className="my-5 list-decimal space-y-1.5 pl-6 marker:font-bold marker:text-emerald-600">{b.items.map((it, k) => <li key={k}>{inl(it)}</li>)}</ol>;
     case "hr": return <div key={i} role="separator" className="my-10 text-center tracking-[1em] text-gray-300">・・・</div>;
     case "code": return <pre key={i} className="my-6 overflow-x-auto rounded-xl bg-[#1e2430] p-4 text-[13px] leading-relaxed text-[#cfe3ff]"><code>{b.v}</code></pre>;
     // eslint-disable-next-line @next/next/no-img-element

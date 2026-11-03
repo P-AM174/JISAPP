@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { AdminMenu } from "@/components/admin/admin-menu";
 import { EngagementPanel } from '@/components/admin/engagement-panel';
 import type { summarizeEngagement } from '@/lib/analytics/engagement-summary';
 import type { summarizeGoal } from '@/lib/analytics/retention';
@@ -95,23 +95,22 @@ export default function AdminAnalyticsPage() {
       <header className="border-b border-gray-200 bg-white px-4 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <JisappLogo href="/" />
-          <Link href="/admin/review" className="text-sm font-semibold text-emerald-700 hover:underline">
-            運営画面へ戻る
-          </Link>
+          <AdminMenu />
         </div>
       </header>
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h1 className="text-xl font-black text-gray-900">計測</h1><p className="mt-0.5 text-[11px] text-gray-500">運営・本人（P-AM のアカウントと管理者）の操作と、そのアカウントで作ったアプリは、どの数にも入れていません{excludedAccounts !== null && `（見つかったアカウント：${excludedAccounts}件）`}</p></div>
-          <div className="flex items-center gap-2 text-sm">
-            {[7, 30, 90].map((d) => (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {/* 1日 = いまから24時間前まで */}
+            {[1, 7, 30, 90].map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => setDays(d)}
                 className={`rounded-full px-3 py-1 font-semibold ${days === d ? "bg-emerald-600 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}
               >
-                直近{d}日
+                {d === 1 ? "直近24時間" : `直近${d}日`}
               </button>
             ))}
           </div>

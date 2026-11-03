@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { AdminMenu } from "@/components/admin/admin-menu";
 import { HeroSlideRenderer } from "@/components/home/hero/hero-slide-renderer";
 import { EMPTY_SLIDE_INPUT } from "@/lib/hero/defaults";
 import {
@@ -288,23 +289,21 @@ export default function AdminHeroPage() {
       <header className="sticky top-0 z-50 border-b border-emerald-100 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
           <JisappLogo href="/" />
-          <span className="text-gray-300">/</span>
-          <span className="text-sm font-bold text-gray-700">ヒーロー編集</span>
+          <span className="hidden text-gray-300 sm:inline">/</span>
+          <span className="hidden whitespace-nowrap text-sm font-bold text-gray-700 sm:inline">ヒーロー編集</span>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/admin/review" className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-emerald-300 hover:text-emerald-600">
-              運営管理
-            </Link>
-            <button onClick={loadSlides} className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-emerald-300 hover:text-emerald-600">
-              <RefreshCw className="h-3 w-3" />更新
+            <button onClick={loadSlides} title="更新" className="flex items-center gap-1 whitespace-nowrap rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-emerald-300 hover:text-emerald-600">
+              <RefreshCw className="h-3 w-3" /><span className="hidden sm:inline">更新</span>
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {saving ? "保存中..." : "保存して公開"}
             </button>
+            <AdminMenu />
           </div>
         </div>
       </header>

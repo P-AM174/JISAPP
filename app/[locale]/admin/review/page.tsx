@@ -8,7 +8,7 @@ import {
   Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
   Flag, Hash, Search, UserX, MessageSquare, Star, Code2, Mail, Bell, Send,
-  Smartphone, Copy, Download, LogOut, ClipboardCheck, LayoutTemplate, Link2, PenLine,
+  Smartphone, Copy, Download, LogOut, LayoutTemplate, Link2, PenLine,
   ArrowRight, Inbox, Clock, type LucideIcon,
 } from "lucide-react";
 import { Pencil, Save, Infinity as InfinityIcon, ClipboardPaste, Eraser, RotateCcw, FileText } from "lucide-react";
@@ -17,6 +17,7 @@ import { looksLikePrompt } from "@/lib/playground/code-cleanup";
 import type { AdminAppStats } from "@/lib/admin/app-stats";
 import { SnsFeaturedPanel } from "@/components/admin/sns-featured-panel";
 import { StuckPromptsPanel } from "@/components/admin/stuck-prompts-panel";
+import { AdminMenu } from "@/components/admin/admin-menu";
 
 type AppSort = "new" | "opens" | "recent" | "data";
 
@@ -226,7 +227,9 @@ export default function AdminDashboard() {
   const [reports,            setReports]            = useState<Report[]>([]);
   const [users,              setUsers]              = useState<UserRecord[]>([]);
   const [userCount,          setUserCount]          = useState(0);
-  const [mounted,            setMounted]            = useState(false);
+  // 今日（日本時間の0時から）作られたアプリの数とアクセス数
+  const [today,              setToday]              = useState<{ appsCreated: number; pageViews: number; visits: number } | null>(null);
+  const [mounted,           setMounted]            = useState(false);
   const [refreshing,         setRefreshing]         = useState(false);
   const [tab,                setTab]                = useState<Tab>("dashboard");
   const [appSubTab,          setAppSubTab]          = useState<AppSubTab>("listed");
@@ -319,12 +322,14 @@ export default function AdminDashboard() {
 
   const loadAll = async () => {
     try {
-      const [prodRes, repRes, userRes, inqRes] = await Promise.all([
+      const [prodRes, repRes, userRes, inqRes, todayRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/reports"),
         fetch("/api/admin/users"),
         fetch("/api/admin/inquiries"),
+        fetch("/api/admin/today").catch(() => null),
       ]);
+      if (todayRes?.ok) setToday(await todayRes.json());
       if (prodRes.ok) {
         const data = await prodRes.json();
         setProducts(data.products ?? []);
@@ -815,54 +820,49 @@ export default function AdminDashboard() {
             運営管理
           </span>
           <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-            {/* 開発スタジオを運営モードで開き、ジサップ公式として出品する */}
-            <Link
-              href="/playground?official=1"
-              target="_blank"
-              title="公式アプリを作る（開発スタジオを運営モードで開く）"
-              className="flex h-8 items-center gap-1.5 rounded-xl bg-emerald-600 px-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:h-9 sm:px-2.5"
-            >
-              <Code2 className="h-4 w-4" />
-              <span className="hidden md:inline">公式アプリを作る</span>
-            </Link>
-            <Link
-              href="/admin/approvals"
-              title="承認キュー"
-              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-emerald-50 hover:text-emerald-700 hover:ring-emerald-200"
-            >
-              <ClipboardCheck className="h-4 w-4" />
-              <span className="hidden md:inline">承認キュー</span>
-            </Link>
-            <Link
-              href="/admin/hero"
-              title="ヒーロー編集"
-              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-violet-50 hover:text-violet-700 hover:ring-violet-200"
-            >
-              <LayoutTemplate className="h-4 w-4" />
-              <span className="hidden md:inline">ヒーロー編集</span>
-            </Link>
-            <Link
-              href="/admin/columns"
-              title="コラム"
-              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-amber-50 hover:text-amber-700 hover:ring-amber-200"
-            >
-              <PenLine className="h-4 w-4" />
-              <span className="hidden md:inline">コラム</span>
-            </Link>
-            <Link
-              href="/admin/analytics"
-              title="計測"
-              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-sky-50 hover:text-sky-700 hover:ring-sky-200"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden md:inline">計測</span>
-            </Link>
+            {/* 広い画面ではボタンを並べ、スマホでは「☰」のメニューにまとめる */}
+            <div className="hidden items-center gap-1.5 md:flex">
+              {/* 開発スタジオを運営モードで開き、ジサップ公式として出品する */}
+              <Link
+                href="/playground?official=1"
+                target="_blank"
+                title="公式アプリを作る（開発スタジオを運営モードで開く）"
+                className="flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+              >
+                <Code2 className="h-4 w-4" />
+                公式アプリを作る
+              </Link>
+              <Link
+                href="/admin/hero"
+                title="ヒーロー編集"
+                className="flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-violet-50 hover:text-violet-700 hover:ring-violet-200"
+              >
+                <LayoutTemplate className="h-4 w-4" />
+                ヒーロー編集
+              </Link>
+              <Link
+                href="/admin/columns"
+                title="コラム"
+                className="flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-amber-50 hover:text-amber-700 hover:ring-amber-200"
+              >
+                <PenLine className="h-4 w-4" />
+                コラム
+              </Link>
+              <Link
+                href="/admin/analytics"
+                title="計測"
+                className="flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-sky-50 hover:text-sky-700 hover:ring-sky-200"
+              >
+                <BarChart3 className="h-4 w-4" />
+                計測
+              </Link>
+            </div>
             <button
               type="button"
               onClick={refresh}
               disabled={refreshing}
               title="最新の情報に更新"
-              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-emerald-50 hover:text-emerald-700 hover:ring-emerald-200 disabled:opacity-60"
+              className="flex h-9 items-center gap-1.5 rounded-xl px-2 text-xs font-bold text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-emerald-50 hover:text-emerald-700 hover:ring-emerald-200 disabled:opacity-60 md:px-2.5"
             >
               <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               <span className="hidden md:inline">更新</span>
@@ -871,11 +871,12 @@ export default function AdminDashboard() {
               type="button"
               onClick={handleLogout}
               title="ログアウト"
-              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-500 ring-1 ring-gray-200 transition-colors hover:bg-rose-50 hover:text-rose-600 hover:ring-rose-200"
+              className="hidden h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-gray-500 ring-1 ring-gray-200 transition-colors hover:bg-rose-50 hover:text-rose-600 hover:ring-rose-200 md:flex"
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden md:inline">ログアウト</span>
+              ログアウト
             </button>
+            <AdminMenu onLogout={() => { setAuthed(false); setPwInput(""); }} className="md:hidden" />
           </div>
         </div>
 
@@ -953,6 +954,26 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </section>
+
+            {/* 今日の数字（日本時間の0時から。運営・本人と公式のアプリは除く） */}
+            <section className="grid grid-cols-2 gap-3">
+              {[
+                { label: "今日作られたアプリ", value: today?.appsCreated, unit: "件", sub: null,                                                   icon: Smartphone, bg: "from-amber-50 to-orange-50", ic: "text-amber-600" },
+                { label: "今日のアクセス",     value: today?.visits,      unit: "訪問", sub: today ? `${today.pageViews.toLocaleString()} ページ表示` : null, icon: TrendingUp, bg: "from-sky-50 to-indigo-50",   ic: "text-sky-600" },
+              ].map((c) => (
+                <div key={c.label} className={cn(CARD, "bg-gradient-to-br p-4", c.bg)}>
+                  <c.icon className={cn("mb-2 h-5 w-5", c.ic)} />
+                  <p className="text-3xl font-black tracking-tight text-gray-900">
+                    {mounted && c.value !== undefined ? c.value.toLocaleString() : "—"}
+                    <span className="ml-0.5 text-xs font-bold text-gray-500">{c.unit}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold text-gray-500">
+                    {c.label}
+                    {c.sub && <span className="ml-1.5 font-normal text-gray-400">{c.sub}</span>}
+                  </p>
+                </div>
+              ))}
             </section>
 
             {/* 数字 */}

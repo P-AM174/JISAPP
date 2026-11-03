@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2, PenLine, Plus } from "lucide-react";
 import Link, { useRouter } from "@/lib/i18n/navigation";
 import { JisappLogo } from "@/components/jisapp-logo";
+import { AdminMenu } from "@/components/admin/admin-menu";
 import { AdminLogin } from "@/components/columns/admin-gate";
 import type { Column } from "@/lib/columns/types";
 
@@ -49,7 +50,7 @@ export default function AdminColumnsPage() {
           <JisappLogo href="/" />
           <span className="text-gray-300">/</span>
           <span className="text-sm font-bold text-gray-700">コラム</span>
-          <Link href="/admin/review" className="ml-auto rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500">運営管理</Link>
+          <AdminMenu className="ml-auto" />
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-6 pb-24">

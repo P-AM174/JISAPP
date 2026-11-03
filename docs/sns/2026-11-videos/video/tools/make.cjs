@@ -13,7 +13,25 @@ const work = path.join(H, 'work', name); fs.rmSync(work, { recursive: true, forc
 // 画面の上に重ねる部品（字幕・全面の差し込み・指）
 const OVERLAY = fs.readFileSync(path.join(__dirname, 'overlay.js'), 'utf8');
 
+// spec.build があるときは、先に声を作って1文ずつの長さを測り、その長さで画面の時間割を決める
+function voiceFirst() {
+  const lines = spec.lines.map(l => ({ text: l.say ?? l.text, tempo: spec.tempo, voice: spec.voiceName }));
+  fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(lines));
+  let durs = null;
+  if (!process.env.NO_VOICE) {
+    try {
+      const outp = execFileSync('python3', [path.join(__dirname, 'gemini_tts.py'), path.join(work, 'vo.json'), work], { env: { TTS_CACHE: path.join(H, 'tts-cache'), ...process.env } }).toString();
+      console.log(outp.split('\n').filter(x => !x.startsWith('{')).join('\n'));
+      durs = outp.split('\n').filter(x => x.startsWith('{')).map(x => JSON.parse(x).dur);
+    } catch (e) { console.log('Gemini TTS が使えないので、声なしで書き出します'); }
+  }
+  spec.voiced = !!durs;
+  // 声がないときは文字数から長さを見積もる
+  Object.assign(spec, spec.build(durs || spec.lines.map(l => (l.say ?? l.text).length * 0.12)));
+}
+
 (async () => {
+  if (spec.build) voiceFirst();
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'ja-JP' });
   await ctx.addInitScript(OVERLAY);
@@ -63,7 +81,8 @@ const OVERLAY = fs.readFileSync(path.join(__dirname, 'overlay.js'), 'utf8');
   // 読み上げ
   // spec.voice が 'gemini' のときは Gemini TTS（GEMINI_API_KEY がなければ声なしで書き出す）。ほかは Open JTalk
   let vo = spec.vo;
-  if (spec.voice === 'gemini') {
+  if (spec.build) { if (!spec.voiced) vo = []; }
+  else if (spec.voice === 'gemini') {
     if (process.env.NO_VOICE) { console.log('声なしで書き出します'); vo = []; }
     else {
       fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(vo.map(v => ({ text: v.say ?? v.text, max: v.max, voice: spec.voiceName }))));

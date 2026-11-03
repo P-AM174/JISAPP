@@ -206,9 +206,22 @@ const color = id => `var(${COLORS[Math.max(0, data.members.findIndex(m => m.id =
 const av = (id, sm = false) => { const m = mem(id); return `<span class="av ${sm ? 'sm' : ''}" style="background:${color(id)}">${esc((m?.name || '?').slice(0, 1))}</span>`; };
 
 // ── 保存 ──
-async function load() { try { return window.Jisapp ? await window.Jisapp.loadData('travel') : null; } catch { return null; } }
+// グループで開いたときは、立て替えをメンバー全員のスマホで共有する（Jisapp.shared）。ひとりで開いたときは自分のスマホに保存
+let inGroup = false;
+async function load() {
+  if (!window.Jisapp) return null;
+  try { inGroup = !!(window.Jisapp.group && await window.Jisapp.group()); } catch { inGroup = false; }
+  try { return inGroup ? await window.Jisapp.shared.load('travel') : await window.Jisapp.loadData('travel'); } catch { return null; }
+}
+// ほかのメンバーが足したり直したりしたら、読み直して知らせる
+function watch() {
+  if (!inGroup) return;
+  window.Jisapp.shared.onChange('travel', async () => {
+    try { const d = await window.Jisapp.shared.load('travel'); if (d && Array.isArray(d.members)) { data = { done: [], ...d }; render(); toast('ほかのメンバーが更新しました'); } } catch {}
+  });
+}
 let saveTimer = null;
-function save() { clearTimeout(saveTimer); saveTimer = setTimeout(async () => { try { if (window.Jisapp) await window.Jisapp.saveData('travel', data); } catch { toast('保存できませんでした'); } }, 300); }
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(async () => { try { if (window.Jisapp) await (inGroup ? window.Jisapp.shared.save('travel', data) : window.Jisapp.saveData('travel', data)); } catch { toast('保存できませんでした'); } }, 300); }
 
 function toast(msg) { const t = $('toast'); t.innerHTML = svg(ICON.check) + esc(msg); t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2000); }
 
@@ -421,7 +434,7 @@ function sample() {
 
 $('addExp').onclick = () => expenseSheet();
 $('sample').onclick = sample;
-(async () => { const d = await load(); if (d && Array.isArray(d.members)) data = { done: [], ...d }; render(); })();
+(async () => { const d = await load(); if (d && Array.isArray(d.members)) data = { done: [], ...d }; render(); watch(); })();
 </script>
 </body>
 </html>

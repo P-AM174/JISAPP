@@ -441,7 +441,7 @@ function SiteHeader({
               { icon: <BookOpen className="h-4 w-4" />,    label: t("マイライブラリ", "My library"), href: "/library",   bg: "bg-teal-50 text-teal-600"       },
               // 日本語版はコラムへ（英語・ベトナム語の記事はまだないので、開発依頼掲示板のまま）
               locale === "ja"
-                ? { icon: <Newspaper className="h-4 w-4" />, label: "アプリでラクする話（コラム）", href: "/column", bg: "bg-amber-50 text-amber-600" }
+                ? { icon: <Newspaper className="h-4 w-4" />, label: "コラムページへ", href: "/column", bg: "bg-amber-50 text-amber-600" }
                 : { icon: <Wrench className="h-4 w-4" />,      label: t("開発依頼掲示板", "App requests"), href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
               { icon: <User className="h-4 w-4" />,        label: t("マイページ", "My page"), href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
             ] as { icon: React.ReactNode; label: string; href: string; bg: string; highlight?: boolean }[]).map((item) => (
@@ -795,7 +795,7 @@ function HomeQuickActions() {
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
             >
               <Newspaper className="h-4 w-4" />
-              アプリでラクする話を読む
+              こんなアプリが作れる話（コラムへ）
             </Link>
           ) : (
             <Link

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from 'react';
 import type { Ratio, Segment, summarizeGoal } from '@/lib/analytics/retention';
 
 type Goal = ReturnType<typeof summarizeGoal>;
@@ -58,9 +57,6 @@ function SegmentTable({ goal }: { goal: Goal }) {
     { label: 'SNSへシェアした率', get: (d) => rate(d.rates.sns) },
     { label: 'メッセージで送った率', get: (d) => rate(d.rates.message) },
     { label: '2つ目のアプリを作った率', get: (d) => rate(d.secondApp.overall) },
-    { label: 'アプリ作成数（昨日）', get: (d) => `${d.creation.yesterday}件` },
-    { label: '前日からの増減', get: (d) => signed(d.creation.dayOverDay), className: (d) => tone(d.creation.dayOverDay) },
-    { label: '1週間前からの増減', get: (d) => signed(d.creation.weekOverWeek), className: (d) => tone(d.creation.weekOverWeek) },
   ];
   return (
     <table className="mt-3 w-full text-left text-xs">
@@ -137,26 +133,6 @@ function SegmentDetail({ d }: { d: Data }) {
         <Kpi label="1つ目から2つ目までの平均" value={d.secondApp.avgDaysToSecond === null ? '—' : `${d.secondApp.avgDaysToSecond.toFixed(1)}日`} sub="2つ以上作った人" />
       </div>
 
-      <h3 className="mt-5 text-sm font-bold text-gray-800">アプリ作成数</h3>
-      <div className="mt-2 grid gap-3 sm:grid-cols-4">
-        <Kpi label="昨日" value={`${d.creation.yesterday}件`} sub={`今日はここまで ${d.creation.today}件`} />
-        <Kpi label="前日からの増減" value={signed(d.creation.dayOverDay)} sub={`昨日 ${d.creation.yesterday} ／ その前日 ${d.creation.dayBefore}`} className={tone(d.creation.dayOverDay)} />
-        <Kpi label="1週間前からの増減" value={signed(d.creation.weekOverWeek)} sub={`昨日 ${d.creation.yesterday} ／ 先週の同じ曜日 ${d.creation.sameDayLastWeek}`} className={tone(d.creation.weekOverWeek)} />
-        <Kpi label="直近7日の増減" value={signed(d.creation.last7Change)} sub={`直近7日 ${d.creation.last7} ／ その前の7日 ${d.creation.prev7}`} className={tone(d.creation.last7Change)} />
-      </div>
-      <div className="mt-3 flex items-end gap-1" aria-label="直近14日のアプリ作成数">
-        {[...d.creation.daily].reverse().map((x) => {
-          const max = Math.max(1, ...d.creation.daily.map((y) => y.count));
-          return (
-            <div key={x.day} className="flex flex-1 flex-col items-center gap-1">
-              <span className="text-[10px] text-gray-500">{x.count}</span>
-              <div className="w-full rounded-t bg-emerald-500" style={{ height: `${Math.max(2, (x.count / max) * 64)}px` }} />
-              <span className="text-[9px] text-gray-400">{x.day.slice(5).replace('-', '/')}</span>
-            </div>
-          );
-        })}
-      </div>
-
       {d.topApps.length > 0 && (
         <details className="mt-4">
           <summary className="cursor-pointer text-xs font-bold text-gray-700">続けて使われているアプリ（7日以内にまた開いた割合が高い順・3件以上）</summary>
@@ -178,24 +154,47 @@ function SegmentDetail({ d }: { d: Data }) {
   );
 }
 
-/** 運営画面のいちばん上：今月の目標「アプリを続けて使ってもらう」の数字（全体・日本語版・英語版） */
-export function RetentionPanel({ goal }: { goal: Goal | null }) {
-  const [segment, setSegment] = useState<Segment>('all');
+/** 計測の「基本」：アプリ作成数（昨日・前日から・1週間前からの増減と、直近14日）。全体は apps 表、言語別は「公開」の記録の言語 */
+export function CreationPanel({ goal, segment }: { goal: Goal | null; segment: Segment }) {
+  if (!goal) return null;
+  const d = goal[segment];
+  return (
+    <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
+      <h2 className="font-bold text-gray-900">アプリ作成数の増減</h2>
+      <div className="mt-3 grid gap-3 sm:grid-cols-4">
+        <Kpi label="昨日" value={`${d.creation.yesterday}件`} sub={`今日はここまで ${d.creation.today}件`} />
+        <Kpi label="前日からの増減" value={signed(d.creation.dayOverDay)} sub={`昨日 ${d.creation.yesterday} ／ その前日 ${d.creation.dayBefore}`} className={tone(d.creation.dayOverDay)} />
+        <Kpi label="1週間前からの増減" value={signed(d.creation.weekOverWeek)} sub={`昨日 ${d.creation.yesterday} ／ 先週の同じ曜日 ${d.creation.sameDayLastWeek}`} className={tone(d.creation.weekOverWeek)} />
+        <Kpi label="直近7日の増減" value={signed(d.creation.last7Change)} sub={`直近7日 ${d.creation.last7} ／ その前の7日 ${d.creation.prev7}`} className={tone(d.creation.last7Change)} />
+      </div>
+      <div className="mt-3 flex items-end gap-1" aria-label="直近14日のアプリ作成数">
+        {[...d.creation.daily].reverse().map((x) => {
+          const max = Math.max(1, ...d.creation.daily.map((y) => y.count));
+          return (
+            <div key={x.day} className="flex flex-1 flex-col items-center gap-1">
+              <span className="text-[10px] text-gray-500">{x.count}</span>
+              <div className="w-full rounded-t bg-emerald-500" style={{ height: `${Math.max(2, (x.count / max) * 64)}px` }} />
+              <span className="text-[9px] text-gray-400">{x.day.slice(5).replace('-', '/')}</span>
+            </div>
+          );
+        })}
+      </div>
+
+    </section>
+  );
+}
+
+/** 計測の「継続利用」：今月の目標「アプリを続けて使ってもらう」の数字。詳しい数字は、ページの上で選んだ言語のもの */
+export function RetentionPanel({ goal, segment }: { goal: Goal | null; segment: Segment }) {
   if (!goal) return null;
   return (
     <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
       <h2 className="font-bold text-gray-900">今月の目標：アプリを続けて使ってもらう</h2>
       <p className="mt-1 text-[11px] text-gray-500">
-        日本語版・英語版は、その言語のページで起きたことで分けます（全体はベトナム語も含む）。作成数の言語別は「公開」の記録のページの言語、2つ目のアプリの言語別は公開の記録にアプリIDを入れ始めた日からの分です。
+        日本語版・英語版は、その言語のページで起きたことで分けます（全体はベトナム語も含む）。2つ目のアプリの言語別は公開の記録にアプリIDを入れ始めた日からの分です。
       </p>
       <SegmentTable goal={goal} />
-      <div className="mt-5 flex gap-2 border-b border-gray-100 pb-2">
-        {(['all', 'ja', 'en'] as Segment[]).map((s) => (
-          <button key={s} type="button" onClick={() => setSegment(s)} className={`rounded-full px-3 py-1 text-xs font-bold ${segment === s ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-            {SEGMENT_LABEL[s]}の詳しい数字
-          </button>
-        ))}
-      </div>
+      <h3 className="mt-6 border-t border-gray-100 pt-4 text-sm font-black text-gray-900">{SEGMENT_LABEL[segment]}の詳しい数字</h3>
       <SegmentDetail d={goal[segment]} />
     </section>
   );

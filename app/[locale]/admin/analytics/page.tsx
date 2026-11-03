@@ -6,10 +6,14 @@ import { AdminMenu } from "@/components/admin/admin-menu";
 import { EngagementPanel } from '@/components/admin/engagement-panel';
 import type { summarizeEngagement } from '@/lib/analytics/engagement-summary';
 import type { summarizeGoal } from '@/lib/analytics/retention';
-import { RetentionPanel } from '@/components/admin/retention-panel';
+import { CreationPanel, RetentionPanel } from '@/components/admin/retention-panel';
+import { ColumnPanel } from '@/components/admin/column-panel';
+import type { summarizeColumns } from '@/lib/analytics/columns-summary';
+import type { Segment } from '@/lib/analytics/retention';
 
 /**
- * 運営画面：計測（今月の目標の継続利用・アプリ作成数・2つ目のアプリ、公開後の行動、流入と利用の流れ）。運営画面なので日本語だけ。
+ * 運営画面：計測。「基本」（期間のまとめ・作成数・利用の流れ・流入・国・貼り付け）、「継続利用」（今月の目標・公開後の行動）、
+ * 「コラム」（記事の訪問・読まれ方・流入元・そのあと）の3つに分け、言語（全体・日本語・英語）と期間で絞る。運営画面なので日本語だけ。
  * 数字は scripts/add-analytics-events.sql の表から集計する
  */
 type Row = { name: string; locale: string; utm_source: string; events: number; sessions: number };
@@ -36,7 +40,18 @@ const FUNNEL: { name: string; label: string }[] = [
   { name: "share", label: "共有" },
   { name: "signup", label: "新規登録" },
 ];
-const LOCALES = ["ja", "en"];
+type Tab = "basic" | "retention" | "column";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "basic", label: "基本" },
+  { id: "retention", label: "継続利用" },
+  { id: "column", label: "コラム" },
+];
+const SEGMENTS: { id: Segment; label: string }[] = [
+  { id: "all", label: "全体" },
+  { id: "ja", label: "日本語" },
+  { id: "en", label: "英語" },
+];
+type Overview = { visits: number; pageViews: number; appsCreated: number; publishes: number; signups: number };
 
 
 export default function AdminAnalyticsPage() {
@@ -44,6 +59,10 @@ export default function AdminAnalyticsPage() {
   const [excludedAccounts, setExcludedAccounts] = useState<number | null>(null);
   const [goal, setGoal] = useState<ReturnType<typeof summarizeGoal> | null>(null);
   const [days, setDays] = useState(30);
+  const [tab, setTab] = useState<Tab>("basic");
+  const [segment, setSegment] = useState<Segment>("all");
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [columns, setColumns] = useState<ReturnType<typeof summarizeColumns> | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [pastes, setPastes] = useState<Record<string, number>>({});
   const [countries, setCountries] = useState<{ country: string; views: number; visits: number }[]>([]);
@@ -56,10 +75,12 @@ export default function AdminAnalyticsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/analytics?days=${days}`);
+      const res = await fetch(`/api/admin/analytics?days=${days}${segment === "all" ? "" : `&locale=${segment}`}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "読み込めませんでした");
       setRows(json.summary);
+      setOverview(json.overview ?? null);
+      setColumns(json.columns ?? null);
       setEngagement(json.engagement??null);
       setGoal(json.goal ?? null);
       setExcludedAccounts(typeof json.excludedAccounts === 'number' ? json.excludedAccounts : null);
@@ -72,7 +93,7 @@ export default function AdminAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [days]);
+  }, [days, segment]);
 
   useEffect(() => {
     void load();
@@ -87,6 +108,7 @@ export default function AdminAnalyticsPage() {
     }
     return map;
   }, [rows]);
+  const LOCALES = segment === "all" ? ["ja", "en"] : [segment];
 
 
 
@@ -99,20 +121,39 @@ export default function AdminAnalyticsPage() {
         </div>
       </header>
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h1 className="text-xl font-black text-gray-900">計測</h1><p className="mt-0.5 text-[11px] text-gray-500">運営・本人（P-AM のアカウントと管理者）の操作と、そのアカウントで作ったアプリは、どの数にも入れていません{excludedAccounts !== null && `（見つかったアカウント：${excludedAccounts}件）`}</p></div>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            {/* 1日 = いまから24時間前まで */}
-            {[1, 7, 30, 90].map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDays(d)}
-                className={`rounded-full px-3 py-1 font-semibold ${days === d ? "bg-emerald-600 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}
-              >
-                {d === 1 ? "直近24時間" : `直近${d}日`}
+        <div>
+          <h1 className="text-xl font-black text-gray-900">計測</h1>
+          <p className="mt-0.5 text-[11px] text-gray-500">運営・本人（P-AM のアカウントと管理者）の操作と、そのアカウントで作ったアプリは、どの数にも入れていません{excludedAccounts !== null && `（見つかったアカウント：${excludedAccounts}件）`}</p>
+        </div>
+
+        {/* 見る内容（カード）・言語・期間 */}
+        <div className="sticky top-0 z-30 -mx-4 space-y-2 bg-[#f3f4f2]/95 px-4 py-2 backdrop-blur">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-white p-1 ring-1 ring-gray-200">
+            {TABS.map((t) => (
+              <button key={t.id} type="button" onClick={() => setTab(t.id)}
+                className={`rounded-xl py-2 text-sm font-bold transition-colors ${tab === t.id ? "bg-emerald-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}>
+                {t.label}
               </button>
             ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <div className="flex items-center gap-1.5">
+              {SEGMENTS.map((g) => (
+                <button key={g.id} type="button" onClick={() => setSegment(g.id)}
+                  className={`rounded-full px-3 py-1 font-semibold ${segment === g.id ? "bg-gray-900 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* 1日 = いまから24時間前まで */}
+              {[1, 7, 30, 90].map((d) => (
+                <button key={d} type="button" onClick={() => setDays(d)}
+                  className={`rounded-full px-3 py-1 font-semibold ${days === d ? "bg-emerald-600 text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>
+                  {d === 1 ? "直近24時間" : `直近${d}日`}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -121,8 +162,34 @@ export default function AdminAnalyticsPage() {
 
         {!loading && !error && (
           <>
-            <RetentionPanel goal={goal} />
-            <EngagementPanel data={engagement}/>
+            {tab === "retention" && (
+              <>
+                <RetentionPanel goal={goal} segment={segment} />
+                <EngagementPanel data={engagement}/>
+              </>
+            )}
+
+            {tab === "column" && <ColumnPanel data={columns} />}
+
+            {tab === "basic" && (
+            <>
+            {overview && (
+              <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {([
+                  ["訪問数", overview.visits, "訪問"],
+                  ["ページ表示", overview.pageViews, "回"],
+                  ["アプリの作成数", overview.appsCreated, "件"],
+                  ["公開（上書きを含む）", overview.publishes, "回"],
+                  ["新規登録", overview.signups, "人"],
+                ] as const).map(([label, value, unit]) => (
+                  <div key={label} className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
+                    <p className="text-2xl font-black tracking-tight text-gray-900">{value.toLocaleString()}<span className="ml-0.5 text-xs font-bold text-gray-500">{unit}</span></p>
+                    <p className="mt-0.5 text-xs font-semibold text-gray-500">{label}</p>
+                  </div>
+                ))}
+              </section>
+            )}
+            <CreationPanel goal={goal} segment={segment} />
 
             <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
               <h2 className="font-bold text-gray-900">利用の流れ（言語別・訪問数）</h2>
@@ -254,6 +321,8 @@ export default function AdminAnalyticsPage() {
               </div>
               <p className="mt-2 text-xs text-gray-400">国は Vercel が判定した2文字の国コード（JP=日本、IN=インド、GB=イギリス、IR=イラン など）</p>
             </section>
+            </>
+            )}
 
           </>
         )}

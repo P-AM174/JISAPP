@@ -7,6 +7,7 @@ import { ColumnBody } from "@/components/columns/column-body";
 import { ColumnCover } from "@/components/columns/column-cover";
 import { ColumnShare } from "@/components/columns/share-x";
 import { MakeAppFab } from "@/components/columns/make-app-fab";
+import { ColumnTracker } from "@/components/columns/column-tracker";
 import { StudioCard } from "@/components/home/studio-card";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { absoluteUrl, siteName } from "@/lib/seo/site";
@@ -90,7 +91,7 @@ export default async function ColumnPage({ params }: PageProps) {
         <p className="mt-3 text-[12.5px] text-gray-500">{date(column.publishedAt, en)}・{en ? `${readingMinutes(column.body, true)} min read` : `${readingMinutes(column.body)}分で読めます`}</p>
         <div className="mt-3"><ColumnShare url={url} text={column.xText || column.title} en={en} /></div>
 
-        <article className="mt-2"><ColumnBody body={column.body} apps={apps} appHref={appHref} toc en={en} /></article>
+        <article id="column-article" className="mt-2"><ColumnBody body={column.body} apps={apps} appHref={appHref} toc en={en} /></article>
 
         <div className="mt-12"><ColumnShare url={url} text={column.xText || column.title} en={en} /></div>
         <div className="mt-8"><StudioCard tone="column" /></div>
@@ -130,6 +131,7 @@ export default async function ColumnPage({ params }: PageProps) {
         )}
       </main>
       <MakeAppFab />
+      <ColumnTracker slug={column.slug} />
     </div>
   );
 }

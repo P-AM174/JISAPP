@@ -216,7 +216,8 @@ function Segmented<T extends string>({
 
 // ══════════════════════════════════════════════════════════
 export default function AdminDashboard() {
-  const [authed,  setAuthed]  = useState(false);
+  // null = ログインしているか確かめているところ（確かめ終わるまでログイン画面を出さない）
+  const [authed,  setAuthed]  = useState<boolean | null>(null);
   const [pwInput, setPwInput] = useState("");
   const [showPw,  setShowPw]  = useState(false);
   const [pwError, setPwError] = useState(false);
@@ -338,6 +339,10 @@ export default function AdminDashboard() {
         setAuthed(true);
       } else if (prodRes.status === 403) {
         setAuthed(false);
+      } else {
+        // ログインはできている（403 ではない）が、一覧の読み込みに失敗した。ログイン画面には戻さない
+        setAuthed(true);
+        notify("アプリの一覧を読み込めませんでした。「更新」で読み直してください");
       }
       if (repRes.ok) {
         const d = await repRes.json();
@@ -353,7 +358,8 @@ export default function AdminDashboard() {
         setOpenInquiryCount(d.openCount ?? 0);
       }
     } catch {
-      setAuthed(false);
+      // 通信の失敗。すでにログインしていると分かっているときは、ログイン画面に戻さない
+      setAuthed((prev) => prev ?? false);
     }
     setMounted(true);
   };
@@ -740,6 +746,15 @@ export default function AdminDashboard() {
       notify((await copyText(fullCode)) ? "このブラウザでは保存できないため、コードをコピーしました" : "保存できませんでした");
     }
   };
+
+  // ══════ ログインしているか確かめているあいだ ══════
+  if (authed === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-jisapp-ambient">
+        <RefreshCw className="h-6 w-6 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
 
   // ══════ ログイン画面 ══════
   if (!authed) {

@@ -18,7 +18,11 @@ export type AnalyticsEvent =
   | "share"
   | "signup"
   /** 公開した直後に選んだ「誰と使う？」（me / friends / group） */
-  | "audience";
+  | "audience"
+  /** コラムの記事をどこまで読んだか（props.depth = 0〜100、props.sec = 表示していた秒数） */
+  | "column_read"
+  /** コラムの記事で押したもの（props.target = app / studio / next_column / share_x / copy など） */
+  | "column_click";
 
 const SESSION_KEY = "jisapp:analytics:session";
 const UTM_KEY = "jisapp:analytics:utm";
@@ -75,6 +79,18 @@ function currentUtm(): Utm {
 }
 
 const REF_SENT_KEY = "jisapp:analytics:ref_sent";
+const LAST_PATH_KEY = "jisapp:analytics:last_path";
+
+/**
+ * サイトの中で、どのページから来たか（ひとつ前に表示したページのパス）。
+ * コラムの記事に、外から来たのか、トップ・コラム一覧・ほかの記事から来たのかを分けるために使う
+ */
+function previousPath(): string | null {
+  const store = safeSession();
+  const prev = store?.getItem(LAST_PATH_KEY) ?? null;
+  store?.setItem(LAST_PATH_KEY, window.location.pathname.slice(0, 64));
+  return prev && prev !== window.location.pathname.slice(0, 64) ? prev : null;
+}
 
 /**
  * 訪問の最初のページ表示にだけ、どのサイトから来たか（参照元のドメイン）をつける。
@@ -103,6 +119,8 @@ export function trackEvent(name: AnalyticsEvent, props?: Record<string, string |
     if (name === "page_view") {
       const ref = entryReferrer();
       if (ref) props = { ...(props ?? {}), ref };
+      const from = previousPath();
+      if (from) props = { ...(props ?? {}), from };
     }
     const body = JSON.stringify({
       name,

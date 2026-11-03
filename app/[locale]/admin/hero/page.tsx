@@ -86,7 +86,8 @@ function toPreviewSlide(slide: EditableSlide): HeroSlide & { featuredApps?: neve
 }
 
 export default function AdminHeroPage() {
-  const [authed, setAuthed] = useState(false);
+  // null = ログインしているか確かめているところ（確かめ終わるまでログイン画面を出さない）
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
   const [showPw, setShowPw] = useState(false);
@@ -123,6 +124,8 @@ export default function AdminHeroPage() {
       if (!selectedKey && list[0]) setSelectedKey(list[0]._key);
       setAuthed(true);
     } catch {
+      // 401 以外の失敗はログイン画面に戻さない
+      setAuthed((prev) => prev ?? true);
       notify("読み込みに失敗しました");
     } finally {
       setLoading(false);
@@ -242,6 +245,14 @@ export default function AdminHeroPage() {
     }
     updateSelected({ featuredAppIds: [...selected.featuredAppIds, id] });
   };
+
+  if (authed === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f0f4f2]">
+        <RefreshCw className="h-6 w-6 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
 
   if (!authed) {
     return (

@@ -9,7 +9,7 @@ import { isExcludedAccount } from "@/lib/analytics/excluded";
  * 計測イベントを受け取って記録する（scripts/add-analytics-events.sql の表）。
  * 表がまだない・書き込みに失敗したときも 204 を返し、画面には影響させない
  */
-const NAMES = new Set(["page_view", "prompt_copy", "studio_paste", "preview", "publish", "share", "signup", "audience", "engagement"]);
+const NAMES = new Set(["page_view", "prompt_copy", "studio_paste", "preview", "publish", "share", "signup", "audience", "engagement", "column_read", "column_click"]);
 
 const str = (v: unknown, max: number) => (typeof v === "string" && v ? v.slice(0, max) : null);
 

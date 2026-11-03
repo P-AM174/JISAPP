@@ -7,14 +7,20 @@ import { summarizeGoal, type CreatedApp } from '@/lib/analytics/retention';
 import { OFFICIAL_CREATOR_NAME } from '@/lib/agent/official-creator';
 import { prisma } from '@/lib/db';
 import { EXCLUDED_ACCOUNT_NAMES, filterExcludedEvents } from '@/lib/analytics/excluded';
+import { summarizeColumns } from '@/lib/analytics/columns-summary';
 
-/** 運営画面用：計測の集計（継続利用・アプリ作成数・2つ目のアプリ、イベント × 言語 × 流入元） */
+/**
+ * 運営画面用：計測の集計（期間のまとめ・継続利用・アプリ作成数・2つ目のアプリ、イベント × 言語 × 流入元、コラム）。
+ * ?locale=ja / en で、その言語のページで起きたことだけに絞る（今月の目標は全体・日本語版・英語版をいつも全部出す）
+ */
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
   const days = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get("days") ?? "30") || 30, 1), 365);
+  const localeParam = req.nextUrl.searchParams.get("locale");
+  const locale = localeParam === "ja" || localeParam === "en" ? localeParam : null;
   const supabase = createServerSupabaseClient();
   const summary = await supabase.rpc("analytics_summary", { p_days: days });
   if (summary.error) {
@@ -33,6 +39,7 @@ export async function GET(req: NextRequest) {
   type Ev = {
     name: string;
     locale: string | null;
+    path: string | null;
     created_at: string;
     session_id: string | null;
     country: string | null;
@@ -46,7 +53,7 @@ export async function GET(req: NextRequest) {
   for (let from = 0; from < 100000; from += 1000) {
     const { data, error } = await supabase
       .from("analytics_events")
-      .select("name, locale, created_at, session_id, country, utm_source, utm_medium, props")
+      .select("name, locale, path, created_at, session_id, country, utm_source, utm_medium, props")
       .gte("created_at", since)
       .order("created_at", { ascending: true })
       .range(from, from + 999);
@@ -79,7 +86,8 @@ export async function GET(req: NextRequest) {
     if (data.length < 1000) break;
   }
   const allEvs = filterExcludedEvents(evs, excludedAppIds);
-  const periodEvs = allEvs.filter((e) => new Date(e.created_at).getTime() >= new Date(periodSince).getTime());
+  const inLocale = (e: Ev) => !locale || e.locale === locale;
+  const periodEvs = allEvs.filter((e) => new Date(e.created_at).getTime() >= new Date(periodSince).getTime() && inLocale(e));
   // 開発スタジオの貼り付けの内訳（動いた・さっきのプロンプト・文章・途中で切れた）
   const pasteBreakdown: Record<string, number> = {};
   for (const r of periodEvs) {
@@ -146,6 +154,26 @@ export async function GET(req: NextRequest) {
 
   const engagement = summarizeEngagement(periodEvs.filter(e=>e.name==='engagement'));
 
+  // 期間のまとめ：訪問・ページ表示・アプリ作成数・公開・新規登録
+  const sessionsOf = (name?: string) => new Set(periodEvs.filter((e) => !name || e.name === name).map((e) => e.session_id).filter(Boolean)).size;
+  const periodStart = new Date(periodSince).getTime();
+  const overview = {
+    visits: sessionsOf(),
+    pageViews: periodEvs.filter((e) => e.name === "page_view").length,
+    // 全体は apps 表。言語別は「公開」の記録（上書きを除く）のページの言語（今月の目標の作成数と同じ数え方）
+    appsCreated: locale
+      ? periodEvs.filter((e) => e.name === "publish" && e.props?.overwrite !== true).length
+      : apps.filter((a) => new Date(a.created_at).getTime() >= periodStart).length,
+    publishes: periodEvs.filter((e) => e.name === "publish").length,
+    signups: periodEvs.filter((e) => e.name === "signup").length,
+  };
+
+  // コラム：記事の題名は columns 表から
+  const titles = new Map<string, string>();
+  const { data: cols } = await supabase.from("columns").select("slug, title").limit(1000);
+  for (const c of (cols ?? []) as { slug: string; title: string | null }[]) titles.set(c.slug, c.title || c.slug);
+  const columns = summarizeColumns(periodEvs, titles);
+
   // 今月の目標（継続利用など）：全体・日本語版・英語版
   const goal = summarizeGoal({ events: allEvs, apps, periodDays: days });
 
@@ -160,5 +188,5 @@ export async function GET(req: NextRequest) {
   }
   const summaryRows = [...funnel.values()].map((r) => ({ name: r.name, locale: r.locale, utm_source: r.utm_source, events: r.events, sessions: r.sessions.size }));
 
-  return NextResponse.json({ days, excludedAccounts: excludedUserIds.size, summary: summaryRows, pasteBreakdown, countries, sources, aiByDay, engagement, goal });
+  return NextResponse.json({ days, locale: locale ?? "all", overview, columns, excludedAccounts: excludedUserIds.size, summary: summaryRows, pasteBreakdown, countries, sources, aiByDay, engagement, goal });
 }

@@ -23,8 +23,8 @@ async function load(params: PageProps["params"]) {
   const { locale, t } = await getI18n(params);
   const { slug } = await params;
   const column = await getPublishedColumn(slug).catch(() => null);
-  // 記事は書いた言語の URL でだけ出す（日本語の記事は /column/…、英語の記事は /en/column/…）
-  if (!column || column.locale !== (locale === "ja" ? "ja" : "en") || (locale !== "ja" && locale !== "en")) return null;
+  // 日本語の記事は /column/…、英語の記事は /en/column/…（ベトナム語のページでは英語の記事を出す）
+  if (!column || column.locale !== (locale === "ja" ? "ja" : "en")) return null;
   return { locale, t, column };
 }
 
@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: PageProps) {
   const og = column.coverImage ? absoluteUrl(column.coverImage) : `/og/columns/${column.slug}.png`;
   return {
     ...createPageMetadata({ locale, title: column.title, description, path: `/column/${column.slug}`, ogImage: og }),
-    // ほかの言語の記事はないので、言語の対応（hreflang）は出さない
-    alternates: { canonical: absoluteUrl(localizePath(`/column/${column.slug}`, locale)) },
+    // ほかの言語の記事はないので、言語の対応（hreflang）は出さない。ベトナム語のページの記事は英語の URL を正とする
+    alternates: { canonical: absoluteUrl(localizePath(`/column/${column.slug}`, column.locale)) },
   };
 }
 
@@ -52,13 +52,13 @@ export default async function ColumnPage({ params }: PageProps) {
   const r = await load(params);
   if (!r) notFound();
   const { locale, t, column } = r;
-  const en = locale === "en";
+  const en = column.locale === "en";
   const [apps, related, popular] = await Promise.all([
     getEmbeddedApps(column.body).catch(() => ({})),
     listRelatedColumns(column).catch(() => []),
     listPopularApps().catch(() => []),
   ]);
-  const url = absoluteUrl(localizePath(`/column/${column.slug}`, locale));
+  const url = absoluteUrl(localizePath(`/column/${column.slug}`, column.locale));
   const appHref = (id: string) => localizePath(`/apps/${id}`, locale);
   return (
     <div className="font-column min-h-screen bg-white">
@@ -87,10 +87,10 @@ export default async function ColumnPage({ params }: PageProps) {
           </div>
         )}
         <h1 className="mt-2 text-[1.6rem] font-bold leading-[1.55] tracking-[0.02em]">{column.title}</h1>
-        <p className="mt-3 text-[12.5px] text-gray-500">{date(column.publishedAt, en)}・{t(`${readingMinutes(column.body)}分で読めます`, `${readingMinutes(column.body)} min read`)}</p>
+        <p className="mt-3 text-[12.5px] text-gray-500">{date(column.publishedAt, en)}・{en ? `${readingMinutes(column.body, true)} min read` : `${readingMinutes(column.body)}分で読めます`}</p>
         <div className="mt-3"><ColumnShare url={url} text={column.xText || column.title} en={en} /></div>
 
-        <article className="mt-2"><ColumnBody body={column.body} apps={apps} appHref={appHref} toc tocTitle={t("目次", "Contents")} /></article>
+        <article className="mt-2"><ColumnBody body={column.body} apps={apps} appHref={appHref} toc en={en} /></article>
 
         <div className="mt-12"><ColumnShare url={url} text={column.xText || column.title} en={en} /></div>
         <div className="mt-8"><StudioCard tone="column" /></div>

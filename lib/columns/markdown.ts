@@ -88,7 +88,7 @@ function plain(v: Inline[]): string {
   return v.map((x) => (x.t === "text" || x.t === "code" ? x.v : x.t === "bold" || x.t === "link" ? plain(x.v) : " ")).join("");
 }
 
-export function parseBody(body: string): Block[] {
+export function parseBody(body: string, en = false): Block[] {
   const lines = body.replace(/\r\n?/g, "\n").split("\n");
   const blocks: Block[] = [];
   let para: string[] = [];
@@ -112,9 +112,9 @@ export function parseBody(body: string): Block[] {
       const inner: string[] = [];
       for (i++; i < lines.length && lines[i].trim() !== ":::"; i++) inner.push(lines[i]);
       const text = inner.join("\n").replace(/^\n+|\s+$/g, "");
-      if (m[1] === "prompt") blocks.push({ t: "prompt", title: (m[2] || "").trim() || "このアプリのプロンプト", v: text });
-      else if (m[1] === "learn") blocks.push({ t: "learn", title: (m[2] || "").trim() || "この記事でわかること", v: parseBody(text) });
-      else blocks.push({ t: "fold", title: (m[2] || "").trim() || "くわしく", v: parseBody(text) });
+      if (m[1] === "prompt") blocks.push({ t: "prompt", title: (m[2] || "").trim() || (en ? "The prompt for this app" : "このアプリのプロンプト"), v: text });
+      else if (m[1] === "learn") blocks.push({ t: "learn", title: (m[2] || "").trim() || (en ? "In this post" : "この記事でわかること"), v: parseBody(text, en) });
+      else blocks.push({ t: "fold", title: (m[2] || "").trim() || (en ? "Details" : "くわしく"), v: parseBody(text, en) });
       continue;
     }
     if ((m = s.match(/^(#{1,3})\s+(.+)$/))) {
@@ -170,7 +170,8 @@ export function excerpt(body: string, max = 120): string {
   const text = parseBody(body).flatMap((b) => (b.t === "p" ? [plain(b.v)] : [])).join(" ").replace(/\s+/g, " ").trim();
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
-/** 読むのにかかる分（日本語 500字/分） */
-export function readingMinutes(body: string): number {
+/** 読むのにかかる分（日本語は 500字/分、英語は 200語/分） */
+export function readingMinutes(body: string, en = false): number {
+  if (en) return Math.max(1, Math.round(body.split(/\s+/).filter(Boolean).length / 200));
   return Math.max(1, Math.round(body.replace(/\s/g, "").length / 500));
 }

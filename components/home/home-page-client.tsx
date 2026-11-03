@@ -89,10 +89,12 @@ function SiteHeader({
   query,
   setQuery,
   onOpenContact,
+  showColumn,
 }: {
   query: string;
   setQuery: (v: string) => void;
   onOpenContact: () => void;
+  showColumn: boolean;
 }) {
   const router = useRouter();
   const { status } = useSession();
@@ -439,9 +441,9 @@ function SiteHeader({
               { icon: <Terminal className="h-4 w-4" />,    label: t("アプリ開発スタジオへ", "Open the Studio"), href: "/playground",bg: "bg-violet-600 text-white", highlight: true },
               { icon: <Package className="h-4 w-4" />,     label: t("自分の作ったアプリを見る", "Apps you made"), href: "/projects",  bg: "bg-violet-50 text-violet-600"   },
               { icon: <BookOpen className="h-4 w-4" />,    label: t("マイライブラリ", "My library"), href: "/library",   bg: "bg-teal-50 text-teal-600"       },
-              // 日本語版はコラムへ（英語・ベトナム語の記事はまだないので、開発依頼掲示板のまま）
-              locale === "ja"
-                ? { icon: <Newspaper className="h-4 w-4" />, label: "コラムページへ", href: "/column", bg: "bg-amber-50 text-amber-600" }
+              // コラムへ（英語版は英語の記事があるときだけ。ないときは開発依頼掲示板）
+              showColumn
+                ? { icon: <Newspaper className="h-4 w-4" />, label: t("コラムページへ", "Read the column"), href: "/column", bg: "bg-amber-50 text-amber-600" }
                 : { icon: <Wrench className="h-4 w-4" />,      label: t("開発依頼掲示板", "App requests"), href: "/requests",  bg: "bg-amber-50 text-amber-600"     },
               { icon: <User className="h-4 w-4" />,        label: t("マイページ", "My page"), href: "/mypage",    bg: "bg-blue-50 text-blue-600"       },
             ] as { icon: React.ReactNode; label: string; href: string; bg: string; highlight?: boolean }[]).map((item) => (
@@ -781,21 +783,20 @@ function SectionHeader({ icon, title, sub, href }: { icon: React.ReactNode; titl
   );
 }
 
-function HomeQuickActions() {
+function HomeQuickActions({ showColumn }: { showColumn: boolean }) {
   const t = useT();
-  const locale = useLocale();
   return (
     <div className="border-b border-gray-100 bg-gradient-to-b from-violet-50/70 to-white px-4 py-6 shadow-sm">
       <div className="mx-auto max-w-4xl">
         <StudioCard />
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:mx-auto sm:max-w-3xl">
-          {locale === "ja" ? (
+          {showColumn ? (
             <Link
               href="/column"
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-bold text-amber-800 transition-all hover:bg-amber-100 active:scale-[0.98]"
             >
               <Newspaper className="h-4 w-4" />
-              こんなアプリが作れる話（コラムへ）
+              {t("こんなアプリが作れる話（コラムへ）", "Apps you could make (column)")}
             </Link>
           ) : (
             <Link
@@ -926,10 +927,13 @@ export function HomePageClient({
   initialData,
   heroSlides,
   aboutIntro,
+  showColumn = false,
 }: {
   initialData: HomeCatalogData;
   heroSlides: HeroSlidePublic[];
   aboutIntro?: React.ReactNode;
+  /** コラムへの入口を出す（日本語版はいつも。英語版は英語の記事があるときだけ。ないときは開発依頼掲示板） */
+  showColumn?: boolean;
 }) {
   const [query,           setQuery]           = useState("");
   const [showContact,     setShowContact]     = useState(false);
@@ -970,10 +974,10 @@ export function HomePageClient({
 
   return (
     <div className="min-h-screen bg-[#f3f6f4]">
-      <SiteHeader query={query} setQuery={setQuery} onOpenContact={() => setShowContact(true)} />
+      <SiteHeader query={query} setQuery={setQuery} onOpenContact={() => setShowContact(true)} showColumn={showColumn} />
 
       <HeroCarousel slides={heroSlides} />
-      <HomeQuickActions />
+      <HomeQuickActions showColumn={showColumn} />
       <HomeLibrarySection />
       <main id="browse" className="mx-auto max-w-6xl space-y-12 px-4 py-10">
 

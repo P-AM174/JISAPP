@@ -113,11 +113,13 @@ export async function getHeroSlidesFromDb(includeDisabled = false): Promise<Hero
   return (data as HeroSlideRow[]).map(rowToSlide);
 }
 
-export async function getPublicHeroSlides(locale: Locale = "ja"): Promise<HeroSlidePublic[]> {
+export async function getPublicHeroSlides(locale: Locale = "ja", opts: { showColumn?: boolean } = {}): Promise<HeroSlidePublic[]> {
   // 運営が編集するスライドは日本語なので、英語版は英語の既定スライドを出す。
-  // ベトナム語版は英語の既定スライドと同じ並びで、文言を辞書から引く
+  // ベトナム語版は英語の既定スライドと同じ並びで、文言を辞書から引く。
+  // 英語の記事があるときは「開発依頼掲示板」のスライドを「コラム」のスライドに差し替える（ベトナム語版は掲示板のまま）
   if (locale !== "ja") {
-    return DEFAULT_HERO_SLIDES_EN.filter((s) => s.enabled).map((en) => {
+    const column = locale === "en" && opts.showColumn;
+    return DEFAULT_HERO_SLIDES_EN.filter((s) => s.enabled && (column ? s.id !== "default-requests-en" : s.id !== "default-column-en")).map((en) => {
       const ja = DEFAULT_HERO_SLIDES.find((s) => s.id === en.id.replace(/-en$/, ""));
       return ja ? pickDeep(locale, ja, en) : en;
     });

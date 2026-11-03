@@ -22,7 +22,16 @@ import type { Column } from "@/lib/columns/types";
 
 type SaveState = "saved" | "saving" | "dirty" | "error";
 
-// 依頼文。くわしい決まりは docs/columns/writing-guide.md（リポジトリを読める AI に、それを読んで書いてもらう）
+// 依頼文。くわしい決まりは docs/columns/writing-guide.md（英語の記事は writing-guide-en.md）。リポジトリを読める AI に、それを読んで書いてもらう
+const AI_PROMPT_EN = (theme: string) => `Please write an official Jisapp column (this repository) in English.
+
+Topic: ${theme || "(write the topic here)"}
+
+The writing rules are in docs/columns/writing-guide-en.md. Read it first.
+Above all:
+- Check every Jisapp feature in the code before writing about it (no features that aren't in the code, no unverifiable numbers)
+- Open with a moment that happened to someone. Headings start with "## ", and the first line is "# Title"
+- Reply with the post only. Start with the ":::learn In this post" box, and at the end add the "説明：", "Xの投稿文：" and "タグ：" lines separately`;
 const AI_PROMPT = (theme: string) => `ジサップ（このリポジトリ）の公式コラムを書いてください。
 
 【テーマ】${theme || "（ここにテーマを書く）"}
@@ -280,7 +289,7 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
         {preview ? (
           <article>
             <h1 className="mb-8 text-[1.75rem] font-black leading-snug text-gray-900">{title || "（タイトルなし）"}</h1>
-            <ColumnBody body={body} toc />
+            <ColumnBody body={body} toc en={col.locale === "en"} />
           </article>
         ) : (
           <>
@@ -315,7 +324,7 @@ export default function ColumnEditorPage({ params }: { params: Promise<{ id: str
 
       {sheet === "publish" && <PublishSheet col={col} title={title} body={body} put={put} onClose={() => setSheet(null)} say={say}
         onDeleted={() => router.push("/admin/columns")} />}
-      {sheet === "ai" && <AiSheet onClose={() => setSheet(null)} say={say} initialTheme={title} />}
+      {sheet === "ai" && <AiSheet onClose={() => setSheet(null)} say={say} initialTheme={title} locale={col.locale} onLocale={(l) => { if (l !== col.locale) put({ locale: l }); }} />}
       {sheet === "app" && <AppSheet onClose={() => setSheet(null)} onPick={(appId) => { insert(() => `::app[${appId}]`, true); setSheet(null); }} />}
       {sheet === "link" && <FieldsSheet title="リンクを入れる" fields={[["文字", "例：開発スタジオ"], ["URL", "https:// か / で始まる"]]}
         onClose={() => setSheet(null)} onOk={([label, url]) => { insert((s) => `[${s || label || url}](${url})`); setSheet(null); }} />}
@@ -397,9 +406,9 @@ function AppSheet({ onPick, onClose }: { onPick: (id: string) => void; onClose: 
   );
 }
 
-function AiSheet({ onClose, say, initialTheme }: { onClose: () => void; say: (t: string) => void; initialTheme: string }) {
+function AiSheet({ onClose, say, initialTheme, locale, onLocale }: { onClose: () => void; say: (t: string) => void; initialTheme: string; locale: Column["locale"]; onLocale: (l: Column["locale"]) => void }) {
   const [theme, setTheme] = useState(initialTheme);
-  const text = AI_PROMPT(theme.trim());
+  const text = locale === "en" ? AI_PROMPT_EN(theme.trim()) : AI_PROMPT(theme.trim());
   const copy = async () => { try { await navigator.clipboard.writeText(text); say("コピーしました。AI のアプリに貼ってください"); } catch { say("コピーできませんでした"); } };
   return (
     <Sheet title="AI に書いてもらう" onClose={onClose}>
@@ -408,8 +417,16 @@ function AiSheet({ onClose, say, initialTheme }: { onClose: () => void; say: (t:
         <li>2. ChatGPT・Claude・Gemini のアプリに貼って送る</li>
         <li>3. 返ってきた文章を全部コピーして、本文に貼る（1行目の「# 〜」はタイトルになります）</li>
       </ol>
+      <div className="mb-3">
+        <span className="mb-1 block text-xs font-bold text-gray-500">記事の言語</span>
+        <div className="flex gap-2">
+          {(["ja", "en"] as const).map((l) => (
+            <button key={l} onClick={() => onLocale(l)} className={`flex-1 rounded-xl py-2 text-sm font-bold ring-1 ${locale === l ? "bg-violet-50 text-violet-700 ring-violet-300" : "text-gray-500 ring-gray-200"}`}>{l === "ja" ? "日本語" : "英語（/en/column に出ます）"}</button>
+          ))}
+        </div>
+      </div>
       <label className="block">
-        <span className="mb-1 block text-xs font-bold text-gray-500">テーマ</span>
+        <span className="mb-1 block text-xs font-bold text-gray-500">テーマ（日本語で書いてもよい）</span>
         <input className={inputCls} placeholder="例：旅行の立て替え精算を、送金2回で終わらせるアプリ" value={theme} onChange={(e) => setTheme(e.target.value)} />
       </label>
       <pre className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-xl bg-gray-50 p-3 text-xs leading-relaxed text-gray-500">{text}</pre>
@@ -469,9 +486,9 @@ function PublishSheet({ col, title, body, put, onClose, say, onDeleted }: {
         <div>
           <span className="mb-1 block text-xs font-bold text-gray-500">タグ（5つまで。一覧の表紙の色と「次に読む」に使う）</span>
           <div className="flex flex-wrap gap-1.5">
-            {[...COLUMN_TAGS.map((x) => x.name), ...tags.filter((x) => !COLUMN_TAGS.some((c) => c.name === x))].map((name) => {
+            {[...COLUMN_TAGS.map((x) => (locale === "en" ? x.en : x.name)), ...tags.filter((x) => !COLUMN_TAGS.some((c) => c.name === x || c.en === x))].map((name) => {
               const on = tags.includes(name);
-              const emoji = COLUMN_TAGS.find((c) => c.name === name)?.emoji;
+              const emoji = COLUMN_TAGS.find((c) => c.name === name || c.en === name)?.emoji;
               return (
                 <button key={name} type="button" onClick={() => toggleTag(name)}
                   className={`rounded-full px-3 py-1.5 text-sm font-bold ring-1 ${on ? "bg-emerald-600 text-white ring-emerald-600" : "text-gray-600 ring-gray-200"}`}>

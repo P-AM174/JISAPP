@@ -120,6 +120,23 @@ export const DEFAULT_HERO_SLIDES_EN: HeroSlide[] = [
     bgPattern: "none",
     featuredAppIds: [],
   },
+  {
+    // 英語の記事が1本でもあるときだけ、上の掲示板のスライドの代わりに出す（lib/hero/service.ts）
+    id: "default-column-en",
+    sortOrder: 2,
+    enabled: true,
+    badge: "Jisapp Column",
+    title: "Splitting trip costs, sorting carpools — so much easier as an app.",
+    subtitle: "Stories of turning annoying group chores into your own app with AI and Jisapp. You might want to make one too.",
+    ctaEnabled: true,
+    ctaLabel: "Read the column",
+    ctaHref: "/column",
+    layout: "two_column",
+    theme: "studio",
+    visualType: "column",
+    bgPattern: "none",
+    featuredAppIds: [],
+  },
 ];
 
 export const EMPTY_SLIDE_INPUT: HeroSlideInput = {

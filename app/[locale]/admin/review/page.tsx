@@ -8,7 +8,7 @@ import {
   Trash2, Eye, EyeOff, Lock, BarChart3, Package,
   TrendingUp, Users, Globe, RefreshCw, ExternalLink,
   Flag, Hash, Search, UserX, MessageSquare, Star, Code2, Mail, Bell, Send,
-  Smartphone, Copy, Download, LogOut, ClipboardCheck, LayoutTemplate, Link2,
+  Smartphone, Copy, Download, LogOut, ClipboardCheck, LayoutTemplate, Link2, PenLine,
   ArrowRight, Inbox, Clock, type LucideIcon,
 } from "lucide-react";
 import { Pencil, Save, Infinity as InfinityIcon, ClipboardPaste, Eraser, RotateCcw, FileText } from "lucide-react";
@@ -840,6 +840,14 @@ export default function AdminDashboard() {
             >
               <LayoutTemplate className="h-4 w-4" />
               <span className="hidden md:inline">ヒーロー編集</span>
+            </Link>
+            <Link
+              href="/admin/columns"
+              title="コラム"
+              className="flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:h-9 sm:px-2.5 text-gray-600 ring-1 ring-gray-200 transition-colors hover:bg-amber-50 hover:text-amber-700 hover:ring-amber-200"
+            >
+              <PenLine className="h-4 w-4" />
+              <span className="hidden md:inline">コラム</span>
             </Link>
             <Link
               href="/admin/analytics"

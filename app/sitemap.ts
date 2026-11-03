@@ -4,6 +4,7 @@ import { CATEGORIES } from "@/lib/categories";
 import { listPublicAppIdsForSitemap } from "@/lib/seo/public-apps";
 import { localizePath } from "@/lib/i18n/config";
 import { indexedLocales } from "@/lib/features";
+import { listPublishedColumnSlugs } from "@/lib/columns/service";
 
 type Entry = MetadataRoute.Sitemap[number];
 
@@ -49,5 +50,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  return [...staticPages, ...categoryPages, ...appPages];
+  // コラムは書いた言語の URL だけ（日本語は /column/…、英語は /en/column/…）
+  const columns = await listPublishedColumnSlugs();
+  const columnPages: MetadataRoute.Sitemap = [
+    ...localized("/column", { lastModified: now, changeFrequency: "weekly", priority: 0.6 }),
+    ...columns.map((c) => ({
+      url: absoluteUrl(localizePath(`/column/${c.slug}`, c.locale)),
+      lastModified: new Date(c.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+  ];
+
+  return [...staticPages, ...categoryPages, ...appPages, ...columnPages];
 }

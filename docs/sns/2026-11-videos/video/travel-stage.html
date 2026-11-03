@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=540, initial-scale=1">
+<title>動画の画面：旅行代の精算（場面→数字の得）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@800;900&family=Outfit:wght@800&display=swap" rel="stylesheet">
+<style>
+/*
+  ショート動画の型「場面 → 数字の得」v1 の画面。
+  - 真ん中に旅の精算ノートのスマホ画面を最後まで固定（中は本物のアプリ）
+  - 一番上に「誰の話か」のラベル、その下に字幕（声と同じ文）をずっと出す
+  - スマホの右上に「増えていく数字」（精算済み 0/3 → 3/3人）
+  - 大きな文字は2行まで、数字は色と大きさを変えて「どん」と出す
+  - 最後は検索窓に「ジサップ」＋ロゴ・jisapp.app
+*/
+:root { --bg: #0f2a28; --yellow: #ffd23f; --accent: #ff7a45; --teal: #2f7f7a; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 540px; height: 960px; overflow: hidden; }
+body { background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='2' cy='2' r='1.3' fill='%23ffffff' fill-opacity='.06'/%3E%3C/svg%3E"); font-family: "M PLUS Rounded 1c", "Hiragino Sans", sans-serif; color: #fff; }
+.label { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: #1b1b1b; font-weight: 900; font-size: 17px; padding: 5px 16px; border-radius: 999px; box-shadow: 0 3px 0 rgba(0,0,0,.35); white-space: nowrap; }
+.cap { position: absolute; top: 52px; left: 16px; right: 16px; height: 96px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 900; font-size: 27px; line-height: 1.3; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.cap small { font-size: 19.5px; line-height: 1.45; white-space: nowrap; }
+.cap b { color: var(--yellow); font-size: 1.18em; }
+.cap span { animation: capIn .16s ease-out; display: inline-block; }
+.phone { position: absolute; top: 160px; left: 50%; transform: translateX(-50%); width: 384px; height: 832px; border-radius: 52px; background: #111; padding: 9px; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.screen { position: relative; width: 366px; height: 814px; border-radius: 44px; overflow: hidden; background: #eaf2f0; }
+.screen iframe { width: 390px; height: 868px; border: 0; transform: scale(.9385); transform-origin: top left; }
+.notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; border-radius: 20px; background: #111; z-index: 5; }
+.inner { position: absolute; inset: 0; z-index: 4; display: none; }
+.inner.on { display: block; animation: fade .15s; }
+.count { position: absolute; top: 146px; right: 14px; z-index: 20; background: #fff; color: #17302e; border-radius: 18px; padding: 6px 12px 7px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,.35); border: 3px solid var(--teal); }
+.count small { display: block; font-size: 11px; font-weight: 900; color: #557370; }
+.count b { font-family: "Outfit", sans-serif; font-size: 30px; line-height: 1; color: var(--teal); }
+.count b i { font-style: normal; font-size: 18px; color: #8aa3a0; }
+.count.bump { animation: bump .35s cubic-bezier(.3,1.8,.5,1); }
+.count.done { background: var(--teal); } .count.done small, .count.done b, .count.done b i { color: #fff; }
+.big { position: absolute; left: 30px; right: 30px; top: 420px; z-index: 30; display: none; text-align: center; background: #fff; color: #17302e; border-radius: 26px; padding: 18px 12px; box-shadow: 0 16px 40px rgba(0,0,0,.45); border: 4px solid #17302e; font-family: "Dela Gothic One", sans-serif; font-size: 40px; line-height: 1.2; }
+.big.on { display: block; animation: boom .4s cubic-bezier(.3,1.7,.5,1); }
+.big em { font-style: normal; color: var(--accent); font-size: 1.35em; }
+.finger { position: absolute; z-index: 40; width: 74px; height: 74px; display: none; pointer-events: none; transition: left .35s ease, top .35s ease, transform .12s; filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
+.finger.tap { transform: scale(.82); }
+.ring { position: absolute; z-index: 39; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 5px solid var(--yellow); pointer-events: none; animation: ring .45s ease-out forwards; }
+@keyframes ring { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.fake { position: absolute; right: 14px; bottom: 12px; z-index: 45; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 800; border-radius: 8px; padding: 3px 8px; }
+.end { position: absolute; inset: 0; z-index: 50; display: none; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+.end.on { display: flex; animation: fade .2s; }
+.end img { width: 150px; height: 150px; border-radius: 34px; background: #fff; padding: 12px; }
+.search { width: 440px; height: 76px; background: #fff; border-radius: 999px; display: flex; align-items: center; gap: 14px; padding: 0 26px; color: #1b1b1b; font-size: 34px; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.search svg { width: 34px; height: 34px; flex-shrink: 0; }
+.search .caret { width: 3px; height: 38px; background: #2f7f7a; animation: blink .8s steps(1) infinite; }
+.url { font-family: "Outfit", sans-serif; font-size: 30px; color: var(--yellow); letter-spacing: .04em; }
+@keyframes capIn { from { transform: translateY(6px); opacity: .2; } to { transform: none; opacity: 1; } }
+@keyframes boom { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bump { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="label" id="label">旅行の幹事へ</div>
+<div class="cap" id="cap"></div>
+<div class="phone"><div class="screen">
+  <div class="notch"></div>
+  <iframe id="app" src="../travel-split.html"></iframe>
+  <div class="inner" id="inner"></div>
+</div></div>
+<div class="count" id="count"><small>精算済み</small><b>0<i>/3人</i></b></div>
+<div class="big" id="big"></div>
+<div class="finger" id="finger"><svg viewBox="0 0 64 64"><path d="M26 6c3 0 5 2 5 5v18l3-1c3-1 5 1 6 3l1 1 2-1c3-1 5 1 6 3l2-1c3 0 5 2 5 5v9c0 8-6 15-15 15h-4c-6 0-10-3-13-8l-9-14c-2-3 0-6 3-6 2 0 3 1 5 3l3 4V11c0-3 2-5 5-5z" fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="round"/></svg></div>
+<div class="fake">名前と金額は架空です</div>
+<div class="end" id="end">
+  <img src="studio/logo.png" alt="">
+  <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="#557370" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span id="q"></span><span class="caret"></span></div>
+  <div class="url">jisapp.app</div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+window.cap = html => { $('cap').innerHTML = html ? `<span>${html}</span>` : ''; };
+window.big = html => { const b = $('big'); b.innerHTML = html || ''; b.className = html ? 'big on' : 'big'; };
+window.count = n => { const c = $('count'); c.querySelector('b').innerHTML = `${n}<i>/3人</i>`; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); c.classList.toggle('done', n >= 3); };
+window.inner = html => { const i = $('inner'); i.innerHTML = html || ''; i.className = html ? 'inner on' : 'inner'; };
+// アプリの中の位置（iframe の座標）に指を動かして、輪を出す。押す本体は撮影スクリプトが iframe の中で行う
+const S = .9385, OX = 87, OY = 169;
+window.tapAt = (ix, iy) => {
+  const x = OX + ix * S, y = OY + iy * S, f = $('finger');
+  f.style.display = 'block'; f.style.left = (x - 22) + 'px'; f.style.top = (y - 6) + 'px';
+  setTimeout(() => { f.classList.add('tap'); const g = document.createElement('div'); g.className = 'ring'; g.style.left = x + 'px'; g.style.top = y + 'px'; document.body.appendChild(g); setTimeout(() => g.remove(), 500); setTimeout(() => f.classList.remove('tap'), 140); }, 360);
+};
+window.hideFinger = () => { $('finger').style.display = 'none'; };
+window.endScreen = () => { $('end').className = 'end on'; const t = 'ジサップ'; let k = 0; const tm = setInterval(() => { $('q').textContent = t.slice(0, ++k); if (k >= t.length) clearInterval(tm); }, 90); };
+</script>
+</body>
+</html>

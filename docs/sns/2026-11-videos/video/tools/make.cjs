@@ -4,9 +4,11 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const V = path.resolve(__dirname, '..');
+// 書き出し先と効果音の場所（リポジトリに入れないものは VIDEO_HOME に置ける）
+const H = process.env.VIDEO_HOME || V;
 const spec = require(path.resolve(process.argv[2]));
 const name = process.argv[3];
-const work = path.join(V, 'work', name); fs.rmSync(work, { recursive: true, force: true }); fs.mkdirSync(path.join(work, 'frames'), { recursive: true });
+const work = path.join(H, 'work', name); fs.rmSync(work, { recursive: true, force: true }); fs.mkdirSync(path.join(work, 'frames'), { recursive: true });
 
 // 画面の上に重ねる部品（字幕・全面の差し込み・指）
 const OVERLAY = fs.readFileSync(path.join(__dirname, 'overlay.js'), 'utf8');
@@ -59,20 +61,30 @@ const OVERLAY = fs.readFileSync(path.join(__dirname, 'overlay.js'), 'utf8');
   console.log('frames', seq.length);
 
   // 読み上げ
-  fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(spec.vo.map(v => ({ text: v.text, speed: v.speed ?? 1.2 }))));
-  console.log(execFileSync('python3.11', ['-P', path.join(__dirname, 'tts.py'), path.join(work, 'vo.json'), work], { cwd: path.join(V, 'tools') }).toString());
+  // spec.voice が 'gemini' のときは Gemini TTS（GEMINI_API_KEY がなければ声なしで書き出す）。ほかは Open JTalk
+  let vo = spec.vo;
+  if (spec.voice === 'gemini') {
+    if (!process.env.GEMINI_API_KEY || process.env.NO_VOICE) { console.log('声なしで書き出します（GEMINI_API_KEY がありません）'); vo = []; }
+    else {
+      fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(vo.map(v => ({ text: v.say ?? v.text, max: v.max, voice: spec.voiceName }))));
+      console.log(execFileSync('python3', [path.join(__dirname, 'gemini_tts.py'), path.join(work, 'vo.json'), work]).toString());
+    }
+  } else {
+    fs.writeFileSync(path.join(work, 'vo.json'), JSON.stringify(vo.map(v => ({ text: v.text, speed: v.speed ?? 1.2 }))));
+    console.log(execFileSync('python3.11', ['-P', path.join(__dirname, 'tts.py'), path.join(work, 'vo.json'), work], { cwd: path.join(V, 'tools') }).toString());
+  }
 
   // 音をまとめる（読み上げ＋効果音）
   const inputs = [], filters = [];
   const add = (file, t, vol) => { const k = inputs.length / 2; inputs.push('-i', file); filters.push(`[${k}:a]aresample=48000,volume=${vol},adelay=${Math.round(t * 1000)}|${Math.round(t * 1000)}[a${k}]`); };
-  spec.vo.forEach((v, i) => add(path.join(work, `vo${String(i).padStart(2, '0')}.wav`), v.t, 1.6));
-  spec.sfx.forEach(s => add(path.join(V, 'sfx', `${s.name}.wav`), s.t, s.vol ?? .9));
+  vo.forEach((v, i) => add(path.join(work, `vo${String(i).padStart(2, '0')}.wav`), v.t, spec.voVol ?? 1.6));
+  spec.sfx.forEach(s => add(path.join(H, 'sfx', `${s.name}.wav`), s.t, s.vol ?? .9));
   const mix = `${filters.join(';')};${inputs.filter((_, i) => i % 2 === 1).map((_, k) => `[a${k}]`).join('')}amix=inputs=${inputs.length / 2}:normalize=0,alimiter=limit=0.95,apad,atrim=0:${spec.duration}[aout]`;
   const audio = path.join(work, 'audio.wav');
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', mix, '-map', '[aout]', '-ac', '2', audio]);
 
   // 動画にする
-  const out = path.join(V, 'out', `${name}.mp4`); fs.mkdirSync(path.dirname(out), { recursive: true });
+  const out = path.join(H, 'out', `${name}.mp4`); fs.mkdirSync(path.dirname(out), { recursive: true });
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', path.join(work, 'frames.txt'), '-i', audio,
     '-vf', 'scale=1080:1920:flags=lanczos,fps=30,format=yuv420p', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-c:a', 'aac', '-b:a', '192k', '-t', String(spec.duration), '-movflags', '+faststart', out]);
   console.log('done', out);

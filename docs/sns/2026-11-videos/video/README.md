@@ -17,3 +17,17 @@ cd tools && node make.cjs ../specs/v1.cjs v1   # out/v1.mp4 ができる
 
 ゲームは `?video=1` を付けて開くと、「あなた」が歩く速さが台本に合わせてゆっくりになる（ふだんは付けない）。
 読み上げは Open JTalk の標準の声（男性）。本番では、好きな声で録り直して差し替えてもよい。
+
+## 型「場面 → 数字の得」v1 で作った旅行代の精算（20秒）
+
+- 画面：`travel-stage.html`（上にラベル「旅行の幹事へ」と字幕、真ん中に `../travel-split.html` を入れたスマホを最後まで固定、右上に「精算済み 0→3人」、大きな文字、終わりの検索窓）
+- 台本と動き：`specs/t20.cjs`（声と字幕は同じ文。表は `VO`）
+- 声：Gemini TTS の Vindemiatrix（`tools/gemini_tts.py`）。1文ずつ作り、前後の無音を削って、その画面の長さに入らないときだけ少し速くする（最大 1.45 倍）
+
+```bash
+cd docs/sns/2026-11-videos/video/tools
+GEMINI_API_KEY=（環境の設定に入れたもの） VIDEO_HOME=書き出し先 node make.cjs ../specs/t20.cjs t20
+```
+
+`GEMINI_API_KEY` がないときは、字幕と効果音だけで書き出す（声なし版）。`VIDEO_HOME` には `sfx/`（効果音）を置き、`out/` と `work/` が作られる。
+声を作るたびに「ジサップ」の発音を聞いて確かめる。

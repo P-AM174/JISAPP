@@ -362,7 +362,14 @@ export function createHowToJsonLd(locale: Locale = DEFAULT_LOCALE) {
   };
 }
 
-function buildLlmsTxtJa(): string {
+/** llms.txt に載せる公開中のコラム */
+export type LlmsColumn = { slug: string; title: string; description: string };
+
+function columnLines(site: string, prefix: string, columns: LlmsColumn[]): string[] {
+  return columns.map((c) => `- [${c.title}](${site}${prefix}/column/${c.slug})${c.description ? `: ${c.description}` : ""}`);
+}
+
+function buildLlmsTxtJa(columns: LlmsColumn[]): string {
   const site = getSiteUrl();
   const llmo = LLMO_JA;
   return [
@@ -462,10 +469,12 @@ function buildLlmsTxtJa(): string {
     `- [よくある質問](${site}/faq): ジサップの説明とFAQ`,
     `- [開発スタジオ](${site}/playground): コードを貼り付けて実行・公開する画面`,
     `- [アプリを探す](${site}/search): 公開アプリの検索`,
+    `- [コラム](${site}/column): グループで使うアプリの作り方・使い方の記事`,
     `- [利用規約](${site}/terms)`,
     `- [English](${site}/en): 英語版`,
     ...SITE_SOCIAL_PROFILES.map((p) => `- [公式${p.name}](${p.url})`),
     "",
+    ...(columns.length ? ["## コラム", "", ...columnLines(site, "", columns), ""] : []),
     "## よくある質問",
     "",
     ...llmo.faqs.flatMap((item) => ["", `### ${item.question}`, "", item.answer]),
@@ -482,7 +491,7 @@ function buildLlmsTxtJa(): string {
  * 英語の llms.txt。日本語と同じくらいの情報を、英語で質問した人の答えに使ってもらえるように書く。
  * 2026-10-15 の流入分析：ChatGPT の回答から、インド・パキスタン・英国・ナイジェリアなどの人が英語版に来ていた
  */
-function buildLlmsTxtEn(): string {
+function buildLlmsTxtEn(columns: LlmsColumn[]): string {
   const site = getSiteUrl();
   const llmo = LLMO_EN;
   return [
@@ -571,9 +580,11 @@ function buildLlmsTxtEn(): string {
     `- [Studio](${site}/en/playground): paste code, preview it and publish`,
     `- [FAQ](${site}/en/faq): what Jisapp is and common questions`,
     `- [Search apps](${site}/en/search): find published apps`,
+    `- [Columns](${site}/en/column): guides to making and using apps for groups`,
     `- [Terms](${site}/en/terms)`,
     `- [日本語](${site}/): Japanese version`,
     "",
+    ...(columns.length ? ["### Columns", "", ...columnLines(site, "/en", columns), ""] : []),
     "### FAQ",
     "",
     ...llmo.faqs.flatMap((item) => ["", `#### ${item.question}`, "", item.answer]),
@@ -586,6 +597,6 @@ function buildLlmsTxtEn(): string {
   ].join("\n");
 }
 
-export function buildLlmsTxt(): string {
-  return `${buildLlmsTxtJa()}\n\n${buildLlmsTxtEn()}`.trim() + "\n";
+export function buildLlmsTxt(columns: { ja: LlmsColumn[]; en: LlmsColumn[] } = { ja: [], en: [] }): string {
+  return `${buildLlmsTxtJa(columns.ja)}\n\n${buildLlmsTxtEn(columns.en)}`.trim() + "\n";
 }

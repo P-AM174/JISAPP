@@ -273,7 +273,11 @@ function toItem(item: ItemRow, me: MemberRow, names: Map<string, string>) {
   return {
     id: item.id,
     value: parseValue(item.data_value),
-    author: item.author_id ? { id: item.author_id, name: names.get(item.author_id) ?? "退出したメンバー" } : null,
+    // メンバーが消えると author_id は空になる。アプリは author が必ずある前提で作られるので、null では返さない
+    // （id は項目ごとに分ける。同じ id だと、抜けた人たちの書き込みが「同じ人」として1つにまとめられてしまう）
+    author: item.author_id
+      ? { id: item.author_id, name: names.get(item.author_id) ?? "退出したメンバー" }
+      : { id: `former:${item.id}`, name: "退出したメンバー" },
     createdAt: item.created_at,
     mine: item.author_id === me.id,
   };

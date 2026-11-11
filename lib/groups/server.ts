@@ -65,16 +65,86 @@ export async function findGroupByInvite(token: string): Promise<GroupRow | null>
   return (data as GroupRow | null) ?? null;
 }
 
+const MEMBER_COLUMNS = "id, group_id, display_name, user_id, is_owner";
+
+/** 1人が持てる鍵（端末）の数。これを超えたら、古い端末から使えなくなる */
+const KEYS_PER_MEMBER = 10;
+
 /** 鍵からメンバーを特定する。グループが違う・鍵が違うときは null */
 export async function authenticateMember(groupId: string, memberKey: unknown): Promise<MemberRow | null> {
   if (typeof memberKey !== "string" || memberKey.length < 16) return null;
+  const hash = hashMemberKey(memberKey);
   const { data } = await db()
     .from("app_group_members")
-    .select("id, group_id, display_name, user_id, is_owner")
+    .select(MEMBER_COLUMNS)
     .eq("group_id", groupId)
-    .eq("member_key_hash", hashMemberKey(memberKey))
+    .eq("member_key_hash", hash)
     .maybeSingle();
-  return (data as MemberRow | null) ?? null;
+  if (data) return data as MemberRow;
+
+  // 2台目からの端末の鍵（scripts/add-app-group-member-keys.sql。表がまだ無ければ見つからない扱い）
+  const { data: key } = await db()
+    .from("app_group_member_keys")
+    .select("member_id")
+    .eq("key_hash", hash)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (!key) return null;
+  const { data: member } = await db()
+    .from("app_group_members")
+    .select(MEMBER_COLUMNS)
+    .eq("id", (key as { member_id: string }).member_id)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  return (member as MemberRow | null) ?? null;
+}
+
+/**
+ * 別の端末用の鍵を足す（前の端末の鍵はそのまま使える）。
+ * 鍵の表がまだ無い・足せなかったときは null（呼び出し側は、今までどおり鍵を作り直す）
+ */
+async function addDeviceKey(memberId: string, groupId: string): Promise<string | null> {
+  const memberKey = newToken(24);
+  const { error } = await db()
+    .from("app_group_member_keys")
+    .insert({ key_hash: hashMemberKey(memberKey), member_id: memberId, group_id: groupId });
+  if (error) {
+    console.error("[app-groups] device key", error.message);
+    return null;
+  }
+  // 端末が多すぎるときは、古い端末の鍵から消す
+  const { data: old } = await db()
+    .from("app_group_member_keys")
+    .select("key_hash")
+    .eq("member_id", memberId)
+    .order("created_at", { ascending: false })
+    .range(KEYS_PER_MEMBER, KEYS_PER_MEMBER + 100);
+  const stale = ((old ?? []) as { key_hash: string }[]).map((k) => k.key_hash);
+  if (stale.length) await db().from("app_group_member_keys").delete().in("key_hash", stale);
+  return memberKey;
+}
+
+/**
+ * 今いるメンバーに、この端末用の鍵を渡す。あわせて変える項目（表示名・アカウント）があれば保存する。
+ * guestOnly：ログインしないで参加したメンバーのときだけ保存する（ほかの人がアカウントにつながったあとに上書きしない）
+ */
+async function issueKeyFor(
+  member: MemberRow,
+  changes: Record<string, string>,
+  guestOnly = false
+): Promise<{ member: MemberRow; memberKey: string } | null> {
+  let memberKey = await addDeviceKey(member.id, member.group_id);
+  const update = { ...changes };
+  if (!memberKey) {
+    memberKey = newToken(24);
+    update.member_key_hash = hashMemberKey(memberKey);
+  }
+  if (Object.keys(update).length === 0) return { member, memberKey };
+  let query = db().from("app_group_members").update(update).eq("id", member.id);
+  if (guestOnly) query = query.is("user_id", null);
+  const { data, error } = await query.select(MEMBER_COLUMNS).maybeSingle();
+  if (error || !data) return null;
+  return { member: data as MemberRow, memberKey };
 }
 
 /** 新しいメンバー（または鍵を作り直したメンバー）を登録し、鍵を返す */
@@ -100,33 +170,28 @@ export async function createMember(input: {
   return { member: data as MemberRow, memberKey };
 }
 
-/** ログインしている人がすでにメンバーなら、鍵を作り直して同じメンバーとして使う（別の端末でも同じ人になる） */
+/** ログインしている人がすでにメンバーなら、この端末用の鍵を渡して同じメンバーとして使う（別の端末でも同じ人になる） */
 export async function reissueMemberForUser(input: {
   groupId: string;
   userId: string;
   displayName?: string;
 }): Promise<{ member: MemberRow; memberKey: string } | null> {
-  const { data: existing } = await db()
+  const existing = await findMemberForUser(input.groupId, input.userId);
+  if (!existing) return null;
+  return issueKeyFor(existing, input.displayName ? { display_name: input.displayName } : {});
+}
+
+/** このグループで、そのアカウントにつながっているメンバー（いくつかあれば最初のもの） */
+async function findMemberForUser(groupId: string, userId: string): Promise<MemberRow | null> {
+  const { data } = await db()
     .from("app_group_members")
-    .select("id, group_id, display_name, user_id, is_owner")
-    .eq("group_id", input.groupId)
-    .eq("user_id", input.userId)
+    .select(MEMBER_COLUMNS)
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (!existing) return null;
-
-  const memberKey = newToken(24);
-  const update: Record<string, string> = { member_key_hash: hashMemberKey(memberKey) };
-  if (input.displayName) update.display_name = input.displayName;
-  const { data, error } = await db()
-    .from("app_group_members")
-    .update(update)
-    .eq("id", (existing as MemberRow).id)
-    .select("id, group_id, display_name, user_id, is_owner")
-    .single();
-  if (error || !data) return null;
-  return { member: data as MemberRow, memberKey };
+  return (data as MemberRow | null) ?? null;
 }
 
 /** ログインしないで参加したメンバー（招待リンクから入り直すとき「前に参加した人」として選べる） */
@@ -142,28 +207,26 @@ export async function listGuestMembers(groupId: string): Promise<{ id: string; n
 }
 
 /**
- * 前に参加した人として入り直す（ブラウザの保存が消えた・別のブラウザで開いたとき）。
- * ログインしないで参加したメンバーだけが対象。鍵を作り直すので、前の端末はもう一度選び直す。
- * ログインしていれば、そのメンバーをアカウントにつなぐ（次からは別の端末でも同じ人になる）
+ * 前に参加した人として入り直す（ブラウザの保存が消えた・別の端末で開いたとき）。
+ * ログインしないで参加したメンバーだけが対象。前の端末もそのまま使える（鍵の表があるとき）。
+ * ログインしていて、このグループにまだアカウントのメンバーがいなければ、そのメンバーをアカウントにつなぐ
+ * （次からは、別の端末でもログインするだけで同じ人になる）
  */
 export async function reclaimGuestMember(input: {
   groupId: string;
   memberId: string;
   userId: string | null;
 }): Promise<{ member: MemberRow; memberKey: string } | null> {
-  const memberKey = newToken(24);
-  const update: Record<string, string> = { member_key_hash: hashMemberKey(memberKey) };
-  if (input.userId) update.user_id = input.userId;
-  const { data, error } = await db()
+  const { data: guest } = await db()
     .from("app_group_members")
-    .update(update)
+    .select(MEMBER_COLUMNS)
     .eq("id", input.memberId)
     .eq("group_id", input.groupId)
     .is("user_id", null)
-    .select("id, group_id, display_name, user_id, is_owner")
     .maybeSingle();
-  if (error || !data) return null;
-  return { member: data as MemberRow, memberKey };
+  if (!guest) return null;
+  const linkAccount = !!input.userId && !(await findMemberForUser(input.groupId, input.userId!));
+  return issueKeyFor(guest as MemberRow, linkAccount ? { user_id: input.userId! } : {}, true);
 }
 
 export function toPublicGroup(group: GroupRow) {

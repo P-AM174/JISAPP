@@ -368,7 +368,11 @@ export function AppGroupPanel({
 
   /** ログインへ。create のときは、戻ってきたらそのまま「グループを作る」を開く */
   const goLogin = (create = false) => {
-    const back = create ? `${loginCallbackUrl}${loginCallbackUrl.includes("?") ? "&" : "?"}create=1` : loginCallbackUrl;
+    goLoginTo(create ? `${loginCallbackUrl}${loginCallbackUrl.includes("?") ? "&" : "?"}create=1` : loginCallbackUrl);
+  };
+
+  /** ログインして、back に戻ってくる */
+  const goLoginTo = (back: string) => {
     try {
       sessionStorage.setItem("jisapp_login_return", back);
     } catch {
@@ -546,6 +550,8 @@ export function AppGroupPanel({
           isLoggedIn={isLoggedIn}
           userName={userName}
           onClose={() => setInvite(null)}
+          // ログインして戻ってきたら、同じ招待リンクの参加画面に戻る（ログインして参加した人は同じメンバーになる）
+          onLogin={() => goLoginTo(`${loginCallbackUrl}${loginCallbackUrl.includes("?") ? "&" : "?"}g=${encodeURIComponent(invite.token)}`)}
           onJoined={(session) => {
             setInvite(null);
             onGroupChange(session);
@@ -822,6 +828,7 @@ function JoinModal({
   isLoggedIn,
   userName,
   onClose,
+  onLogin,
   onJoined,
 }: {
   appId: string;
@@ -831,6 +838,8 @@ function JoinModal({
   isLoggedIn: boolean;
   userName: string | null;
   onClose: () => void;
+  /** ログインして、この参加画面に戻ってくる */
+  onLogin: () => void;
   onJoined: (session: GroupSession) => void;
 }) {
   const [name, setName] = useState("");
@@ -906,6 +915,9 @@ function JoinModal({
         <>
           <p className="mt-4 text-sm font-bold text-slate-800">{t("あなたの名前を選んでください", "Pick your name")}</p>
           <p className="mt-1 text-xs text-slate-500">{t("前と同じ人として戻ります。出欠や書き込みもそのまま使えます", "You'll come back as the same person, with your answers and posts")}</p>
+          {isLoggedIn && (
+            <p className="mt-1 text-xs text-slate-500">{t("選んだ名前はこのアカウントにつながり、次からは別の端末でもログインするだけで戻れます", "The name you pick is linked to this account, so next time you can come back on any device just by signing in")}</p>
+          )}
           <div className="mt-3 flex flex-wrap gap-2">
             {guests.map((g) => (
               <button
@@ -955,10 +967,21 @@ function JoinModal({
             <Users className="h-4 w-4" />
             {busy ? t("参加しています…", "Joining…") : t("参加する", "Join")}
           </button>
-          {!isLoggedIn && guests.length > 0 && (
+          {/* ログインしていても出す（ログインしないで参加した人が、別の端末でログインして開いたとき、別人として増えないように） */}
+          {guests.length > 0 && (
             <button type="button" onClick={() => { setPicking(true); setError(""); }} className="mt-3 w-full rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50">
               {t("前に参加したことがある", "I've joined before")}
             </button>
+          )}
+          {/* グループを作った人・ログインして参加した人は、名前の一覧に出ない。ログインすれば同じ人として戻れる */}
+          {!isLoggedIn && (
+            <p className="mt-3 text-center text-xs text-slate-500">
+              {t("グループを作った人・ログインして参加した人は", "Created the group or joined while signed in? ")}
+              <button type="button" onClick={onLogin} className="mx-0.5 font-bold text-emerald-700 underline underline-offset-2">
+                {t("ログイン", "Sign in")}
+              </button>
+              {t("すると、同じ人として戻れます", " to come back as the same person")}
+            </p>
           )}
         </>
       )}

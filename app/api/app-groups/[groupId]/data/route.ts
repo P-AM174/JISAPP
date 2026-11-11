@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import {
   GROUP_LIMITS,
   WRITE_LIMITS,
@@ -94,10 +94,9 @@ export async function POST(req: Request, ctx: Ctx) {
     return fail("不正なリクエストです");
   }
 
-  const group = await findGroupById(groupId);
+  // グループとメンバーは同時に確かめる（順番に聞くと、その分だけ待ちが延びる）
+  const [group, member] = await Promise.all([findGroupById(groupId), authenticateMember(groupId, body.memberKey)]);
   if (!group) return fail("グループが見つかりません。削除された可能性があります", 404);
-
-  const member = await authenticateMember(groupId, body.memberKey);
   if (!member) return fail("このグループのメンバーではありません。招待リンクから参加し直してください", 403);
 
   const client = db();
@@ -107,9 +106,10 @@ export async function POST(req: Request, ctx: Ctx) {
     return fail("書き込みが多すぎます。少し待ってからもう一度試してください", 429);
   }
 
-  // 使われていることを記録（長く使われていないグループの自動削除用。確認だけの versions は除く）
+  // 使われていることを記録（長く使われていないグループの自動削除用。確認だけの versions は除く）。
+  // 答えを返したあとに記録する（記録を待たせない）
   if (body.op !== "versions") {
-    await touchGroupActivity(groupId).catch(() => {});
+    after(() => touchGroupActivity(groupId).catch(() => {}));
   }
 
   switch (body.op) {
@@ -166,21 +166,21 @@ export async function POST(req: Request, ctx: Ctx) {
 
     case "list": {
       if (!isValidDataKey(body.key)) return fail("キー名は英数字で64文字以内にしてください");
-      const { data: items, error: listError } = await client
-        .from("app_group_items")
-        .select("id, data_value, author_id, created_at")
-        .eq("group_id", groupId)
-        .eq("data_key", body.key)
-        .order("created_at", { ascending: true })
-        .limit(GROUP_LIMITS.itemsPerKey);
+      // 項目と、書いた人の名前は同時に読む
+      const [{ data: items, error: listError }, { data: members }] = await Promise.all([
+        client
+          .from("app_group_items")
+          .select("id, data_value, author_id, created_at")
+          .eq("group_id", groupId)
+          .eq("data_key", body.key)
+          .order("created_at", { ascending: true })
+          .limit(GROUP_LIMITS.itemsPerKey),
+        client.from("app_group_members").select("id, display_name").eq("group_id", groupId),
+      ]);
       if (listError) {
         console.error("[app-groups data list]", listError.message);
         return NextResponse.json({ error: "グループのデータを読み込めませんでした" }, { status: 503 });
       }
-      const { data: members } = await client
-        .from("app_group_members")
-        .select("id, display_name")
-        .eq("group_id", groupId);
       const names = new Map(((members ?? []) as { id: string; display_name: string }[]).map((m) => [m.id, m.display_name]));
       return NextResponse.json({
         result: ((items ?? []) as ItemRow[]).map((item) => toItem(item, member, names)),

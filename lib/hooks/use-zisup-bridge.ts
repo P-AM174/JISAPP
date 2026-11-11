@@ -88,6 +88,17 @@ async function callGroupData(group: GroupSession, body: Record<string, unknown>)
 }
 
 /**
+ * 自分の名前（me）と参加中のグループ（group）は、この端末に保存した参加情報から答える。
+ * アプリは開いてすぐ me を聞くことが多く、サーバーに聞くと表示がその分遅れるため。
+ * 形はサーバーの答え（toPublicMember / toPublicGroup）と同じ。ほかの操作は null（サーバーに聞く）
+ */
+function localGroupAnswer(group: GroupSession, op: string | undefined): object | null {
+  if (op === "me") return { id: group.memberId, name: group.displayName, isOwner: group.isOwner };
+  if (op === "group") return { id: group.groupId, appId: group.appId, name: group.groupName };
+  return null;
+}
+
+/**
  * グループに参加していないとき（開発スタジオ・グループ未参加）は、この端末だけのテスト用データとして動かす。
  * アプリの作者が、公開前に共有機能の動きを確かめられるようにするため。
  */
@@ -377,7 +388,8 @@ export function useZisupBridge(
         }
         try {
           const result = group
-            ? await callGroupData(group, { op: msg.op, key: msg.key, value: msg.value, itemId: msg.itemId })
+            ? (localGroupAnswer(group, msg.op) ??
+              (await callGroupData(group, { op: msg.op, key: msg.key, value: msg.value, itemId: msg.itemId })))
             : localShared(appId, msg);
           if (msg.op === "get") loadFailedKeysRef.current.delete(sharedKey);
           send(id, JSON.stringify(result ?? null));

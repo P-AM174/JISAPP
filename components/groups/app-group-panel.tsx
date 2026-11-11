@@ -149,6 +149,12 @@ export function AppGroupPanel({
         if (cancelled || r.ok || (r.status !== 403 && r.status !== 404)) return;
         leaveActiveGroup(appId, true);
         onGroupChange(null);
+        // 外されたあとでも、招待リンクから開いていれば、そのまま参加の画面を出す（招待の確認を待たずに開いたため）
+        const token = new URL(window.location.href).searchParams.get("g");
+        if (r.status === 403 && token && token === group.inviteToken) {
+          startInvite(token);
+          return;
+        }
         setInviteError(
           r.status === 404
             ? format(t("グループ「{groupName}」は削除されました", "The group “{groupName}” was deleted"), { groupName: group.groupName })
@@ -268,6 +274,23 @@ export function AppGroupPanel({
     const token = url.searchParams.get("g");
     if (!token) return;
     fromInviteRef.current = true;
+    // この端末で、このリンクのグループにもう参加していれば、確認を待たずにすぐアプリを開く
+    // （ホーム画面から開いたときも、アドレスに招待の印が残っているのでここを通る）。
+    // 外されていたときは、上の「参加中か確かめる」処理が見つけて、参加の画面を出し直す
+    const joined = listLocalSessions(appId).find((s) => s.inviteToken === token);
+    if (joined) {
+      saveGroupSession(joined);
+      onGroupChange(joined);
+      setInviteResolved(true);
+      return;
+    }
+    startInvite(token);
+    // 初回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 参加の画面を出し、グループの情報を読み込む（参加済みなら、そのグループで開く） */
+  function startInvite(token: string) {
     // アプリより先に、参加の画面をすぐ出す（グループの情報は読み込みながら）
     setInvite({ token, info: null });
 
@@ -291,9 +314,7 @@ export function AppGroupPanel({
       }
       setInvite({ token, info: data });
     })();
-    // 初回だけ
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
 
   // 参加の画面を出しているあいだは、アプリを開かない（ひとりで使う状態で先に開くと、何が起きたかわかりにくい）
   useEffect(() => {

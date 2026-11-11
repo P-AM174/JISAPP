@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Check, Link2, LogIn, Users } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
@@ -30,9 +30,15 @@ export function PublishGroupInvite({ appId, title, isGuest, onLogin }: { appId: 
     if (active?.isOwner && active.inviteToken) setGroup(active);
   }, [appId]);
 
+  // 表示名には、アカウントの名前を最初の1回だけ入れておく。
+  // 空になるたびに入れ直すと、消して別の名前にできなくなるため、入れたあとは触らない
+  const nameFilledRef = useRef(false);
+  const accountName = session?.user?.name ?? "";
   useEffect(() => {
-    if (!displayName && session?.user?.name) setDisplayName(session.user.name.slice(0, 20));
-  }, [session, displayName]);
+    if (nameFilledRef.current || !accountName) return;
+    nameFilledRef.current = true;
+    setDisplayName((current) => current || accountName.slice(0, 20));
+  }, [accountName]);
 
   const create = async () => {
     if (!groupName.trim() || !displayName.trim()) {

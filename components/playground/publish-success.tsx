@@ -11,7 +11,7 @@ import { copyText } from "@/lib/playground/ai-launch";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { format, localizePath } from "@/lib/i18n/config";
 import { AddToHomeSteps } from "@/components/add-to-home-guide";
-import { getLineShareUrl, getTwitterShareUrl, openShareWindow, withUtm } from "@/lib/share";
+import { getTwitterShareUrl, openLineShare, openShareWindow, withUtm } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 import { buildSharedConvertMessage } from "@/lib/playground/prompt-template";
@@ -141,8 +141,9 @@ export function PublishSuccess({
               <button
                 type="button"
                 onClick={() => {
-                  openShareWindow(getLineShareUrl(withUtm(url, "line", locale), shareText));
+                  // 先に記録する（スマホでは、このあと LINE アプリに切り替わってページを離れるため）
                   trackEvent("share", { channel: "line" });
+                  openLineShare(withUtm(url, "line", locale), shareText);
                 }}
                 className="flex items-center justify-center gap-2 rounded-xl bg-[#06C755] py-3 text-sm font-black text-white hover:brightness-95"
               >

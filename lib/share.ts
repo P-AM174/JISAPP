@@ -26,6 +26,36 @@ export function getLineShareUrl(url: string, text?: string): string {
   }`;
 }
 
+/**
+ * スマホで LINE アプリの「送信先を選択」画面を開く URL（LINE URL スキーム）。
+ * 文の下にリンクを入れて送る。LINE が入っていない端末では、LINE のダウンロードページが開く
+ */
+export function getLineAppShareUrl(url: string, text?: string): string {
+  const message = [text?.trim(), url].filter(Boolean).join("\n");
+  return `https://line.me/R/share?text=${encodeURIComponent(message)}`;
+}
+
+/** スマホ・タブレットか（iPad は PC と同じ名前で名乗るので、タッチ操作できる Mac として見分ける） */
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return true;
+  return /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+}
+
+/**
+ * LINE で送る。
+ * スマホは LINE アプリの「送信先を選択」を、その場で開く（新しい窓で開くとアプリに切り替わらないことがある）。
+ * Web 版の共有ページ（social-plugins.line.me）は、LINE アプリの外では LINE へのログインを求めるため、スマホでは使わない。
+ * PC は LINE URL スキームに対応していないので、Web 版の共有ページを新しい窓で開く
+ */
+export function openLineShare(url: string, text?: string): void {
+  if (isMobileDevice()) {
+    window.location.href = getLineAppShareUrl(url, text);
+    return;
+  }
+  openShareWindow(getLineShareUrl(url, text));
+}
+
 export function getTwitterShareUrl(url: string, text?: string): string {
   const params = new URLSearchParams({ url });
   if (text?.trim()) params.set("text", text.trim());

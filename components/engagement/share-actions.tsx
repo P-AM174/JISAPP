@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, Link2, Share } from 'lucide-react';
 import { useLocale, useT } from '@/lib/i18n/client';
-import { getLineShareUrl, getTwitterShareUrl, openShareWindow } from '@/lib/share';
+import { getTwitterShareUrl, openLineShare, openShareWindow } from '@/lib/share';
 import { engagement, shareLink } from '@/lib/analytics/engagement';
 import { LineBrandIcon, MessagesIcon, TelegramBrandIcon, WhatsAppBrandIcon, XBrandIcon } from '@/components/share-button';
 
@@ -38,7 +38,9 @@ export function ShareActions({appId,url,title,kind='public'}:{appId:string;url:s
    }
    if(channel==='copy'){await copy(link,channel,shareId);return;}
    if(channel==='sms'){window.location.href=`sms:?&body=${encodeURIComponent(`${text}\n${link}`)}`;return;}
-   const destination=channel==='line'?getLineShareUrl(link,text):channel==='whatsapp'?`https://wa.me/?text=${encodeURIComponent(text+'\n'+link)}`:channel==='telegram'?`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`:getTwitterShareUrl(link,text);
+   // LINE：スマホは LINE アプリを開く（Web 版の共有ページはログインを求めるため）
+   if(channel==='line'){openLineShare(link,text);return;}
+   const destination=channel==='whatsapp'?`https://wa.me/?text=${encodeURIComponent(text+'\n'+link)}`:channel==='telegram'?`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`:getTwitterShareUrl(link,text);
    openShareWindow(destination);
  }
  const ja=locale==='ja';

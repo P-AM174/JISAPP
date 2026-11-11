@@ -14,7 +14,7 @@ import {
   type GroupRow,
   type MemberRow,
 } from "@/lib/groups/server";
-import { APP_DATA_LIMITS, APP_DATA_LIMIT_MESSAGES, GROUP_QUOTA_MESSAGE, checkAppDataValue, utf8Bytes } from "@/lib/app-data-limits";
+import { APP_DATA_LIMITS, APP_DATA_LIMIT_MESSAGES, GROUP_QUOTA_MESSAGE, checkAppDataValue, utf8Bytes, type AppDataWarning } from "@/lib/app-data-limits";
 import { notifyGroupStorageAlmostFull, notifyGroupStorageFull } from "@/lib/notifications/storage-notices";
 import { isStorageLimitExempt } from "@/lib/app-data-exemptions";
 
@@ -193,14 +193,13 @@ export async function POST(req: Request, ctx: Ctx) {
       if (value.length > GROUP_LIMITS.valueChars) return fail("データが大きすぎます");
       const { rejected, almostFull } = await checkGroupValue(client, group, value, null);
       if (rejected) return rejected;
-      const { count } = await client
-        .from("app_group_items")
-        .select("id", { count: "exact", head: true })
-        .eq("group_id", groupId)
-        .eq("data_key", body.key);
-      if ((count ?? 0) >= GROUP_LIMITS.itemsPerKey) return fail("これ以上追加できません（上限に達しました）");
       const minuteAgo = new Date(Date.now() - 60_000).toISOString();
-      const [{ count: recent }, { count: total }] = await Promise.all([
+      const [{ count }, { count: recent }, { count: total }] = await Promise.all([
+        client
+          .from("app_group_items")
+          .select("id", { count: "exact", head: true })
+          .eq("group_id", groupId)
+          .eq("data_key", body.key),
         client
           .from("app_group_items")
           .select("id", { count: "exact", head: true })
@@ -211,8 +210,29 @@ export async function POST(req: Request, ctx: Ctx) {
       if ((recent ?? 0) >= WRITE_LIMITS.addsPerMinute) {
         return fail("追加が多すぎます。1分ほど待ってからもう一度試してください", 429);
       }
-      if ((total ?? 0) >= WRITE_LIMITS.itemsPerGroup) {
+      // 1つのキーの項目が上限に達していたら、いちばん古い項目から消して入れる
+      // （出欠のように毎日書き足すアプリが、1年ほどで書き込めなくならないように）。
+      // 断る理由がすべてなくなってから消す（消したのに書き込めない、を起こさない）
+      const overflow = (count ?? 0) - GROUP_LIMITS.itemsPerKey + 1;
+      if (overflow <= 0 && (total ?? 0) >= WRITE_LIMITS.itemsPerGroup) {
         return fail("このグループのデータがいっぱいです。不要な項目を消してください");
+      }
+      if (overflow > 0) {
+        const { data: oldest } = await client
+          .from("app_group_items")
+          .select("id")
+          .eq("group_id", groupId)
+          .eq("data_key", body.key)
+          .order("created_at", { ascending: true })
+          .limit(overflow);
+        const ids = ((oldest ?? []) as { id: string }[]).map((item) => item.id);
+        const { error: trimError } = ids.length
+          ? await client.from("app_group_items").delete().in("id", ids)
+          : { error: null };
+        if (trimError || ids.length < overflow) {
+          console.error("[app-groups data add] trim", trimError?.message ?? `${ids.length}/${overflow}`);
+          return fail("これ以上追加できません（上限に達しました）");
+        }
       }
       const { data, error } = await client
         .from("app_group_items")
@@ -220,9 +240,18 @@ export async function POST(req: Request, ctx: Ctx) {
         .select("id, data_value, author_id, created_at")
         .single();
       if (error || !data) return fail("追加できませんでした", 500);
+      // 書いた人の画面に注意を出す：古い項目を消したとき・もうすぐ消え始めるとき・容量がもうすぐいっぱいのとき
+      const warning: AppDataWarning | null =
+        overflow > 0
+          ? "group_items_trimmed"
+          : (count ?? 0) + 1 >= GROUP_LIMITS.itemsPerKeyWarn
+            ? "group_items_near"
+            : almostFull
+              ? "group"
+              : null;
       return NextResponse.json({
         result: toItem(data as ItemRow, member, new Map([[member.id, member.display_name]])),
-        warning: almostFull ? "group" : null,
+        warning,
       });
     }
 

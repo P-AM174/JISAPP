@@ -102,6 +102,9 @@ function TermsJa() {
           180日間だれにも使われていないグループは、共有データごと自動で削除されます。
         </li>
         <li>
+          アプリの1つの一覧に置ける項目は2,000件までです。超えた場合は、書き込むたびにいちばん古い項目から自動で削除されます。上限が近づいたときと、削除したときは、書き込んだ人の画面でお知らせします。
+        </li>
+        <li>
           作成者はメンバーをグループから外せます。外されたメンバーは、そのグループのデータを見たり書き込んだりできなくなります（それまでの書き込みは「退出したメンバー」として残ります）。
         </li>
         <li>
@@ -208,6 +211,11 @@ function TermsEn() {
           guarantee backups of shared data.
         </li>
         <li>Groups that nobody has used for 180 days are deleted automatically, together with their shared data.</li>
+        <li>
+          A single list in an app can hold up to 2,000 items. Beyond that, the oldest item is deleted automatically each
+          time a new one is added. The person writing is notified on screen when the limit is near and when items are
+          deleted.
+        </li>
         <li>
           The creator can remove members from the group. Removed members can no longer view or write the group&apos;s
           data (their earlier posts remain, shown as a &quot;member who left&quot;).

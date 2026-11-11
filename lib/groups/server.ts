@@ -10,8 +10,10 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 export const GROUP_LIMITS = {
   /** 1つの値・項目の最大文字数 */
   valueChars: 100_000,
-  /** 1つのキーに追加できる項目の数 */
+  /** 1つのキーに置ける項目の数（超えたら古い項目から消す） */
   itemsPerKey: 2_000,
+  /** この数を超えたら「もうすぐ古い項目から消えます」と知らせる */
+  itemsPerKeyWarn: 1_800,
   groupName: 40,
   displayName: 20,
 };

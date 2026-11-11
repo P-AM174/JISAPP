@@ -112,9 +112,15 @@ function SupabaseAppPage({ id }: { id: string }) {
   const [inviteRequest, setInviteRequest] = useState(0);
   /** 招待リンクから来て、参加の画面を出しているあいだはアプリを開かない */
   const [invitePending, setInvitePending] = useState(false);
+  /** グループに入らずに「ひとりで試してみる」を選んだ（この端末だけのテスト用データで動かす） */
+  const [groupTestMode, setGroupTestMode] = useState(false);
   useEffect(() => {
     setGroup(readActiveGroup(id));
   }, [id]);
+  // グループを抜けた・外されたときは、もう一度「グループに入る」案内から
+  useEffect(() => {
+    setGroupTestMode(false);
+  }, [group?.groupId]);
 
   useZisupBridge(iframeRef, id, enableCloud ? userId : null, group, app?.title ?? "");
 
@@ -445,7 +451,45 @@ ${app.js_code ?? ""}`);
             ) : null}
           </div>
         )}
-        {syncReady && !invitePending ? (
+        {syncReady && !invitePending && appUsesShared && !group && !groupTestMode ? (
+          // グループ共有アプリは、グループに入るまで動かさない。
+          // 入らずに開くと、この端末だけのテスト用データとして動き、書いた内容が誰にも共有されないため
+          <div className="flex flex-1 items-center justify-center overflow-auto bg-emerald-50/40 px-5 py-8">
+            <div className="w-full max-w-sm text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-emerald-700 ring-1 ring-emerald-200">
+                <Users className="h-6 w-6" />
+              </span>
+              <h2 className="mt-3 text-lg font-extrabold text-slate-900">{t("みんなで使うアプリです", "An app to use with a group")}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {t(
+                  "グループに入ると、メンバーと同じデータを見たり書いたりできます。招待された人は、受け取った招待リンクから開いてください。前に参加した人は、上の帯の「グループに戻る」から戻れます。",
+                  "Join a group to see and write the same data as its members. If you were invited, open the invite link you received. If you joined before, use “Go back” in the bar above."
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => setInviteRequest((n) => n + 1)}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 hover:from-emerald-700 hover:to-teal-700"
+              >
+                <Users className="h-4 w-4" />
+                {t("グループを作る", "Create a group")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setGroupTestMode(true)}
+                className="mt-3 w-full text-center text-xs font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-700"
+              >
+                {t("ひとりで試してみる（この端末だけに保存され、共有されません）", "Try it on your own (saved only on this device, not shared)")}
+              </button>
+            </div>
+          </div>
+        ) : syncReady && !invitePending ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {appUsesShared && !group && (
+              <p className="shrink-0 border-b border-amber-100 bg-amber-50 px-4 py-1.5 text-center text-[11px] font-semibold text-amber-800">
+                {t("お試し中：書いた内容はこの端末だけに保存され、ほかの人には共有されません", "Trying it out: what you write is saved only on this device and isn't shared")}
+              </p>
+            )}
           <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
             <iframe
               ref={iframeRef}
@@ -456,6 +500,7 @@ ${app.js_code ?? ""}`);
               title={app.title}
               allow="clipboard-write"
             />
+          </div>
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-sm text-gray-400">

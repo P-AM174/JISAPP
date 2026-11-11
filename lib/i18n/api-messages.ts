@@ -163,6 +163,10 @@ const EXACT: Record<string, string> = {
     "This app's data is almost at the amount that can be saved at once (2MB). It's safer to ask the app's creator to split the data, for example by year",
   [APP_DATA_WARNINGS.user]: "Your saved data is almost at the limit (10MB across all apps)",
   [APP_DATA_WARNINGS.group]: "This group's shared data is almost at the limit (10MB). It's safer to delete items you no longer need",
+  [APP_DATA_WARNINGS.group_items_near]:
+    "This app's list is almost at its limit (2,000 items). After that, the oldest item is deleted automatically each time something is added. Make a note of anything you want to keep",
+  [APP_DATA_WARNINGS.group_items_trimmed]:
+    "The list reached its limit (2,000 items), so the oldest item was deleted automatically. From now on, the oldest items are deleted as new ones are added",
   [GROUP_QUOTA_MESSAGE]: "This group's shared data storage (10MB) is full. Delete items you no longer need",
   保存データを読み込めませんでした: "Couldn't load the saved data",
   不正なデータです: "Invalid data",

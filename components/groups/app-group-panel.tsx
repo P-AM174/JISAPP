@@ -94,6 +94,8 @@ export function AppGroupPanel({
   const t = useT();
   /** 招待リンクから来たとき。info が null のあいだは、グループの情報を読み込み中 */
   const [invite, setInvite] = useState<{ token: string; info: InviteInfo | null } | null>(null);
+  /** 参加の画面を「×」で閉じた招待（帯から、もう一度参加の画面を開けるようにする） */
+  const [closedInvite, setClosedInvite] = useState<{ token: string; groupName: string } | null>(null);
   const [renaming, setRenaming] = useState(false);
   /** 招待リンク（?g=）の処理が終わったか。終わるまでは、アドレスの ?g= を消さない */
   const [inviteResolved, setInviteResolved] = useState(
@@ -327,14 +329,20 @@ export function AppGroupPanel({
   // グループに入っているあいだは、アドレスに招待の印（?g=）を残す。
   // ホーム画面に置いたとき・別のブラウザで開いたときも、そのグループで開ける
   useEffect(() => {
-    if (invite || (!group && !inviteResolved)) return;
+    // 参加の画面を閉じただけのあいだは、招待の印を残す（読み込み直しても、もう一度参加の画面が出る）
+    if (invite || (!group && (!inviteResolved || closedInvite))) return;
     const url = new URL(window.location.href);
     const want = group?.inviteToken ?? null;
     if (want ? url.searchParams.get("g") === want : !url.searchParams.has("g")) return;
     if (want) url.searchParams.set("g", want);
     else url.searchParams.delete("g");
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-  }, [group?.groupId, group?.inviteToken, invite, inviteResolved]);
+  }, [group?.groupId, group?.inviteToken, invite, inviteResolved, closedInvite]);
+
+  // グループに入ったら、閉じた招待の案内はいらない
+  useEffect(() => {
+    if (group) setClosedInvite(null);
+  }, [group]);
 
   // モーダルの「（グループ名）のアプリを開く」（?group=）から来たとき：そのグループで開く
   useEffect(() => {
@@ -527,7 +535,29 @@ export function AppGroupPanel({
             </>
           ) : (
             <>
-              {returnable.length > 0 ? (
+              {closedInvite ? (
+                <>
+                  <p className="min-w-0 flex-1 leading-snug text-emerald-950">
+                    <span className="block truncate font-bold">
+                      {closedInvite.groupName
+                        ? format(t("「{groupName}」に招待されています", "You're invited to “{groupName}”"), { groupName: closedInvite.groupName })
+                        : t("グループに招待されています", "You're invited to a group")}
+                    </span>
+                    <span className="block truncate text-[11px] text-emerald-800/70">{t("参加すると、メンバーとデータを共有できます", "Join to share data with the members")}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const token = closedInvite.token;
+                      setClosedInvite(null);
+                      startInvite(token);
+                    }}
+                    className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-2 font-black text-white shadow-sm shadow-emerald-600/25 hover:bg-emerald-700 active:scale-[0.97]"
+                  >
+                    {t("参加する", "Join")}
+                  </button>
+                </>
+              ) : returnable.length > 0 ? (
                 <>
                   <p className="min-w-0 flex-1 leading-snug text-emerald-950">
                     <span className="block truncate font-bold">
@@ -570,7 +600,11 @@ export function AppGroupPanel({
           info={invite.info}
           isLoggedIn={isLoggedIn}
           userName={userName}
-          onClose={() => setInvite(null)}
+          onClose={() => {
+            // 閉じても招待は覚えておき、帯から参加し直せるようにする
+            setClosedInvite({ token: invite.token, groupName: invite.info?.group.name ?? "" });
+            setInvite(null);
+          }}
           // ログインして戻ってきたら、同じ招待リンクの参加画面に戻る（ログインして参加した人は同じメンバーになる）
           onLogin={() => goLoginTo(`${loginCallbackUrl}${loginCallbackUrl.includes("?") ? "&" : "?"}g=${encodeURIComponent(invite.token)}`)}
           onJoined={(session) => {

@@ -1,4 +1,5 @@
 import { pick, type Locale } from "@/lib/i18n/config";
+import { designTemplatePrompt, type DesignId } from "@/lib/playground/design-templates";
 
 /*
  * AI に渡す指示文。日本語版・英語版・ベトナム語版（英語の指示文＋画面はベトナム語）がある。
@@ -917,8 +918,10 @@ Use 2–3 of the following 4. When unsure, use fewer (follow 4-5). Don't put all
 □ Are there any emoji or symbol characters?`;
 
 type BuildPromptOptions = {
-  /** ジサップオリジナルデザインの指定を差し込むか */
+  /** ジサップオリジナルデザインの指定を差し込むか（design を渡したときは design が優先） */
   useJisappDesign?: boolean;
+  /** 開発スタジオで選んだデザイン（ベトナム語では使わず、useJisappDesign で決める） */
+  design?: DesignId;
   /** 保存方法。zisup = 端末をまたぐ保存、local = 同じ端末の localStorage */
   storage?: "zisup" | "local";
   /** グループのメンバー全員でデータを共有するか */
@@ -956,8 +959,19 @@ export function buildPromptFromTemplate(
     ? prompt.replace(PROMPT_STORAGE_MARKER, storageBlock)
     : `${prompt}\n\n${storageBlock}`;
 
-  if (options?.useJisappDesign) {
-    const design = vi ? PROMPT_JISAPP_DESIGN_VI : en ? PROMPT_JISAPP_DESIGN_EN : PROMPT_JISAPP_DESIGN;
+  // デザインの指示：選んだテンプレート → ジサップ → なし（ベトナム語は今までどおりオン・オフだけ）
+  const picked = !vi && options?.design ? options.design : options?.useJisappDesign ? "jisapp" : "none";
+  const design =
+    picked === "jisapp"
+      ? vi ? PROMPT_JISAPP_DESIGN_VI : en ? PROMPT_JISAPP_DESIGN_EN : PROMPT_JISAPP_DESIGN
+      : designTemplatePrompt(picked, en);
+  // テンプレートを選んだときは、土台の「明るく爽やかな UI（ライトモード）」の一文を、テンプレートに従う文に置き換える（ダークなどとぶつかるため）
+  if (picked !== "jisapp" && picked !== "none") {
+    prompt = prompt
+      .replace("初心者向けに明るく爽やかで洗練されたモダンなUI（ライトモード）を実装してください。", "見た目（配色・明るさ・形）は、下の【UI/UXデザインの指定】に従って実装してください。")
+      .replace("build a bright, fresh, polished, modern UI (light mode) that's friendly for beginners.", "build the look (colors, brightness, shapes) by following the [UI/UX design] section below.");
+  }
+  if (design) {
     const designBlock = `${design}\n\n`;
     prompt = prompt.includes(storageBlock)
       ? prompt.replace(storageBlock, `${designBlock}${storageBlock}`)

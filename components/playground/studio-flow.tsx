@@ -26,6 +26,8 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import { format, pick, toLocale } from "@/lib/i18n/config";
 import { rich } from "@/lib/i18n/rich";
 import { DoneSigns } from "@/components/playground/done-signs";
+import { DesignPicker } from "@/components/playground/design-picker";
+import type { DesignId } from "@/lib/playground/design-templates";
 import { visitSource } from "@/lib/analytics/client";
 
 export type StudioStage = "choose" | "idea" | "paste" | "ready";
@@ -232,7 +234,10 @@ export function PaneTitleBar({
 
 export type IdeaOptions = {
   details: string;
+  /** ベトナム語のページのオン・オフ（ほかの言語では design から決まる） */
   useJisappDesign: boolean;
+  /** 選んだデザイン（日本語・英語のページ） */
+  design: DesignId;
   needSave: boolean;
   /** グループのメンバー全員でデータを共有する */
   shared: boolean;
@@ -612,6 +617,7 @@ export function PromptTemplateModal({
   // 特定のAIに決めず、いつも使っている生成AIに貼ってもらう
   const ai = STUDIO_AIS.find((a) => a.id === "other") ?? STUDIO_AIS[STUDIO_AIS.length - 1];
   const t = useT();
+  const locale = useLocale();
 
   useEffect(() => {
     if (!open) return;
@@ -759,12 +765,19 @@ export function PromptTemplateModal({
                   />
                 </div>
                 <div className="h-px bg-slate-100" />
-                <ToggleRow
-                  label={t("ジサップのデザインで作る", "Use the Jisapp design")}
-                  description={t("白いカードとくっきりした配色の、すっきりしたデザイン（配色はアプリに合わせてAIが決めます）", "A clean look with white cards and bold colors (the AI picks colors to suit your app)")}
-                  checked={options.useJisappDesign}
-                  onChange={(v) => onOptionsChange({ ...options, useJisappDesign: v })}
-                />
+                {locale === "vi" ? (
+                  <ToggleRow
+                    label={t("ジサップのデザインで作る", "Use the Jisapp design")}
+                    description={t("白いカードとくっきりした配色の、すっきりしたデザイン（配色はアプリに合わせてAIが決めます）", "A clean look with white cards and bold colors (the AI picks colors to suit your app)")}
+                    checked={options.useJisappDesign}
+                    onChange={(v) => onOptionsChange({ ...options, useJisappDesign: v })}
+                  />
+                ) : (
+                  <DesignPicker
+                    value={options.design}
+                    onChange={(design) => onOptionsChange({ ...options, design, useJisappDesign: design !== "none" })}
+                  />
+                )}
                 <ToggleRow
                   label={options.shared ? t("自分だけのデータも保存する", "Also save personal data") : t("データを保存する", "Save data")}
                   description={options.shared ? t("設定など、共有しないデータを残します", "Keeps data you don't share, like settings") : t("ログインすると別の端末でも記録が残ります", "When signed in, your records carry over to other devices")}

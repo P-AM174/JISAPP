@@ -83,6 +83,7 @@ import {
   type IdeaOptions,
   type StudioStage,
 } from "@/components/playground/studio-flow";
+import { DEFAULT_DESIGN, isDesignId } from "@/lib/playground/design-templates";
 import { detectEmbeddedSecrets } from "@/lib/playground/detect-embedded-secrets";
 import {
   compareStorageUsage,
@@ -123,6 +124,7 @@ type StoredFlow = {
 const DEFAULT_IDEA_OPTIONS: IdeaOptions = {
   details: "",
   useJisappDesign: true,
+  design: DEFAULT_DESIGN,
   needSave: false,
   shared: false,
 };
@@ -1399,6 +1401,7 @@ export default function PlaygroundPage() {
   const buildPrompt = () =>
     buildPromptFromTemplate(idea.trim(), ideaOptions.details, {
       useJisappDesign: ideaOptions.useJisappDesign,
+      design: ideaOptions.design,
       storage: ideaOptions.needSave ? "zisup" : "local",
       shared: ideaOptions.shared,
       locale,
@@ -1762,7 +1765,11 @@ export default function PlaygroundPage() {
       const stored = JSON.parse(localStorage.getItem(FLOW_STORAGE_KEY) ?? "{}") as StoredFlow;
       if (stored.aiId) setAiId(findStudioAi(stored.aiId).id);
       // 「データを保存する」は引き継がず、開くたびにオフから
-      if (stored.options) setIdeaOptions({ ...DEFAULT_IDEA_OPTIONS, ...stored.options, needSave: DEFAULT_IDEA_OPTIONS.needSave });
+      // デザインは前に選んだものを引き継ぐ（デザインを選べるようになる前の記録は、オン・オフから決める）
+      if (stored.options) {
+        const design = isDesignId(stored.options.design) ? stored.options.design : stored.options.useJisappDesign === false ? "none" : DEFAULT_DESIGN;
+        setIdeaOptions({ ...DEFAULT_IDEA_OPTIONS, ...stored.options, design, needSave: DEFAULT_IDEA_OPTIONS.needSave });
+      }
       // 開き直したときはエディタの最初の画面から。入力内容とAIの選択だけ引き継ぐ
     } catch { /* noop */ }
     const ideaParam = params.get("idea");

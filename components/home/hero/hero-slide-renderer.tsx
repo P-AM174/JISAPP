@@ -106,7 +106,7 @@ export function HeroSlideCard({ slide }: { slide: HeroSlidePublic }) {
   );
 }
 
-export function HeroSlideRenderer({ slide }: { slide: HeroSlidePublic }) {
+function HeroSlideBody({ slide }: { slide: HeroSlidePublic }) {
   switch (slide.layout) {
     case "card":
       return <HeroSlideCard slide={slide} />;
@@ -115,4 +115,16 @@ export function HeroSlideRenderer({ slide }: { slide: HeroSlidePublic }) {
     default:
       return <HeroSlideTwoColumn slide={slide} />;
   }
+}
+
+export function HeroSlideRenderer({ slide }: { slide: HeroSlidePublic }) {
+  // 「デザイン見本」のスライドは、どこを押してもボタンの先（詳しいコラム）へ移る
+  const linkAll = slide.visualType === "designs" && slide.ctaEnabled && slide.ctaHref;
+  if (!linkAll) return <HeroSlideBody slide={slide} />;
+  return (
+    <div className="relative">
+      <HeroSlideBody slide={slide} />
+      <Link href={slide.ctaHref!} aria-label={slide.ctaLabel ? `${slide.title} — ${slide.ctaLabel}` : slide.title} className="absolute inset-0 z-20 cursor-pointer" />
+    </div>
+  );
 }

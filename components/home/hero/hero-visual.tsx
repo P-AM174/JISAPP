@@ -15,6 +15,36 @@ export function HeroVisual({ type }: { type: HeroVisual | null }) {
     );
   }
 
+  if (type === "designs") {
+    // 6つのデザインの見本を、カードを広げたように並べる（public/design-templates）
+    const cards: [string, string, string][] = [
+      ["minimal", "シンプル", "Minimal"],
+      ["utility", "業務向け", "Utility"],
+      ["editorial", "雑誌風", "Editorial"],
+      ["friendly", "やさしい", "Friendly"],
+      ["dark", "ダーク", "Dark"],
+      ["bold", "ポップ", "Bold"],
+    ];
+    return (
+      <div aria-hidden className="relative mx-auto h-[230px] w-full max-w-md">
+        {cards.map(([id, ja, en], i) => {
+          const k = i - (cards.length - 1) / 2;
+          return (
+            <div
+              key={id}
+              className="absolute left-1/2 top-3 w-[150px] origin-bottom rounded-xl bg-white p-1 shadow-xl ring-1 ring-black/10"
+              style={{ transform: `translateX(calc(-50% + ${k * 54}px)) translateY(${Math.abs(k) * 9}px) rotate(${k * 6}deg)`, zIndex: 10 - Math.round(Math.abs(k) * 2) }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/design-templates/${id}.webp`} alt="" className="block aspect-[480/376] w-full rounded-lg object-cover object-left-top" />
+              <p className="px-1 pb-0.5 pt-1 text-center text-[11px] font-bold text-slate-700">{t(ja, en)}</p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (type === "studio") {
     return (
       <div className="relative mx-auto w-full max-w-sm">

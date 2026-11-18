@@ -3,6 +3,22 @@ import type { HeroSlide, HeroSlideInput } from "./types";
 /** DB が空 or エラー時のフォールバック */
 export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   {
+    id: "default-designs",
+    sortOrder: 0,
+    enabled: true,
+    badge: "新機能",
+    title: "アプリのデザインが、6種類から選べるようになりました",
+    subtitle: "シンプル・業務向け・雑誌風・やさしい・ダーク・ポップ。開発スタジオで、見本を見ながら選べます。",
+    ctaEnabled: true,
+    ctaLabel: "詳しく見る",
+    ctaHref: "/column/app-design-templates",
+    layout: "two_column",
+    theme: "violet",
+    visualType: "designs",
+    bgPattern: "dots",
+    featuredAppIds: [],
+  },
+  {
     id: "default-main",
     sortOrder: 0,
     enabled: true,
@@ -72,6 +88,23 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
 
 /** 英語版のスライド（運営画面で編集するスライドは日本語用） */
 export const DEFAULT_HERO_SLIDES_EN: HeroSlide[] = [
+  {
+    // デザインを選べるようになったお知らせ（ベトナム語版には出さない：lib/hero/service.ts）
+    id: "default-designs-en",
+    sortOrder: 0,
+    enabled: true,
+    badge: "New",
+    title: "Pick your app's look from 6 new designs",
+    subtitle: "Minimal, Utility, Editorial, Friendly, Dark and Bold. Choose one in the Studio while looking at samples.",
+    ctaEnabled: true,
+    ctaLabel: "Learn more",
+    ctaHref: "/column/pick-your-app-design",
+    layout: "two_column",
+    theme: "violet",
+    visualType: "designs",
+    bgPattern: "dots",
+    featuredAppIds: [],
+  },
   {
     id: "default-main-en",
     sortOrder: 0,

@@ -54,5 +54,6 @@ export const HERO_VISUAL_LABELS = {
   requests: "掲示板",
   column: "コラム",
   phone: "スマホ",
+  designs: "デザイン見本（スライド全体がボタンの先へのリンク）",
   none: "なし",
 } as const;

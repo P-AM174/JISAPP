@@ -119,7 +119,7 @@ export async function getPublicHeroSlides(locale: Locale = "ja", opts: { showCol
   // 英語の記事があるときは「開発依頼掲示板」のスライドを「コラム」のスライドに差し替える（ベトナム語版は掲示板のまま）
   if (locale !== "ja") {
     const column = locale === "en" && opts.showColumn;
-    return DEFAULT_HERO_SLIDES_EN.filter((s) => s.enabled && (column ? s.id !== "default-requests-en" : s.id !== "default-column-en")).map((en) => {
+    return DEFAULT_HERO_SLIDES_EN.filter((s) => s.enabled && (column ? s.id !== "default-requests-en" : s.id !== "default-column-en") && !(locale === "vi" && s.id === "default-designs-en")).map((en) => {
       const ja = DEFAULT_HERO_SLIDES.find((s) => s.id === en.id.replace(/-en$/, ""));
       return ja ? pickDeep(locale, ja, en) : en;
     });

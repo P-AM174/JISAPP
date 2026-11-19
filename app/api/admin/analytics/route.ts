@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
     .slice(0, 30);
 
   // どこから来たか：訪問（セッション）ごとに、最初のイベントの utm と参照元で決め、その訪問で貼り付け・公開・登録まで進んだかを数える
-  const visits = new Map<string, { source: TrafficSource; day: string; paste: boolean; publish: boolean; signup: boolean }>();
+  const visits = new Map<string, { source: TrafficSource; day: string; bucket: string; paste: boolean; publish: boolean; signup: boolean }>();
   for (const e of periodEvs) {
     if (!e.session_id) continue;
     let v = visits.get(e.session_id);
@@ -121,6 +121,8 @@ export async function GET(req: NextRequest) {
         source: classifySource({ utmSource: e.utm_source, utmMedium: e.utm_medium, ref: e.props?.ref }),
         // 日本時間の日付
         day: new Date(new Date(e.created_at).getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10),
+        // グラフ用：日本時間の日付（直近24時間のときは「日付T時」）
+        bucket: new Date(new Date(e.created_at).getTime() + 9 * 3600 * 1000).toISOString().slice(0, days === 1 ? 13 : 10),
         paste: false,
         publish: false,
         signup: false,
@@ -188,5 +190,57 @@ export async function GET(req: NextRequest) {
   }
   const summaryRows = [...funnel.values()].map((r) => ({ name: r.name, locale: r.locale, utm_source: r.utm_source, events: r.events, sessions: r.sessions.size }));
 
-  return NextResponse.json({ days, locale: locale ?? "all", overview, columns, excludedAccounts: excludedUserIds.size, summary: summaryRows, pasteBreakdown, countries, sources, aiByDay, engagement, goal });
+  // グラフ用：項目をタップしたときの折れ線。項目ごとに「日（日本時間）→ 数」を返す。直近24時間のときは1時間ごと。
+  // キーは「種類:名前」（overview:visits・funnel:prompt_copy:ja・paste:none・source:ChatGPT・country:JP）。
+  // 訪問（セッション）の数は、その日（時間）の中で数える（2日にまたがる訪問は両方の日に入る）
+  const hourly = days === 1;
+  const jst = (t: number) => new Date(t + 9 * 3600 * 1000).toISOString();
+  const bucketOf = (iso: string) => (hourly ? jst(new Date(iso).getTime()).slice(0, 13) : jst(new Date(iso).getTime()).slice(0, 10));
+  const buckets: string[] = [];
+  {
+    const step = hourly ? 3600 * 1000 : 24 * 3600 * 1000;
+    const end = Date.now();
+    for (let t = periodStart; ; t += step) {
+      const b = bucketOf(new Date(Math.min(t, end)).toISOString());
+      if (buckets[buckets.length - 1] !== b) buckets.push(b);
+      if (t >= end) break;
+    }
+  }
+  const counts: Record<string, Record<string, number>> = {};
+  const sessionSets = new Map<string, Set<string>>();
+  const bump = (key: string, bucket: string) => {
+    const c = (counts[key] ??= {});
+    c[bucket] = (c[bucket] ?? 0) + 1;
+  };
+  /** 同じ日（時間）の同じ訪問は1回だけ数える */
+  const bumpSession = (key: string, bucket: string, sessionId: string | null) => {
+    if (!sessionId) return;
+    const k = `${key}|${bucket}`;
+    const set = sessionSets.get(k) ?? new Set<string>();
+    if (set.has(sessionId)) return;
+    set.add(sessionId);
+    sessionSets.set(k, set);
+    bump(key, bucket);
+  };
+  for (const e of periodEvs) {
+    const b = bucketOf(e.created_at);
+    bumpSession("overview:visits", b, e.session_id);
+    if (e.name === "page_view") {
+      bump("overview:pageViews", b);
+      bumpSession(`country:${e.country ?? "??"}`, b, e.session_id);
+    }
+    if (e.name === "publish") {
+      bump("overview:publishes", b);
+      if (locale && e.props?.overwrite !== true) bump("overview:appsCreated", b);
+    }
+    if (e.name === "signup") bump("overview:signups", b);
+    if (e.name === "studio_paste") bump(`paste:${e.props?.issue ?? (e.props?.ok ? "none" : "unknown")}`, b);
+    bumpSession(`funnel:${e.name}:${e.locale ?? "-"}`, b, e.session_id);
+  }
+  if (!locale) for (const a of apps) if (new Date(a.created_at).getTime() >= periodStart) bump("overview:appsCreated", bucketOf(a.created_at));
+  // 流入元は、訪問の最初の記録の日（時間）に数える（表の「訪問」と合う）
+  for (const v of visits.values()) bump(`source:${v.source.name}`, v.bucket);
+  const trends = { hourly, buckets, counts };
+
+  return NextResponse.json({ days, locale: locale ?? "all", overview, columns, excludedAccounts: excludedUserIds.size, summary: summaryRows, pasteBreakdown, countries, sources, aiByDay, engagement, goal, trends });
 }

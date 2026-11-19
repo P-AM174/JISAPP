@@ -10,6 +10,7 @@ import { CreationPanel, RetentionPanel } from '@/components/admin/retention-pane
 import { ColumnPanel } from '@/components/admin/column-panel';
 import type { summarizeColumns } from '@/lib/analytics/columns-summary';
 import type { Segment } from '@/lib/analytics/retention';
+import { TrendSheet, type TrendTarget, type Trends } from '@/components/admin/trend-sheet';
 
 /**
  * 運営画面：計測。「基本」（期間のまとめ・作成数・利用の流れ・流入・国・貼り付け）、「継続利用」（今月の目標・公開後の行動）、
@@ -29,6 +30,10 @@ const KIND_COLOR: Record<string, string> = {
   other: "bg-amber-100 text-amber-800",
 };
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "-");
+/** 訪問（セッション）の数のグラフにつける補足 */
+const SESSION_NOTE = "訪問の数は日（時間）ごとに数えるので、日をまたいだ訪問は両方の日に入ります。そのため、グラフの合計は表の数より少し多くなることがあります。";
+/** タップできる行・数字の見た目 */
+const TAP = "cursor-pointer rounded-md transition-colors hover:bg-emerald-50 active:bg-emerald-100";
 
 const FUNNEL: { name: string; label: string }[] = [
   { name: "page_view", label: "ページ表示" },
@@ -68,6 +73,10 @@ export default function AdminAnalyticsPage() {
   const [countries, setCountries] = useState<{ country: string; views: number; visits: number }[]>([]);
   const [sources, setSources] = useState<SourceRow[]>([]);
   const [aiByDay, setAiByDay] = useState<{ day: string; counts: Record<string, number> }[]>([]);
+  /** 項目をタップしたときに出す折れ線グラフの数 */
+  const [trends, setTrends] = useState<Trends | null>(null);
+  const [trendTarget, setTrendTarget] = useState<TrendTarget | null>(null);
+  const openTrend = (target: TrendTarget) => { if (trends) setTrendTarget(target); };
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -88,6 +97,7 @@ export default function AdminAnalyticsPage() {
       setCountries(json.countries ?? []);
       setSources(json.sources ?? []);
       setAiByDay(json.aiByDay ?? []);
+      setTrends(json.trends ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "読み込めませんでした");
     } finally {
@@ -157,6 +167,9 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
 
+        {tab === "basic" && !loading && !error && (
+          <p className="text-xs font-semibold text-emerald-700">数字や行をタップすると、{days === 1 ? "1時間" : "1日"}ごとの推移のグラフが出ます</p>
+        )}
         {error && <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200">{error}</p>}
         {loading && <p className="text-sm text-gray-500">読み込み中…</p>}
 
@@ -176,16 +189,21 @@ export default function AdminAnalyticsPage() {
             {overview && (
               <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {([
-                  ["訪問数", overview.visits, "訪問"],
-                  ["ページ表示", overview.pageViews, "回"],
-                  ["アプリの作成数", overview.appsCreated, "件"],
-                  ["公開（上書きを含む）", overview.publishes, "回"],
-                  ["新規登録", overview.signups, "人"],
-                ] as const).map(([label, value, unit]) => (
-                  <div key={label} className="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
+                  ["訪問数", overview.visits, "訪問", "visits"],
+                  ["ページ表示", overview.pageViews, "回", "pageViews"],
+                  ["アプリの作成数", overview.appsCreated, "件", "appsCreated"],
+                  ["公開（上書きを含む）", overview.publishes, "回", "publishes"],
+                  ["新規登録", overview.signups, "人", "signups"],
+                ] as const).map(([label, value, unit, key]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => openTrend({ key: `overview:${key}`, title: label, unit, note: key === "visits" ? SESSION_NOTE : undefined })}
+                    className="rounded-2xl bg-white p-4 text-left ring-1 ring-gray-200 transition-colors hover:bg-emerald-50/60 hover:ring-emerald-200"
+                  >
                     <p className="text-2xl font-black tracking-tight text-gray-900">{value.toLocaleString()}<span className="ml-0.5 text-xs font-bold text-gray-500">{unit}</span></p>
                     <p className="mt-0.5 text-xs font-semibold text-gray-500">{label}</p>
-                  </div>
+                  </button>
                 ))}
               </section>
             )}
@@ -206,7 +224,15 @@ export default function AdminAnalyticsPage() {
                       <tr key={f.name} className="border-t border-gray-100">
                         <td className="py-1.5">{f.label}</td>
                         {LOCALES.map((l) => (
-                          <td key={l}>{(funnel.get(`${f.name}:${l}`) ?? 0).toLocaleString()}</td>
+                          <td key={l}>
+                            <button
+                              type="button"
+                              onClick={() => openTrend({ key: `funnel:${f.name}:${l}`, title: `${f.label}（${l}）`, unit: "訪問", note: SESSION_NOTE })}
+                              className={`px-1.5 py-0.5 tabular-nums underline decoration-gray-300 decoration-dotted underline-offset-4 ${TAP}`}
+                            >
+                              {(funnel.get(`${f.name}:${l}`) ?? 0).toLocaleString()}
+                            </button>
+                          </td>
                         ))}
                       </tr>
                     ))}
@@ -234,10 +260,16 @@ export default function AdminAnalyticsPage() {
                 ) : (
                   <ul className="mt-3 space-y-1.5 text-sm">
                     {list.map(([k, n]) => (
-                      <li key={k} className="flex items-center gap-3">
-                        <span className="w-14 text-right font-bold tabular-nums">{n.toLocaleString()}</span>
-                        <span className="w-12 text-right text-xs text-gray-400 tabular-nums">{Math.round((n / total) * 100)}%</span>
-                        <span className={k === "none" ? "text-emerald-700" : "text-gray-700"}>{LABEL[k] ?? k}</span>
+                      <li key={k}>
+                        <button
+                          type="button"
+                          onClick={() => openTrend({ key: `paste:${k}`, title: `貼り付け：${LABEL[k] ?? k}`, unit: "回" })}
+                          className={`flex w-full items-center gap-3 py-0.5 text-left ${TAP}`}
+                        >
+                          <span className="w-14 shrink-0 text-right font-bold tabular-nums">{n.toLocaleString()}</span>
+                          <span className="w-12 shrink-0 text-right text-xs text-gray-400 tabular-nums">{Math.round((n / total) * 100)}%</span>
+                          <span className={k === "none" ? "text-emerald-700" : "text-gray-700"}>{LABEL[k] ?? k}</span>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -258,7 +290,11 @@ export default function AdminAnalyticsPage() {
                   </thead>
                   <tbody>
                     {sources.map((r) => (
-                      <tr key={r.name} className="border-t border-gray-100">
+                      <tr
+                        key={r.name}
+                        onClick={() => openTrend({ key: `source:${r.name}`, title: `${r.name} からの訪問`, unit: "訪問", note: "訪問の最初の記録の日（時間）に数えています。表の「訪問」と同じ数です。" })}
+                        className={`border-t border-gray-100 ${TAP}`}
+                      >
                         <td className="py-1.5 font-semibold">{r.name}</td>
                         <td><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${KIND_COLOR[r.kind] ?? KIND_COLOR.other}`}>{KIND_LABEL[r.kind] ?? r.kind}</span></td>
                         <td className="tabular-nums">{r.visits.toLocaleString()}</td>
@@ -309,7 +345,11 @@ export default function AdminAnalyticsPage() {
                   </thead>
                   <tbody>
                     {countries.map((c) => (
-                      <tr key={c.country} className="border-t border-gray-100">
+                      <tr
+                        key={c.country}
+                        onClick={() => openTrend({ key: `country:${c.country}`, title: `${c.country} からの訪問`, unit: "訪問", note: SESSION_NOTE })}
+                        className={`border-t border-gray-100 ${TAP}`}
+                      >
                         <td className="py-1.5">{c.country}</td>
                         <td>{c.visits.toLocaleString()}</td>
                         <td>{c.views.toLocaleString()}</td>
@@ -327,6 +367,7 @@ export default function AdminAnalyticsPage() {
           </>
         )}
       </main>
+      {trends && trendTarget && <TrendSheet trends={trends} target={trendTarget} onClose={() => setTrendTarget(null)} />}
     </div>
   );
 }

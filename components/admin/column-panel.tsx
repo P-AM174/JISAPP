@@ -1,6 +1,7 @@
 "use client";
 
 import { CLICK_LABEL, type summarizeColumns } from "@/lib/analytics/columns-summary";
+import { TAP_CLASS, type TrendOpeners } from "./trend-openers";
 
 type Data = ReturnType<typeof summarizeColumns>;
 type Progress = Data["articles"]["progress"];
@@ -8,15 +9,24 @@ type Progress = Data["articles"]["progress"];
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "—");
 const secLabel = (s: number | null) => (s === null ? "—" : s < 60 ? `${s}秒` : `${Math.floor(s / 60)}分${s % 60 ? `${s % 60}秒` : ""}`);
 
-function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-xl bg-amber-50/60 p-3 ring-1 ring-amber-100">
+function Tile({ label, value, sub, onClick }: { label: string; value: string; sub?: string; onClick?: () => void }) {
+  const body = (
+    <>
       <p className="text-[11px] font-semibold text-gray-500">{label}</p>
       <p className="mt-1 text-2xl font-black text-gray-900">{value}</p>
       {sub && <p className="mt-0.5 text-[11px] text-gray-500">{sub}</p>}
-    </div>
+    </>
+  );
+  // タップすると日ごとの推移のグラフが出る
+  return onClick ? (
+    <button type="button" onClick={onClick} className="rounded-xl bg-amber-50/60 p-3 text-left ring-1 ring-amber-100 transition-colors hover:bg-amber-100/60">{body}</button>
+  ) : (
+    <div className="rounded-xl bg-amber-50/60 p-3 ring-1 ring-amber-100">{body}</div>
   );
 }
+
+/** コラムのグラフにつける補足 */
+const COLUMN_NOTE = "日（時間）ごとに数えるので、日をまたいだ訪問は両方の日に入ります。そのため、グラフの合計は表の数より少し多くなることがあります。";
 
 function ProgressLine({ p, base }: { p: Progress; base: number }) {
   const items: [string, number][] = [["指示文コピー", p.prompt_copy], ["貼り付け", p.studio_paste], ["公開", p.publish], ["新規登録", p.signup]];
@@ -32,18 +42,19 @@ function ProgressLine({ p, base }: { p: Progress; base: number }) {
 }
 
 /** 計測の「コラム」：コラムの訪問、記事ごとの読まれ方・流入元・押されたもの・そのあとアプリ作りまで進んだか */
-export function ColumnPanel({ data }: { data: Data | null }) {
+export function ColumnPanel({ data, open }: { data: Data | null; open?: TrendOpeners | null }) {
   if (!data) return null;
+  const show = (key: string, title: string) => (open ? () => open.count(key, { title, unit: "訪問", note: COLUMN_NOTE }) : undefined);
   const { list, articles, rows } = data;
   return (
     <>
       <section className="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
         <h2 className="font-bold text-gray-900">コラム全体</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Tile label="記事の訪問" value={articles.visits.toLocaleString()} sub={`${articles.views.toLocaleString()} ページ表示`} />
-          <Tile label="一覧ページの訪問" value={list.visits.toLocaleString()} sub={`${list.views.toLocaleString()} ページ表示`} />
-          <Tile label="読んだあと貼り付けまで" value={articles.progress.studio_paste.toLocaleString()} sub={`記事の訪問の ${pct(articles.progress.studio_paste, articles.visits)}`} />
-          <Tile label="読んだあと公開まで" value={articles.progress.publish.toLocaleString()} sub={`記事の訪問の ${pct(articles.progress.publish, articles.visits)}`} />
+          <Tile onClick={show("column:articles.visits", "コラム記事の訪問")} label="記事の訪問" value={articles.visits.toLocaleString()} sub={`${articles.views.toLocaleString()} ページ表示`} />
+          <Tile onClick={show("column:list.visits", "コラム一覧ページの訪問")} label="一覧ページの訪問" value={list.visits.toLocaleString()} sub={`${list.views.toLocaleString()} ページ表示`} />
+          <Tile onClick={show("column:progress.studio_paste", "コラムを読んだあと貼り付けまで")} label="読んだあと貼り付けまで" value={articles.progress.studio_paste.toLocaleString()} sub={`記事の訪問の ${pct(articles.progress.studio_paste, articles.visits)}`} />
+          <Tile onClick={show("column:progress.publish", "コラムを読んだあと公開まで")} label="読んだあと公開まで" value={articles.progress.publish.toLocaleString()} sub={`記事の訪問の ${pct(articles.progress.publish, articles.visits)}`} />
         </div>
         <p className="mt-3 text-xs text-gray-600">
           記事を読んだあと、同じ訪問で：<ProgressLine p={articles.progress} base={articles.visits} />
@@ -55,12 +66,14 @@ export function ColumnPanel({ data }: { data: Data | null }) {
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {articles.sources.slice(0, 12).map((s) => (
-              <li key={s.name} className="flex items-center gap-2">
+              <li key={s.name}>
+                <button type="button" onClick={show(`column:source:${s.name}`, `コラム記事への訪問：${s.name}`)} className={`flex w-full items-center gap-2 py-0.5 text-left ${TAP_CLASS}`}>
                 <span className="relative h-4 w-32 shrink-0 overflow-hidden rounded bg-gray-50 ring-1 ring-gray-200 sm:w-48">
                   <span className="absolute inset-y-0 left-0 bg-amber-400" style={{ width: `${(s.visits / articles.sources[0].visits) * 100}%` }} />
                 </span>
                 <b className="w-10 text-right tabular-nums">{s.visits}</b>
                 <span className="text-gray-700">{s.name}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -83,7 +96,7 @@ export function ColumnPanel({ data }: { data: Data | null }) {
               <li key={r.slug} className="rounded-xl bg-gray-50 p-4 ring-1 ring-gray-100">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <a href={r.href} target="_blank" rel="noreferrer" className="min-w-0 flex-1 font-bold text-gray-900 hover:text-emerald-700">{r.title}</a>
-                  <span className="text-sm"><b className="text-lg tabular-nums">{r.visits}</b> 訪問 <span className="text-xs text-gray-400">（{r.views} 表示）</span></span>
+                  <button type="button" onClick={show(`column:article:${r.slug}`, `記事の訪問：${r.title}`)} className={`px-1 text-sm ${TAP_CLASS}`}><b className="text-lg tabular-nums underline decoration-gray-300 decoration-dotted underline-offset-4">{r.visits}</b> 訪問 <span className="text-xs text-gray-400">（{r.views} 表示）</span></button>
                 </div>
 
                 <div className="mt-3 grid gap-3 text-xs sm:grid-cols-3">

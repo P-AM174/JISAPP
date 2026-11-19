@@ -10,7 +10,8 @@ import { CreationPanel, RetentionPanel } from '@/components/admin/retention-pane
 import { ColumnPanel } from '@/components/admin/column-panel';
 import type { summarizeColumns } from '@/lib/analytics/columns-summary';
 import type { Segment } from '@/lib/analytics/retention';
-import { TrendSheet, type TrendTarget, type Trends } from '@/components/admin/trend-sheet';
+import { TrendSheet, countSeries, dailySeries, rateSeries, type TrendSeries, type Trends } from '@/components/admin/trend-sheet';
+import type { TrendOpeners } from '@/components/admin/trend-openers';
 
 /**
  * 運営画面：計測。「基本」（期間のまとめ・作成数・利用の流れ・流入・国・貼り付け）、「継続利用」（今月の目標・公開後の行動）、
@@ -75,8 +76,15 @@ export default function AdminAnalyticsPage() {
   const [aiByDay, setAiByDay] = useState<{ day: string; counts: Record<string, number> }[]>([]);
   /** 項目をタップしたときに出す折れ線グラフの数 */
   const [trends, setTrends] = useState<Trends | null>(null);
-  const [trendTarget, setTrendTarget] = useState<TrendTarget | null>(null);
-  const openTrend = (target: TrendTarget) => { if (trends) setTrendTarget(target); };
+  const [trendSeries, setTrendSeries] = useState<TrendSeries | null>(null);
+  /** 件数の項目をタップした（key は trends.counts のキー） */
+  const openTrend = ({ key, ...meta }: { key: string; title: string; unit: string; note?: string }) => { if (trends) setTrendSeries(countSeries(trends, key, meta)); };
+  /** 継続利用・コラムのパネルに渡す（パネルの中の項目をタップしたとき） */
+  const openers: TrendOpeners | null = trends && goal ? {
+    count: (key, meta) => setTrendSeries(countSeries(trends, key, meta)),
+    rate: (key, meta) => setTrendSeries(rateSeries(trends, key, meta)),
+    daily: (seg, key, meta, kind) => setTrendSeries(dailySeries(trends, goal[seg].daily, key, meta, kind)),
+  } : null;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -167,8 +175,12 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
 
-        {tab === "basic" && !loading && !error && (
-          <p className="text-xs font-semibold text-emerald-700">数字や行をタップすると、{days === 1 ? "1時間" : "1日"}ごとの推移のグラフが出ます</p>
+        {!loading && !error && (
+          <p className="text-xs font-semibold text-emerald-700">
+            {tab === "retention"
+              ? "数字をタップすると、日ごとの推移のグラフが出ます（割合は、初めて開いた日・案内を見た日ごと）"
+              : `数字や行をタップすると、${days === 1 ? "1時間" : "1日"}ごとの推移のグラフが出ます`}
+          </p>
         )}
         {error && <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200">{error}</p>}
         {loading && <p className="text-sm text-gray-500">読み込み中…</p>}
@@ -177,12 +189,12 @@ export default function AdminAnalyticsPage() {
           <>
             {tab === "retention" && (
               <>
-                <RetentionPanel goal={goal} segment={segment} />
-                <EngagementPanel data={engagement}/>
+                <RetentionPanel goal={goal} segment={segment} open={openers} />
+                <EngagementPanel data={engagement} open={openers}/>
               </>
             )}
 
-            {tab === "column" && <ColumnPanel data={columns} />}
+            {tab === "column" && <ColumnPanel data={columns} open={openers} />}
 
             {tab === "basic" && (
             <>
@@ -367,7 +379,7 @@ export default function AdminAnalyticsPage() {
           </>
         )}
       </main>
-      {trends && trendTarget && <TrendSheet trends={trends} target={trendTarget} onClose={() => setTrendTarget(null)} />}
+      {trendSeries && <TrendSheet series={trendSeries} onClose={() => setTrendSeries(null)} />}
     </div>
   );
 }

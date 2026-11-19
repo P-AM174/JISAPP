@@ -110,7 +110,13 @@ export function summarizeUsage(events: GoalEvent[], now: Date = new Date()) {
     return r;
   };
   const sentApps = new Set<string>();
-  const publishers = new Set<string>(), shownHome = new Set<string>();
+  /** 公開完了の画面を見た（アプリ×ブラウザ）→ 初めて見た日（日ごとのグラフ用） */
+  const publishers = new Map<string, string>(), shownHome = new Set<string>();
+  // 運営画面のグラフ用：日ごとの数。割合は「初めて開いた日（公開完了の画面を見た日）」ごとに分ける
+  const dailyRatios: Record<string, Record<string, Ratio>> = {};
+  const dailyCounts: Record<string, Record<string, number>> = {};
+  const dayTally = (name: string, day: string, hit: boolean) => tally(((dailyRatios[name] ??= {})[day] ??= ratio()), hit);
+  const dayCount = (name: string, day: string) => { const c = (dailyCounts[name] ??= {}); c[day] = (c[day] ?? 0) + 1; };
   const sharedBy = { sns: new Set<string>(), message: new Set<string>(), other: new Set<string>() };
   let groupsCreated = 0, groupsJoined = 0;
 
@@ -130,7 +136,7 @@ export function summarizeUsage(events: GoalEvent[], now: Date = new Date()) {
       }
       case 'home_first_launch': row(k.app, k.key).installed = true; break;
       case 'data_saved': row(k.app, k.key).saveDays.add(day); break;
-      case 'publish_shown': publishers.add(k.key); break;
+      case 'publish_shown': { const was = publishers.get(k.key); if (!was || day < was) publishers.set(k.key, day); break; }
       case 'home_shown': shownHome.add(k.key); break;
       case 'share_clicked': {
         sentApps.add(k.app);
@@ -138,8 +144,8 @@ export function summarizeUsage(events: GoalEvent[], now: Date = new Date()) {
         (SNS.has(c) ? sharedBy.sns : MESSAGE.has(c) ? sharedBy.message : sharedBy.other).add(k.key);
         break;
       }
-      case 'group_created': groupsCreated++; break;
-      case 'group_joined': groupsJoined++; break;
+      case 'group_created': groupsCreated++; dayCount('groups.created', day); break;
+      case 'group_joined': groupsJoined++; dayCount('groups.joined', day); break;
     }
   }
 
@@ -158,13 +164,24 @@ export function summarizeUsage(events: GoalEvent[], now: Date = new Date()) {
     const days = [...r.days].sort();
     const first = days[0];
     tally(homeAdded, r.installed);
-    if (shownHome.has(key)) tally(homeAddedAfterGuide, r.installed);
+    dayTally('rates.homeAdded', first, r.installed);
+    if (shownHome.has(key)) { tally(homeAddedAfterGuide, r.installed); dayTally('rates.homeAddedAfterGuide', first, r.installed); }
     if (diffDays(first, today) < 7) continue; // まだ7日たっていない
     const g = r.owner ? owners : others;
+    const who = r.owner ? 'owners' : 'others';
     const d7 = days.some((d) => d !== first && diffDays(first, d) <= 7);
-    tally(g.d1, days.includes(addDays(first, 1)));
+    const d1 = days.includes(addDays(first, 1));
+    tally(g.d1, d1);
     tally(g.d7, d7);
-    if (diffDays(first, today) >= 30) tally(g.d30, days.some((d) => diffDays(first, d) >= 30));
+    dayTally(`retention.${who}.d1`, first, d1);
+    dayTally(`retention.${who}.d7`, first, d7);
+    if (diffDays(first, today) >= 30) {
+      const d30 = days.some((d) => diffDays(first, d) >= 30);
+      tally(g.d30, d30);
+      dayTally(`retention.${who}.d30`, first, d30);
+    }
+    dayTally('dataSaved.any', first, r.saveDays.size >= 1);
+    dayTally('dataSaved.twoDays', first, r.saveDays.size >= 2);
     // 比べる数（作者本人も含めた全員の「7日以内にまた開いた」）
     tally(byKind[r.kind] ?? byKind.unknown, d7);
     tally(r.installed ? byHome.installed : byHome.notInstalled, d7);
@@ -176,8 +193,14 @@ export function summarizeUsage(events: GoalEvent[], now: Date = new Date()) {
     topApps.set(r.app, a);
   }
 
-  const shareRate = (set: Set<string>): Ratio => ({ numerator: [...publishers].filter((k) => set.has(k)).length, denominator: publishers.size });
+  const shareRate = (set: Set<string>): Ratio => ({ numerator: [...publishers.keys()].filter((k) => set.has(k)).length, denominator: publishers.size });
+  for (const [key, day] of publishers) {
+    dayTally('rates.sns', day, sharedBy.sns.has(key));
+    dayTally('rates.message', day, sharedBy.message.has(key));
+  }
   return {
+    /** 運営画面のグラフ用：日（日本時間）ごとの割合と件数。キーは上の数字の名前（retention.others.d7・rates.sns など） */
+    daily: { ratios: dailyRatios, counts: dailyCounts },
     retention: { others, owners },
     byKind,
     byHome,

@@ -240,7 +240,81 @@ export async function GET(req: NextRequest) {
   if (!locale) for (const a of apps) if (new Date(a.created_at).getTime() >= periodStart) bump("overview:appsCreated", bucketOf(a.created_at));
   // 流入元は、訪問の最初の記録の日（時間）に数える（表の「訪問」と合う）
   for (const v of visits.values()) bump(`source:${v.source.name}`, v.bucket);
-  const trends = { hourly, buckets, counts };
+
+  // 継続利用の「公開後の共有・ホーム画面・再利用」：アプリ×ブラウザごとに、初めて起きた日（時間）に数える（summarizeEngagement と同じ単位）。
+  // 割合は「案内を見た日」ごとに、そのアプリ×ブラウザがあとで押したかを数える
+  const ratios: Record<string, Record<string, { n: number; d: number }>> = {};
+  {
+    const firstAt = new Map<string, string>(); // `${action}|${app}:${visitor}` → 初めての日（時間）
+    const hitKeys = new Map<string, Set<string>>(); // action → そのことをしたアプリ×ブラウザ
+    const shareIds = new Set<string>();
+    for (const e of periodEvs) {
+      if (e.name !== "engagement") continue;
+      const p = (e.props ?? {}) as Record<string, unknown>;
+      const action = String(p.action ?? ""), app = String(p.appId ?? ""), visitor = String(p.visitor || e.session_id || "");
+      if (!app || !visitor) continue;
+      const key = `${app}:${visitor}`, b = bucketOf(e.created_at);
+      (hitKeys.get(action) ?? hitKeys.set(action, new Set()).get(action)!).add(key);
+      // 共有リンクは、同じアプリ×ブラウザが何回押しても、リンクごとに数える（表の「発行」と同じ）
+      if (action === "share_clicked" && p.shareId && !shareIds.has(String(p.shareId))) {
+        shareIds.add(String(p.shareId));
+        bump("eng:shareLinks", b);
+      }
+      const fk = `${action}|${key}`;
+      if (firstAt.has(fk)) continue;
+      firstAt.set(fk, b);
+      if (action === "home_first_launch") {
+        bump("eng:homeInstalls", b);
+        if (p.owner !== true) bump("eng:homeInstallsOthers", b);
+      }
+      if (action === "home_installed") bump("eng:installed", b);
+    }
+    const rateByFirst = (name: string, base: string, hit: string) => {
+      const r = (ratios[name] ??= {});
+      const hits = hitKeys.get(hit) ?? new Set<string>();
+      for (const [fk, b] of firstAt) {
+        if (!fk.startsWith(`${base}|`)) continue;
+        const cell = (r[b] ??= { n: 0, d: 0 });
+        cell.d++;
+        if (hits.has(fk.slice(base.length + 1))) cell.n++;
+      }
+    };
+    rateByFirst("eng:shareRate", "share_shown", "share_clicked");
+    rateByFirst("eng:homeGuideRate", "home_shown", "home_howto");
+  }
+
+  // コラム：今の数え方（summarizeColumns）を、日（時間）ごとに分けた記録にそのまま使う。
+  // 日をまたいだ訪問は両方の日に入るので、グラフの合計は表より少し多くなることがある
+  {
+    const byBucket = new Map<string, Ev[]>();
+    for (const e of periodEvs) {
+      const b = bucketOf(e.created_at);
+      (byBucket.get(b) ?? byBucket.set(b, []).get(b)!).push(e);
+    }
+    const add = (key: string, b: string, n: number) => {
+      if (!n) return;
+      const c = (counts[key] ??= {});
+      c[b] = (c[b] ?? 0) + n;
+    };
+    for (const [b, list] of byBucket) {
+      const s = summarizeColumns(list, titles);
+      add("column:articles.visits", b, s.articles.visits);
+      add("column:list.visits", b, s.list.visits);
+      add("column:progress.studio_paste", b, s.articles.progress.studio_paste);
+      add("column:progress.publish", b, s.articles.progress.publish);
+      for (const src of s.articles.sources) add(`column:source:${src.name}`, b, src.visits);
+      for (const r of s.rows) add(`column:article:${r.slug}`, b, r.visits);
+    }
+  }
+
+  // 継続利用の割合は「初めて開いた日」ごと（日単位）なので、直近24時間のときも日の横軸を使う
+  const dayBuckets: string[] = [];
+  for (let t = periodStart; ; t += 24 * 3600 * 1000) {
+    const d = jst(Math.min(t, Date.now())).slice(0, 10);
+    if (dayBuckets[dayBuckets.length - 1] !== d) dayBuckets.push(d);
+    if (t >= Date.now()) break;
+  }
+  const trends = { hourly, buckets, dayBuckets, counts, ratios };
 
   return NextResponse.json({ days, locale: locale ?? "all", overview, columns, excludedAccounts: excludedUserIds.size, summary: summaryRows, pasteBreakdown, countries, sources, aiByDay, engagement, goal, trends });
 }

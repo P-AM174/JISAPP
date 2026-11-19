@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "@/lib/i18n/navigation";
 import { useRouter } from "@/lib/i18n/navigation";
 import { GroupShortcuts } from "@/components/groups/group-shortcuts";
-import { ChevronRight, Database, ExternalLink, Pin, PinOff, Trash2, X } from "lucide-react";
+import { ChevronRight, Database, ExternalLink, Pin, PinOff, SquarePlus, Trash2, X } from "lucide-react";
+import { IconPicker } from "@/components/engagement/icon-picker";
+import { ShareButton } from "@/components/share-button";
+import { getAppShareUrl } from "@/lib/share";
 import { MiniPreview } from "@/components/app-catalog/mini-preview";
 import { displayCreatorName, getCreatorProfilePath } from "@/components/app-catalog/utils";
 import { categoryName } from "@/lib/categories";
@@ -22,6 +25,10 @@ type Detail = {
   removedByCreator: boolean;
   libraryCount: number;
   stampCount: number;
+  /** 自分が作ったアプリ（アイコンを変えられる） */
+  isOwner?: boolean;
+  /** グループ共有アプリ（アプリのURLを送ってもデータは共有されないので、共有ボタンは出さない） */
+  isGroupApp?: boolean;
 };
 
 /** マイライブラリのカードをタップしたときに、下から出す詳細シート */
@@ -183,6 +190,36 @@ export function LibraryDetailSheet({
 
           {/* 参加中のグループがあれば、そのグループで開く・別のグループを作る */}
           <GroupShortcuts appId={entry.appId} onNavigate={(p) => router.push(p)} />
+
+          {/* 作者が削除したアプリは、アイコンも変えられず、送っても相手が開けないので出さない */}
+          {detail && !detail.removedByCreator && (
+            <div className="space-y-2">
+              {/* アイコンを変えられるのはアプリの作者だけ */}
+              {detail.isOwner && <IconPicker appId={entry.appId} title={title} />}
+              <div className={detail.isGroupApp ? "grid grid-cols-1" : "grid grid-cols-2 gap-2"}>
+                {/* ホーム画面に追加は、そのアプリのページで行う（ライブラリのページのままだと、ライブラリがホーム画面に入ってしまう）。
+                    ?home=1 で開くと、アプリのページで「ホーム画面に追加」のシートがすぐ出る */}
+                <button
+                  type="button"
+                  onClick={() => router.push(`/apps/${entry.appId}?home=1`)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-sky-50 px-3 py-3 text-sm font-bold text-sky-700 ring-1 ring-sky-100 transition-colors hover:bg-sky-100"
+                >
+                  <SquarePlus className="h-4 w-4" />
+                  {t("ホーム画面に追加", "Add to home screen")}
+                </button>
+                {!detail.isGroupApp && (
+                  <ShareButton
+                    url={getAppShareUrl(entry.appId)}
+                    title={title}
+                    text={format(t("{title} | ジサップで作った無料アプリ", "{title} | a free app made on Jisapp"), { title })}
+                    size="md"
+                    variant="outline"
+                    className="w-full"
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <button

@@ -3,12 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getLibraryCounts } from "@/lib/library-counts";
+import { usesSharedData } from "@/lib/groups/client";
 
 const STAMP_KEY_PREFIX = "__stamp__";
 
 /**
  * マイライブラリの詳細シート用: GET /api/library/detail?appId=xxx
  * 作者・ライブラリ登録数・スタンプ数を返す（カードをタップしたときだけ読み込む）
+ * あわせて、自分が作者か（アイコンを変えられるか）と、グループ共有アプリか（URLではなく招待で送るか）も返す
  */
 export async function GET(req: Request) {
   let userId: string | null = null;
@@ -31,7 +33,7 @@ export async function GET(req: Request) {
   const [{ data: app }, libraryCounts, { count: stampCount }] = await Promise.all([
     supabase
       .from("apps")
-      .select("title, description, category, creator_name, status, admin_deleted")
+      .select("title, description, category, creator_name, creator_id, status, admin_deleted, group_sharing, html_code, js_code")
       .eq("id", appId)
       .maybeSingle(),
     getLibraryCounts([appId]),
@@ -56,5 +58,8 @@ export async function GET(req: Request) {
     removedByCreator: app.status === "deleted",
     libraryCount: libraryCounts[appId] ?? 0,
     stampCount: stampCount ?? 0,
+    isOwner: !!app.creator_id && app.creator_id === userId,
+    // グループ共有アプリは、アプリのURLを送ってもデータが共有されない（グループの招待で送る）
+    isGroupApp: app.group_sharing ?? usesSharedData(`${app.html_code ?? ""}\n${app.js_code ?? ""}`),
   });
 }

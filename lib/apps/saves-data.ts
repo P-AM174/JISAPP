@@ -5,5 +5,15 @@
  */
 export function appSavesData(source: string): boolean {
   if (!source) return false;
-  return /(?:Jisapp|Zisup)\s*\.\s*(?:saveData|loadData)\s*\(/.test(source) || /\blocalStorage\b/.test(source);
+  return usesJisappSave(source) || /\blocalStorage\b/.test(source);
+}
+
+/**
+ * ジサップの saveData / loadData を呼んでいるか。
+ * `const J = window.Jisapp; J.saveData(...)` のように、変数に入れてから呼ぶ書き方も拾う
+ */
+export function usesJisappSave(source: string): boolean {
+  if (!source) return false;
+  if (/(?:Jisapp|Zisup)\s*\.\s*(?:saveData|loadData)\s*\(/.test(source)) return true;
+  return /\b(?:Jisapp|Zisup)\b/.test(source) && /\.\s*(?:saveData|loadData)\s*\(/.test(source);
 }

@@ -1,4 +1,5 @@
 import { pick, type Locale, format } from "@/lib/i18n/config";
+import { usesJisappSave } from "@/lib/apps/saves-data";
 
 export type StorageUsage = {
   /** window.Jisapp.saveData / loadData（旧名 window.Zisup）で使っている名前 */
@@ -79,9 +80,17 @@ export function extractStorageUsage(source: string): StorageUsage {
   }
 
   // 名前が変数の場合も「使っている」ことだけ検知する
+  // `const J = window.Jisapp; J.saveData(PREFIX + y, ...)` のように、変数に入れてから呼ぶ書き方もある
+  if (zisupKeys.size === 0 && /\b(?:Jisapp|Zisup)\b/.test(source)) {
+    const aliasRe = new RegExp(String.raw`\.\s*(?:saveData|loadData)\s*\(\s*${STRING_LIT}`, "g");
+    while ((m = aliasRe.exec(source)) !== null) {
+      if (m[1]) zisupKeys.add(m[1]);
+    }
+  }
   const usesZisup =
     zisupKeys.size > 0 ||
-    /(?:window\.)?(?:Jisapp|Zisup)\.(?:saveData|loadData)\s*\(/i.test(source);
+    /(?:window\.)?(?:Jisapp|Zisup)\.(?:saveData|loadData)\s*\(/i.test(source) ||
+    usesJisappSave(source);
   const usesLocalStorage =
     localStorageKeys.size > 0 ||
     /localStorage\.(?:getItem|setItem|removeItem)\s*\(/i.test(source);

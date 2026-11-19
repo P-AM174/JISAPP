@@ -852,19 +852,16 @@ export function PromptTemplateModal({
                 <li className="flex gap-3">
                   <StepDot n={1} />
                   <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-slate-700">{t("AIの入力欄に貼り付けて、送信する", "Paste it into the AI's chat box and send")}</span>
-                    <p className="mt-0.5 text-xs text-slate-500">{t("スマホは入力欄を長押し →「ペースト」／PCは Ctrl+V（Macは ⌘+V）", "On a phone, long-press the box → “Paste”; on a computer, Ctrl+V (⌘+V on Mac)")}</p>
+                    {/* 小さい文字は読まれないので、大事なこと（貼り付け方）も太字の中に入れる */}
+                    <span className="text-sm font-semibold text-slate-700">{t("AIの入力欄を長押し →「ペースト」して送信（PCは Ctrl+V）", "Long-press the AI's chat box → “Paste”, then send (Ctrl+V on a computer)")}</span>
                   </div>
                 </li>
                 <li className="flex gap-3">
                   <StepDot n={2} />
                   <div className="min-w-0 flex-1">
                     <span className="text-sm font-semibold text-slate-700">
-                      {t("AIが書き終わったら、コードを全部コピーして、ジサップに戻る", "When the AI has finished, copy all the code and come back to Jisapp")}
+                      {t("書き終わったら、コードを全部コピーして、ブラウザのこの画面に戻る", "When it's done, copy all the code and come back to this page in your browser")}
                     </span>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {t("ブラウザに戻れば、この画面のまま待っています。戻ったら、コードを貼り付けるだけです", "Switch back to your browser — this page will be waiting. Then just paste the code")}
-                    </p>
                   </div>
                 </li>
               </ol>

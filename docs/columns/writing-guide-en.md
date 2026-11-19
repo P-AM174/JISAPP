@@ -3,6 +3,7 @@
 Used when the admin screen (/admin/columns) copies the English request ("AIに頼む" → English).
 Assumes an AI that can read this whole repository (ChatGPT / Claude projects, etc.).
 English posts are published at `/en/column/<name>`.
+The full workflow (choosing a topic, photos, cover image, saving a draft) is in [playbook.md](playbook.md) (in Japanese).
 
 ## Facts
 
@@ -14,6 +15,9 @@ English posts are published at `/en/column/<name>`.
 - Don't criticize other services
 - Names and amounts in examples are fictional — say so
 - Write the brand as **Jisapp** (never the katakana name)
+- When the post introduces an app on Jisapp, **check its features in the app's own HTML**, not just its description
+- Don't say an app is "used by teams" unless it actually has groups using it
+- Don't feature an app made by another user without their permission
 
 ## Reader and tone
 
@@ -42,6 +46,16 @@ English posts are published at `/en/column/<name>`.
 6. Wrap-up
 7. The last line: `::button[Make an app on Jisapp](/playground)`
 
+### When the post introduces an app on Jisapp (one a group uses together)
+
+Use this shape for steps 4–5:
+
+4. **Use it as it is**: the app card (`::app[ID]`), with the prompt right below it (`:::prompt The prompt for this app` … `:::`). The prompt is built the same way as the Studio does it (Jisapp design + group sharing), with the app's features in "Extra requests and specs" (see playbook.md)
+5. **Getting started** (3 numbered steps): tap **Create a group** (only the creator signs in) → send the invite link to the WhatsApp group → members open it, type their name and tap **Join** (no sign-in, nothing to install). Say that only people who joined from the link can see the data
+6. **Make your own version** (4 numbered steps): in the Studio tap **Make an app to share with a group** → describe it, add the features and tap **Make and copy the prompt** → paste it into your usual AI → copy the AI's code, tap **Paste the code and run it**, then publish. Then say to change "Extra requests and specs" in the prompt above, with one example message as a quote (`> `)
+7. Wrap-up (3 bullets and a line that goes back to the opening moment)
+8. The last line: `::button[Make an app on Jisapp](/playground)`
+
 ## Formatting (only these marks become formatting; HTML is not allowed)
 
 | Write | Shows as |
@@ -68,7 +82,7 @@ Don't add images (they're added later in the admin screen).
 - First line: `# Title` (about 60 characters max; the moment or the benefit)
 - After the post, separately, add these three lines (they're moved into the publish settings automatically when pasted):
   - `説明：` a description for search results (about 150 characters, in English)
-  - `Xの投稿文：` a post for X (about 200 characters, in English; the link is added automatically)
+  - `Xの投稿文：` a post for X (about 200 characters, in English; the link is added automatically). Open with the moment, use short lines with line breaks, and end with 3–4 hashtags for the people who'd use the app and the people who build apps with AI (e.g. `#ClubCricket #VibeCoding #NoCode #ChatGPT`)
   - `タグ：` 1–3 tags separated by commas. Preset tags get a color and an icon: Travel, Sports, PTA, School, Family, Clubs, Work, Money
 
 (The labels `説明：`, `Xの投稿文：`, `タグ：` stay in Japanese so the admin screen can find them; the text after them is English.)

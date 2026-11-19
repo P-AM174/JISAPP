@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
-  ArrowUp,
   ArrowUpRight,
   Check,
   ChevronDown,
@@ -796,23 +795,25 @@ export function PromptTemplateModal({
           </>
         ) : (
           <>
+            {/* コピーしたあとは「今やること」だけを見せる：AI を開いて、貼って送る。
+                コードを貼るのは AI から戻ってきたあと（戻ってきたら、そのまま貼り付け待ちの画面になる） */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
-              <div className="flex flex-col items-center pt-2 text-center">
+              <div className="flex flex-col items-center pt-1 text-center">
                 <span
                   className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-full",
+                    "flex h-12 w-12 items-center justify-center rounded-full",
                     copyOk ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-600/30" : "bg-amber-100 text-amber-600"
                   )}
                 >
-                  {copyOk ? <Check className="h-7 w-7" strokeWidth={3} /> : <Copy className="h-6 w-6" />}
+                  {copyOk ? <Check className="h-6 w-6" strokeWidth={3} /> : <Copy className="h-5 w-5" />}
                 </span>
                 <h2 className="mt-3 text-xl font-extrabold tracking-tight text-slate-900">
-                  {copyOk ? t("プロンプトをコピーしました", "Prompt copied") : t("自動でコピーできませんでした", "Couldn't copy automatically")}
+                  {copyOk ? t("コピーしました", "Copied") : t("自動でコピーできませんでした", "Couldn't copy automatically")}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm font-semibold text-slate-600">
                   {copyOk
-                    ? t("いつも使っている生成AIのアプリに貼り付けて、送信してください", "Paste it into the AI app you use and send it")
-                    : t("下の枠を長押しして、すべて選択 →「コピー」してください", "Long-press the box below, select all → “Copy”")}
+                    ? t("次は、生成AIに貼り付けて送ります", "Next, paste it into an AI and send it")
+                    : t("下の枠を長押しして、すべて選択 →「コピー」してから、AIを開いてください", "Long-press the box below, select all → “Copy”, then open an AI")}
                 </p>
               </div>
 
@@ -826,68 +827,73 @@ export function PromptTemplateModal({
                 />
               )}
 
-              <ol className="mt-5 space-y-3">
+              {/* AI を開く。押すと AI が開き、この画面は「AIの返事を待っています」になる */}
+              <p className="mt-5 text-xs font-bold text-slate-500">{t("使うAIを開く", "Open the AI you use")}</p>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {STUDIO_AIS.filter((a) => a.url).map((a) => (
+                  <a
+                    key={a.id}
+                    href={a.url ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => onLaunch(a)}
+                    className="flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-2 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
+                  >
+                    {a.name}
+                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-80" strokeWidth={2.25} />
+                  </a>
+                ))}
+              </div>
+              <p className="mt-1.5 text-center text-[11px] text-slate-500">
+                {t("ほかのAIを使うときは、そのアプリを開いてください", "Using another AI? Just open that app")}
+              </p>
+
+              <ol className="mt-5 space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
                 <li className="flex gap-3">
                   <StepDot n={1} />
                   <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-slate-700">{t("いつも使っている生成AIのアプリを開く", "Open the AI app you use")}</span>
-                    <p className="mt-0.5 text-xs text-slate-500">{t("ChatGPT・Gemini・Claude など、どのAIでも使えます", "Any AI works — ChatGPT, Gemini, Claude and more")}</p>
-                    {copyOk && (
-                      <div className="mt-2 overflow-hidden rounded-xl bg-white ring-1 ring-emerald-200">
-                        <p className="flex items-center gap-1.5 border-b border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-800">
-                          <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                          {t("コピーしたプロンプト（この内容をAIに送ります）", "The copied prompt (this is what you send to the AI)")}
-                        </p>
-                        <textarea
-                          readOnly
-                          value={promptText}
-                          rows={4}
-                          aria-label={t("コピーしたプロンプト", "Copied prompt")}
-                          className="block w-full resize-none bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-600 outline-none"
-                        />
-                      </div>
-                    )}
+                    <span className="text-sm font-semibold text-slate-700">{t("AIの入力欄に貼り付けて、送信する", "Paste it into the AI's chat box and send")}</span>
+                    <p className="mt-0.5 text-xs text-slate-500">{t("スマホは入力欄を長押し →「ペースト」／PCは Ctrl+V（Macは ⌘+V）", "On a phone, long-press the box → “Paste”; on a computer, Ctrl+V (⌘+V on Mac)")}</p>
                   </div>
                 </li>
                 <li className="flex gap-3">
                   <StepDot n={2} />
                   <div className="min-w-0 flex-1">
                     <span className="text-sm font-semibold text-slate-700">
-                      {t("生成AIのチャット入力欄に、コピーしたプロンプトをペーストして送信する", "Paste the copied prompt into the AI's chat box and send it")}
+                      {t("AIが書き終わったら、コードを全部コピーして、ジサップに戻る", "When the AI has finished, copy all the code and come back to Jisapp")}
                     </span>
-                    {/* チャット入力欄に、コピーしたプロンプトを貼った様子の絵 */}
-                    <div aria-hidden className="mt-2 rounded-2xl bg-slate-100 p-3 pt-9">
-                      <div className="relative flex items-end gap-2 rounded-2xl bg-white px-3.5 py-2.5 shadow-sm ring-1 ring-slate-200">
-                        <span className="line-clamp-3 min-w-0 flex-1 whitespace-pre-line font-mono text-[10px] leading-snug text-slate-600">
-                          {promptText || t("メッセージを入力…", "Type a message…")}
-                        </span>
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="absolute -top-7 left-6 rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow">
-                          {t("ペースト", "Paste")}
-                          <span className="absolute -bottom-1 left-3 h-2 w-2 rotate-45 bg-slate-900" />
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[11px] text-slate-500">{t("スマホは入力欄を長押し →「ペースト」／PCは Ctrl+V（Macは ⌘+V）", "On a phone, long-press the box → “Paste”; on a computer, Ctrl+V (⌘+V on Mac)")}</p>
-                    </div>
-                  </div>
-                </li>
-                <li className="flex gap-3">
-                  <StepDot n={3} />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-slate-700">
-                      {t("AIが書き終わったら、返ってきたコードを全部コピーして、ジサップに戻って貼り付ける", "When the AI has finished, copy all the code it returns, come back to Jisapp and paste it")}
-                    </span>
-                    <DoneSigns className="mt-2" />
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {t("ブラウザに戻れば、この画面のまま待っています。戻ったら、コードを貼り付けるだけです", "Switch back to your browser — this page will be waiting. Then just paste the code")}
+                    </p>
                   </div>
                 </li>
               </ol>
+
+              {copyOk && (
+                <details className="group mt-3 overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
+                  <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-500 [&::-webkit-details-marker]:hidden">
+                    <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
+                    {t("コピーした内容を見る", "See what was copied")}
+                  </summary>
+                  <textarea
+                    readOnly
+                    value={promptText}
+                    rows={5}
+                    aria-label={t("コピーしたプロンプト", "Copied prompt")}
+                    className="block w-full resize-none border-t border-slate-100 bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-600 outline-none"
+                  />
+                </details>
+              )}
             </div>
             <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white/80 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-              <button type="button" onClick={() => onLaunch(ai)} className={PRIMARY_BUTTON}>
+              {/* AI に送り終わった人（AI を別の方法で開いた人など）向け。主ボタンにはしない */}
+              <button
+                type="button"
+                onClick={() => onLaunch(ai)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50"
+              >
                 <ClipboardPaste className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                {t("AIに送ったら、コードを貼り付けへ", "Sent it? Go paste the code")}
+                {t("AIに送った → コードを貼り付けへ", "Sent it → Paste the code")}
               </button>
               <div className="flex items-center justify-center gap-5 text-xs font-semibold text-slate-500">
                 <button type="button" onClick={onRecopy} className="flex items-center gap-1 hover:text-slate-800">

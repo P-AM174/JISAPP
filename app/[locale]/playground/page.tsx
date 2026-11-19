@@ -838,7 +838,8 @@ export default function PlaygroundPage() {
   const [templateOpen, setTemplateOpen]   = useState(false);
   const [templateStep, setTemplateStep]   = useState<"form" | "copied">("form");
   const [promptText, setPromptText]       = useState("");
-  const [promptCopied, setPromptCopied]   = useState(true);
+  /** null: まだコピーしていない（自分で「コピーする」を押してもらう）／true: コピーできた／false: できなかった */
+  const [promptCopied, setPromptCopied]   = useState<boolean | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
   const [menuOpen, setMenuOpen]           = useState(false);
   // 「localStorage で保存しています」の注意を閉じたか（プレビューの邪魔にならないように）
@@ -1433,13 +1434,31 @@ export default function PlaygroundPage() {
   /** サークルなど、メンバーとデータを共有するアプリを作る */
   const openSharedTemplate = () => openTemplateWith(true);
 
-  /** テンプレートからプロンプトを作ってコピーする。コピーしたことを先にはっきり見せる */
+  /**
+   * テンプレートからプロンプトを作って見せる。コピーはまだしない。
+   * 自分で「コピーする」を押したほうが、「手元にプロンプトがある → AIに貼る」とつながりやすいため
+   */
   const createPrompt = () => {
     if (!idea.trim()) {
       setIdeaError(t("作りたいものを書いてください", "Tell us what you want to make"));
       return;
     }
-    void copyPromptAndShow(buildPrompt());
+    const prompt = buildPrompt();
+    setPromptText(prompt);
+    // あとで「さっきのプロンプトを貼った」と見分けるため、端末に覚えておく
+    try { localStorage.setItem(LAST_PROMPT_KEY, prompt); } catch { /* noop */ }
+    setPromptCopied(null);
+    setTemplateStep("copied");
+    setTemplateOpen(true);
+  };
+
+  /** 完成画面の「コピーする」。クリックの中で同期的にコピーする（アプリ内ブラウザ対策） */
+  const copyCreatedPrompt = async () => {
+    if (!promptText) return;
+    const ok = copyTextNow(promptText) || (await copyText(promptText));
+    setPromptCopied(ok);
+    if (ok) trackEvent("prompt_copy", { via: "studio" });
+    leftForAiRef.current = true;
   };
 
   const recopyPrompt = () => {
@@ -2304,7 +2323,7 @@ export default function PlaygroundPage() {
         onCreate={createPrompt}
         promptText={promptText}
         copyOk={promptCopied}
-        onRecopy={recopyPrompt}
+        onCopy={() => void copyCreatedPrompt()}
         onLaunch={launchAi}
         onEdit={() => setTemplateStep("form")}
       />

@@ -591,7 +591,7 @@ export function PromptTemplateModal({
   onCreate,
   promptText,
   copyOk,
-  onRecopy,
+  onCopy,
   onLaunch,
   onEdit,
 }: {
@@ -603,12 +603,13 @@ export function PromptTemplateModal({
   ideaError: string;
   options: IdeaOptions;
   onOptionsChange: (next: IdeaOptions) => void;
-  /** プロンプトを作ってコピーする */
+  /** プロンプトを作る（コピーは完成画面で自分で押してもらう） */
   onCreate: () => void;
   promptText: string;
-  /** コピーできたか（できなかったときは手でコピーしてもらう） */
-  copyOk: boolean;
-  onRecopy: () => void;
+  /** null: まだコピーしていない／true: コピーできた／false: できなかった（手でコピーしてもらう） */
+  copyOk: boolean | null;
+  /** 完成画面の「コピーする」 */
+  onCopy: () => void;
   /** AI を開く（開いたら貼り付け待ちになる） */
   onLaunch: (ai: StudioAi) => boolean;
   onEdit: () => void;
@@ -637,7 +638,7 @@ export function PromptTemplateModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={step === "form" ? t("プロンプトを作成", "Make a prompt") : t("プロンプトをコピーしました", "Prompt copied")}
+        aria-label={step === "form" ? t("プロンプトを作成", "Make a prompt") : t("アプリのプロンプトが完成しました", "Your app's prompt is ready")}
         className="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-[#fbfdfc] shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -788,115 +789,115 @@ export function PromptTemplateModal({
             </div>
             <div className="shrink-0 border-t border-slate-100 bg-white/80 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               <button type="button" onClick={onCreate} className={PRIMARY_BUTTON}>
-                <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                {t("プロンプトを作ってコピーする", "Make and copy the prompt")}
+                <FileText className="h-4 w-4 shrink-0" strokeWidth={2.25} />
+                {t("プロンプトを作る", "Make the prompt")}
               </button>
             </div>
           </>
         ) : (
           <>
-            {/* コピーしたあとは「今やること」だけを見せる：AI を開いて、貼って送る。
-                コードを貼るのは AI から戻ってきたあと（戻ってきたら、そのまま貼り付け待ちの画面になる） */}
+            {/* プロンプトができたら、中身を見せて、自分で「コピーする」を押してもらう。
+                コピーしたら「使うAIを開く」と手順を出す（コードを貼るのは AI から戻ってきたあと） */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
               <div className="flex flex-col items-center pt-1 text-center">
-                <span
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-full",
-                    copyOk ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-600/30" : "bg-amber-100 text-amber-600"
-                  )}
-                >
-                  {copyOk ? <Check className="h-6 w-6" strokeWidth={3} /> : <Copy className="h-5 w-5" />}
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-600/30">
+                  <FileText className="h-6 w-6" strokeWidth={2.25} />
                 </span>
                 <h2 className="mt-3 text-xl font-extrabold tracking-tight text-slate-900">
-                  {copyOk ? t("コピーしました", "Copied") : t("自動でコピーできませんでした", "Couldn't copy automatically")}
+                  {t("アプリのプロンプトが完成しました！", "Your app's prompt is ready!")}
                 </h2>
                 <p className="mt-1 text-sm font-semibold text-slate-600">
-                  {copyOk
-                    ? t("次は、生成AIに貼り付けて送ります", "Next, paste it into an AI and send it")
-                    : t("下の枠を長押しして、すべて選択 →「コピー」してから、AIを開いてください", "Long-press the box below, select all → “Copy”, then open an AI")}
+                  {t("以下をコピーして、自分のAIの入力欄にペーストして送信しましょう。", "Copy it below, then paste it into your AI's chat box and send it.")}
                 </p>
               </div>
 
-              {!copyOk && (
-                <textarea
-                  readOnly
-                  value={promptText}
-                  rows={6}
-                  onFocus={(e) => e.currentTarget.select()}
-                  className="mt-4 block w-full resize-none rounded-xl bg-white px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-slate-600 outline-none ring-2 ring-amber-300"
-                />
+              {/* 中身を5行ほど見せる（コピーできなかったときは、ここを長押ししてコピーしてもらう） */}
+              <textarea
+                readOnly
+                value={promptText}
+                rows={5}
+                aria-label={t("AIに送るプロンプト", "Prompt for your AI")}
+                onFocus={(e) => e.currentTarget.select()}
+                className={cn(
+                  "mt-4 block w-full resize-none rounded-xl bg-white px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-slate-600 outline-none ring-1",
+                  copyOk === false ? "ring-2 ring-amber-300" : "ring-slate-200"
+                )}
+              />
+
+              <button
+                type="button"
+                onClick={onCopy}
+                className={
+                  copyOk
+                    ? "mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50"
+                    : PRIMARY_BUTTON + " mt-3 w-full"
+                }
+              >
+                {copyOk ? <Check className="h-4 w-4 shrink-0" strokeWidth={3} /> : <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} />}
+                {copyOk ? t("コピーしました（もう一度コピー）", "Copied (copy again)") : t("コピーする", "Copy")}
+              </button>
+              {copyOk === false && (
+                <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                  {t("自動でコピーできませんでした。上の枠を長押しして、すべて選択 →「コピー」してください", "Couldn't copy automatically. Long-press the box above, select all → “Copy”")}
+                </p>
               )}
 
-              {/* AI を開く。押すと AI が開き、この画面は「AIの返事を待っています」になる */}
-              <p className="mt-5 text-xs font-bold text-slate-500">{t("使うAIを開く", "Open the AI you use")}</p>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {STUDIO_AIS.filter((a) => a.url).map((a) => (
-                  <a
-                    key={a.id}
-                    href={a.url ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => onLaunch(a)}
-                    className="flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-2 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
-                  >
-                    {a.name}
-                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-80" strokeWidth={2.25} />
-                  </a>
-                ))}
-              </div>
-              <p className="mt-1.5 text-center text-[11px] text-slate-500">
-                {t("ほかのAIを使うときは、そのアプリを開いてください", "Using another AI? Just open that app")}
-              </p>
-
-              <ol className="mt-5 space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
-                <li className="flex gap-3">
-                  <StepDot n={1} />
-                  <div className="min-w-0 flex-1">
-                    {/* 小さい文字は読まれないので、大事なこと（貼り付け方）も太字の中に入れる */}
-                    <span className="text-sm font-semibold text-slate-700">{t("AIの入力欄を長押し →「ペースト」して送信（PCは Ctrl+V）", "Long-press the AI's chat box → “Paste”, then send (Ctrl+V on a computer)")}</span>
+              {/* コピーしたら（できなかったときも、手でコピーしてもらうので）次にやることを出す */}
+              {copyOk !== null && (
+                <>
+                  <p className="mt-6 text-xs font-bold text-slate-500">{t("使うAIを開く", "Open the AI you use")}</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {STUDIO_AIS.filter((a) => a.url).map((a) => (
+                      <a
+                        key={a.id}
+                        href={a.url ?? undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => onLaunch(a)}
+                        className="flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-2 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:from-emerald-700 hover:to-teal-700 active:scale-[0.98] touch-manipulation"
+                      >
+                        {a.name}
+                        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-80" strokeWidth={2.25} />
+                      </a>
+                    ))}
                   </div>
-                </li>
-                <li className="flex gap-3">
-                  <StepDot n={2} />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-slate-700">
-                      {t("書き終わったら、コードを全部コピーして、ブラウザのこの画面に戻る", "When it's done, copy all the code and come back to this page in your browser")}
-                    </span>
-                  </div>
-                </li>
-              </ol>
+                  <p className="mt-1.5 text-center text-[11px] text-slate-500">
+                    {t("ほかのAIを使うときは、そのアプリを開いてください", "Using another AI? Just open that app")}
+                  </p>
 
-              {copyOk && (
-                <details className="group mt-3 overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
-                  <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-500 [&::-webkit-details-marker]:hidden">
-                    <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
-                    {t("コピーした内容を見る", "See what was copied")}
-                  </summary>
-                  <textarea
-                    readOnly
-                    value={promptText}
-                    rows={5}
-                    aria-label={t("コピーしたプロンプト", "Copied prompt")}
-                    className="block w-full resize-none border-t border-slate-100 bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-600 outline-none"
-                  />
-                </details>
+                  <ol className="mt-5 space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
+                    <li className="flex gap-3">
+                      <StepDot n={1} />
+                      <div className="min-w-0 flex-1">
+                        {/* 小さい文字は読まれないので、大事なこと（貼り付け方）も太字の中に入れる */}
+                        <span className="text-sm font-semibold text-slate-700">{t("AIの入力欄を長押し →「ペースト」して送信（PCは Ctrl+V）", "Long-press the AI's chat box → “Paste”, then send (Ctrl+V on a computer)")}</span>
+                      </div>
+                    </li>
+                    <li className="flex gap-3">
+                      <StepDot n={2} />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-semibold text-slate-700">
+                          {t("書き終わったら、コードを全部コピーして、ブラウザのこの画面に戻る", "When it's done, copy all the code and come back to this page in your browser")}
+                        </span>
+                      </div>
+                    </li>
+                  </ol>
+                </>
               )}
             </div>
             <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white/80 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               {/* AI に送り終わった人（AI を別の方法で開いた人など）向け。主ボタンにはしない */}
-              <button
-                type="button"
-                onClick={() => onLaunch(ai)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50"
-              >
-                <ClipboardPaste className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-                {t("AIに送った → コードを貼り付けへ", "Sent it → Paste the code")}
-              </button>
-              <div className="flex items-center justify-center gap-5 text-xs font-semibold text-slate-500">
-                <button type="button" onClick={onRecopy} className="flex items-center gap-1 hover:text-slate-800">
-                  <Copy className="h-3.5 w-3.5" />
-                  {t("もう一度コピー", "Copy again")}
+              {copyOk !== null && (
+                <button
+                  type="button"
+                  onClick={() => onLaunch(ai)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50"
+                >
+                  <ClipboardPaste className="h-4 w-4 shrink-0" strokeWidth={2.25} />
+                  {t("AIに送った → コードを貼り付けへ", "Sent it → Paste the code")}
                 </button>
+              )}
+              <div className="flex items-center justify-center text-xs font-semibold text-slate-500">
                 <button type="button" onClick={onEdit} className="flex items-center gap-1 hover:text-slate-800">
                   <RotateCcw className="h-3.5 w-3.5" />
                   {t("内容を直す", "Edit the details")}

@@ -330,7 +330,9 @@ export function ShareButton({
     setSharing(true);
     try {
       if (prefersNativeShare()) {
-        const ok = await nativeShare({ url: withUtm(url, "native", locale), title, text: shareText });
+        // OS の共有シートには文（text）を渡さない。iPhone の「コピー」が文と URL をつなげてコピーし、
+        // 貼り付けてもそのまま開けなくなるため。LINE などで送ったときは、リンクのカード（OGP）にアプリ名が出る
+        const ok = await nativeShare({ url: withUtm(url, "native", locale), title });
         if (ok) {
           trackEvent("share", { channel: "native" });
           return;
